@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-examine"
+  short_description: "Inspect survey sources at exact locators."
+  default_prompt: "Use $isomer-kaoju-examine to inspect source claims, code mappings, contradictions, and achieved evidence depth."

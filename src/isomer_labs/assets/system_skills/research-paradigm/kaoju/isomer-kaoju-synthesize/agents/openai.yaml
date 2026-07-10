@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-synthesize"
+  short_description: "Synthesize an audited Kaoju survey."
+  default_prompt: "Use $isomer-kaoju-synthesize to write survey conclusions from accepted evidence and an accepted Audit Report."

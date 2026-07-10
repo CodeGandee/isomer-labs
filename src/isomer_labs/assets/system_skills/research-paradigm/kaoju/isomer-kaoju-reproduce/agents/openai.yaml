@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-reproduce"
+  short_description: "Run bounded paper-method trials."
+  default_prompt: "Use $isomer-kaoju-reproduce to run a faithful method trial or an explicit generated-data capability probe."

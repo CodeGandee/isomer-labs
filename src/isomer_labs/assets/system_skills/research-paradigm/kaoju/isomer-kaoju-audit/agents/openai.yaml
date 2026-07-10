@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-audit"
+  short_description: "Audit survey evidence without repairing it."
+  default_prompt: "Use $isomer-kaoju-audit to diagnose survey coverage, identity, provenance, traceability, and fairness."

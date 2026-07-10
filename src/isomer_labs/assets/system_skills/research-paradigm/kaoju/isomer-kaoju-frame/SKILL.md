@@ -1,0 +1,61 @@
+---
+name: isomer-kaoju-frame
+description: Use when a Kaoju request needs a bounded Survey Contract, clarification-first choices, comparison intent, coverage limits, evidence depth, resources, Gates, or stop conditions.
+---
+
+# Kaoju Frame
+
+## Overview
+
+Turn the user's survey question into an explicit contract before discovery or execution changes its scope. Ambiguity that changes cost, evidence strength, or comparability must become a user-visible decision.
+
+## Workflow
+
+1. **Resolve context**. Read the Research Topic, Research Inquiry, user request, prior survey refs, and Workspace Readiness Artifact.
+2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
+3. **Inspect ambiguity**. Identify unclear boundaries, source classes, time horizon, seed role, inclusion rules, desired depth, deliverables, resources, and Gates.
+4. **Clarify when requested or material**. Use the A/B/C/D clarification contract, mark exactly one suggested option, then ask whether to clarify more or proceed.
+5. **Freeze the contract**. Record question, boundary, source classes, coverage date, inclusion and exclusion rules, evidence contract, resources, Gate posture, outputs, and stop conditions.
+6. **Add empirical intent when applicable**. For actual-run comparison, create the Comparison Intent Document and wait for a Proceed Decision before preparation or Runs.
+7. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+8. **Return status**. Report the Survey Contract or Comparison Intent Document ref and the next allowed stage.
+
+If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
+
+## When to Use
+
+Use at the start of a survey procedure, when a prior contract no longer fits, or when empirical comparison needs a user checkpoint. Do not use this skill to search, acquire, inspect, execute, audit, or synthesize evidence.
+
+## Survey Contract
+
+Required fields are the user question, target audience, boundary, primary and linked source classes, seeds, coverage date, `searched_through` policy, inclusion and exclusion rules, desired verification depth, comparison mode, deliverables, resource envelope, Gate requirements, clarification mode, stop conditions, and accepted prior refs.
+
+For comparative Runs, the Comparison Intent Document additionally states candidate identities and readiness, reusable prior evidence, acquisition and environment needs, reproduce or reimplement routes, datasets, metrics, evaluators, fairness rules, repetitions or uncertainty plan, resources, Gates, unresolved decisions, and the Proceed Decision.
+
+## Reference Routing
+
+Use `$isomer-kaoju-shared` for interaction, evidence, Artifact, owner-routing, lineage, and terminal contracts. Use `$isomer-kaoju-workspace-mgr` when readiness evidence is missing or stale.
+
+## Foundational Principle
+
+A vague request is not an execution contract. Do not spend material resources or claim coverage beyond the boundary the user accepted.
+
+## Rationalization Table
+
+| Rationalization | Required response |
+| --- | --- |
+| “The field boundary is obvious.” | State it and its exclusions in the Survey Contract. |
+| “We can choose metrics after the Runs.” | Define metric and evaluator semantics before comparative execution. |
+| “The user asked to proceed quickly.” | Keep mandatory Gates and comparison intent; reduce scope instead. |
+
+## Red Flags
+
+- No coverage date or stop condition.
+- Empirical candidates start preparation before a Proceed Decision.
+- “Latest” appears without a `searched_through` boundary.
+
+## Common Mistakes
+
+- Treating repositories as primary related works when no paper or report relationship is established.
+- Asking many unstructured questions. Ask one material A/B/C/D choice at a time.
+- Using clarification-first as a procedure. It is an interaction mode inside the chosen procedure.

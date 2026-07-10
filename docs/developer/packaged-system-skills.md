@@ -7,6 +7,7 @@ Released-package installation should use `isomer-cli system-skills install`, whi
 ```bash
 isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target codex --extension kaoju
 ```
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Target defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible projection.
@@ -18,9 +19,12 @@ Use `system-skills upgrade` after installing a newer Isomer CLI package when pac
 ```bash
 isomer-cli system-skills upgrade --target codex
 isomer-cli system-skills upgrade --target codex --extension deepsci
+isomer-cli system-skills upgrade --target codex --extension kaoju
 ```
 
-Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci skills under `research-paradigm/deepsci/`.
+Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
+
+Select `deepsci` for hypothesis-driven research that develops or evaluates a new route. Select `kaoju` for evidence-led literature and codebase surveys, including source examination, first-hand paper-method trials, and controlled comparisons. Selecting one extension includes core skills and that family only; use the existing all-extensions selector or select both when an agent needs both families.
 
 `npx skills add` remains useful when testing a single source-checkout skill directory directly, but it is no longer the public recommended path for released Isomer packages. Repository-root discovery can still find repository-local OpenSpec development skills, so do not document repository-root `npx skills add CodeGandee/isomer-labs --skill isomer-op-entrypoint` as a packaged Isomer install path.
 

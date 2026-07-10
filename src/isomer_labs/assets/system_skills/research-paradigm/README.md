@@ -1,6 +1,15 @@
 # Research Paradigm Skills
 
-This subtree contains the production DeepSci research-method skills for Isomer Labs. The active skill root is `deepsci/`; retired `v1` and temporary `v2` skill roots are intentionally absent.
+This subtree contains two optional production research-paradigm families for Isomer Labs. `deepsci/` supports hypothesis-driven new-method research; `kaoju/` supports evidence-led surveys of literature, codebases, datasets, and models, including governed first-hand trials when a survey question requires them. Retired `v1` and temporary `v2` skill roots are intentionally absent.
+
+## Production Families
+
+| Path | Role |
+| --- | --- |
+| `deepsci/isomer-deepsci-<purpose>/` | Hypothesis-driven research stages, experiments, analysis, decisions, writing, and publication support. |
+| `kaoju/isomer-kaoju-<purpose>/` | Literature-first survey framing, discovery, material acquisition, source examination, reproduction, comparison, audit, and synthesis. |
+
+Kaoju maps and verifies existing work. DeepSci develops or evaluates a research route around a hypothesis and comparator. A task may hand evidence between families, but each family retains its own procedure and evidence contract.
 
 ## Production DeepSci Layout
 
@@ -12,7 +21,13 @@ This subtree contains the production DeepSci research-method skills for Isomer L
 
 The root directory does not contain active flat `isomer-deepsci-*` skill folders. New research work should target `deepsci/` and suffixless skill names such as `isomer-deepsci-scout`.
 
-DeepSci is a domain extension family, not the generic extension bucket. Future domain extensions should use the `isomer-<extension-name>-<purpose>` convention described in the packaged system-skill README; the planned DeepSci namespace shape is `isomer-deepsci-<purpose>`. Cross-domain helper interfaces remain under `isomer-misc-*`.
+DeepSci and Kaoju are domain extension families, not a generic extension bucket. Domain extensions use the `isomer-<extension-name>-<purpose>` convention described in the packaged system-skill README: `isomer-deepsci-<purpose>` and `isomer-kaoju-<purpose>`. Cross-domain helper interfaces remain under `isomer-misc-*`.
+
+## Production Kaoju Layout
+
+The Kaoju family contains one pipeline, shared and workspace contracts, and focused frame, discover, acquire, examine, reproduce, compare, audit, and synthesize skills. Its pipeline exposes seven bounded survey procedures, grouped `manage-survey` and `manage-dataset` helpers, and `help`. Generic repository maintenance, environment repair, and resume behavior remain context inside a selected survey procedure.
+
+Active Kaoju guidance lives in `SKILL.md`, `agents/openai.yaml`, and directly linked local `commands/` or `references/`. It uses existing Topic Workspace, provider, environment, execution, Gate, and research-recording owners rather than defining a Kaoju runtime database or provider.
 
 ## Core Research Skills
 

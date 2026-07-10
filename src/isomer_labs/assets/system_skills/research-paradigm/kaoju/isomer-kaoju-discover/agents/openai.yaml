@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-discover"
+  short_description: "Discover version-aware survey materials."
+  default_prompt: "Use $isomer-kaoju-discover to find and select papers, reports, repositories, datasets, and models."

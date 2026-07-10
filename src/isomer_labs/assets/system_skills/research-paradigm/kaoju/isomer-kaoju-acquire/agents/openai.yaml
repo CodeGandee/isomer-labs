@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-acquire"
+  short_description: "Acquire pinned survey materials safely."
+  default_prompt: "Use $isomer-kaoju-acquire to resolve material identities and route governed acquisition into the Topic Workspace."

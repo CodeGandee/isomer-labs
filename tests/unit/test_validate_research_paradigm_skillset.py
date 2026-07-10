@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import shutil
 import sys
 import tempfile
 import textwrap
@@ -76,6 +77,20 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """,
         )
         return root, target
+
+    def add_valid_kaoju(self, target: Path) -> Path:
+        source = (
+            REPO_ROOT
+            / "src"
+            / "isomer_labs"
+            / "assets"
+            / "system_skills"
+            / "research-paradigm"
+            / "kaoju"
+        )
+        destination = target / "kaoju"
+        shutil.copytree(source, destination)
+        return destination
 
     def write_skill(
         self,
@@ -182,6 +197,104 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         root, target = self.make_valid_skillset()
         diagnostics = validator.validate_skillset(target, root)
         self.assertEqual([], messages(diagnostics))
+
+    def test_valid_kaoju_family_passes_with_deepsci_fixture(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.add_valid_kaoju(target)
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_kaoju_missing_skill_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        shutil.rmtree(kaoju / "isomer-kaoju-acquire")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS007", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("expected kaoju skill is missing" in message for message in messages(diagnostics)))
+
+    def test_kaoju_wrong_namespace_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        (kaoju / "isomer-kaoju-acquire").rename(kaoju / "isomer-ext-acquire")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS007", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("must match isomer-kaoju-*" in message for message in messages(diagnostics)))
+
+    def test_kaoju_manifest_identity_drift_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        manifest = kaoju / "isomer-kaoju-frame" / "agents" / "openai.yaml"
+        text = manifest.read_text(encoding="utf-8").replace(
+            'display_name: "isomer-kaoju-frame"',
+            'display_name: "isomer-kaoju-other"',
+        )
+        manifest.write_text(text, encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS006", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("isomer-kaoju-frame" in message for message in messages(diagnostics)))
+
+    def test_kaoju_broken_direct_reference_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        missing = kaoju / "isomer-kaoju-shared" / "references" / "evidence-contract.md"
+        missing.unlink()
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertTrue({"RPS005", "RPS019"} <= codes(diagnostics), messages(diagnostics))
+
+    def test_kaoju_stale_domain_term_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        skill = kaoju / "isomer-kaoju-frame" / "SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "\nUse the Research Goal as context.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS001", codes(diagnostics), messages(diagnostics))
+
+    def test_kaoju_hard_coded_provider_and_local_path_are_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        skill = kaoju / "isomer-kaoju-discover" / "SKILL.md"
+        skill.write_text(
+            skill.read_text(encoding="utf-8") + "\nAlways use GitHub and store results under /data/kaoju/results.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertTrue({"RPS004", "RPS020"} <= codes(diagnostics), messages(diagnostics))
+
+    def test_kaoju_command_surface_drift_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        write(
+            kaoju / "isomer-kaoju-pipeline" / "commands" / "source-audit.md",
+            """
+            # Source Audit
+
+            ## Workflow
+
+            1. Inspect a source.
+            2. Return a report.
+
+            If the task does not map cleanly, use the native planning tool.
+            """,
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS018", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("source-audit" in message for message in messages(diagnostics)))
 
     def test_deepsci_callback_steps_are_required(self) -> None:
         root, target = self.make_valid_skillset()

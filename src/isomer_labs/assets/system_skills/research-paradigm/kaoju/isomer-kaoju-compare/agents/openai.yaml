@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-compare"
+  short_description: "Compare surveyed methods with evidence."
+  default_prompt: "Use $isomer-kaoju-compare to perform a source-grounded theory comparison or a controlled empirical comparison."

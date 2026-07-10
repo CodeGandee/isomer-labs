@@ -1,0 +1,38 @@
+# Theory Comparison Pass
+
+## Workflow
+
+1. **Frame the question**. Accept candidate Source Identities, comparison purpose, audience, desired source depth, and base survey refs.
+2. **Derive dimensions**. Use `$isomer-kaoju-compare` to define domain-relevant dimensions, rationale, applicability, and source basis; use bounded discovery when the domain basis is unclear.
+3. **Acquire and examine evidence**. Use `$isomer-kaoju-acquire` and `$isomer-kaoju-examine` to inspect each candidate at exact source locators.
+4. **Build the theory matrix**. Record exact evidence or `not stated`, `not applicable`, `unclear`, or `disputed` in every cell.
+5. **Audit**. Use `$isomer-kaoju-audit` to check identity, dimension basis, source depth, locator coverage, and unsupported inference.
+6. **Synthesize**. If audit accepts the evidence, use `$isomer-kaoju-synthesize` to integrate the Theory Comparison Artifact into the survey.
+7. **Stop**. Return the pipeline terminal report; do not start empirical Runs.
+
+If the request does not map cleanly to this recipe, use the native planning tool to build and execute a source-grounded comparison plan while preserving audit before synthesis.
+
+## Trigger
+
+Use when the user asks to compare named works in theory and wants the comparison to reflect meaningful dimensions in the survey domain.
+
+## Inputs
+
+Require candidate identities or resolvable locators, comparison question, accepted survey context, intended audience, desired source depth, and coverage constraints.
+
+## Outputs
+
+- Dimension definitions with rationale, applicability rules, and source bases.
+- Source-grounded Theory Comparison Artifact with exact cell evidence.
+- Audit Report, Claim Status Table updates, and survey comparison view.
+- Explicit contradictions, missing states, and limits.
+
+## Stop Conditions
+
+Stop when every candidate and applicable dimension has evidence or an explicit missing state. Source-only cells remain at source-inspected depth and never receive empirical `compared` depth.
+
+## Common Mistakes
+
+- Copying a familiar comparison taxonomy without checking domain relevance.
+- Filling unstated details through inference.
+- Ranking works whose cells are unclear, disputed, or not applicable.

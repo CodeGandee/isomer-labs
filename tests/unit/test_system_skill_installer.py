@@ -47,11 +47,43 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertIn("isomer-op-entrypoint", [skill.name for skill in core.skills])
         self.assertIn("isomer-op-gui-mgr", [skill.name for skill in core.skills])
         self.assertNotIn("deepsci", core.selected_extensions)
+        self.assertNotIn("kaoju", core.selected_extensions)
 
         deepsci = resolve_system_skill_selection(extensions=("deepsci",))
         self.assertIn("core", deepsci.selected_groups)
         self.assertIn("deepsci", deepsci.selected_extensions)
         self.assertIn("isomer-deepsci-pipeline", [skill.name for skill in deepsci.skills])
+
+        kaoju = resolve_system_skill_selection(extensions=("kaoju",))
+        self.assertEqual(("kaoju",), kaoju.selected_extensions)
+        self.assertIn("core", kaoju.selected_groups)
+        self.assertIn("isomer-kaoju-pipeline", [skill.name for skill in kaoju.skills])
+        self.assertNotIn("isomer-deepsci-pipeline", [skill.name for skill in kaoju.skills])
+
+    def test_kaoju_extension_install_status_upgrade_and_uninstall(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(extensions=("kaoju",))
+
+        installed = install_system_skills(target, selection)
+
+        self.assertTrue(installed.ok)
+        kaoju_names = sorted(record.name for record in installed.installed if record.name.startswith("isomer-kaoju-"))
+        self.assertEqual(11, len(kaoju_names))
+        self.assertTrue((target.skill_root / "isomer-kaoju-pipeline" / "commands" / "comparative-pass.md").is_file())
+        self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
+        self.assertFalse((target.skill_root / "isomer-deepsci-pipeline").exists())
+
+        status = inspect_system_skills(target, selection)
+        self.assertEqual((), status.missing)
+        self.assertEqual(11, len(tuple(record for record in status.installed if record.name.startswith("isomer-kaoju-"))))
+
+        upgraded = upgrade_system_skills(target, selection)
+        self.assertEqual(11, len(tuple(record for record in upgraded.refreshed if record.name.startswith("isomer-kaoju-"))))
+
+        removed = uninstall_system_skills(target, selection)
+        self.assertEqual(11, len(tuple(record for record in removed.removed if record.name.startswith("isomer-kaoju-"))))
+        self.assertFalse((target.skill_root / "isomer-kaoju-pipeline").exists())
 
     def test_copy_projection_is_flat_and_manifest_tracked(self) -> None:
         root = self.make_root()

@@ -13,7 +13,19 @@ from pathlib import Path
 from typing import Iterable
 
 
+@dataclass(frozen=True)
+class FamilyConfig:
+    key: str
+    root_name: str
+    name_pattern: re.Pattern[str]
+    name_shape: str
+    expected_skills: frozenset[str]
+    max_workflow_line: int
+    required: bool
+
+
 SKILL_NAME_RE = re.compile(r"^isomer-deepsci-[a-z0-9]+(?:-[a-z0-9]+)*$")
+KAOJU_SKILL_NAME_RE = re.compile(r"^isomer-kaoju-[a-z0-9]+(?:-[a-z0-9]+)*$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -52,6 +64,94 @@ EXPECTED_DEEPSCI_SKILLS = frozenset(
         "isomer-deepsci-shared",
         "isomer-deepsci-workspace-mgr",
         "isomer-deepsci-write",
+    }
+)
+
+EXPECTED_KAOJU_SKILLS = frozenset(
+    {
+        "isomer-kaoju-acquire",
+        "isomer-kaoju-audit",
+        "isomer-kaoju-compare",
+        "isomer-kaoju-discover",
+        "isomer-kaoju-examine",
+        "isomer-kaoju-frame",
+        "isomer-kaoju-pipeline",
+        "isomer-kaoju-reproduce",
+        "isomer-kaoju-shared",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-workspace-mgr",
+    }
+)
+
+FAMILY_CONFIGS = (
+    FamilyConfig(
+        key="deepsci",
+        root_name="deepsci",
+        name_pattern=SKILL_NAME_RE,
+        name_shape="isomer-deepsci-*",
+        expected_skills=EXPECTED_DEEPSCI_SKILLS,
+        max_workflow_line=MAX_DEEPSCI_WORKFLOW_LINE,
+        required=True,
+    ),
+    FamilyConfig(
+        key="kaoju",
+        root_name="kaoju",
+        name_pattern=KAOJU_SKILL_NAME_RE,
+        name_shape="isomer-kaoju-*",
+        expected_skills=EXPECTED_KAOJU_SKILLS,
+        max_workflow_line=40,
+        required=False,
+    ),
+)
+
+EXPECTED_KAOJU_COMMANDS = frozenset(
+    {
+        "audit-survey-pass",
+        "comparative-pass",
+        "curated-intake-pass",
+        "direction-expansion-pass",
+        "landscape-pass",
+        "manage-dataset",
+        "manage-survey",
+        "method-trial-pass",
+        "theory-comparison-pass",
+    }
+)
+
+EXPECTED_KAOJU_PROCEDURES = frozenset(
+    {
+        "audit-survey-pass",
+        "comparative-pass",
+        "curated-intake-pass",
+        "direction-expansion-pass",
+        "landscape-pass",
+        "method-trial-pass",
+        "theory-comparison-pass",
+    }
+)
+
+FORBIDDEN_KAOJU_PROCEDURES = frozenset(
+    {
+        "environment-repair",
+        "full-kaoju",
+        "list-passes",
+        "refresh",
+        "repository-refresh",
+        "reproduction",
+        "resume",
+        "source-audit",
+    }
+)
+
+EXPECTED_KAOJU_SHARED_REFERENCES = frozenset(
+    {
+        "evidence-contract.md",
+        "external-owner-routing.md",
+        "interaction-and-gates.md",
+        "lineage.md",
+        "source-identity.md",
+        "survey-artifacts.md",
+        "terminal-report.md",
     }
 )
 
@@ -221,7 +321,14 @@ NON_ACTIVE_ROLES = frozenset(
     }
 )
 
-LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/")
+LOCAL_REFERENCE_PREFIXES = ("commands/", "references/", "assets/", "scripts/")
+
+KAOJU_FORBIDDEN_ACTIVE_PATTERNS = (
+    ("provider-specific runtime binding", re.compile(r"\b(?:Tavily|Semantic Scholar|Crossref|GitHub|GitLab|Hugging Face|arXiv API)\b", re.I)),
+    ("feature-design runtime dependency", re.compile(r"\bcontext/features/[^\s)`\"']+")),
+    ("OpenSpec runtime dependency", re.compile(r"\bopenspec/changes/[^\s)`\"']+")),
+    ("retired research skill namespace", re.compile(r"\bisomer-(?:ext|rsch)-[a-z0-9-]+\b")),
+)
 
 DEEPSCI_STORAGE_BINDING_PATTERNS = (
     (
@@ -420,6 +527,8 @@ def classify_document(
     roles: set[str] = set()
     if rel_target.startswith("deepsci/"):
         roles.add("deepsci")
+    if rel_target.startswith("kaoju/"):
+        roles.add("kaoju")
     for role_key, role_name in (
         ("migration_file_globs", "migration"),
         ("source_analysis_file_globs", "source-analysis"),
@@ -573,10 +682,15 @@ def workflow_numbered_steps(lines: tuple[str, ...], workflow_line: int) -> list[
     return steps
 
 
-def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], generation: str | None) -> None:
+def validate_skill_layout(
+    skill_dir: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    family: FamilyConfig,
+) -> None:
     skill_name = skill_dir.name
-    if not SKILL_NAME_RE.match(skill_name):
-        add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match isomer-deepsci-*")
+    if not family.name_pattern.match(skill_name):
+        add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match {family.name_shape}")
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", "skill folder is missing SKILL.md")
@@ -588,15 +702,18 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
         add(diagnostics, repo_root, skill_md, 2, "RPS007", "frontmatter name must match the skill folder")
     if not frontmatter.get("description"):
         add(diagnostics, repo_root, skill_md, 3, "RPS007", "frontmatter description is required")
+    if family.key == "kaoju":
+        if set(frontmatter) != {"name", "description"}:
+            add(diagnostics, repo_root, skill_md, 1, "RPS018", "Kaoju frontmatter must contain only name and description")
+        if not frontmatter.get("description", "").startswith("Use when"):
+            add(diagnostics, repo_root, skill_md, 3, "RPS018", "Kaoju frontmatter description must start with 'Use when'")
 
     workflow_line = find_h2(lines, "Workflow")
     workflow_steps: list[tuple[int, int, str]] = []
     if workflow_line is None:
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
     else:
-        if generation == "deepsci" and workflow_line > MAX_DEEPSCI_WORKFLOW_LINE:
-            add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
-        elif generation != "deepsci" and workflow_line > 40:
+        if workflow_line > family.max_workflow_line:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
         workflow_steps = workflow_numbered_steps(lines, workflow_line)
         numbers = [number for _, number, _ in workflow_steps]
@@ -609,7 +726,12 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
     if not any("does not map cleanly" in line for line in lines):
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must include fallback guidance")
 
-    if generation == "deepsci":
+    if family.key == "kaoju":
+        for heading in ("Overview", "When to Use", "Common Mistakes"):
+            if find_h2(lines, heading) is None:
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju SKILL.md must contain ## {heading}")
+
+    if family.key in {"deepsci", "kaoju"}:
         reminder_line = next(
             (line_number for line_number, line in enumerate(lines, start=1) if DEEPSCI_CALLBACK_ANTI_PATTERN in line),
             None,
@@ -639,7 +761,7 @@ def validate_skill_layout(skill_dir: Path, repo_root: Path, diagnostics: list[Di
                 skill_md,
                 reminder_line or workflow_line or 1,
                 "RPS017",
-                "production DeepSci SKILL.md must express User Skill Callback begin/end resolution as numbered workflow steps",
+                f"production {family.key} SKILL.md must express User Skill Callback begin/end resolution as numbered workflow steps",
             )
 
 
@@ -1434,6 +1556,128 @@ def validate_coupling_patterns(
                 )
 
 
+def validate_kaoju_direct_references(
+    skill_dir: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    skill_root = skill_dir.resolve()
+    active_files = sorted(
+        path
+        for path in skill_dir.rglob("*")
+        if path.is_file()
+        and path.suffix in {".md", ".yaml", ".yml"}
+        and not any(part in {"assets", "scripts"} for part in path.relative_to(skill_dir).parts[:-1])
+    )
+    for path in active_files:
+        for line_number, line in enumerate(read_lines(path), start=1):
+            for reference in local_references_from_line(line):
+                if is_placeholder_reference(reference):
+                    continue
+                target = (skill_dir / reference).resolve()
+                if not target.is_relative_to(skill_root) or not target.exists():
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "RPS005",
+                        f"local reference '{reference}' does not exist inside {skill_dir.name}",
+                    )
+
+
+def validate_kaoju_command_page(
+    path: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    lines = read_lines(path)
+    workflow_line = find_h2(lines, "Workflow")
+    if workflow_line is None:
+        add(diagnostics, repo_root, path, 1, "RPS018", "Kaoju command page must contain ## Workflow")
+        return
+    if workflow_line > 20:
+        add(diagnostics, repo_root, path, workflow_line, "RPS018", "Kaoju command ## Workflow must appear near the top")
+    numbers = workflow_step_numbers(lines, workflow_line)
+    if len(numbers) < 2 or numbers[0] != 1:
+        add(diagnostics, repo_root, path, workflow_line, "RPS018", "Kaoju command ## Workflow must contain numbered steps")
+    if not any("does not map cleanly" in line for line in lines):
+        add(diagnostics, repo_root, path, 1, "RPS018", "Kaoju command page must include fallback guidance")
+
+
+def validate_kaoju_command_surface(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    pipeline = kaoju_root / "isomer-kaoju-pipeline"
+    command_root = pipeline / "commands"
+    if not command_root.exists():
+        add(diagnostics, repo_root, command_root, 1, "RPS018", "Kaoju pipeline commands directory is missing")
+        return
+    command_pages = {path.stem: path for path in command_root.glob("*.md") if path.is_file()}
+    for missing in sorted(EXPECTED_KAOJU_COMMANDS - set(command_pages)):
+        add(diagnostics, repo_root, command_root / f"{missing}.md", 1, "RPS018", f"expected Kaoju command '{missing}' is missing")
+    for extra in sorted(set(command_pages) - EXPECTED_KAOJU_COMMANDS):
+        add(diagnostics, repo_root, command_pages[extra], 1, "RPS018", f"unapproved Kaoju command '{extra}' is active")
+    for forbidden in sorted(FORBIDDEN_KAOJU_PROCEDURES & set(command_pages)):
+        add(diagnostics, repo_root, command_pages[forbidden], 1, "RPS018", f"generic procedure '{forbidden}' must not be exposed by Kaoju")
+    for path in command_pages.values():
+        validate_kaoju_command_page(path, repo_root, diagnostics)
+
+    skill_md = pipeline / "SKILL.md"
+    if skill_md.exists():
+        lines = read_lines(skill_md)
+        text = "\n".join(lines)
+        for heading in ("Procedural Subcommands", "Helper Subcommands", "Misc Subcommands"):
+            if not any(normalize_heading(line.removeprefix("###")) == heading for line in lines if line.startswith("###")):
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju pipeline must contain ### {heading}")
+        for command in sorted(EXPECTED_KAOJU_COMMANDS):
+            if f"`{command}`" not in text or f"commands/{command}.md" not in text:
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju pipeline must link command '{command}'")
+        for forbidden in sorted(FORBIDDEN_KAOJU_PROCEDURES):
+            public_row = re.compile(rf"^\|\s*`{re.escape(forbidden)}`\s*\|", re.M)
+            if public_row.search(text):
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"generic procedure '{forbidden}' must not be public")
+
+    action_contracts = {
+        "manage-survey": ("list", "show", "status", "export"),
+        "manage-dataset": ("register", "list", "show", "refresh", "remove"),
+    }
+    for command, actions in action_contracts.items():
+        path = command_pages.get(command)
+        if path is None:
+            continue
+        text = path.read_text(encoding="utf-8")
+        for action in actions:
+            if f"`{action}`" not in text:
+                add(diagnostics, repo_root, path, 1, "RPS018", f"{command} must include action '{action}'")
+
+
+def validate_kaoju_shared_references(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    references = kaoju_root / "isomer-kaoju-shared" / "references"
+    actual = {path.name for path in references.glob("*.md") if path.is_file()} if references.exists() else set()
+    for missing in sorted(EXPECTED_KAOJU_SHARED_REFERENCES - actual):
+        add(diagnostics, repo_root, references / missing, 1, "RPS019", f"required Kaoju shared reference '{missing}' is missing")
+
+
+def validate_kaoju_active_guidance(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    if "kaoju" not in document.roles or not is_active_guidance(document):
+        return
+    for line_number, line in enumerate(document.lines, start=1):
+        for label, pattern in KAOJU_FORBIDDEN_ACTIVE_PATTERNS:
+            if pattern.search(line) and not is_rejection_line(line):
+                add(diagnostics, repo_root, document.path, line_number, "RPS020", f"active Kaoju guidance contains {label}")
+
+
 def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
     for path in sorted(candidate for candidate in target.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
         for line_number, line in enumerate(read_lines(path), start=1):
@@ -1458,7 +1702,11 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
 
     allow_zones = load_allow_zones(target)
     file_roles = load_file_roles(target)
-    flat_skill_dirs = sorted(path for path in target.iterdir() if path.is_dir() and path.name.startswith("isomer-deepsci-"))
+    flat_skill_dirs = sorted(
+        path
+        for path in target.iterdir()
+        if path.is_dir() and path.name.startswith(("isomer-deepsci-", "isomer-kaoju-"))
+    )
     for skill_dir in flat_skill_dirs:
         add(
             diagnostics,
@@ -1466,7 +1714,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             skill_dir,
             1,
             "RPS007",
-            "active flat root research skill folders are not allowed; use deepsci/",
+            "active flat root research skill folders are not allowed; use the configured family root",
         )
 
     skill_dirs: list[tuple[Path, str]] = []
@@ -1475,30 +1723,47 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         if root_path.exists():
             add(diagnostics, repo_root, root_path, 1, "RPS007", f"{retired_root}/ retired skill root must be absent")
 
-    deepsci_root = target / "deepsci"
-    if not deepsci_root.exists():
-        add(diagnostics, repo_root, deepsci_root, 1, "RPS007", "deepsci/ production skill directory is missing")
-    else:
-        legacy_deepsci_skill_dirs = sorted(
-            path for path in deepsci_root.iterdir() if path.is_dir() and path.name.startswith("isomer-rsch-")
-        )
-        for skill_dir in legacy_deepsci_skill_dirs:
-            add(diagnostics, repo_root, skill_dir, 1, "RPS007", "legacy isomer-rsch-* skill folder must be renamed to isomer-deepsci-*")
-        deepsci_skill_dirs = sorted(
-            path for path in deepsci_root.iterdir() if path.is_dir() and path.name.startswith("isomer-deepsci-")
-        )
-        actual_names = {path.name for path in deepsci_skill_dirs}
-        for missing in sorted(EXPECTED_DEEPSCI_SKILLS - actual_names):
-            add(diagnostics, repo_root, deepsci_root / missing, 1, "RPS007", "expected deepsci skill is missing")
-        for skill_dir in deepsci_skill_dirs:
-            skill_dirs.append((skill_dir, "deepsci"))
+    family_by_key = {family.key: family for family in FAMILY_CONFIGS}
+    for family in FAMILY_CONFIGS:
+        family_root = target / family.root_name
+        if not family_root.exists():
+            if family.required:
+                add(diagnostics, repo_root, family_root, 1, "RPS007", f"{family.root_name}/ production skill directory is missing")
+            continue
+        all_dirs = sorted(path for path in family_root.iterdir() if path.is_dir())
+        valid_skill_dirs = sorted(path for path in all_dirs if family.name_pattern.match(path.name))
+        candidate_dirs = sorted(path for path in all_dirs if (path / "SKILL.md").exists())
+        for skill_dir in candidate_dirs:
+            if skill_dir not in valid_skill_dirs:
+                if family.key == "deepsci" and skill_dir.name.startswith("isomer-rsch-"):
+                    message = "legacy isomer-rsch-* skill folder must be renamed to isomer-deepsci-*"
+                else:
+                    message = f"skill folder '{skill_dir.name}' in {family.root_name}/ must match {family.name_shape}"
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_dir,
+                    1,
+                    "RPS007",
+                    message,
+                )
+        actual_names = {path.name for path in valid_skill_dirs}
+        for missing in sorted(family.expected_skills - actual_names):
+            add(diagnostics, repo_root, family_root / missing, 1, "RPS007", f"expected {family.key} skill is missing")
+        if family.key == "kaoju":
+            for extra in sorted(actual_names - family.expected_skills):
+                add(diagnostics, repo_root, family_root / extra, 1, "RPS007", f"unapproved Kaoju skill '{extra}' is active")
+        for skill_dir in valid_skill_dirs:
+            skill_dirs.append((skill_dir, family.key))
 
-    if not skill_dirs:
+    if not any(generation == "deepsci" for _, generation in skill_dirs):
         add(diagnostics, repo_root, target, 1, "RPS007", "no production deepsci isomer-deepsci-* skill folders were found")
     for skill_dir, generation in skill_dirs:
-        validate_skill_layout(skill_dir, repo_root, diagnostics, generation)
+        validate_skill_layout(skill_dir, repo_root, diagnostics, family_by_key[generation])
         validate_manifest(skill_dir, repo_root, diagnostics)
         validate_local_references(skill_dir, repo_root, diagnostics)
+        if generation == "kaoju":
+            validate_kaoju_direct_references(skill_dir, repo_root, diagnostics)
 
     documents = collect_documents(target, repo_root, file_roles)
     registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "tbd-surface-registry.md"
@@ -1536,9 +1801,14 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_deepsci_latest_context_preflight(document, repo_root, diagnostics)
         validate_deepsci_display_contract_guidance(document, repo_root, diagnostics)
         validate_deepsci_support_section_intros(document, repo_root, diagnostics)
+        validate_kaoju_active_guidance(document, repo_root, diagnostics)
     validate_deepsci_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_deepsci_payload_first_bindings(skill_dirs, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
+    kaoju_root = target / "kaoju"
+    if kaoju_root.exists():
+        validate_kaoju_command_surface(kaoju_root, repo_root, diagnostics)
+        validate_kaoju_shared_references(kaoju_root, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

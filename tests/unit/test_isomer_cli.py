@@ -2617,9 +2617,10 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertFalse(data["mutated"])
-        self.assertEqual(["deepsci"], [extension["extension_id"] for extension in data["extensions"]])
+        self.assertEqual(["deepsci", "kaoju"], [extension["extension_id"] for extension in data["extensions"]])
         self.assertFalse(data["extensions"][0]["declared_installed"])
         self.assertFalse(data["extensions"][0]["installation_verified"])
+        self.assertFalse(data["extensions"][1]["declared_installed"])
 
         status, output = self.run_cli(["project", "system-extensions", "remember", "deepsci", "--json"], cwd=root)
         data = json.loads(output)
@@ -2641,6 +2642,20 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertTrue(data["mutated"])
         self.assertFalse(data["extensions"][0]["declared_installed"])
+
+        status, output = self.run_cli(["project", "system-extensions", "remember", "kaoju", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(data["extensions"][1]["declared_installed"])
+        manifest_text = (root / ".isomer-labs" / "manifest.toml").read_text(encoding="utf-8")
+        self.assertIn('installed = ["kaoju"]', manifest_text)
+
+        status, output = self.run_cli(["project", "system-extensions", "forget", "kaoju", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertFalse(data["extensions"][1]["declared_installed"])
 
     def test_system_extensions_cli_rejects_unknown_and_missing_project(self) -> None:
         root = self.make_root()
@@ -2700,7 +2715,7 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(44, len(data["insertion_points"]))
+        self.assertEqual(66, len(data["insertion_points"]))
 
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--core-only", "--json"], cwd=root)
         data = json.loads(output)

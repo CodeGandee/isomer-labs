@@ -55,6 +55,25 @@ skills = [
   "research-paradigm/deepsci/isomer-deepsci-write",
 ]
 
+[groups.kaoju]
+description = "Evidence-led literature, codebase, dataset, model, and first-hand survey skills."
+kind = "extension"
+extension_id = "kaoju"
+always_available = false
+skills = [
+  "research-paradigm/kaoju/isomer-kaoju-pipeline",
+  "research-paradigm/kaoju/isomer-kaoju-shared",
+  "research-paradigm/kaoju/isomer-kaoju-workspace-mgr",
+  "research-paradigm/kaoju/isomer-kaoju-frame",
+  "research-paradigm/kaoju/isomer-kaoju-discover",
+  "research-paradigm/kaoju/isomer-kaoju-acquire",
+  "research-paradigm/kaoju/isomer-kaoju-examine",
+  "research-paradigm/kaoju/isomer-kaoju-reproduce",
+  "research-paradigm/kaoju/isomer-kaoju-compare",
+  "research-paradigm/kaoju/isomer-kaoju-audit",
+  "research-paradigm/kaoju/isomer-kaoju-synthesize",
+]
+
 [callback_insertion_point_stages.begin]
 label = "Begin"
 description = "After mandatory context or entry-fit checks and before the first skill-specific action."
@@ -127,4 +146,37 @@ callback_insertion_points = ["begin", "end"]
 callback_insertion_points = ["begin", "end"]
 
 [skill_metadata."research-paradigm/deepsci/isomer-deepsci-write"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-pipeline"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-shared"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-workspace-mgr"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-frame"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-discover"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-acquire"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-examine"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-reproduce"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-compare"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-audit"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-synthesize"]
 callback_insertion_points = ["begin", "end"]

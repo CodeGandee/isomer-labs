@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-workspace-mgr"
+  short_description: "Check Kaoju workspace readiness."
+  default_prompt: "Use $isomer-kaoju-workspace-mgr to check Topic Workspace and registered dataset readiness for survey work."

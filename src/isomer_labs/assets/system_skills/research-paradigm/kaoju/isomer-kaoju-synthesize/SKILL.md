@@ -1,0 +1,61 @@
+---
+name: isomer-kaoju-synthesize
+description: Use when an accepted Kaoju Audit Report and accepted survey evidence are ready for a Field Summary, Survey Delta, Claim Status Table, or Kaoju Dossier.
+---
+
+# Kaoju Synthesize
+
+## Overview
+
+Write the strongest survey conclusion supported by accepted evidence and no stronger. Preserve contradictions, failures, limitations, uncertainty, and unresolved questions as first-class outputs.
+
+## Workflow
+
+1. **Accept audited inputs**. Require an accepted Audit Report, Survey Contract, accepted Artifact and Evidence Item refs, and the requested output view.
+2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-synthesize --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
+3. **Freeze claim boundaries**. Map each intended conclusion to accepted evidence, achieved depth, verdict, contradictions, and audit limits.
+4. **Build the requested view**. Produce the Related-Work Catalog or delta, Field Summary, Claim Status Table, comparison view, reading path, or Kaoju Dossier from accepted refs.
+5. **Calibrate language**. Distinguish source-stated, source-supported, executed, compared, inconclusive, contradicted, blocked, and not-comparable conclusions.
+6. **Preserve lineage**. Link every derived section or table to its source Artifacts, Evidence Items, Runs, Findings, Decision Records, and Provenance Records.
+7. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-synthesize --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+8. **Return status**. Report `complete`, `paused`, or `blocked` with output refs, coverage limits, unresolved questions, and a resume point when applicable.
+
+If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
+
+## When to Use
+
+Use only after audit accepts the evidence for synthesis or narrows the claims explicitly. Do not use this skill to fill evidence gaps, discover new sources, execute code, repair Runs, or bypass a not-ready Audit Report.
+
+## Output Contract
+
+Every output states its Survey Contract boundary, evidence cutoff, `searched_through` limit, accepted input refs, achieved verification depths, important contradictions and failures, limitations, and unresolved frontier. Structured records require non-empty top-level `title` and `summary`.
+
+The Claim Status Table gives each conclusion a status, depth, verdict, supporting and challenging evidence refs, Run or source locators, and limitations. The Kaoju Dossier assembles the catalog, field model, comparisons, first-hand Findings, failures, limitations, unresolved questions, and reading path without hiding their lineage.
+
+## Reference Routing
+
+Use `$isomer-kaoju-shared` for evidence, survey Artifact, lineage, and terminal contracts. Return a not-ready audit to the owning repair stage; use `$isomer-kaoju-audit` again after new evidence exists.
+
+## Foundational Principle
+
+Synthesis organizes accepted evidence; it does not manufacture missing evidence or erase inconvenient evidence.
+
+## Rationalization Table
+
+| Rationalization | Required response |
+| --- | --- |
+| “The reader needs a clear winner.” | Report the supported comparison, including ties and non-comparability. |
+| “The missing work probably would not change the result.” | State the coverage gap and limit the conclusion. |
+| “Failures belong in an appendix.” | Keep their effect visible wherever the affected claim appears. |
+
+## Red Flags
+
+- A final claim has no entry in the Claim Status Table.
+- Audited limitations disappear from the summary.
+- A generated-data capability probe is presented as benchmark reproduction.
+
+## Common Mistakes
+
+- Writing from memory instead of accepted refs. Build every section from the audited evidence set.
+- Turning `unclear` or `disputed` into a neutral score. Preserve the state and source basis.
+- Claiming the field is complete. State the bounded search and remaining frontier.

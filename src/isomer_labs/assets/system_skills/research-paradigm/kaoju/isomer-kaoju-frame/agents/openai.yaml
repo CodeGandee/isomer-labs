@@ -1,0 +1,4 @@
+interface:
+  display_name: "isomer-kaoju-frame"
+  short_description: "Frame a bounded Kaoju survey."
+  default_prompt: "Use $isomer-kaoju-frame to freeze the survey boundary, evidence contract, resources, and decisions."

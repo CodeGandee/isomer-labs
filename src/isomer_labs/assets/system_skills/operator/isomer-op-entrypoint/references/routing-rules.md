@@ -5,7 +5,7 @@
 1. Decide whether the user wants route explanation only or wants work performed. Explanation-only requests stay non-mutating.
 2. If the user explicitly names a skill or CLI family, prefer that route unless it conflicts with owner boundaries or required readiness.
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
-4. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, or DeepSci readiness is unclear.
+4. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
 5. Select one route, proceed with that selected route by default, and report blockers instead of presenting a menu when a concrete task can be routed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build the smallest safe routing plan from candidate routes, owner boundaries, read-only context evidence, and missing inputs, then execute the plan or stop on a concrete blocker.
@@ -27,12 +27,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Topic Service Master lifecycle preparation, launch, inspection, stop, or repair. | `isomer-srv-topic-service-agent-support` through the matching lifecycle subcommand after an operator owner delegates it. |
 | Prepared DeepSci research-stage work. | Matching `isomer-deepsci-*` skill or `isomer-deepsci-pipeline`. |
 | DeepSci work before accepted bootstrap. | `isomer-deepsci-workspace-mgr` or missing setup owner. |
+| Prepared evidence-led survey, source examination, method trial, or comparison work. | Matching `isomer-kaoju-*` skill or `isomer-kaoju-pipeline`. |
+| Kaoju work before Topic Workspace, survey, or dataset-registry readiness is established. | `isomer-kaoju-workspace-mgr` or the missing platform owner. |
 
 ## Proceed Policy
 
 Proceed when the user supplied a concrete task and the selected route owns it. Do not stop after only listing possible routes unless the user asked for route explanation, multiple alternatives, or a non-mutating status.
 
-Block when required context cannot be resolved safely, when the selected route would bypass owner workflow boundaries, when mutation needs approval not present in the prompt, or when DeepSci readiness is missing and no setup route can run without more input.
+Block when required context cannot be resolved safely, when the selected route would bypass owner workflow boundaries, when mutation needs approval not present in the prompt, or when the selected research extension's readiness is missing and no setup route can run without more input.
 
 ## Boundary Rules
 

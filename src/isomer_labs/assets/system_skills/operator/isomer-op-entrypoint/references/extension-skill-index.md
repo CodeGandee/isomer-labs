@@ -2,13 +2,29 @@
 
 ## Workflow
 
-1. Determine whether the user task is domain-extension work, currently production DeepSci research or paper-companion work.
-2. Check whether the task needs base Topic Workspace readiness, selected Topic Actor or Agent workspace readiness, production DeepSci bootstrap, latest-context preflight, placeholder bindings, or worker-output policy before a research-stage skill can run.
-3. Route missing readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-srv-agent-env-setup` through its owner workflow, or `isomer-deepsci-workspace-mgr`.
-4. Route prepared research-stage work to the matching `isomer-deepsci-*` skill or to `isomer-deepsci-pipeline` for a named pass.
-5. Preserve the selected DeepSci skill's callbacks, latest-context preflight, worker-output policy, placeholder binding, accepted-record, and blocker rules.
+1. Determine whether the task is production DeepSci hypothesis-driven work, DeepSci paper-companion work, or Kaoju evidence-led survey work.
+2. Check base Topic Workspace, selected Topic Actor or Agent workspace, extension-specific readiness, and required owner or Gate evidence before a research skill can run.
+3. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route extension readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
+4. Route prepared work to the matching `isomer-deepsci-*` or `isomer-kaoju-*` skill, using the family pipeline for a named procedure.
+5. Preserve the selected family's callbacks, evidence, lineage, recording, owner, Gate, and blocker rules.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a DeepSci route plan from the Research Topic context, readiness evidence, selected skill set, durable records, and missing inputs, then execute the plan or report the blocker.
+If the user's task does not map cleanly to these steps, use your native planning tool to build an extension route plan from the Research Topic context, readiness evidence, selected skill set, durable records, and missing inputs, then execute the plan or report the blocker.
+
+## Kaoju Survey Skills
+
+| Intent | Skill |
+| --- | --- |
+| Select and run one bounded landscape, curated intake, direction expansion, theory comparison, method trial, empirical comparison, or audit procedure. | `isomer-kaoju-pipeline` |
+| Apply shared evidence depth, source identity, interaction, Gate, lineage, owner-routing, and terminal contracts. | `isomer-kaoju-shared` |
+| Check Topic Workspace, existing survey, repository, registered dataset, and resource readiness. | `isomer-kaoju-workspace-mgr` |
+| Freeze a Survey Contract or empirical Comparison Intent Document. | `isomer-kaoju-frame` |
+| Discover version-aware papers, reports, repositories, datasets, and models. | `isomer-kaoju-discover` |
+| Pin and route governed acquisition of selected materials. | `isomer-kaoju-acquire` |
+| Inspect paper, report, code, dataset, or model evidence at exact locators. | `isomer-kaoju-examine` |
+| Run one intended-data trial or explicit generated-data capability probe. | `isomer-kaoju-reproduce` |
+| Build a source-grounded theory comparison or controlled empirical comparison. | `isomer-kaoju-compare` |
+| Diagnose survey coverage, identity, evidence, lineage, and fairness without repair. | `isomer-kaoju-audit` |
+| Write accepted survey conclusions from an accepted Audit Report. | `isomer-kaoju-synthesize` |
 
 ## DeepSci Bootstrap and Pipeline
 
@@ -47,4 +63,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Build a complete Chinese PPTX presentation from a scientific paper, abstract, legends, or notes. | `isomer-deepsci-nature-paper2ppt` |
 | Polish, restructure, or translate academic prose into Nature-leaning English without inventing claims. | `isomer-deepsci-nature-polishing` |
 
-Do not let ordinary DeepSci research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, or bootstrap readiness. Route setup first, then return to the selected extension skill.
+Do not let ordinary research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, extension readiness, dataset registration, or owner evidence. Route setup first, then return to the selected extension skill.
