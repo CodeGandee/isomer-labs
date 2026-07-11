@@ -55,6 +55,22 @@ class SystemSkillAssetTests(unittest.TestCase):
         extensions = iter_system_skill_extensions()
         self.assertEqual(("deepsci", "kaoju"), tuple(extension.extension_id for extension in extensions))
         self.assertEqual(("deepsci", "kaoju"), tuple(extension.group for extension in extensions))
+        self.assertEqual(("isomer-deepsci-pipeline", "isomer-kaoju-pipeline"), tuple(extension.entry_skill for extension in extensions))
+        self.assertEqual("empirical-pass", extensions[0].commands[0])
+        self.assertEqual(
+            (
+                "landscape-pass",
+                "curated-intake-pass",
+                "direction-expansion-pass",
+                "theory-comparison-pass",
+                "method-trial-pass",
+                "comparative-pass",
+                "audit-survey-pass",
+                "manage-survey",
+                "manage-dataset",
+            ),
+            extensions[1].commands,
+        )
         self.assertIn("research-paradigm/deepsci/isomer-deepsci-scout", extensions[0].skills)
         self.assertEqual(11, len(extensions[1].skills))
         self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", extensions[1].skills)
@@ -101,6 +117,38 @@ class SystemSkillAssetTests(unittest.TestCase):
         with patch.object(system_assets, "load_system_skill_manifest", return_value=manifest):
             with self.assertRaisesRegex(SystemSkillAssetError, "kind"):
                 iter_system_skill_groups()
+
+    def test_manifest_rejects_invalid_extension_discovery_metadata(self) -> None:
+        mutations = (
+            ("missing entry", lambda manifest: manifest["groups"]["kaoju"].pop("entry_skill"), "entry_skill"),
+            (
+                "unknown entry",
+                lambda manifest: manifest["groups"]["kaoju"].__setitem__("entry_skill", "isomer-kaoju-missing"),
+                "entry_skill",
+            ),
+            (
+                "invalid command",
+                lambda manifest: manifest["groups"]["kaoju"].__setitem__("commands", ["Not A Command"]),
+                "commands",
+            ),
+            (
+                "duplicate command",
+                lambda manifest: manifest["groups"]["kaoju"].__setitem__("commands", ["landscape-pass", "landscape-pass"]),
+                "duplicate commands",
+            ),
+            (
+                "core metadata",
+                lambda manifest: manifest["groups"]["core"].__setitem__("entry_skill", "isomer-op-entrypoint"),
+                "must not define extension entry metadata",
+            ),
+        )
+        for label, mutate, diagnostic in mutations:
+            with self.subTest(label=label):
+                manifest = deepcopy(load_system_skill_manifest())
+                mutate(manifest)
+                with patch.object(system_assets, "load_system_skill_manifest", return_value=manifest):
+                    with self.assertRaisesRegex(SystemSkillAssetError, diagnostic):
+                        iter_system_skill_groups()
 
     def test_materialize_selected_group_preserves_relative_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

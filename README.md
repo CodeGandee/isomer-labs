@@ -81,6 +81,13 @@ The Project Manifest records where each Topic Workspace lives, while `topic-work
 
 Install packaged Isomer skills with `isomer-cli system-skills install`. The entrypoint skill is included in the core group and is the best starting point for operators because it routes known tasks to the right Isomer skill or CLI command.
 
+Discover optional agent-skill extensions and inspect their entry skills, public commands, and installation guidance before selecting one:
+
+```bash
+isomer-cli system-skills extensions list
+isomer-cli system-skills extensions show kaoju
+```
+
 ```bash
 isomer-cli system-skills install --target codex
 ```
@@ -91,6 +98,12 @@ Install the DeepSci extension when a project needs the research pipeline skills:
 
 ```bash
 isomer-cli system-skills install --target codex --extension deepsci
+```
+
+Install Kaoju when a project needs evidence-led literature and codebase surveys, first-hand method trials, or controlled comparisons. After installation, enter the extension through `$isomer-kaoju-pipeline` rather than `isomer-cli ext kaoju`.
+
+```bash
+isomer-cli system-skills install --target codex --extension kaoju
 ```
 
 Inspect or remove Isomer-owned projections with:

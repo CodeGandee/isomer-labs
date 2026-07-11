@@ -17,6 +17,13 @@ When working from a source checkout, use the developer setup in [Testing](../dev
 
 Install the packaged core skills into the coding-agent surface you use. Pick one target, or use `all` when you intentionally want every supported local target populated.
 
+List optional agent-skill extensions or inspect one extension before installation:
+
+```bash
+isomer-cli system-skills extensions list
+isomer-cli system-skills extensions show kaoju
+```
+
 ```bash
 isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target claude-code
@@ -28,6 +35,12 @@ Use `--extension deepsci` when the agent should run the DeepSci research workflo
 
 ```bash
 isomer-cli system-skills install --target codex --extension deepsci
+```
+
+Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. Invoke it through `$isomer-kaoju-pipeline` after installation.
+
+```bash
+isomer-cli system-skills install --target codex --extension kaoju
 ```
 
 ## Create a Project

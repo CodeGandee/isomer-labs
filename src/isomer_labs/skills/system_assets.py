@@ -15,6 +15,7 @@ import tomlkit
 SYSTEM_SKILLS_RESOURCE = "assets/system_skills"
 SYSTEM_SKILL_GROUP_KINDS = ("core", "extension")
 SYSTEM_EXTENSION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
+SYSTEM_EXTENSION_COMMAND_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 class SystemSkillAssetError(ValueError):
@@ -31,6 +32,8 @@ class SystemSkillGroup:
     kind: str
     always_available: bool
     extension_id: str | None = None
+    entry_skill: str | None = None
+    commands: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -41,6 +44,8 @@ class SystemSkillExtension:
     group: str
     description: str
     skills: tuple[str, ...]
+    entry_skill: str
+    commands: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -107,12 +112,16 @@ def iter_system_skill_extensions() -> tuple[SystemSkillExtension, ...]:
     for group in iter_system_skill_groups():
         if group.kind != "extension" or group.extension_id is None:
             continue
+        if group.entry_skill is None:
+            raise SystemSkillAssetError(f"Extension system-skill group {group.name!r} is missing entry_skill.")
         extensions.append(
             SystemSkillExtension(
                 extension_id=group.extension_id,
                 group=group.name,
                 description=group.description,
                 skills=group.skills,
+                entry_skill=group.entry_skill,
+                commands=group.commands,
             )
         )
     return tuple(extensions)
@@ -223,9 +232,13 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
         if not isinstance(always_available, bool):
             raise SystemSkillAssetError(f"System-skill group {name!r} must define boolean always_available.")
         extension_id = value.get("extension_id")
+        entry_skill = value.get("entry_skill")
+        commands = value.get("commands")
         if kind == "core":
             if extension_id is not None:
                 raise SystemSkillAssetError(f"Core system-skill group {name!r} must not define extension_id.")
+            if entry_skill is not None or commands is not None:
+                raise SystemSkillAssetError(f"Core system-skill group {name!r} must not define extension entry metadata.")
             if not always_available:
                 raise SystemSkillAssetError(f"Core system-skill group {name!r} must be always_available.")
         else:
@@ -236,6 +249,19 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
             if extension_id in extension_ids:
                 raise SystemSkillAssetError(f"Duplicate packaged system extension id: {extension_id}")
             extension_ids.add(extension_id)
+            skill_names = {PurePosixPath(item).name for item in skills}
+            if not isinstance(entry_skill, str) or not entry_skill or entry_skill not in skill_names:
+                raise SystemSkillAssetError(
+                    f"Extension system-skill group {name!r} must define entry_skill as one of its packaged skill names."
+                )
+            if not isinstance(commands, list) or not all(
+                isinstance(item, str) and SYSTEM_EXTENSION_COMMAND_RE.fullmatch(item) for item in commands
+            ):
+                raise SystemSkillAssetError(
+                    f"Extension system-skill group {name!r} must define commands as a list of stable command ids."
+                )
+            if len(commands) != len(set(commands)):
+                raise SystemSkillAssetError(f"Extension system-skill group {name!r} must not define duplicate commands.")
         parsed_groups.append(
             SystemSkillGroup(
                 name=str(name),
@@ -244,6 +270,8 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
                 kind=str(kind),
                 always_available=always_available,
                 extension_id=str(extension_id) if isinstance(extension_id, str) else None,
+                entry_skill=str(entry_skill) if isinstance(entry_skill, str) else None,
+                commands=tuple(str(item) for item in commands) if isinstance(commands, list) else (),
             )
         )
     return tuple(parsed_groups)

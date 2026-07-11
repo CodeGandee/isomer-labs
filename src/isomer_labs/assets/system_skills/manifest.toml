@@ -29,6 +29,17 @@ skills = [
 description = "DeepScientist-derived production research paradigm skills."
 kind = "extension"
 extension_id = "deepsci"
+entry_skill = "isomer-deepsci-pipeline"
+commands = [
+  "empirical-pass",
+  "hypothesis-pass",
+  "list-passes",
+  "paper-pass",
+  "polish-pass",
+  "rebuttal-pass",
+  "revision-pass",
+  "submission-pass",
+]
 always_available = false
 skills = [
   "research-paradigm/deepsci/isomer-deepsci-analysis",
@@ -59,6 +70,18 @@ skills = [
 description = "Evidence-led literature, codebase, dataset, model, and first-hand survey skills."
 kind = "extension"
 extension_id = "kaoju"
+entry_skill = "isomer-kaoju-pipeline"
+commands = [
+  "landscape-pass",
+  "curated-intake-pass",
+  "direction-expansion-pass",
+  "theory-comparison-pass",
+  "method-trial-pass",
+  "comparative-pass",
+  "audit-survey-pass",
+  "manage-survey",
+  "manage-dataset",
+]
 always_available = false
 skills = [
   "research-paradigm/kaoju/isomer-kaoju-pipeline",

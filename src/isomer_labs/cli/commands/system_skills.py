@@ -22,13 +22,48 @@ from isomer_labs.skills.installer import (
     uninstall_system_skills,
     upgrade_system_skills,
 )
-from isomer_labs.skills.system_assets import iter_system_skill_groups
+from isomer_labs.skills.system_assets import SystemSkillExtension, iter_system_skill_extensions, iter_system_skill_groups
 
 
 def register_system_skill_commands(app: click.Group) -> None:
-    @app.group(name="system-skills", help="Install and inspect packaged Isomer system skills.")
+    @app.group(name="system-skills", help="Discover, install, and inspect packaged Isomer system skills.")
     def system_skills_group() -> None:
         pass
+
+    @system_skills_group.group(name="extensions", help="Discover optional packaged agent-skill extensions.")
+    def system_skill_extensions_group() -> None:
+        pass
+
+    @system_skill_extensions_group.command(name="list", help="List packaged agent-skill extensions.")
+    @click.pass_context
+    def system_skill_extensions_list_command(ctx: click.Context) -> int:
+        options = _root_options(ctx)
+        extensions = [_extension_payload(extension) for extension in iter_system_skill_extensions()]
+        payload: dict[str, object] = {
+            "ok": True,
+            "mutated": False,
+            "extensions": extensions,
+        }
+        return _emit("system-skills extensions list", options, payload, _render_extension_list(extensions))
+
+    @system_skill_extensions_group.command(name="show", help="Show one packaged agent-skill extension.")
+    @click.argument("extension_id")
+    @click.pass_context
+    def system_skill_extensions_show_command(ctx: click.Context, extension_id: str) -> int:
+        options = _root_options(ctx)
+        extension = next(
+            (item for item in iter_system_skill_extensions() if item.extension_id == extension_id),
+            None,
+        )
+        if extension is None:
+            raise click.ClickException(f"Unknown packaged system extension: {extension_id}")
+        extension_payload = _extension_payload(extension)
+        payload: dict[str, object] = {
+            "ok": True,
+            "mutated": False,
+            "extension": extension_payload,
+        }
+        return _emit("system-skills extensions show", options, payload, _render_extension_show(extension_payload))
 
     @system_skills_group.command(name="list", help="List packaged Isomer system skills.")
     @click.pass_context
@@ -46,20 +81,16 @@ def register_system_skill_commands(app: click.Group) -> None:
                     "kind": group.kind,
                     "always_available": group.always_available,
                     "extension_id": group.extension_id,
+                    "entry_skill": group.entry_skill,
+                    "commands": list(group.commands),
                     "skills": [Path(skill_path).name for skill_path in group.skills],
                     "source_paths": list(group.skills),
                 }
                 for group in groups
             ],
             "extensions": [
-                {
-                    "extension_id": group.extension_id,
-                    "group": group.name,
-                    "description": group.description,
-                    "skills": [Path(skill_path).name for skill_path in group.skills],
-                }
-                for group in groups
-                if group.kind == "extension"
+                _extension_payload(extension)
+                for extension in iter_system_skill_extensions()
             ],
             "skills": [skill.to_json() for skill in skills],
             "supported_targets": list(SUPPORTED_TARGETS),
@@ -257,7 +288,13 @@ def _target_options(func: Any) -> Any:
 def _selection_options(func: Any) -> Any:
     func = click.option("--skill", "skills", multiple=True, help="Explicit packaged skill name to select.")(func)
     func = click.option("--all-extensions", is_flag=True, help="Include every packaged extension group.")(func)
-    func = click.option("--extension", "extensions", multiple=True, help="Packaged extension id to include.")(func)
+    func = click.option(
+        "--extension",
+        "extensions",
+        multiple=True,
+        type=click.Choice(tuple(extension.extension_id for extension in iter_system_skill_extensions())),
+        help="Packaged agent-skill extension id to include.",
+    )(func)
     func = click.option("--group", "groups", multiple=True, help="Packaged system-skill group to select.")(func)
     return func
 
@@ -320,6 +357,54 @@ def _render_list(payload: dict[str, object]) -> list[str]:
         for skill in _string_list(group.get("skills")):
             lines.append(f"  - {skill}")
     lines.append(f"Targets: {', '.join(_string_list(payload.get('supported_targets')))}")
+    return lines
+
+
+def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
+    extension_id = extension.extension_id
+    entry_skill = extension.entry_skill
+    return {
+        "extension_id": extension_id,
+        "group": extension.group,
+        "description": extension.description,
+        "entry_skill": entry_skill,
+        "commands": list(extension.commands),
+        "skills": [Path(skill_path).name for skill_path in extension.skills],
+        "install_command": f"isomer-cli system-skills install --target <target> --extension {extension_id}",
+        "status_command": f"isomer-cli system-skills status --target <target> --extension {extension_id}",
+        "invocation": f"${entry_skill}",
+    }
+
+
+def _render_extension_list(extensions: list[dict[str, object]]) -> list[str]:
+    lines = ["Packaged Isomer agent-skill extensions:"]
+    for extension in extensions:
+        lines.append(f"- {extension.get('extension_id')}: {extension.get('description')}")
+        lines.append(f"  entry skill: {extension.get('invocation')}")
+        lines.append(f"  inspect: isomer-cli system-skills extensions show {extension.get('extension_id')}")
+    lines.append("Runtime and compatibility CLI commands are listed under: isomer-cli ext --help")
+    return lines
+
+
+def _render_extension_show(extension: dict[str, object]) -> list[str]:
+    lines = [
+        f"Packaged Isomer agent-skill extension: {extension.get('extension_id')}",
+        f"Description: {extension.get('description')}",
+        f"Entry skill: {extension.get('invocation')}",
+        "Commands:",
+    ]
+    invocation = extension.get("invocation")
+    for command in _string_list(extension.get("commands")):
+        lines.append(f"- {invocation} {command}")
+    lines.extend(
+        (
+            "Skills:",
+            *[f"- {skill}" for skill in _string_list(extension.get("skills"))],
+            f"Install: {extension.get('install_command')}",
+            f"Status: {extension.get('status_command')}",
+            "This is an agent-skill extension; runtime and compatibility CLI commands are listed under isomer-cli ext --help.",
+        )
+    )
     return lines
 
 

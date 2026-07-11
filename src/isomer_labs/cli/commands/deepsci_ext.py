@@ -27,7 +27,13 @@ from isomer_labs.core.diagnostics import has_errors
 
 
 def register_deepsci_ext_commands(app: click.Group) -> None:
-    @app.group(name="ext", help="Use extension command surfaces for research records, ideas, and compatibility tooling.")
+    @app.group(
+        name="ext",
+        help=(
+            "Use native runtime and compatibility extension commands. Discover installable agent-skill extensions with "
+            "'isomer-cli system-skills extensions'."
+        ),
+    )
     def ext_group() -> None:
         pass
 

@@ -2,6 +2,14 @@
 
 System skills live under `src/isomer_labs/assets/system_skills/` and are packaged with the Python distribution. They teach agents how to operate Isomer projects, create research intent, manage topic workspaces, use DeepSci workflows, and route tasks through the operator entrypoint.
 
+Discover optional packaged agent-skill extensions before installation. The focused inspection output includes the manifest-owned description, entry skill, public commands, packaged skills, and install and status command shapes:
+
+```bash
+isomer-cli system-skills extensions list
+isomer-cli system-skills extensions show deepsci
+isomer-cli system-skills extensions show kaoju
+```
+
 Released-package installation should use `isomer-cli system-skills install`, which reads packaged resources from the installed Python package and projects flat skill directories into supported agent-tool skill roots:
 
 ```bash
@@ -25,6 +33,8 @@ isomer-cli system-skills upgrade --target codex --extension kaoju
 Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
 
 Select `deepsci` for hypothesis-driven research that develops or evaluates a new route. Select `kaoju` for evidence-led literature and codebase surveys, including source examination, first-hand paper-method trials, and controlled comparisons. Selecting one extension includes core skills and that family only; use the existing all-extensions selector or select both when an agent needs both families.
+
+The CLI `ext` namespace owns native runtime and compatibility commands such as `ext research` and the DeepScientist compatibility adapter. Packaged DeepSci and Kaoju agent-skill extensions are discovered under `system-skills extensions` and invoked through their installed entry skills. Kaoju therefore starts with `$isomer-kaoju-pipeline`; there is no `isomer-cli ext kaoju` command group.
 
 Kaoju packages its storage-neutral semantic registry in `isomer-kaoju-shared/references/artifact-semantics.md` and concrete producer contracts in each producer's `artifact-bindings.md`. Installation must preserve both. The family-neutral research format schema, template, and Kaoju profile catalog ship as Python package assets independently of the skill projection. DeepSci placeholder binding pages and profile refs remain unchanged.
 

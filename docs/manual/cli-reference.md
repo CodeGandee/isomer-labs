@@ -35,8 +35,10 @@ Normal failure output does not include Python tracebacks. Use root-level `--debu
 
 ### System Skill Installation Commands
 
-The `system-skills` namespace installs packaged Isomer system skills from the released Python package into local coding-agent skill roots:
+The `system-skills` namespace discovers and installs packaged Isomer system skills from the released Python package into local coding-agent skill roots:
 
+- `system-skills extensions list`
+- `system-skills extensions show <extension-id>`
 - `system-skills list`
 - `system-skills status`
 - `system-skills install`
@@ -45,13 +47,16 @@ The `system-skills` namespace installs packaged Isomer system skills from the re
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`.
 
-**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `list` and `status` are read-only.
+**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `extensions list`, `extensions show`, `list`, and `status` are read-only.
 
 ```bash
 isomer-cli system-skills list
 isomer-cli --print-json system-skills list
+isomer-cli system-skills extensions list
+isomer-cli system-skills extensions show kaoju
 isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target codex --extension kaoju
 isomer-cli system-skills install --target all --skill isomer-op-entrypoint
 isomer-cli system-skills install --target codex --skill isomer-op-entrypoint --force
 isomer-cli system-skills upgrade --target codex
@@ -62,6 +67,8 @@ isomer-cli system-skills uninstall --target codex
 ### Extension Research Commands
 
 The `ext research` namespace manages GUI-readable research records and idea lineage metadata:
+
+The top-level `ext` namespace contains native runtime and compatibility commands. It is distinct from installable agent-skill extensions, which are discovered with `isomer-cli system-skills extensions`. For example, Kaoju is invoked through the installed `$isomer-kaoju-pipeline` skill and does not define `isomer-cli ext kaoju`.
 
 - `ext research ideas generation upsert`
 - `ext research ideas graph`

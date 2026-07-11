@@ -4,7 +4,7 @@
 TBD - created by archiving change add-system-skill-installer-cli. Update Purpose after archive.
 ## Requirements
 ### Requirement: System Skill CLI Surface
-The system SHALL expose a top-level `isomer-cli system-skills` command group for packaged Isomer system-skill installation, upgrade, and inspection.
+The system SHALL expose a top-level `isomer-cli system-skills` command group for packaged Isomer system-skill discovery, installation, upgrade, and inspection.
 
 #### Scenario: Help lists system-skills command group
 - **WHEN** a user runs `isomer-cli --help`
@@ -12,7 +12,7 @@ The system SHALL expose a top-level `isomer-cli system-skills` command group for
 
 #### Scenario: System skill group lists supported subcommands
 - **WHEN** a user runs `isomer-cli system-skills --help`
-- **THEN** the command help lists `list`, `status`, `install`, `upgrade`, and `uninstall`
+- **THEN** the command help lists `extensions`, `list`, `status`, `install`, `upgrade`, and `uninstall`
 
 ### Requirement: Packaged Skill Listing
 The system SHALL list packaged Isomer system-skill groups, extensions, and skills from the installed package resources.
@@ -77,6 +77,11 @@ The system SHALL select installable packaged skills by group, extension, all ext
 #### Scenario: Install explicit skill
 - **WHEN** a user runs `isomer-cli system-skills install --target generic --skill isomer-op-entrypoint`
 - **THEN** the command installs `isomer-op-entrypoint` even if no group selector is provided
+
+#### Scenario: Extension selector advertises packaged ids
+- **WHEN** a user inspects help or shell completion for a `system-skills` command with `--extension`
+- **THEN** the selector advertises the extension ids from the packaged manifest
+- **AND** the selector does not require ids to be hardcoded separately from package metadata
 
 #### Scenario: Unknown selector is rejected
 - **WHEN** a user requests an unknown group, extension, or skill name
@@ -209,4 +214,41 @@ The system SHALL provide `isomer-cli system-skills upgrade` to refresh installed
 - **WHEN** the user runs upgrade with an explicit projection mode
 - **THEN** upgrade refreshes selected skills using the requested projection mode
 - **AND** it records that projection mode in the target root manifest
+
+### Requirement: Packaged Extension Discovery Commands
+The system SHALL provide focused commands for discovering optional packaged system-skill extensions and their agent-facing entry surfaces.
+
+#### Scenario: Extension list summarizes available extensions
+- **WHEN** a user runs `isomer-cli system-skills extensions list`
+- **THEN** the output lists each packaged extension id, description, and entry skill in manifest order
+- **AND** the output points to extension inspection for complete usage
+
+#### Scenario: Extension show explains Kaoju usage
+- **WHEN** a user runs `isomer-cli system-skills extensions show kaoju`
+- **THEN** the output identifies `$isomer-kaoju-pipeline` as the entry skill
+- **AND** it lists Kaoju's public procedure and helper command ids
+- **AND** it provides commands to install and inspect the Kaoju extension
+
+#### Scenario: JSON discovery is structured
+- **WHEN** a user requests JSON output for extension list or show
+- **THEN** each extension object includes its id, group, description, entry skill, commands, skills, install command, status command, and invocation
+- **AND** the response reports `mutated` as false
+
+#### Scenario: Unknown extension show fails safely
+- **WHEN** a user runs `isomer-cli system-skills extensions show <unknown-id>`
+- **THEN** the command reports a deterministic unknown-extension error
+- **AND** it does not mutate files
+
+### Requirement: CLI Extension Namespaces Are Distinguishable
+The CLI SHALL distinguish native runtime or compatibility command surfaces from installable agent-skill extensions.
+
+#### Scenario: Runtime extension help points to system-skill discovery
+- **WHEN** a user runs `isomer-cli ext --help`
+- **THEN** the help describes `ext` as runtime and compatibility command surfaces
+- **AND** it points to `isomer-cli system-skills extensions` for installable agent-skill extensions
+
+#### Scenario: Kaoju remains agent-skill driven
+- **WHEN** a user inspects the Kaoju extension
+- **THEN** the CLI directs the user to install and invoke `$isomer-kaoju-pipeline`
+- **AND** the CLI does not claim that `isomer-cli ext kaoju` exists
 

@@ -129,9 +129,9 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("Commands:", stdout)
         self.assertIn("doctor         Run read-only dependency, Project, and topic diagnostics.", stdout)
         self.assertIn("project        Manage Isomer Projects", stdout)
-        self.assertIn("ext            Use extension command surfaces", stdout)
+        self.assertIn("ext            Use native runtime and compatibility extension commands", stdout)
         self.assertIn("schemas        Inspect built-in schemas", stdout)
-        self.assertIn("system-skills  Install and inspect packaged Isomer system skills", stdout)
+        self.assertIn("system-skills  Discover, install, and inspect packaged Isomer system", stdout)
         self.assertEqual(1, stdout.count("doctor         Run read-only dependency, Project, and topic diagnostics."))
         self.assertEqual(1, stdout.count("project        Manage Isomer Projects"))
         self.assertNotIn("Top-level commands:", stdout)
@@ -144,7 +144,7 @@ class IsomerCliTests(unittest.TestCase):
             (["project", "topics"], "Usage: isomer-cli project topics", ("list", "show", "create")),
             (["project", "team-instances", "adapter-link"], "Usage: isomer-cli project team-instances adapter-link", ("export",)),
             (["ext", "research"], "Usage: isomer-cli ext research", ("records", "ideas")),
-            (["system-skills"], "Usage: isomer-cli system-skills", ("list", "install", "status", "upgrade")),
+            (["system-skills"], "Usage: isomer-cli system-skills", ("extensions", "list", "install", "status", "upgrade")),
         ]
 
         for args, usage, expected_commands in cases:
@@ -619,9 +619,9 @@ class IsomerCliTests(unittest.TestCase):
             "Documentation: https://codegandee.github.io/isomer-labs/",
             "doctor         Run read-only dependency, Project, and topic diagnostics.",
             "project        Manage Isomer Projects",
-            "ext            Use extension command surfaces",
+            "ext            Use native runtime and compatibility extension commands",
             "schemas        Inspect built-in schemas",
-            "system-skills  Install and inspect packaged Isomer system skills",
+            "system-skills  Discover, install, and inspect packaged Isomer system skills",
         ):
             self.assertIn(text, help_text)
         self.assertNotIn("Top-level commands:", help_text)
@@ -773,6 +773,57 @@ class IsomerCliTests(unittest.TestCase):
         removed = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], removed["removed_skills"])
         self.assertFalse((skill_root / "isomer-op-entrypoint").exists())
+
+    def test_system_skill_extension_discovery_explains_kaoju_entry_surface(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(["--print-json", "system-skills", "extensions", "list"], cwd=root)
+        self.assertEqual(0, status, output)
+        listed = json.loads(output)
+        self.assertFalse(listed["mutated"])
+        self.assertEqual(["deepsci", "kaoju"], [item["extension_id"] for item in listed["extensions"]])
+        kaoju = listed["extensions"][1]
+        self.assertEqual("isomer-kaoju-pipeline", kaoju["entry_skill"])
+        self.assertEqual("$isomer-kaoju-pipeline", kaoju["invocation"])
+        self.assertIn("landscape-pass", kaoju["commands"])
+        self.assertIn("manage-dataset", kaoju["commands"])
+
+        status, output = self.run_cli(
+            ["--print-json", "system-skills", "extensions", "show", "kaoju"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        shown = json.loads(output)
+        self.assertFalse(shown["mutated"])
+        extension = shown["extension"]
+        self.assertEqual("kaoju", extension["extension_id"])
+        self.assertEqual("$isomer-kaoju-pipeline", extension["invocation"])
+        self.assertIn("--extension kaoju", extension["install_command"])
+        self.assertIn("--extension kaoju", extension["status_command"])
+        self.assertIn("isomer-kaoju-synthesize", extension["skills"])
+
+    def test_system_skill_extension_help_distinguishes_agent_and_runtime_extensions(self) -> None:
+        runner = CliRunner()
+        system_help = runner.invoke(cli.app, ["system-skills", "--help"])
+        self.assertEqual(0, system_help.exit_code, system_help.output)
+        self.assertIn("extensions", system_help.output)
+
+        install_help = runner.invoke(cli.app, ["system-skills", "install", "--help"])
+        self.assertEqual(0, install_help.exit_code, install_help.output)
+        self.assertIn("--extension [deepsci|kaoju]", install_help.output)
+
+        ext_help = runner.invoke(cli.app, ["ext", "--help"])
+        self.assertEqual(0, ext_help.exit_code, ext_help.output)
+        self.assertIn("runtime and compatibility", ext_help.output)
+        self.assertIn("isomer-cli system-skills", ext_help.output)
+
+        missing = runner.invoke(cli.app, ["system-skills", "extensions", "show", "missing"])
+        self.assertNotEqual(0, missing.exit_code)
+        self.assertIn("Unknown packaged system extension: missing", missing.output)
+
+        kaoju_runtime = runner.invoke(cli.app, ["ext", "kaoju", "--help"])
+        self.assertNotEqual(0, kaoju_runtime.exit_code)
+        self.assertIn("No such command 'kaoju'", kaoju_runtime.output)
 
     def test_system_skills_cli_force_and_upgrade_refresh_manifest_tracked_skills(self) -> None:
         root = self.make_root()
