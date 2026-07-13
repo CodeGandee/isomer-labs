@@ -7,12 +7,13 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from isomer_labs import cli
 from isomer_labs.cli.commands.research_templates_ext import (
     DEFAULT_TEMPLATE_NAME,
     TEMPLATE_SEMANTIC_ID,
+    _find_template_record,
 )
 
 
@@ -163,6 +164,102 @@ class ResearchTemplatesExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, removed)
         self.assertEqual("archived", removed["record"]["status"])
         self.assertFalse(template_dir.exists())
+
+
+class ResearchExtensionErrorExamplesTests(unittest.TestCase):
+    def make_root(self) -> Path:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        return Path(tmp.name)
+
+    def run_main(self, args: list[str], *, cwd: Path) -> tuple[int, str]:
+        stdout = io.StringIO()
+        with (
+            contextlib.chdir(cwd),
+            patch.dict(os.environ, {"HOME": str(cwd), "PATH": os.environ.get("PATH", "")}, clear=True),
+            contextlib.redirect_stdout(stdout),
+        ):
+            status = cli.main(args)
+        return status, stdout.getvalue()
+
+    def _examples_for(self, group_args: list[str]) -> list[str]:
+        root = self.make_root()
+        status, output = self.run_main(["--print-json", *group_args, "not-a-command"], cwd=root)
+        self.assertEqual(2, status)
+        payload = json.loads(output)
+        diagnostics = payload.get("diagnostics", [])
+        self.assertTrue(diagnostics)
+        examples = diagnostics[0].get("examples", [])
+        return [str(example) for example in examples]
+
+    def test_templates_unknown_command_shows_templates_examples(self) -> None:
+        examples = self._examples_for(["ext", "research", "templates"])
+        self.assertTrue(any("ext research templates create" in example for example in examples))
+        self.assertTrue(any("ext research templates list" in example for example in examples))
+        self.assertTrue(any("ext research templates show" in example for example in examples))
+
+    def test_records_unknown_command_shows_records_examples(self) -> None:
+        examples = self._examples_for(["ext", "research", "records"])
+        self.assertTrue(any("ext research records list" in example for example in examples))
+        self.assertTrue(any("ext research records show" in example for example in examples))
+
+    def test_ideas_unknown_command_shows_ideas_examples(self) -> None:
+        examples = self._examples_for(["ext", "research", "ideas"])
+        self.assertTrue(any("ext research ideas list" in example for example in examples))
+        self.assertTrue(any("ext research ideas graph" in example for example in examples))
+
+
+class FindTemplateRecordTests(unittest.TestCase):
+    def test_find_template_record_uses_query_index_not_list_records(self) -> None:
+        context = MagicMock()
+        record_id = "artifact-test-123"
+        query_payload = {
+            "ok": True,
+            "records": [
+                {
+                    "record_id": record_id,
+                    "status": "ready",
+                    "metadata": {
+                        "transition_metadata": {
+                            "template_name": "main",
+                            "semantic_id": TEMPLATE_SEMANTIC_ID,
+                        },
+                    },
+                }
+            ],
+        }
+        with (
+            patch("isomer_labs.cli.commands.research_templates_ext.query_index_list") as query_mock,
+            patch("isomer_labs.cli.commands.research_templates_ext.list_records") as list_mock,
+        ):
+            query_mock.return_value = (query_payload, [])
+            found = _find_template_record(context, "main")
+        self.assertIsNotNone(found)
+        assert isinstance(found, dict)
+        self.assertEqual(record_id, found["id"])
+        self.assertEqual("ready", found["status"])
+        self.assertEqual("main", found["transition_metadata"]["template_name"])
+        query_mock.assert_called_once()
+        list_mock.assert_not_called()
+
+    def test_find_template_record_skips_archived(self) -> None:
+        context = MagicMock()
+        query_payload = {
+            "ok": True,
+            "records": [
+                {
+                    "record_id": "archived-record",
+                    "status": "archived",
+                    "metadata": {
+                        "transition_metadata": {"template_name": "main"},
+                    },
+                }
+            ],
+        }
+        with patch("isomer_labs.cli.commands.research_templates_ext.query_index_list") as query_mock:
+            query_mock.return_value = (query_payload, [])
+            found = _find_template_record(context, "main")
+        self.assertIsNone(found)
 
 
 if __name__ == "__main__":

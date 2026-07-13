@@ -54,6 +54,21 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "schemas list": (
         "isomer-cli --print-json schemas list",
     ),
+    "ext research templates": (
+        "isomer-cli --print-json ext research templates create --name main",
+        "isomer-cli --print-json ext research templates list",
+        "isomer-cli --print-json ext research templates show --name main",
+    ),
+    "ext research records": (
+        "isomer-cli --print-json ext research records list --topic my-topic",
+        "isomer-cli --print-json ext research records show <record-id> --topic my-topic",
+        "isomer-cli --print-json ext research records create --topic my-topic --record-kind artifact",
+    ),
+    "ext research ideas": (
+        "isomer-cli --print-json ext research ideas list --topic my-topic",
+        "isomer-cli --print-json ext research ideas graph --topic my-topic",
+        "isomer-cli --print-json ext research ideas validate --topic my-topic",
+    ),
 }
 
 

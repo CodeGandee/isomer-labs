@@ -17,6 +17,7 @@ from isomer_labs.cli.options import (
     topic_selection_options as _topic_selection_options,
 )
 from isomer_labs.project.context import EffectiveTopicContext
+from isomer_labs.records.index import query_index_list
 from isomer_labs.records.store import (
     ResearchRecordRequest,
     archive_record,
@@ -485,11 +486,30 @@ def _parents_json(record_id: str) -> list[dict[str, Any]]:
 
 
 def _find_template_record(context: EffectiveTopicContext, template_name: str) -> dict[str, Any] | None:
-    payload, _ = list_records(context, env=os.environ, semantic_id=TEMPLATE_SEMANTIC_ID, limit=None)
-    for record in payload.get("records", []):
-        meta = record.get("transition_metadata", {}) or {}
-        if meta.get("template_name") == template_name and record.get("status") != "archived":
-            return record
+    payload, _ = query_index_list(
+        context,
+        env=os.environ,
+        semantic_id=TEMPLATE_SEMANTIC_ID,
+        status="ready",
+        limit=None,
+    )
+    records = payload.get("records", [])
+    if not isinstance(records, list):
+        return None
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        if record.get("status") == "archived":
+            continue
+        meta = (record.get("metadata") or {}).get("transition_metadata", {}) or {}
+        if not isinstance(meta, dict):
+            continue
+        if meta.get("template_name") == template_name:
+            return {
+                "id": record["record_id"],
+                "status": record["status"],
+                "transition_metadata": meta,
+            }
     return None
 
 
