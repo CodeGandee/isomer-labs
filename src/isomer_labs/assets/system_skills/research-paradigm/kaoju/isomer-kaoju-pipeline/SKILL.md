@@ -1,13 +1,13 @@
 ---
 name: isomer-kaoju-pipeline
-description: Use when a user requests a bounded Kaoju survey, curated intake, direction expansion, theory comparison, paper-method trial, empirical comparison, survey audit, or survey and dataset management.
+description: Use when a user requests a bounded Kaoju survey, curated intake, direction expansion, theory comparison, paper-method trial, empirical comparison, survey audit, paper writing, template generation, or survey and dataset management.
 ---
 
 # Kaoju Pipeline
 
 ## Overview
 
-Select and run one bounded survey procedure or grouped management action. Preserve stage handoffs, require audit before synthesis, and stop with explicit status instead of choosing the next macro procedure autonomously.
+Select and run one bounded survey procedure, paper-writing procedure, or grouped management action. Preserve stage handoffs, require audit before synthesis, and stop with explicit status instead of choosing the next macro procedure autonomously.
 
 Read the shared artifact semantics and recording rules before dispatch, each producer skill's `artifact-bindings.md` before an accepted write, and this skill's binding page before creating `kaoju:survey-terminal-report`. An unavailable binding or record surface is a storage blocker; do not fall back to invented paths, profiles, canonical Markdown, or untracked JSON.
 
@@ -27,7 +27,7 @@ If the task does not map cleanly to these steps, use the native planning tool to
 
 ## When to Use
 
-Use for the seven named survey procedures and two grouped managers below. Do not use this skill for generic repository refresh, environment repair, standalone reproduction, source audit, list-passes, a full-Kaoju macro, or a generic resume procedure; keep those steps inside the active procedure or route them to their owner.
+Use for the nine named survey and paper-writing procedures and two grouped managers below. Do not use this skill for generic repository refresh, environment repair, standalone reproduction, source audit, list-passes, a full-Kaoju macro, or a generic resume procedure; keep those steps inside the active procedure or route them to their owner.
 
 ## Subcommands
 
@@ -42,6 +42,8 @@ Use for the seven named survey procedures and two grouped managers below. Do not
 | `method-trial-pass` | Obtain and run one paper method on intended or generated data. | `commands/method-trial-pass.md` |
 | `comparative-pass` | Plan and run a controlled empirical comparison after user approval. | `commands/comparative-pass.md` |
 | `audit-survey-pass` | Audit accepted survey evidence and synthesize only when ready. | `commands/audit-survey-pass.md` |
+| `paper-pass` | Turn accepted audit and synthesis records into a publication bundle. | `commands/paper-pass.md` |
+| `create-paper-template` | Generate an editable LaTeX template and compile a preview PDF. | `commands/create-paper-template.md` |
 
 ### Helper Subcommands
 
@@ -56,7 +58,7 @@ Helpers group object operations and remain lower-level implementation commands. 
 
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
-| `help` | List the seven procedures, their triggers, and public support interface. | This entrypoint. |
+| `help` | List the nine procedures, their triggers, and public support interface. | This entrypoint. |
 
 ## Clarification and Resume
 
@@ -66,7 +68,7 @@ Resume is accepted context: name durable input refs, verify them, state the star
 
 ## Reference Routing
 
-Read the selected local command page, then use `$isomer-kaoju-shared` for cross-stage contracts. Invoke `$isomer-kaoju-workspace-mgr`, `$isomer-kaoju-frame`, `$isomer-kaoju-discover`, `$isomer-kaoju-acquire`, `$isomer-kaoju-examine`, `$isomer-kaoju-reproduce`, `$isomer-kaoju-compare`, `$isomer-kaoju-audit`, and `$isomer-kaoju-synthesize` only as required by that page.
+Read the selected local command page, then use `$isomer-kaoju-shared` for cross-stage contracts. Invoke `$isomer-kaoju-workspace-mgr`, `$isomer-kaoju-frame`, `$isomer-kaoju-discover`, `$isomer-kaoju-acquire`, `$isomer-kaoju-examine`, `$isomer-kaoju-reproduce`, `$isomer-kaoju-compare`, `$isomer-kaoju-audit`, `$isomer-kaoju-synthesize`, and `$isomer-kaoju-write` only as required by that page.
 
 ## Foundational Principle
 
@@ -85,6 +87,8 @@ One command means one bounded user intent. Do not expand a completed pass into a
 
 - The command surface contains a generic maintenance task.
 - A procedure synthesizes from an unaccepted Audit Report.
+- A paper-pass starts without accepted audit and synthesis records.
+- `create-paper-template` treats its preview PDF as the final paper PDF.
 - Empirical preparation starts before a Proceed Decision.
 - The terminal report starts another procedure.
 

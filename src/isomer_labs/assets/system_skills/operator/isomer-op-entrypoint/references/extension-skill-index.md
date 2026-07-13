@@ -27,6 +27,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Build a source-grounded theory comparison or controlled empirical comparison. | `isomer-kaoju-compare` |
 | Diagnose survey coverage, identity, evidence, lineage, and fairness without repair. | `isomer-kaoju-audit` |
 | Write accepted survey conclusions from an accepted Audit Report. | `isomer-kaoju-synthesize` |
+| Turn accepted audit and synthesis records into a publication-ready manuscript and bundle. | `isomer-kaoju-write` |
 
 ## DeepSci Bootstrap and Pipeline
 

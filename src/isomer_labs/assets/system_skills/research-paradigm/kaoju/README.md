@@ -6,7 +6,7 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 
 | Skill | Responsibility |
 | --- | --- |
-| `isomer-kaoju-pipeline` | Route one bounded survey procedure or grouped management action. |
+| `isomer-kaoju-pipeline` | Route one bounded survey procedure, paper-writing procedure, or grouped management action. |
 | `isomer-kaoju-shared` | Define evidence, identity, lineage, interaction, owner-routing, and terminal contracts. |
 | `isomer-kaoju-workspace-mgr` | Check Topic Workspace readiness and registered dataset posture. |
 | `isomer-kaoju-frame` | Freeze the Survey Contract or Comparison Intent Document. |
@@ -17,10 +17,11 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 | `isomer-kaoju-compare` | Build source-grounded theory or empirical comparisons. |
 | `isomer-kaoju-audit` | Diagnose coverage, identity, evidence, and fairness defects. |
 | `isomer-kaoju-synthesize` | Write accepted survey conclusions without exceeding evidence. |
+| `isomer-kaoju-write` | Turn accepted audit and synthesis records into a publication bundle. |
 
 ## Public Pipeline Surface
 
-Procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, and `audit-survey-pass`. Helpers group object operations under `manage-survey` and `manage-dataset`; `help` is the only miscellaneous subcommand.
+Procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. Helpers group object operations under `manage-survey` and `manage-dataset`; `help` is the only miscellaneous subcommand.
 
 Kaoju is distinct from DeepSci: Kaoju maps and verifies existing work, while DeepSci frames hypotheses and develops or evaluates new research routes. Generic repository maintenance, environment repair, and resume behavior remain implementation context inside the active survey procedure.
 

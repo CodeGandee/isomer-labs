@@ -1,0 +1,7 @@
+metadata:
+  version: "0.2.3"
+
+interface:
+  display_name: "isomer-kaoju-write"
+  short_description: "Write a publication-ready paper from audited Kaoju survey evidence."
+  default_prompt: "Use $isomer-kaoju-write to turn accepted Kaoju audit and synthesis records into a paper contract, LaTeX manuscript, document build, validation report, and publication bundle."
