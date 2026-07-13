@@ -10,6 +10,7 @@ from typing import Any
 import click
 
 from isomer_labs.cli.commands.research_ideas_ext import register_research_idea_commands
+from isomer_labs.cli.commands.research_templates_ext import register_research_templates_commands
 from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
@@ -67,6 +68,11 @@ def register_research_record_ext_commands(app: click.Group) -> None:
         pass
 
     register_research_idea_commands(
+        research_group,
+        with_context=_with_context,
+        json_error_payload=_json_error_payload,
+    )
+    register_research_templates_commands(
         research_group,
         with_context=_with_context,
         json_error_payload=_json_error_payload,

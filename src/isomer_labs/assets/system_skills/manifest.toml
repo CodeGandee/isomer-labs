@@ -82,6 +82,8 @@ commands = [
   "method-trial-pass",
   "comparative-pass",
   "audit-survey-pass",
+  "paper-pass",
+  "create-paper-template",
   "manage-survey",
   "manage-dataset",
 ]
@@ -99,6 +101,7 @@ skills = [
   "research-paradigm/kaoju/isomer-kaoju-compare",
   "research-paradigm/kaoju/isomer-kaoju-audit",
   "research-paradigm/kaoju/isomer-kaoju-synthesize",
+  "research-paradigm/kaoju/isomer-kaoju-write",
 ]
 
 [callback_insertion_point_stages.begin]
@@ -206,4 +209,7 @@ callback_insertion_points = ["begin", "end"]
 callback_insertion_points = ["begin", "end"]
 
 [skill_metadata."research-paradigm/kaoju/isomer-kaoju-synthesize"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-write"]
 callback_insertion_points = ["begin", "end"]
