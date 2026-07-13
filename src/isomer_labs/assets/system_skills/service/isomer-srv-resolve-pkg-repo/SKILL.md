@@ -59,3 +59,7 @@ The skill currently covers pixi, uv, conda, pip, npm, and bun. Other package man
 - **Forgetting NVIDIA channel preference**. For NVIDIA packages on Conda/Pixi, prefer the `nvidia` channel over `conda-forge` when both are reachable.
 - **Recording only the winner**. Note every candidate tested, why it was rejected, and the source of the chosen mirror so the decision remains auditable.
 - **Mutating manifests before confirming reachability**. Resolve repositories first; do not run install commands against a source that has not been tested.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

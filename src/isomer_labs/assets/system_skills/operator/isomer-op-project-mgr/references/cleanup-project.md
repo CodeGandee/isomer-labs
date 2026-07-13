@@ -17,7 +17,7 @@ When this subcommand is selected, execute the following steps in order.
 4. Apply cleanup only after review:
    - If the user confirms deletion after reviewing the plan, run the same command with `--yes` instead of `--dry-run`.
    - For whole content-root deletion, include `--purge-content-root` only when the user explicitly asks to remove the entire selected generated content root.
-5. Report `project_root`, `project_manifest_path`, selected cleanup parts, `cleanup_plan`, removed targets, skipped targets, diagnostics, and next operator action.
+5. Report the Project root and manifest path, selected cleanup parts and plan, removed and skipped targets, diagnostics, and next operator action in natural language.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project root, cleanup parts, CLI command boundaries, and guardrails, then execute the plan.
 

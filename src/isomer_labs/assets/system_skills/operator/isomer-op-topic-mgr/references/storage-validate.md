@@ -14,7 +14,7 @@ If the user's task does not map cleanly to these steps, validate the labels name
 
 ## Output
 
-Report `status`, `topic`, `semantic_paths`, `topic_main`, `local_tmp_path_status`, projection roots, custom labels, storage-profile evidence, blockers, and `next_action`.
+Report the validation outcome and selected Research Topic, then summarize semantic paths, Topic Main Development Repository, local temporary-path posture, projection roots, custom labels, storage-profile evidence, blockers, and the next action.
 
 ## Guardrails
 

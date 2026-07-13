@@ -65,3 +65,7 @@ Numbers carry the identity of the code, inputs, evaluator, environment, and exec
 - Asking for a dataset before checking registered data. Query and validate the Topic Dataset Manifest first.
 - Running setup commands outside the owner or resource boundary. Route them and retain logs.
 - Calling a smoke test a benchmark. Record the actual Run purpose and achieved depth.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

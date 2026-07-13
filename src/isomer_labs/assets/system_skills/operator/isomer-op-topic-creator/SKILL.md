@@ -92,11 +92,11 @@ Helper subcommands are lower-level ladder stages normally called by `fast-forwar
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report `status`, Project root, Research Topic ref, Topic Workspace ref, `topic.repos.main` readiness, Workspace Runtime status, Topic Actor roster, each selected actor cwd, actor onboarding status, `topic.workspace.summary` path and freshness, reset checkpoint id when created or refreshed, ready surfaces, verified checks, skipped stages, and blockers.
+Lead with the topic-creation outcome. Name the Project, Research Topic, and Topic Workspace, then summarize Topic Main Development Repository readiness, Workspace Runtime status, Topic Actors and their workspaces, onboarding, summary freshness, any reset checkpoint, ready surfaces, verified checks, skipped stages, and blockers.
 
 ### Complete Output
 
@@ -115,3 +115,7 @@ Do not route manual, human-orchestrated, or multiple manually controlled coding-
 Do not silently recreate the default `operator` Topic Actor after an explicit opt-out. Report a blocker if a later step requires it.
 
 Do not prescribe a next research command, research-stage route, Houmao launch, or formal team specialization route in terminal Topic Creator output. Report what is ready, verified, skipped, blocked, and where `topic.workspace.summary` was written.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

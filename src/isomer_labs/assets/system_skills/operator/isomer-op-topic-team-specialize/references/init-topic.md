@@ -57,28 +57,15 @@ If the user is actually asking for a later procedural subcommand and predecessor
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `status`: initialized, provisional, blocked, or not checked.
-- `topic`: `research_topic_ref` and `topic_workspace_ref`.
-- `overview`: `topic_overview_path` when created or resolved.
-- `registration`: `topic_registration_status`.
-- `open_questions`: questions that should go to `clarify-topic`.
-- `next_operator_action`
+State whether topic initialization completed, is provisional, blocked, or was not checked. Name the Research Topic and Topic Workspace, the overview path when created or resolved, registration posture, open questions for `clarify-topic`, and the next operator action.
 
 ### Complete Output
 
-- `research_topic_ref`
-- `topic_workspace_ref`
-- `topic_overview_label`
-- `topic_overview_path`
-- `topic_overview_storage_profile`
-- `topic_overview_source`
-- `topic_registration_status`
-- `open_questions`
-- `next_operator_action`
+Group the complete explanation by topic identity, overview label and path, storage profile and source, registration posture, open questions, and next operator action.
 
 ## Guardrails
 

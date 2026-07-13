@@ -12,10 +12,4 @@ If the user's help request does not map cleanly to these steps, use your native 
 
 ## Output
 
-Report:
-
-- `skill`: `isomer-op-toolbox-mgr`.
-- `public_subcommands`: procedural subcommands only.
-- `safe_start`: the narrowest recommended subcommand.
-- `required_inputs`: missing Project, Toolbox, target, scope, or Runtime Param details.
-- `guardrails`: no schema changes, no direct registry or manifest mutation when CLI owns it, no implicit Toolbox skill auto-invocation, no secret-like material.
+Identify `isomer-op-toolbox-mgr` as the owner, list only its public procedural subcommands, and recommend the narrowest safe start. Name missing Project, Toolbox, target, scope, or Runtime Param inputs and summarize the mutation, auto-invocation, schema, and secret-handling guardrails in natural language.

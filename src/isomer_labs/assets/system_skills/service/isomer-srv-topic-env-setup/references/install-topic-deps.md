@@ -78,14 +78,14 @@ When this subcommand is selected, execute the following steps in order.
    - If classification evidence or required bounded guidance is missing, stop with a blocker and ask for `derive-env-gate` to repair `topic.env.topic_setup_target_spec`.
    - Use lightweight read-only probes such as CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Run the bounded real setup path named by the target spec, such as reduced build parallelism, a selected native-extension target, sample data, reduced model/input size, or metadata-limited acquisition when that path is needed to make later verification meaningful.
-   - If capacity is insufficient, unclear, or already busy, do not substitute an unrelated smoke test for the required setup path; record `resource_check_status: blocked` with the reason and the smallest real-path command that would be run when capacity is available.
+   - If capacity is insufficient, unclear, or already busy, do not substitute an unrelated smoke test for the required setup path; record that the resource check is blocked, with the reason and smallest real-path command to run when capacity is available.
 18. **Run setup commands through the Topic Workspace Pixi environment** when the target spec requires commands beyond dependency mutation:
    - Use `pixi run --manifest-path <manifest_path> --environment <pixi_environment> <command>`.
    - Include any recorded runtime wiring in the command instead of relying on ambient shell state.
 19. **Install the selected environment** with `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
 20. **Update `topic.env.topic_setup_target_spec`**:
    - Include commands run, selected Python version, version evidence, starter dependencies, VCS ignore changes, adaptation decisions, selected package sources, resource check evidence, bounded real-path execution decisions, enclosure classification, external runtime wiring, topic-local fallbacks, changed files, channel decisions, blockers, and execution log entries.
-21. **Report the install result** using the parent skill's output fields.
+21. **Report the install result** using the parent skill's natural-language output contract.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the resolved `topic.env.topic_setup_target_spec`, dependency policy, Pixi help, parent guardrails, and user request, then execute the plan.
 

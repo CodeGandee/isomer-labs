@@ -93,3 +93,7 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 - Bootstrap check: post-preparation workspace bootstrap questions route to `isomer-deepsci-workspace-mgr`, with the current cwd classified as Topic Workspace, Topic Actor Workspace, `topic.repos.main`, or formal Agent Workspace when possible.
 - Binding check: unresolved storage bindings remain semantic until a later binding pass assigns durable labels, typed refs, paths, or schemas.
 - Result check: the final coordination result states chosen semantic object, owning producer, intended consumer, and unresolved binding or route question.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

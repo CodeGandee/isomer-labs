@@ -18,7 +18,7 @@ If the user's task does not map cleanly to these steps, build an inspect-only up
 
 ## Output
 
-Report `status`, `topic`, `pixi`, `request`, `plan`, `package_specifics`, `commands_run`, `verification`, `changed_paths`, blockers, and `next_action`.
+Report the update outcome and selected Research Topic, then summarize Pixi context, the request and plan, package-specific guidance, commands, verification, changed paths, blockers, and the next action.
 
 ## Guardrails
 

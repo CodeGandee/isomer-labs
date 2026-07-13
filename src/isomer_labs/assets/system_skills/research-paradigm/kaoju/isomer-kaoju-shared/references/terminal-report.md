@@ -1,8 +1,10 @@
 # Terminal Report
 
-## Required Shape
+## Durable Artifact Schema
 
-Every bounded procedure or stage returns:
+This table defines the exact stored terminal-report artifact, not the chat response format. Preserve these fields in the durable report, then summarize the outcome, accepted outputs, blockers, and resume point in natural-language Markdown for chat.
+
+Every bounded procedure or stage records:
 
 | Field | Requirement |
 | --- | --- |

@@ -17,7 +17,7 @@ If the user's task does not map cleanly to these steps, materialize only the nam
 
 ## Output
 
-Report `status`, `topic`, `topic_actor_bindings`, `topic_actor_workspace_paths`, `topic_actor_branch_plan`, `worktree_status_by_actor` or equivalent worktree evidence, support labels, runtime audit refs when available, blockers, and `next_action`.
+Report the materialization outcome and selected Research Topic, then summarize Topic Actor bindings, workspace paths, branch plan, worktree evidence by actor, support labels, runtime audit refs when available, blockers, and the next action.
 
 ## Guardrails
 

@@ -22,20 +22,13 @@ If the user's task does not map cleanly to these steps, ask for actor names, run
 
 Do not make every manually controlled worker share `topic.repos.main` as cwd. Each worker that needs independent work receives its own `topic.actors.workspace` cwd, materialized as a worktree of `topic.repos.main`; controller provenance, not Git workspace topology, distinguishes a manually controlled Topic Actor from a formal Agent Workspace.
 
+Keep `topic.repos.main` as the Git anchor and integration surface for those worktrees while each Topic Actor works from its resolved Topic Actor Workspace.
+
 Do not claim actor readiness from a materialized workspace alone. Require delegated worktree evidence for the expected actor branch, `topic.intent.actor_definitions`, derived `topic.env.actor_env_gates`, gate verification evidence from actor cwd, and enough actor onboarding context for the selected actors. If delegated worktree evidence is missing or blocked, stop before actor env gate verification for that actor.
 
 ## Actor Onboarding Shape
 
-Actor onboarding context is startup convenience for the selected Topic Actors, not accepted research truth. It should include:
-
-- `actor_identity`: Topic Actor name plus actor kind, runtime kind, role kind, controller kind, and adapter ref when known.
-- `cwd`: resolved `topic.actors.workspace` path, source, and matching `topic.repos.main` worktree status.
-- `branch`: current or intended `per-topic-actor/<topic-actor-name>/main` branch.
-- `integration_surface`: `topic.repos.main` as the Git anchor and integration surface, not a shared cwd requirement for every worker.
-- `support_labels`: resolved `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, and `topic.actors.tmp`.
-- `boundary_notes`: private, log, link, and tmp posture; generated links are convenience pointers only.
-- `verification_evidence`: worktree check, gate check, cwd check, materialization evidence, and delegated owner evidence when available.
-- `blockers`: missing labels, unsafe paths, unresolved actor definitions, failed gate checks, or explicit opt-outs.
+Actor onboarding context is startup convenience for the selected Topic Actors, not accepted research truth. Describe each actor's identity and controller posture, resolved workspace and worktree, branch, Topic Main Development Repository integration surface, support paths, boundary posture, verification evidence, and blockers in readable prose or a Markdown list. Exact semantic labels and branch names remain evidence, not response keys.
 
 If actor-local cards or pointers are written, keep them under `topic.actors.isomer_managed` or `topic.actors.links` and describe them as startup convenience. Do not describe them as authoritative research records, durable findings, or accepted artifact refs.
 

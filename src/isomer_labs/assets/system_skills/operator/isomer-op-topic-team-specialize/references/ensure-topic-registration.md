@@ -14,7 +14,7 @@ When this subcommand is selected, execute the following steps in order.
    - Use user input, `topic-overview.md`, or an already registered Research Topic Config.
    - If the statement is missing, generic, or unclear, stop with a blocker asking the user for the concrete research topic before any Project Config mutation.
 4. Idempotently verify existing Project Manifest-backed registrations:
-   - If the selected Research Topic and Topic Workspace are already registered and point to the intended topic material, report `topic_registration_status: registered`.
+   - If the selected Research Topic and Topic Workspace are already registered and point to the intended topic material, state that registration is ready.
    - Carry forward the registered refs, and record that no mutation was needed.
 5. If registration is missing, check path safety before mutation:
    - The candidate Topic Workspace directory must be project-scoped.
@@ -31,8 +31,8 @@ When this subcommand is selected, execute the following steps in order.
    - Accepted forms are an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` file target, an explicit directory target, or the implicit registered Topic Workspace directory default.
    - The implicit default is valid only when Pixi resolves it as a confined Topic Workspace Pixi workspace with environment `default`.
 9. If Pixi cannot resolve the explicit or implicit binding target, report the blocker:
-   - Set `topic_registration_status: blocked`.
-   - Set `environment_binding_status: blocked`.
+   - Explain that topic registration is blocked.
+   - Explain that environment binding is blocked.
    - Name the target, binding source, and Pixi or confinement failure.
    - Do not hand-edit `.isomer-labs/manifest.toml` from this skill.
 10. Report registration status, registered refs, command evidence, environment binding status, blockers, and the next safe subcommand.
@@ -52,17 +52,7 @@ If the topic overview exists but does not contain a concrete topic statement, re
 
 ## Verification Targets
 
-Verify and report:
-
-- `research_topic_ref`: the requested or derived Research Topic id.
-- `topic_workspace_ref`: the candidate or registered Topic Workspace.
-- `registered_research_topic_ref`: the Project Manifest-backed Research Topic ref when present.
-- `registered_topic_workspace_ref`: the Project Manifest-backed Topic Workspace ref when present.
-- `topic_registration_status`: `registered`, `provisional`, `blocked`, or `not checked`.
-- `registration_command_evidence`: the supported command or API evidence used, or `not needed`.
-- `environment_binding_status`: `active`, `implicit-default`, `blocked`, or `not checked`.
-- `environment_binding_ref`: the binding source, `manifest_path_or_dir`, Pixi-resolved `manifest_path`, and `pixi_environment` when present.
-- `registration_blockers`: blockers that prevent authoritative registration or downstream service delegation.
+Verify the requested or derived Research Topic and candidate Topic Workspace against their Project Manifest-backed refs. Report registration as registered, provisional, blocked, or not checked, and summarize the command or API evidence. Describe the environment binding as active, implicit by default, blocked, or not checked, including its manifest and Pixi evidence when present. Name blockers that prevent authoritative registration or downstream service delegation.
 
 ## Supported Registration Surface
 

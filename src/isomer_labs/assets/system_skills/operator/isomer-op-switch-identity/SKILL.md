@@ -54,28 +54,15 @@ Load only the selected command detail page before executing a command.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: switched, acted-as, persistent, reset, unchanged, or blocked.
-- `identity`: target kind, target name, selected topic, and whether the Project Operator acted as or on behalf of that identity.
-- `cwd`: resolved `topic.actors.workspace` or `agent.workspace`.
-- `persistence_mode`: one-task, one-prompt `act-as`, persistent session switch, or reset.
-- `commands_outside_cwd`: any command run outside the target cwd and why.
-- `blockers`: ambiguous target, unresolved semantic path, unsafe workspace, missing readiness evidence, or unsafe provenance claim.
-- `next_action`: continue under persistent posture, restore normal operator identity, provide missing target info, or stop.
+State whether identity was switched, used for one action, made persistent, reset, blocked, or left unchanged. Name the target, topic, resolved Topic Actor or Agent Workspace, and persistence scope. Mention any command that had to run outside that workspace and why, then give blockers and the next safe action.
 
 ### Complete Output
 
-When requested, include:
-
-- `target_resolution_evidence`: Project, Research Topic, target kind, target name, command or API evidence, and path source.
-- `workspace_readiness_evidence`: existing workspace proof, worktree or branch posture when available, and readiness command output summary.
-- `identity_scope`: previous posture, active posture, persistence mode, restore behavior, and uncertainty after context compaction.
-- `provenance_notes`: exact wording used to avoid fabricated Agent Instance, Topic Actor process, Houmao launch, or Execution Adapter claims.
+Group the complete explanation by target-resolution evidence, workspace and worktree readiness, previous and active identity scope, restoration behavior, and provenance wording used to avoid unsupported runtime claims.
 
 ## Common Mistakes
 
@@ -85,3 +72,7 @@ When requested, include:
 - Do not leave `act-as` active after the following prompt completes.
 - Do not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution without verified runtime evidence.
 - Do not overwrite another worker's uncommitted work without explicit user instruction.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

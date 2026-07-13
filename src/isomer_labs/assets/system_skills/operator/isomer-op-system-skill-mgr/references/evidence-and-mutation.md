@@ -32,4 +32,4 @@ Never call `forget` automatically. Absence in the current session does not prove
 
 Report installation and registration independently. If files are installed but `remember` fails, retain the installation, report the Project as needing registration, and retry inspection plus `remember` on the next run. Do not reinstall a complete compatible family merely to retry bookkeeping.
 
-After installation, classify a refreshed inventory if the host supports refresh. Otherwise set `host_refresh_required=true` and recommend a new turn, thread, or host-native reload.
+After installation, classify a refreshed inventory if the host supports refresh. Otherwise state that a host refresh is required and recommend a new turn, thread, or host-native reload.

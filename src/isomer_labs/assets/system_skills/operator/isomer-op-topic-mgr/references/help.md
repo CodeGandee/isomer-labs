@@ -8,7 +8,7 @@ When this subcommand is selected, execute the following steps in order.
 2. Explain that invoking the skill without a prompt defaults to `status`, while explicit help prints this usage surface.
 3. Print the available public subcommands as a three-column table with `Subcommand`, `Purpose`, and `Produces` columns.
 4. Name the required inputs: Project Manifest context, initialized Research Topic, Topic Workspace, optional Topic Actor names, optional packet/profile material, requested Agent Name mapping, package mutation request, or environment verification target.
-5. State the output contract: Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+5. State the output contract: Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 6. State the key guardrails: no blank-state topic initialization, no directory-scanning selection, no silent Git repair, no Git-based reset behavior, no cross-topic refs, no local virtualenv or ambient package mutation, no Agent Instance creation, no Houmao launch, no Execution Adapter operation, and no production DeepSci research bootstrap ownership.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which usage details to print, then execute the plan.

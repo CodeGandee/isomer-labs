@@ -14,7 +14,7 @@ If the user's task does not map cleanly to these steps, route the smallest safe 
 
 ## Output
 
-Report `status`, `topic`, Agent Names, `agent_workspace_paths`, semantic paths, service evidence, commands run, verification evidence, blockers, and `next_action`.
+Report the Agent environment verification outcome and selected Research Topic, then summarize Agent Names and workspace paths, semantic paths, service and command evidence, blockers, and the next action.
 
 ## Guardrails
 

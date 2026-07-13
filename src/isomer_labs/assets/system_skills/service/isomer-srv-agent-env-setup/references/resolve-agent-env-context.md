@@ -29,7 +29,7 @@ When this subcommand is selected, execute the following steps in order.
 5. **Confirm path boundaries**:
    - The Topic Workspace and resolved setup labels must be inside the selected Project root unless a later accepted external-root policy explicitly permits the binding.
 6. **Record invocation posture**:
-   - Report `requester`, `confirmation_source`, optional Service Request refs, support Artifact refs, Provenance refs, and whether the current invocation is read-only or can proceed to confirmed mutation.
+   - Report who requested the work, how authorization was confirmed, any Service Request, support Artifact, or Provenance refs, and whether the invocation is read-only or authorized to mutate.
 7. **Report resolved context** using the parent Essential Output by default and Complete Output when requested:
    - Stop with blockers for missing Project Manifest, unknown Research Topic, missing Topic Workspace, unresolved Pixi binding, semantic label blockers, unsafe paths, or missing mutation confirmation for mutating follow-up steps.
 

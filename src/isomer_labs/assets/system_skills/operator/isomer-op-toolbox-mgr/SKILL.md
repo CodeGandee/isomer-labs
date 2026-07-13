@@ -78,11 +78,11 @@ Default new Toolbox source to `skillset/toolboxes/<toolbox-id>/`. Block writes o
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report `status`, Toolbox ID, Toolbox source path when relevant, selected Toolbox Scope, changed files or ids, installed callback ids, Toolbox skill invocation posture, effective Runtime Param ids, validation result, diagnostics, blockers, rollback hint, and next action.
+Lead with the Toolbox operation outcome. Name the Toolbox, source path, and selected scope when relevant, then summarize changed files or identifiers, installed callbacks, Toolbox skill invocation posture, effective Runtime Params, validation, diagnostics, blockers, rollback guidance, and the next action.
 
 ### Complete Output
 
@@ -112,3 +112,7 @@ Use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent 
 | Setting Runtime Params by editing TOML from memory | Use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles. |
 | Installing before validating scope and insertion point | Validate manifest, target skill, stage, source paths, and scope before install or refresh. |
 | Hiding broad effects in a short success message | Report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output. |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -20,3 +20,7 @@ This prior helps route GPU analytical-modeling work when model predictions, meas
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `mismatch-route` | Decision prior for failed or incomplete model evidence | `commands/mismatch-route.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

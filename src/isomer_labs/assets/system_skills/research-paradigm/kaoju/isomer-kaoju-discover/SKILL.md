@@ -66,3 +66,7 @@ Discovery proves that a candidate was found under a recorded route. It does not 
 - Deduplicating different versions before deciding their relationship. Build the work family first.
 - Omitting excluded items. Retain their reasons so later passes can audit coverage.
 - Mixing linked repositories, datasets, and models into the primary paper list without type-aware relationships.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

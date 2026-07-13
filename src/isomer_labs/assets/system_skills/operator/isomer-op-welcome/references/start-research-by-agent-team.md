@@ -11,14 +11,8 @@
 
 If the user's task does not map cleanly to these steps, use your native planning tool to check whether the user supplied a Domain Agent Team Template; if not, ask for the template or recommend `start-research-manually`.
 
-## Output Fields
+## Output Guidance
 
-- `status`: `recommended`.
-- `interpreted_goal`: `start-research-by-agent-team`.
-- `recommended_workflow`: `start-research-by-agent-team`.
-- `owner_skill`: `isomer-op-topic-team-specialize`.
-- `safe_first_command`: `Use $isomer-op-topic-team-specialize fast-forward`.
-- `blockers`: missing concrete Research Topic, missing Domain Agent Team Template, missing Project context, or unapproved mutation.
-- `next_action`: invoke the owner skill directly or provide missing topic and template input.
+Recommend the agent-team research path in natural language and route it to `isomer-op-topic-team-specialize`. Give `Use $isomer-op-topic-team-specialize fast-forward` as the safe first invocation. Name any missing Research Topic, Domain Agent Team Template, Project context, or mutation authority, then state whether to invoke the owner or provide the missing input.
 
 Do not launch an Agent Team or Houmao runtime from the welcome surface.

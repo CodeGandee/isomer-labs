@@ -25,8 +25,8 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Classify the operation**:
    - Input: task or command, cwd when known, expected result, purpose, and relevant context.
-   - Output one `classification_result`: `light`, `heavy`, `unknown-risk`, or `not-applicable`.
-   - Record `classification_reason` and `resource_dimensions`, such as CPU, RAM, disk, network, GPU, wall time, or external service pressure.
+   - Classify the operation as `light`, `heavy`, `unknown-risk`, or `not-applicable`.
+   - Explain the reason and the relevant resource dimensions, such as CPU, RAM, disk, network, GPU, wall time, or external service pressure.
 2. **Decide the follow-up**:
    - `light`: no resource check plan is required; record why.
    - `not-applicable`: route to the relevant non-runtime policy; record why.
@@ -63,37 +63,15 @@ For tools that wrap and launch another command, such as `ncu`, `nsys`, `valgrind
 
 ## Reporting Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `classification_result`: `light`, `heavy`, `unknown-risk`, or `not-applicable`.
-- `classification_reason`: concise reason for the classification.
-- `bounded_guidance_required`: yes or no.
-- `bounded_command`: exact command to run when bounded guidance is required.
-- `result`: ready, failed, blocked, or not checked.
-- `blocker`: exact blocker and retry command when unsafe.
+State whether the operation is light, heavy, of unknown risk, or outside this skill, and explain why. Say whether bounded guidance is required. When it is, provide the exact bounded command. Close with whether the operation is ready, failed, blocked, or not checked; name the blocker and retry command when execution is unsafe.
 
 ### Complete Output
 
-When requested, include:
-
-- `classification_source`: `isomer-misc-bounded-run-tips`.
-- `classification_result`
-- `classification_reason`
-- `resource_dimensions`: CPU, RAM, disk, network, GPU, wall time, external service pressure, or `none`.
-- `bounded_guidance_required`
-- `operation`: command or task being classified or bounded.
-- `cwd`: working directory when known.
-- `expected_result`: what proves the real path works.
-- `bounded_guidance_source`: matching subcommand, generic best-effort, or not needed.
-- `resource_probe`: memory, CPU, disk, GPU, and active process evidence used when bounded guidance is required.
-- `bounded_limits`: worker count, architecture list, input size, test selection, or benchmark duration.
-- `bounded_command`
-- `result`
-- `blocker`
+Group the full explanation by operation, risk classification, resource evidence, bounded limits, command, and result. Include the working directory when known, the expected proof of success, relevant CPU, memory, disk, network, GPU, wall-time, or service pressure, and whether guidance came from a matching subcommand or a generic best-effort judgment.
 
 ## Common Mistakes
 
@@ -103,3 +81,7 @@ When requested, include:
 - Saturating all RAM, CPU, disk, or GPU capacity just to prove environment readiness.
 - Hiding skipped heavy work behind `ready` instead of reporting a blocker and the bounded command to retry.
 - Inverting Pixi and a wrapper tool by writing `<wrapper-tool> pixi run ...` for profiler, debugger, tracer, or memory-checker work; the usual bounded command shape is `pixi run <wrapper-tool> ... <target-command>`.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

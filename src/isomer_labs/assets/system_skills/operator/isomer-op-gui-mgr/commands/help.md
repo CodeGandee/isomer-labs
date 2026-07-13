@@ -20,8 +20,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 | `refresh-records` | Refresh visible GUI data or query-index state safely. | Refresh type, recent errors, validation or maintenance action. |
 | `troubleshoot` | Diagnose slow loads, cache issues, stale data, or unsupported views. | Diagnostic path, owner route, next action. |
 
-## Output Fields
+## Output Guidance
 
-Essential Output includes `status`, `project`, `gui`, `cache_mode`, `commands_or_routes`, `diagnostics`, `blockers`, and `next_action`.
+Essential Output naturally summarizes the outcome, Project, GUI surface, cache posture, important commands or routes, diagnostics, blockers, and next action.
 
 Complete Output adds resolved Project root, selected topic, backend process command, route family, response summary, cache headers, recent-errors summary, index action, diagnostics, and handoff route.

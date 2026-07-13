@@ -15,7 +15,7 @@ If the user's task does not map cleanly to these steps, ask for the missing repo
 
 ## Output
 
-Report `status`, `topic`, `registered_label`, `path`, `storage_profile`, `path_source`, `commands_run`, blockers, and `next_action`.
+Report the registration outcome and selected Research Topic, then name the registered label and path, storage profile and path source, commands run, blockers, and the next action.
 
 ## Guardrails
 

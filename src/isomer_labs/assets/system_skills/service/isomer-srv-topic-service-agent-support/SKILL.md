@@ -65,3 +65,7 @@ Read as needed:
 - Do not bypass Isomer validators or user approval.
 - Do not ask the user to install Houmao system skills into their ordinary operator skill home as the primary route. Use Isomer CLI skill-context and Project-local `.isomer-labs/houmao-skills/`.
 - Do not rely on implicit `.houmao/` discovery from Topic Workspace cwd. Use the returned `houmao_project_path` and tell agents to run Houmao commands with `--project-dir <houmao_project_path>`.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -106,3 +106,7 @@ This skill can end only when all applicable checks are true:
 - Treating a Topic Actor Workspace as an Agent Workspace or fabricating Agent Instance refs for Topic Actor records.
 - Inventing hard-coded paths when a semantic label, typed ref, or blocker is required.
 - Letting working agents cite generated links instead of semantic labels and typed refs.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

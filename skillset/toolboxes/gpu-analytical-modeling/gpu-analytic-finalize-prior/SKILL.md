@@ -21,3 +21,7 @@ This prior prevents closure when central GPU analytical-modeling claims lack vis
 | --- | --- | --- |
 | `closure-readiness` | Finalization-start closure posture prior | `commands/closure-readiness.md` |
 | `final-evidence-class` | Final evidence-class check before closure | `commands/final-evidence-class.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -20,7 +20,7 @@ When this subcommand is selected, execute the following steps in order.
    - State what each planned Agent Workspace must be able to do from its cwd.
    - Keep this source intent user-editable and avoid derived command matrices, worktree creation logs, or verification results.
 5. If per-Agent Workspace requirements are too vague to derive a target spec later:
-   - Write open questions or report `agent_env_source_status: blocked`.
+   - Write open questions or explain that Agent environment source intent is blocked.
    - Stop before `setup-agent-workspace` delegates to `isomer-srv-agent-env-setup`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from topic-team material, Agent Name evidence, workspace topology evidence, user-provided cwd requirements, Workspace Path Resolution output, and this reference page, then execute the plan.
@@ -57,27 +57,15 @@ When Agent Names are not authoritative and the caller did not provide an explici
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `agent_env_source_status`: ready, revised, blocked, or not changed.
-- `agent_env_source_path`: resolved path for `topic.intent.agent_env_requirements`.
-- `agent_scope`: authoritative Agent Names, selected-agent subset, or blocker.
-- `blockers`: source-intent blockers or open questions.
-- `next_operator_action`: usually `setup-agent-workspace` when source intent is usable, or ask the user to answer open questions.
+State whether the Agent environment source intent is ready, revised, blocked, or unchanged. Give the resolved requirements path, authoritative Agent Names or selected subset, source-intent blockers or open questions, and the next operator action.
 
 ### Complete Output
 
-- `agent_env_source_status`
-- `agent_env_source_label`
-- `agent_env_source_path`
-- `agent_env_source_storage_profile`
-- `agent_env_source`
-- `agent_env_source_detail`
-- `agent_env_source_diagnostics`
-- `agent_scope`
-- `next_operator_action`
+Group the complete explanation by source-intent status, semantic label and path, storage profile, source and diagnostics, Agent scope, and next operator action.
 
 ## Guardrails
 

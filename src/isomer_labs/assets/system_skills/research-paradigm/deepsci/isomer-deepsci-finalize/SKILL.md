@@ -93,3 +93,7 @@ This skill can end only when the relevant placeholders are explicit enough for t
 - Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
 - Do not ask the user routine technical questions before checking durable local evidence.
 - Do not hide blocked states behind vague progress language.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

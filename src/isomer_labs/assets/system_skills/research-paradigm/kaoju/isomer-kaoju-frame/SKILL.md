@@ -61,3 +61,7 @@ A vague request is not an execution contract. Do not spend material resources or
 - Treating repositories as primary related works when no paper or report relationship is established.
 - Asking many unstructured questions. Ask one material A/B/C/D choice at a time.
 - Using clarification-first as a procedure. It is an interaction mode inside the chosen procedure.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

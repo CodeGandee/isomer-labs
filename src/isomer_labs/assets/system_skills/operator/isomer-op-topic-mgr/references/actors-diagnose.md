@@ -15,7 +15,7 @@ If the user's task does not map cleanly to these steps, diagnose the named actor
 
 ## Output
 
-Report `status`, `topic`, `topic_actor_bindings`, actor cwd evidence, `worktree_status_by_actor` or equivalent branch and source evidence, support labels, branch posture, audit refs, blockers, and `next_action`.
+Report the diagnostic outcome and selected Research Topic, then summarize Topic Actor bindings, cwd and worktree evidence by actor, support labels, branch posture, audit refs, blockers, and the next action.
 
 ## Guardrails
 

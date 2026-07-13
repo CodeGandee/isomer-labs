@@ -15,7 +15,7 @@ When this subcommand is selected, execute the following steps in order.
    - Avoid dependency versions unless the topic context explicitly says them.
 5. If the topic is too vague to status without guessing:
    - Write the known facts and open questions only when safe.
-   - Report `topic_intent_status: blocked`, and name the missing topic substance.
+   - Explain that Topic intent is blocked and name the missing topic substance.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from Project context, topic source material, Workspace Path Resolution output, and this reference page, then execute the plan.
 
@@ -51,26 +51,15 @@ When the Research Topic or candidate Topic Workspace is missing but the user gav
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `topic_intent_status`: ready, revised, blocked, or not changed.
-- `topic_overview_path`: resolved path for `topic.intent.overview`.
-- `open_questions`: material topic questions.
-- `blockers`: topic-understanding blockers.
-- `next_operator_action`: usually `ensure-topic-registration`, `resolve-topic-env-gate`, or ask the user to answer open questions.
+State whether the Topic intent is ready, revised, blocked, or unchanged. Give the resolved overview path, material open questions, Topic-understanding blockers, and the next operator action.
 
 ### Complete Output
 
-- `topic_intent_status`
-- `topic_overview_label`
-- `topic_overview_path`
-- `topic_overview_storage_profile`
-- `topic_overview_source`
-- `topic_overview_source_detail`
-- `topic_overview_diagnostics`
-- `open_questions`
+Group the complete explanation by Topic intent status, overview label and path, storage profile, source and diagnostics, and open questions.
 
 ## Guardrails
 

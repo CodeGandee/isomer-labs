@@ -37,7 +37,7 @@ When this subcommand is selected, execute the following steps in order.
 9. Map the service output using **Service Output Mapping**:
    - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, repository acquisition decisions, projection metadata, gate checklist completion evidence, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
-10. Report `topic_environment_status` as ready, changed, deferred, blocked, or not checked, with the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
+10. State naturally whether the Topic environment is ready, changed, deferred, blocked, or not checked, and give the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a service-delegation plan from the topic material, template requirements, available `topic.intent.topic_env_requirements` intent or explicit target spec source, `isomer-srv-topic-env-setup` output contract, and guardrails, then execute only the operator-safe handoff and reporting portions.
 

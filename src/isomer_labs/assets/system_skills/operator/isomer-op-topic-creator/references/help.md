@@ -49,9 +49,9 @@ If the user's task does not map cleanly to these steps, print the closest subcom
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
-Essential Output reports `status`, Project root, Research Topic ref, Topic Workspace ref, `topic.repos.main` readiness, Workspace Runtime status, Topic Actor roster, each selected actor cwd, actor onboarding status, `topic.workspace.summary` path and freshness, ready surfaces, verified checks, skipped stages, and blockers.
+Essential Output naturally summarizes the outcome, Project root, Research Topic and Topic Workspace, Topic Main Development Repository readiness, Workspace Runtime, Topic Actor roster and workspaces, actor onboarding, summary freshness, ready surfaces, verified checks, skipped stages, and blockers.
 
 Complete Output adds commands run, semantic labels, path sources, delegated owner evidence, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, topic environment setup evidence, actor binding JSON, actor onboarding evidence, summary evidence, skipped stages, and blockers.
 

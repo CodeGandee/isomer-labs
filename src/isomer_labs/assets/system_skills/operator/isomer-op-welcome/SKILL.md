@@ -65,29 +65,15 @@ Load only the selected reference page before answering.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: welcome, routing, recommendation, or blocker result.
-- `interpreted_goal`: the normalized user goal or selected usage path.
-- `recommended_workflow`: visible usage path or owner workflow.
-- `owner_skill`: direct active owner skill to invoke.
-- `safe_first_command`: the first owner-skill invocation or read-only inspection command.
-- `blockers`: missing user decision, missing topic substance, missing template, unavailable Project context, or unsafe mutation request.
-- `next_action`: choose a path, provide missing input, invoke the owner skill directly, or stop on blocker.
+Explain naturally how you understood the user's goal, then recommend the visible workflow and active owner skill. Provide the safe first invocation or read-only command, name any missing decision or context that blocks progress, and state the next action.
 
 ### Complete Output
 
-When requested, include:
-
-- `context_evidence`: read-only Project context facts, prompt evidence, and selected Project root.
-- `read_only_commands_run`: any `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, or `isomer-cli project context show` command used for `next-step`.
-- `alternate_owner_workflows`: plausible lower-priority visible usage paths or owner skills.
-- `routing_rationale`: why the recommended owner skill is safer than nearby alternatives.
-- `retired_route_exclusions`: explicit note that retired operator compatibility skills are not active routes when relevant.
+Group the complete explanation by Project and prompt evidence, read-only commands, alternate owner workflows, routing rationale, and any retired compatibility routes excluded from consideration.
 
 ## Guardrails
 
@@ -114,3 +100,7 @@ Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op
 Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template.
 
 Do not automatically route to `isomer-misc-tool-packs`. Mention `isomer-misc-tool-packs` only as a manual skill when the user explicitly asks for installable toolsets, and keep package mutation routing with the active owner skill.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

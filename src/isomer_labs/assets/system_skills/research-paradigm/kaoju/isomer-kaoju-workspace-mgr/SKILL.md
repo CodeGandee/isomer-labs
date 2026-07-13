@@ -69,3 +69,7 @@ Workspace visibility is not mutation authority. Missing owner evidence is a bloc
 - Copying external datasets into the Topic Workspace. Register a managed link through its owner.
 - Treating old survey refs as current. Validate identity, audit state, and staleness before reuse.
 - Hiding unavailable resources. Return a bounded blocker and resume condition.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -87,37 +87,12 @@ Treat compile success separately from runtime success. On a host without a compa
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: setup, plan-only, or blocker status.
-- `target`: `project_path`, `manifest_file`, and `target_environment`.
-- `cuda`: selected `cuda_version` and CUDA/C++ setup posture.
-- `verification`: `verification_result` and the key command when run.
-- `changed_files`: important files changed.
-- `warnings_or_blockers`: user-actionable warnings or blockers.
+Lead with whether setup completed, remained plan-only, or blocked. Name the target project, Pixi manifest and environment, selected CUDA version, and CUDA/C++ setup posture. Summarize the key verification command and result, important changed files, and actionable warnings or blockers.
 
 ### Complete Output
 
-When requested, include:
-
-- `project_path`
-- `manifest_file`
-- `target_environment`
-- `cuda_version`
-- `setup_mode`
-- `cpp_toolchain_source`
-- `channels_changed`
-- `pixi_components_reused`
-- `host_components_wired`
-- `dependencies_added`
-- `system_install_guidance`
-- `tasks_added_or_changed`
-- `bounded_cuda_compile_guidance`: `not needed`, or evidence from `isomer-misc-bounded-run-tips cuda-compile`
-- `verification_command`
-- `verification_result`
-- `changed_files`
-- `warnings_or_blockers`
+Group the complete explanation by target and setup mode, CUDA version and C++ toolchain source, channel and dependency changes, reused Pixi or host components, system-install guidance, task changes, bounded CUDA compilation guidance, verification, changed files, and warnings or blockers.

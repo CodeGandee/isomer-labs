@@ -31,28 +31,18 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- | --- |
 | `help` | Print usage, owner routes, outputs, and guardrails. | Help output. |
 | `show-options` | Print the default action menu and visible usage paths. | Option menu with owner skills. |
-| `choose-path` | Interpret an ambiguous goal and recommend a visible usage path. | `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, `next_action`. |
+| `choose-path` | Interpret an ambiguous goal and recommend a visible usage path. | A natural explanation of the goal, recommended workflow and owner, safe first invocation, blockers, and next action. |
 | `show-skill-map` | Show direct invocation guidance. | Compact intent-to-owner table. |
 | `next-step` | Inspect Project context with read-only commands when requested. | Recommended owner workflow plus blockers. |
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `status`
-- `interpreted_goal`
-- `recommended_workflow`
-- `owner_skill`
-- `safe_first_command`
-- `blockers`
-- `next_action`
+Explain naturally how the user's goal was understood, then give the recommended workflow, owner skill, safe first command, blockers, and next action.
 
 ### Complete Output
 
-- `context_evidence`
-- `read_only_commands_run`
-- `alternate_owner_workflows`
-- `routing_rationale`
-- `retired_route_exclusions`
+Group the full explanation by context evidence, read-only commands, alternate owner workflows, routing rationale, and retired route exclusions.

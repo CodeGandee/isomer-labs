@@ -227,8 +227,17 @@ OUTPUT_CONTRACT_REQUIRED_TERMS = (
     "Default to **Essential Output** in chat.",
     "Essential Output",
     "Complete Output",
-    "complete, verbose, audit, debug, full handoff, JSON, or full output",
+    "complete, verbose, audit, debug, full handoff, or full output",
+    "Present either depth in natural-language Markdown.",
+    "If the user explicitly requests JSON or another machine-readable format",
 )
+CHAT_RESPONSE_REQUIRED_TERMS = (
+    "Present normal chat responses in natural-language Markdown.",
+    "Treat named output items as information to cover, not as literal response keys.",
+    "Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output.",
+    "Keep exact schemas in durable artifacts and summarize them naturally in chat.",
+)
+MACHINE_SHAPED_CHAT_ITEM_RE = re.compile(r"^\s*-\s+`[a-z][a-z0-9_]*`:\s*", re.MULTILINE)
 
 TOPIC_TEAM_SPECIALIZATION_PROCEDURAL_SUBCOMMANDS = (
     "init-topic.md",
@@ -394,8 +403,8 @@ TOPIC_CREATOR_REQUIRED_SKILL_TERMS = (
     "topic.workspace.summary",
     "structured reset checkpoint",
     "Workspace Runtime",
-    "Topic Actor roster",
-    "actor cwd",
+    "Topic Actors and their workspaces",
+    "actor-scoped semantic paths",
     "actor onboarding",
     "isomer-op-project-mgr",
     "isomer-srv-topic-env-setup",
@@ -432,7 +441,9 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "Helper Subcommands",
         "Misc Subcommands",
         "Default to **Essential Output** in chat.",
-        "complete, verbose, audit, debug, full handoff, JSON, or full output",
+        "complete, verbose, audit, debug, full handoff, or full output",
+        "Present either depth in natural-language Markdown.",
+        "If the user explicitly requests JSON or another machine-readable format",
     ),
     "fast-forward.md": (
         "fast-forward",
@@ -702,13 +713,12 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "isomer-cli project context show",
     "Default to **Essential Output** in chat.",
     "Complete Output",
-    "status",
-    "interpreted_goal",
-    "recommended_workflow",
-    "owner_skill",
-    "safe_first_command",
-    "blockers",
-    "next_action",
+    "understood the user's goal",
+    "recommend the visible workflow",
+    "active owner skill",
+    "safe first invocation",
+    "blocks progress",
+    "next action",
     "isomer-misc-tool-packs",
 )
 
@@ -749,13 +759,12 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "Domain Agent Team Template",
         "isomer-op-gui-mgr",
         "GUI",
-        "status",
-        "interpreted_goal",
-        "recommended_workflow",
-        "owner_skill",
-        "safe_first_command",
+        "understood the goal",
+        "recommend the visible workflow",
+        "owner skill",
+        "safe first invocation",
         "blockers",
-        "next_action",
+        "next action",
     ),
     "show-skill-map.md": (
         "Direct Invocation",
@@ -951,7 +960,7 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "idempotent",
     "one operator root or inventory",
     "partial outcome",
-    "host_refresh_required",
+    "host refresh is required",
     "Default to **Essential Output** in chat.",
     "Complete Output",
 )
@@ -964,11 +973,11 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "internals classify-system-skill-inventory",
         "project system-extensions remember",
         "Never call `forget`",
-        "host_refresh_required",
+        "host refresh is required",
     ),
     "detect-extensions.md": ("read-only", "Project", "project-scope skill roots", "host-visible skill names"),
     "reconcile-extensions.md": ("additive", "Project", "remember", "Never infer removal"),
-    "install-extension.md": ("Select the skill root", "--home", "Verify with", "registration", "host_refresh_required"),
+    "install-extension.md": ("Select the skill root", "--home", "Verify with", "registration", "host refresh is required"),
     "status.md": ("non-mutating", "declarations", "host-known roots", "stale user-controlled state"),
     "repair.md": ("stale declaration", "malformed", "obsolete", "newer-than-CLI", "explicit user request"),
 }
@@ -1050,10 +1059,10 @@ ENTRYPOINT_REQUIRED_SKILL_TERMS = (
     "service skills are only bounded support",
     "Default to **Essential Output** in chat.",
     "Complete Output",
-    "route_candidates",
-    "routing_rationale",
-    "extension_skill_readiness",
-    "retired_route_exclusions",
+    "routing alternatives",
+    "rationale",
+    "extension readiness",
+    "retired routes excluded",
 )
 
 ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
@@ -1105,7 +1114,7 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
     "storage-resolve.md": (
         "isomer-cli project paths get",
         "project paths explain",
-        "semantic_paths",
+        "semantic paths",
         "topic.repos.main",
         "agent.workspace",
     ),
@@ -1190,7 +1199,7 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "Do not use local `venv`",
         "isomer-misc-pkg-specifics",
         "no package-specific rule",
-        "package_specifics",
+        "package-specific evidence",
     ),
     "env-update-packages.md": (
         "Pixi-scoped",
@@ -1198,7 +1207,7 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "verification",
         "isomer-misc-pkg-specifics",
         "no package-specific rule",
-        "package_specifics",
+        "package-specific guidance",
     ),
     "env-remove-packages.md": (
         "dependency",
@@ -1206,7 +1215,7 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "blocker",
         "isomer-misc-pkg-specifics",
         "no package-specific rule",
-        "package_specifics",
+        "package-specific evidence",
     ),
     "env-verify-topic.md": (
         "isomer-srv-topic-env-setup",
@@ -1224,7 +1233,7 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "runtime launch readiness",
     ),
     "status.md": (
-        "semantic_paths",
+        "semantic paths",
         "Topic Manager evidence",
         "read-only",
     ),
@@ -1375,7 +1384,7 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "topic.tmp",
         "resolved `topic.tmp`",
         "local, ignored, disposable, not shared, and not durable evidence",
-        "per_agent_readiness_status: not checked",
+        "per-Agent readiness was not checked",
         "Do not read `topic.intent.agent_env_requirements`",
         "bounded real-path",
         "generic smoke test",
@@ -1491,7 +1500,7 @@ HOUMAO_INTEROP_SERVICE_REQUIRED_SKILL_TERMS = (
     "Inspect-runtime mode",
     "isomer-op-project-mgr",
     "isomer-op-topic-team-specialize",
-    "next_action",
+    "next action",
     "Do not own Project lifecycle",
 )
 
@@ -1499,7 +1508,7 @@ HOUMAO_INTEROP_SERVICE_REFERENCE_REQUIRED_TERMS = {
     "help.md": (
         "Project Operator Session",
         "Service Request",
-        "next_action",
+        "next action",
     ),
     "explain-loop.md": (
         "gateway-driven request queue",
@@ -1655,7 +1664,7 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
     "verify-agent-env-gate.md": (
         "selected-agent partial readiness evidence",
         "without passing Agent Name",
-        "overall_readiness_status",
+        "overall readiness",
         "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
         "Agent Workspace cwd",
         "classification source",
@@ -1984,6 +1993,48 @@ def validate_split_output_contract_docs(repo_root: Path, roots: tuple[Path, ...]
                 read_lines(path),
                 code=code,
             )
+    return diagnostics
+
+
+def validate_chat_output_presentation(repo_root: Path, roots: tuple[Path, ...], *, code: str) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for skill_path in sorted(root.rglob("SKILL.md")):
+            if "org" in skill_path.parts:
+                continue
+            skill_lines = read_lines(skill_path)
+            skill_text = "\n".join(skill_lines)
+            for required_term in CHAT_RESPONSE_REQUIRED_TERMS:
+                if required_term not in skill_text:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_path,
+                        first_line_containing(skill_lines, "## Chat Response"),
+                        code,
+                        f"{skill_path.name} must require natural-language chat presentation with '{required_term}'",
+                    )
+
+        for path in sorted(root.rglob("*.md")):
+            if "org" in path.parts:
+                continue
+            lines = read_lines(path)
+            section = output_contract_section(lines)
+            if section is None:
+                continue
+            start_index, section_text = section
+            for line_offset, line in enumerate(section_text.splitlines()):
+                if MACHINE_SHAPED_CHAT_ITEM_RE.search(line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        start_index + line_offset + 1,
+                        code,
+                        "chat-facing output contracts must describe information naturally instead of prescribing `snake_case: details` record items",
+                    )
     return diagnostics
 
 
@@ -3407,6 +3458,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_operator_manifest_inventory(repo_root))
     diagnostics.extend(validate_deepsci_mini_specialization_guide(repo_root))
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
+    diagnostics.extend(validate_chat_output_presentation(repo_root, (repo_root / "skillset" / "operator",), code="SKL006"))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "operator",), code="OPS010"))
     return sorted(set(diagnostics))
 
@@ -3623,6 +3675,13 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
             code="SVS004",
         )
     )
+    diagnostics.extend(
+        validate_chat_output_presentation(
+            repo_root,
+            (repo_root / "skillset" / "service", repo_root / "skillset" / "misc"),
+            code="SKL006",
+        )
+    )
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "service",), code="SVS005"))
     return sorted(set(diagnostics))
 
@@ -3675,6 +3734,17 @@ def validate_all(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_operator_skillset(repo_root))
     diagnostics.extend(validate_service_skillset(repo_root))
     diagnostics.extend(validate_package_specifics_skill(repo_root))
+    diagnostics.extend(
+        validate_chat_output_presentation(
+            repo_root,
+            (
+                repo_root / "skillset" / "research-paradigm",
+                repo_root / "skillset" / "dev",
+                repo_root / "skillset" / "toolboxes",
+            ),
+            code="SKL006",
+        )
+    )
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "misc",), code="SKL004"))
     return sorted(set(diagnostics))
 
@@ -3700,6 +3770,13 @@ def main(argv: list[str] | None = None) -> int:
             Diagnostic(item.path, item.line, item.code, item.message)
             for item in research_validator.validate_skillset(repo_root / "skillset" / "research-paradigm", repo_root)
         ]
+        diagnostics.extend(
+            validate_chat_output_presentation(
+                repo_root,
+                (repo_root / "skillset" / "research-paradigm",),
+                code="SKL006",
+            )
+        )
     elif args.scope == "operator":
         diagnostics = validate_operator_skillset(repo_root)
     elif args.scope == "service":

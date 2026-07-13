@@ -61,3 +61,7 @@ An exact locator makes an observation auditable; a plausible paraphrase does not
 - Copying source claims into the ledger without a verdict. Record whether evidence supports, challenges, or leaves the claim inconclusive.
 - Omitting contradictions. Preserve both evidence paths and their identities.
 - Treating inaccessible material as excluded. Record a Source Access Blocker so the audit can distinguish coverage from access.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

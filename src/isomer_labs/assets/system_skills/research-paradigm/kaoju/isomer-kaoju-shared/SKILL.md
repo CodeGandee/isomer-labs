@@ -77,3 +77,7 @@ Evidence labels are part of the evidence. Violating their letter also violates t
 - Treating a managed link as dataset identity. Record both the external source locator and the managed-link locator.
 - Calling an inquiry exhaustive because a search converged. State `searched_through`, coverage bounds, and the remaining frontier.
 - Starting another macro procedure after completion. Return the terminal report and let the caller choose the next procedure.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

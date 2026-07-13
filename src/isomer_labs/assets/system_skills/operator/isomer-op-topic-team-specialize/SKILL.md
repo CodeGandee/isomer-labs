@@ -201,21 +201,13 @@ Leave `Final Report` empty or marked pending until adaptation is complete. After
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format. When important handoff detail is omitted, say that Complete Output is available on request.
 
 ### Essential Output
 
-Report:
+Lead with the Topic Team Specialization, validation, or setup outcome. Name the Research Topic and Topic Workspace, registration posture, selected Domain Agent Team Template, and copied material status. Include important created or changed paths, Topic and Agent environment readiness when checked, validation, blockers or deferrals, and the next safe operator step.
 
-- `status`: topic-team specialization, validation, or setup status.
-- `topic`: resolved `research_topic_ref` and `topic_workspace_ref`.
-- `registration`: `topic_registration_status` and blocker summary.
-- `template`: selected Domain Agent Team Template and copied material status.
-- `important_paths`: `topic-overview.md`, copied team material under `<topic-workspace>/team-profile/execplan/`, `isomer-managed/` material, environment gates, Agent Workspace root, or final summary paths when created or changed.
-- `environment`: `topic_environment_status` and `agent_environment_status` when checked.
-- `validation`: `topic_team_validation_status` or validation blocker.
-- `blockers`: user-actionable blockers and deferrals.
-- `next_action`: the next safe operator step.
+Treat `topic-overview.md` as the canonical topic overview artifact and keep execution plans under `<topic-workspace>/team-profile/execplan/`; mention those paths only when they materially affect the result.
 
 ### Complete Output
 
@@ -267,3 +259,7 @@ Do not bypass Topic Team Instantiation Packet validation, Topic Agent Team Profi
 Do not treat generated guides as authoritative template source. They are copied-root explanations that need review before reuse.
 
 Do not run live teams, create Agent Instances, mutate Workspace Runtime, or launch execution adapters from this skill. Live operation belongs to a later runtime workflow.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

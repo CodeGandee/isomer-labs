@@ -15,7 +15,7 @@ When this subcommand is selected, execute the following steps in order.
    - Leave `## Topic Breakdown` subsections (`Do's`, `Don'ts`) and `## Related Links` in a placeholder state when no substance is available.
    - Strip any template `>` example blocks from the written file.
    - Record uncertainty as assumptions or open questions instead of inventing missing details.
-7. Report `topic_overview_label`, resolved path metadata, created or reused status, online sources consulted when any, assumptions, open questions, blockers, and readiness state.
+7. Report the Topic overview label and resolved path, whether it was created or reused, any online sources consulted, assumptions, open questions, blockers, and readiness in natural language.
 
 If the user's task does not map cleanly to these steps, explain whether the blocker is missing concrete topic material, missing Topic Workspace resolution, or conflicting existing overview material.
 

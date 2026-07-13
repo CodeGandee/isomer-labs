@@ -19,7 +19,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Output
 
-Report `research_topic_ref`, `topic_workspace_ref`, `topic_workspace_path`, `semantic_paths` with label, path, source, readiness, and diagnostics, candidate packet/profile files, blockers, and `next_operator_action`.
+Report the Research Topic, Topic Workspace and its path, then summarize resolved semantic paths with their labels, sources, readiness and diagnostics, candidate packet or profile files, blockers, and the next operator action.
 
 ## Guardrails
 

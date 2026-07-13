@@ -21,3 +21,7 @@ This prior helps scout-stage agents frame GPU kernel analytical-modeling work be
 | --- | --- | --- |
 | `framing-prior` | Source and model-shape framing before scout work | `commands/framing-prior.md` |
 | `output-check` | Source, model-shape, and evidence readiness check after scout work | `commands/output-check.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

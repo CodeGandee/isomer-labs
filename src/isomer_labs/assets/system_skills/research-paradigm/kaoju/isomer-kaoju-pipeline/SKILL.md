@@ -93,3 +93,7 @@ One command means one bounded user intent. Do not expand a completed pass into a
 - Choosing `method-trial-pass` for several methods. Use `comparative-pass` when controlled cross-method numbers are the intent.
 - Treating curated intake as automatic endorsement. Every item still needs identity, inspection, disposition, and audit.
 - Exporting a survey as new evidence. Export changes representation, not evidence status or lineage.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

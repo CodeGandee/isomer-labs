@@ -54,32 +54,15 @@ Load only the subcommand pages needed for the support task.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: interop, customization, or help result.
-- `mode`: selected subcommand.
-- `key_files`: the most important files or directories to inspect or edit.
-- `commands`: relevant Houmao or Isomer commands.
-- `blockers`: unresolved items that prevent safe support, customization guidance, inspection, or launch-facing handoff.
-- `next_action`: safe operator follow-up, service repair route, adapter route, or stop condition.
+Lead with the interop, customization, or help outcome and name the selected mode. Summarize the important files and relevant Houmao or Isomer commands, then state any unresolved blocker and the safe operator, repair, adapter, or stop action.
 
 ### Complete Output
 
-When requested, include:
-
-- `mode`
-- `houmao_source_root`
-- `domain_template_root`
-- `key_files`
-- `concept_mapping`
-- `customization_points`
-- `commands`
-- `blockers`
-- `next_action`
+Group the complete explanation by selected mode, Houmao and Domain Agent Team Template roots, key files, concept mapping, customization points, commands, blockers, and next action.
 
 ## Guardrails
 
@@ -94,3 +77,7 @@ Do not conflate DeepScientist's single-agent stage-skill model with Houmao's mul
 Do not own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing. Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
 
 Do not tell users that direct Houmao system-skill installation is required for ordinary Isomer operation. Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

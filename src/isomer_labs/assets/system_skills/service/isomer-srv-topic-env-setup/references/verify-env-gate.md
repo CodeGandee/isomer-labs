@@ -42,7 +42,7 @@ When this subcommand is selected, execute the following steps in order.
    - If classification evidence or required bounded guidance is missing, report `blocked` and ask for `derive-env-gate` to repair the target spec before verification.
    - Use lightweight read-only probes before commands classified as `heavy` or `unknown-risk`, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Run the smallest real command that exercises the essential path named by the source intent, such as fewer build jobs, selected kernel targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark cases.
-   - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the heavy path. Report `blocked` with `resource_check_status: blocked`, the capacity reason, and the bounded real-path command that would be run when capacity is available.
+   - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the heavy path. Explain naturally that the resource check is blocked, give the capacity reason, and provide the bounded real-path command for retry when capacity is available.
 6. **Run verification commands through Pixi**:
    - Run from the Topic Workspace root unless the target spec specifies the resolved Topic Main Development Repository or a repo-specific working directory.
    - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.

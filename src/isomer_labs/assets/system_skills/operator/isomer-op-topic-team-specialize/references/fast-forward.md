@@ -54,19 +54,11 @@ In inclusive targeted recovery, run the returned path with the target included. 
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `status`: fast-forward status.
-- `topic`: Research Topic and Topic Workspace.
-- `registration`: registration and environment binding status.
-- `template`: selected Domain Agent Team Template and copied material status.
-- `environment`: topic and agent environment status when checked.
-- `validation`: topic-team validation status.
-- `important_paths`: topic overview, gates, copied material, and `isomer-topic-summary.md` when present.
-- `blockers`: user-actionable blockers and deferrals.
-- `next_operator_action`
+Lead with the fast-forward outcome and name the Research Topic and Topic Workspace. Summarize registration and environment binding, the selected Domain Agent Team Template and copied material, Topic and Agent environment readiness when checked, validation, important overview, gate, copied-material, or summary paths, blockers and deferrals, and the next operator action.
 
 ### Complete Output
 

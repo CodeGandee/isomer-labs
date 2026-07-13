@@ -11,14 +11,8 @@
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide whether the user is asking for manual Topic Actor research or formal Domain Agent Team Template specialization, then recommend the matching visible usage path or ask for that distinction.
 
-## Output Fields
+## Output Guidance
 
-- `status`: `recommended`.
-- `interpreted_goal`: `start-research-manually`.
-- `recommended_workflow`: `start-research-manually`.
-- `owner_skill`: `isomer-op-topic-creator`.
-- `safe_first_command`: `Use $isomer-op-topic-creator fast-forward` or `Use $isomer-op-topic-creator step-by-step`.
-- `blockers`: missing concrete Research Topic, missing Project decision, or unapproved mutation.
-- `next_action`: invoke the owner skill directly or provide missing topic substance.
+Recommend the manual research path in natural language and route it to `isomer-op-topic-creator`. Give `Use $isomer-op-topic-creator fast-forward` or `Use $isomer-op-topic-creator step-by-step` as the safe first invocation. Name any missing Research Topic, Project decision, or mutation authority, then state whether to invoke the owner or provide the missing topic substance.
 
 Do not route this usage path to `isomer-op-topic-team-specialize` unless the user explicitly asks for a Domain Agent Team Template.

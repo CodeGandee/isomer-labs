@@ -102,20 +102,11 @@ Example prompts:
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format. When important handoff detail is omitted, say that Complete Output is available on request.
 
 ### Essential Output
 
-Report:
-
-- `status`: `overall_readiness_status`, selected-agent partial status, or blocker status.
-- `topic`: `research_topic_id` and `topic_workspace_dir`.
-- `topic_predecessors`: Topic Workspace environment, Topic Main Development Repository, and projection predecessor summary.
-- `agent_workspaces`: worktree and readiness summary by Agent Name.
-- `verification`: critical cwd verification result, including selected-agent partial scope when used.
-- `changed_files`: important files changed.
-- `blockers`: user-actionable blockers by Agent Name or matrix scope.
-- `next_action`: safe follow-up, repair route, selected-agent rerun, route to topic env setup, or stop condition.
+Lead with overall or selected-Agent readiness. Name the Research Topic and Topic Workspace, summarize Topic environment and Topic Main Development Repository predecessors, and report worktree readiness by Agent Name. Include cwd verification, important changed files, blockers at Agent or matrix scope, and the next safe action.
 
 ### Complete Output
 
@@ -141,5 +132,9 @@ When requested, include grouped handoff and audit fields:
 - Keep the resolved `agent.workspace` path as a worktree of the already-prepared normal non-bare Topic Main Development Repository on `per-agent/<agent-name>/main`.
 - Treat `topic.repos.main.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
 - Direct Project Operator Session invocation is allowed after selected Project, Research Topic, Topic Workspace, topic env predecessor evidence, authoritative Agent Name plan, and mutation scope are confirmed. Record optional Service Request, support Artifact, and Provenance refs when available.
-- Selected-agent direct verification is partial evidence. It must not report `overall_readiness_status` as ready unless the complete planned Agent Name matrix has passed.
-- Before resource-check planning, ask `isomer-misc-bounded-run-tips` to classify each resource-relevant per-agent cwd verification operation. Treat `heavy` and `unknown-risk` classifications as requiring bounded guidance, lightweight read-only resource probes, and the smallest real command that satisfies the gate. Apply a matching bounded-run tips subcommand when available, or record generic best-effort judgment when no specific recipe applies. Examples include selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases; bounded-run tips owns the classification decision. If no bounded real-path command can safely exercise the required path, record `resource_check_status: blocked` and the command to retry later instead of claiming readiness.
+- Selected-agent direct verification is partial evidence. It must not claim overall readiness unless the complete planned Agent Name matrix has passed.
+- Before resource-check planning, ask `isomer-misc-bounded-run-tips` to classify each resource-relevant per-agent cwd verification operation. Treat `heavy` and `unknown-risk` classifications as requiring bounded guidance, lightweight read-only resource probes, and the smallest real command that satisfies the gate. Apply a matching bounded-run tips subcommand when available, or record generic best-effort judgment when no specific recipe applies. Examples include selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases; bounded-run tips owns the classification decision. If no bounded real-path command can safely exercise the required path, record that the resource check is blocked and give the command to retry later instead of claiming readiness.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

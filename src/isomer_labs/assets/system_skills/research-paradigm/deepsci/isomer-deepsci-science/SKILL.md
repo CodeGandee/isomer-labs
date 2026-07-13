@@ -116,3 +116,7 @@ This skill can end only when package availability is checked or blocked, scienti
 - Do not create science evidence only in chat.
 - Do not let package-card metadata override task-specific evidence.
 - Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -14,7 +14,7 @@ If the user's task does not map cleanly to these steps, verify only the named to
 
 ## Output
 
-Report `status`, `topic`, `semantic_paths`, `topic_env_target_spec`, `commands_run`, `verification`, service evidence, blockers, and `next_action`.
+Report the Topic environment verification outcome and selected Research Topic, then summarize semantic paths, the target specification, commands and verification, service evidence, blockers, and the next action.
 
 ## Guardrails
 

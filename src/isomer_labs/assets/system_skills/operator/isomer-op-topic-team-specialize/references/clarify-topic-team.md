@@ -12,7 +12,7 @@ When this subcommand is selected, execute the following steps in order.
 5. Execute the **Sequential Clarification Loop**, asking exactly one focused question at a time.
 6. After each accepted answer, update the relevant copied topic-team artifacts directly through **Direct Topic Team Material Integration**.
 7. Stop when the specialized team is clear enough for the next static setup or validation step, the user signals completion, or five clarification questions have been asked.
-8. Report `topic_team_revision_status`, changed paths, remaining blockers, validation refs, and whether setup or validation can proceed.
+8. Report the Topic Team revision outcome, changed paths, remaining blockers, validation refs, and whether setup or validation can proceed in natural language.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step revision plan from the specialization outputs, requested changes, and guardrails, then execute the plan.
 

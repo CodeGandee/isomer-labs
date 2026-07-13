@@ -49,3 +49,7 @@ If the package is not listed, do not invent a package-specific rule inside the c
 - Recording a package as ready from solver success alone instead of checking the package's runtime metadata.
 - Putting package-specific caveats in core service skills instead of this package-specific index.
 - Turning this skill into a generic environment setup, package-source reachability, or bounded-run guide.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

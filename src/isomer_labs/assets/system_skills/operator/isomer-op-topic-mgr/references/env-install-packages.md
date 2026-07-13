@@ -84,7 +84,7 @@ When a package could fit multiple kinds, choose the route that satisfies the tas
 
 Apply these routes before mutation:
 
-1. **Already present**: if the Pixi-scoped verification check passes, report `already_present` and skip mutation.
+1. **Already present**: if the Pixi-scoped verification check passes, say that the package is already present and skip mutation.
 2. **Package-specific route**: for every named package, check `isomer-misc-pkg-specifics` before generic source choices. Follow the selected package page when it exists, or record `no package-specific rule` before continuing.
 3. **Python PyPI route**: use `pixi add --manifest-path <manifest_path> --pypi <requirement>` for importable Python libraries that PyPI can satisfy and have no overriding package-specific rule.
 4. **Pixi/Conda route**: use `pixi add --manifest-path <manifest_path> <matchspec>` for native tools, Conda-preferred packages, R packages available through channels, binary runtimes, and CLI tools that should live in the Topic Workspace environment.
@@ -111,19 +111,7 @@ Before heavy or unknown-risk installation or verification, classify the operatio
 
 ## Output
 
-Report:
-
-- `status`: installed, already-present, partially-installed, blocked, failed, deferred, or inspect-only.
-- `topic`: selected `research_topic_ref`, `topic_workspace_ref`, and `topic_workspace_dir`.
-- `pixi`: `manifest_path`, `pixi_environment`, and whether mutation ran.
-- `request`: source prompt or file, requester skill when known, task purpose, and assumptions.
-- `plan`: packages, inferred kinds, selected routes, verification checks, and blockers before mutation.
-- `package_specifics`: selected `isomer-misc-pkg-specifics` evidence or `no package-specific rule` for each named package.
-- `commands_run`: Pixi mutation and verification commands.
-- `changed_files`: Pixi manifest, lockfile, or workspace files changed.
-- `verification`: per-package result and evidence.
-- `blockers`: ambiguous package names, unsafe routes, unavailable sources, failed checks, or privileged prerequisites.
-- `next_action`: rerun requester skill check, revise request, resolve blocker, or stop.
+Lead with whether packages were installed, already present, partially installed, blocked, failed, deferred, or only inspected. Name the selected Research Topic, Topic Workspace, Pixi manifest and environment, and whether mutation ran. Summarize the request, plan, package-specific guidance, commands, changed files, per-package verification, blockers, and next action in natural language.
 
 ## Guardrails
 

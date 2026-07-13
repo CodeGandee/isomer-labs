@@ -19,10 +19,12 @@ Read-only status route:
 GET /api/health
 ```
 
-Expected evidence includes:
+The `/api/health` machine payload uses these exact evidence fields:
 
 - `ok`: service health flag.
 - `project_root`: Project root selected when the GUI Backend started.
 - `cache_mode`: `normal` or `debug`.
 
 `/api/health` confirms the selected GUI Backend process. It does not validate every Topic Workspace, record, graph, or frontend route.
+
+Keep these exact names when inspecting the API payload, but summarize health, Project, and cache posture naturally in the chat response.

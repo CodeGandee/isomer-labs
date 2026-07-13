@@ -109,22 +109,11 @@ Example prompts:
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format. When important handoff detail is omitted, say that Complete Output is available on request.
 
 ### Essential Output
 
-Report:
-
-- `status`: `readiness_status` and selected subcommand or setup mode.
-- `topic`: `research_topic_id` and `topic_workspace_dir`.
-- `pixi`: manifest target, resolved `manifest_path`, and `pixi_environment`.
-- `topic_main`: Topic Main Development Repository readiness summary.
-- `extern_repos`: external repo projection summary.
-- `gate`: critical `topic.env.topic_setup_target_spec` checklist result.
-- `changed_files`: important files changed.
-- `blockers`: user-actionable blockers or failed commands.
-- `per_agent_readiness_status`: `not checked` when Agent Workspace cwd readiness is relevant.
-- `next_action`: safe operator follow-up, repair route, or stop condition.
+Lead with Topic environment readiness and the selected setup mode. Name the Research Topic, Topic Workspace, Pixi manifest and environment, then summarize Topic Main Development Repository readiness, external repository projections, the critical environment gate, and important changed files. State blockers or failed commands, clarify when per-Agent cwd readiness was not checked, and end with the next safe action.
 
 ### Complete Output
 
@@ -161,3 +150,7 @@ When requested, include grouped handoff and audit fields:
 - Do not run `sudo`, mutate system package managers, edit global shell profiles, install global Python or Node packages, change `/etc`, run `ldconfig`, install daemons, change kernel drivers, or perform other privileged or machine-global setup from this skill. Report those needs as blockers or external prerequisites.
 - Do not hide inferred repo sources; warning-label them in `topic.env.topic_setup_target_spec` and final output.
 - Do not launch Houmao agents, create Agent Instances, materialize Topic Agent Team Profiles, mutate unrelated Workspace Runtime records, perform GUI work, or make research decisions from this skill.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

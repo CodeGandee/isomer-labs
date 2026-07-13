@@ -38,7 +38,7 @@ When this subcommand is selected, execute the following steps in order.
    - Example commands are `isomer-cli --print-json project validate` and `isomer-cli --print-json doctor --with-topic <research_topic_id>`.
    - Treat diagnostics about missing `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspaces, roles, role counts, or launch readiness as non-blocking for this subcommand.
    - Diagnostics about launch-facing material are non-blocking for this subcommand unless they also prevent Topic Workspace discovery, semantic path resolution, Pixi binding resolution, source gate reading, dependency setup, repo checks, or Pixi-scoped verification.
-9. **Report workspace context** using the parent skill's output fields:
+9. **Report workspace context** using the parent skill's natural-language output contract:
    - Stop with blockers for missing Project Manifest, unknown topic, missing Topic Workspace, semantic path blocker, Pixi tooling failure, unresolvable target, or invalid paths.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the parent guardrails, Project Manifest evidence, and user request, then execute the plan.

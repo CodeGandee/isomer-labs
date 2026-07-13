@@ -21,3 +21,7 @@ This prior turns GPU analytical-modeling experiments into falsifiable checks. It
 | --- | --- | --- |
 | `evaluation-and-profiler-contract` | Evaluation, NCU/profiler, and component-proof planning | `commands/evaluation-and-profiler-contract.md` |
 | `result-evidence-check` | Result evidence, proxy boundary, and mismatch check | `commands/result-evidence-check.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

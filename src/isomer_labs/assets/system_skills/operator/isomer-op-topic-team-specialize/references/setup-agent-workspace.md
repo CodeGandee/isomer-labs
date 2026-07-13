@@ -27,7 +27,7 @@ When this subcommand is selected, execute the following steps in order.
    - Require delegated output to record `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected Agent Name or matrix scope.
    - Require delegated output to record resource checks and bounded real-path verification decisions before any per-agent cwd verification command classified as `heavy` or `unknown-risk`. Selected-agent partial checks can reduce how many Agent Workspaces run the check, but the selected command must still exercise the requested build, inference, dataset, or benchmark path. If no bounded real-path command can run safely, require a blocker with evidence instead of readiness.
    - Record `agent_env_source_label`, `agent_env_source_path`, `agent_env_target_spec_label`, `agent_env_target_spec_path`, Topic Main Development Repository predecessor evidence, projection predecessor evidence, Agent Names, resolved `agent.workspace` paths, branch plan, worktree status by agent, gate checklist completion evidence, resource check status, readiness by agent, overall readiness, commands run, changed files, blockers, and next action as service evidence.
-   - Preserve selected-agent partial evidence as partial; it cannot satisfy `overall_readiness_status: ready` unless the complete planned Agent Name matrix has already passed.
+   - Preserve selected-agent partial evidence as partial; it cannot establish overall readiness unless the complete planned Agent Name matrix has already passed.
 7. Treat non-Git static setup as an explicit blocker or exception for launch-facing worker Agent Workspaces:
    - If the user intentionally requests non-Git support material, record why it is outside the standard worker layout.
 8. Create or report Agent Workspace directories only after the specialized team shape is clear and the target paths are safe.
@@ -101,7 +101,7 @@ $isomer-srv-agent-env-setup verify-agent-env-gate <research_topic_id> --agent <a
 
 Use the full `setup-agent-env` flow for overall readiness. Use direct selected-agent verification only when the user explicitly asks for partial selected-agent repair or rerun evidence.
 
-Accept delegated `overall_readiness_status: ready` only when every required per-agent `## Gate Checklist` item is checked with cwd evidence for every planned Agent Name. If the service output contains unchecked, failed, blocked, partial, or not-checked checklist items, record those exact items, Agent Names, reasons, and next actions instead of summarizing the agent environment as ready.
+Accept delegated overall readiness only when every required per-agent `## Gate Checklist` item is checked with cwd evidence for every planned Agent Name. If the service output contains unchecked, failed, blocked, partial, or not-checked checklist items, record those exact items, Agent Names, reasons, and next actions instead of summarizing the agent environment as ready.
 
 ## Guardrails
 

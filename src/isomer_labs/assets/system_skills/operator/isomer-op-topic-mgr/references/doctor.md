@@ -15,7 +15,7 @@ If the user's task does not map cleanly to these steps, run the read-only checks
 
 ## Output
 
-Report `status`, `topic`, `semantic_paths`, storage diagnostics, actor diagnostics, team diagnostics, environment diagnostics, retired-skill routing findings, blockers, and `next_action`.
+Report the diagnostic outcome and selected Research Topic, then summarize semantic paths, storage diagnostics, actor, team, and environment diagnostics, retired-skill routing findings, blockers, and the next action.
 
 ## Guardrails
 

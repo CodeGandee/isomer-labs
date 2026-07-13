@@ -67,29 +67,15 @@ When a manifest is known, you may also test with `pixi project channel add --man
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `subcommand`: `pixi-resolve`.
-- `recommended_channels`: ordered list of channels to use.
-- `nvidia`: NVIDIA package signal and channel recommendation when relevant.
-- `status`: reachable, blocked, or not tested.
-- `blockers`: missing package context, no reachable channel, ambiguous NVIDIA signal, or network failure.
-- `next_action`: add channels to the Pixi manifest, proceed with install, inspect local network config, or stop.
+Recommend the ordered Pixi channels and explain any NVIDIA package signal. State whether the channels are reachable, blocked, or untested; name missing context, channel, NVIDIA, or network blockers; and give the next safe install or configuration action.
 
 ### Complete Output
 
-- `official_conda_forge_reachable`
-- `nvidia_channel_reachable`
-- `nvidia_packages_requested`
-- `local_config_paths`
-- `local_config_channels`
-- `recommended_channels`
-- `tested_channels`
-- `manifest_path`
-- `blockers`
-- `next_action`
+Group the complete explanation by conda-forge and NVIDIA reachability, requested NVIDIA packages, local configuration paths and channels, tested and recommended channels, manifest path, blockers, and next action.
 
 ## Blockers
 

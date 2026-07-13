@@ -108,23 +108,11 @@ Load only the selected reference page before executing a subcommand.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format. When important handoff detail is omitted, say that Complete Output is available on request.
 
 ### Essential Output
 
-Report:
-
-- `status`: initialized-topic, storage, actor, team, environment mutation, or verification status.
-- `topic`: selected `research_topic_ref` and `topic_workspace_ref`.
-- `semantic_paths`: relevant semantic labels, path sources, readiness, and blockers.
-- `topic_main`: `topic.repos.main` path and readiness summary when relevant.
-- `topic_actors`: Topic Actor roster, actor cwd summary, actor support labels, and actor blockers when relevant.
-- `agent_workspaces`: Agent Workspace path summary and unsafe topology problems when relevant.
-- `environment`: package request, selected install/update/remove route, verification summary, service handoff, or blockers when relevant.
-- `reset`: selected checkpoint id, reset plan id, blocker summary, generated review view, and reset outcome when relevant.
-- `changed_paths`: package environment files, boundary material, generated links, or actor support material when created or changed.
-- `blockers`: unsafe repo state, unsafe path, branch conflict, missing initialized-topic context, failed verification, missing input, or unapproved mutation.
-- `next_action`: the next safe operator step.
+Lead with the initialized-topic, storage, actor, team, environment, reset, or verification outcome. Name the Research Topic and Topic Workspace, then cover only the relevant semantic paths, Topic Main Development Repository readiness, Topic Actors, Agent Workspaces, environment work, reset state, and changed paths. Close with blockers and the next safe operator step.
 
 ### Complete Output
 
@@ -173,3 +161,7 @@ Do not create Agent Instances, mutate Workspace Runtime records as live team tru
 Workspace Boundaries and Peer Read Access are advisory collaboration contracts, not filesystem-grade security isolation.
 
 Reset checkpoint, reset plan, and reset apply workflows use structured records and Workspace Runtime state only. Use `isomer-cli project topic-reset ...` commands, require selected Research Topic and Topic Workspace context, inspect blockers before mutation, and never depend on project-root Git state for reset behavior.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

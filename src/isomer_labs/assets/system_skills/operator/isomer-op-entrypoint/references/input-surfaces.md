@@ -6,7 +6,7 @@
 2. Resolve Project and Topic context through prompt evidence or read-only Isomer CLI context commands instead of scanning unregistered sibling directories.
 3. For file inputs, determine whether the file is a topic brief, package request, research record payload, artifact-format payload, handoff, paper draft, experiment result, reviewer feedback, or generic prompt file.
 4. For identity inputs, distinguish Topic Actor names from Agent Names and use `isomer-op-switch-identity` when the task must run from `topic.actors.workspace` or `agent.workspace`.
-5. Return a normalized request containing `interpreted_goal`, `input_surface`, `selected_context`, missing fields, and the safest next route.
+5. Explain the normalized goal, strongest input surface, selected context, missing information, and safest next route in natural language.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step input-resolution plan from the prompt, available Project context, and Isomer CLI read-only discovery commands, then execute the plan or stop on a missing-input blocker.
 

@@ -39,7 +39,7 @@ def messages(diagnostics: list[object]) -> list[str]:
 OUTPUT_CONTRACT_FIXTURE = """
             ## Output Contract
 
-            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+            Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
             ### Essential Output
 
@@ -48,6 +48,10 @@ OUTPUT_CONTRACT_FIXTURE = """
             ### Complete Output
 
             - Include all bookkeeping, semantic refs, audit evidence, and handoff fields.
+
+            ## Chat Response
+
+            Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
 """
 
 
@@ -375,7 +379,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             # Isomer Admin Topic Creator
 
-            Create a prepared Topic Workspace through Project Manifest-backed context, `topic.repos.main`, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, `topic.workspace.summary`, structured reset checkpoint, Workspace Runtime, Topic Actor roster, actor cwd, and actor onboarding.
+            Create a prepared Topic Workspace through Project Manifest-backed context, `topic.repos.main`, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, `topic.workspace.summary`, structured reset checkpoint, Workspace Runtime, Topic Actors and their workspaces, actor-scoped semantic paths, and actor onboarding.
 
             ## Workflow
 
@@ -415,7 +419,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             if command_name == omit_command:
                 continue
             extra_terms = {
-                "help.md": "Subcommand Functionalities. Procedural Subcommands. Helper Subcommands. Misc Subcommands. Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.",
+                "help.md": "Subcommand Functionalities. Procedural Subcommands. Helper Subcommands. Misc Subcommands. Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.",
                 "fast-forward.md": "`fast-forward` stops at the first blocker, routes through `define-topic-env` and `define-actors`, and ends at `finalize`.",
                 "resolve-topic-input.md": "Resolve a concrete Research Topic and does not write `topic.intent.overview`.",
                 "create-research-intent.md": "Write only `topic.intent.overview` from `templates/topic-overview.md`; Strip `>` example blocks; populate `Research Topic`, `Motivation`, `Topic Breakdown` with `Do's` and `Don'ts`, `Expected Outcome`, and `Related Links`; do not write `topic.intent.topic_env_requirements`.",
@@ -626,15 +630,15 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Output Contract
 
-            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+            Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
             ### Essential Output
 
-            Report `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
+            Explain naturally how you understood the user's goal, then recommend the visible workflow and active owner skill. Provide the safe first invocation, name any missing context that blocks progress, and state the next action.
 
             ### Complete Output
 
-            Include `context_evidence`, `read_only_commands_run`, `alternate_owner_workflows`, `routing_rationale`, and `retired_route_exclusions`.
+            Group the complete explanation by context evidence, read-only commands, alternate owner workflows, routing rationale, and retired routes.
 
             ## Guardrails
 
@@ -642,6 +646,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             Route Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
+
+            ## Chat Response
+
+            Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -697,7 +705,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                This command recommends visible paths, routes GUI questions to `isomer-op-gui-mgr`, and reports `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action`.
+                It recommends visible paths. Use this command to recommend the visible workflow, route GUI questions to `isomer-op-gui-mgr`, explain how it understood the goal, name the owner skill and safe first invocation, report blockers, and state the next action.
             """,
             "show-skill-map.md": """
                 # Show Skill Map
@@ -801,15 +809,15 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Output Contract
 
-            Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+            Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
             ### Essential Output
 
-            Report `status`, `interpreted_goal`, `selected_route`, `context_used`, `what_changed`, `blockers`, and `next_action`.
+            Lead with the routing and execution outcome. Explain how you understood the goal, name the selected route and material context, summarize changes, and state blockers and the next action.
 
             ### Complete Output
 
-            Include `route_candidates`, `routing_rationale`, `commands_run`, `selected_context`, `extension_skill_readiness`, `service_delegation_notes`, and `retired_route_exclusions`.
+            Group the complete explanation by routing alternatives and rationale, commands and selected context, extension readiness, service delegation, and retired routes excluded from consideration.
 
             ## Guardrails
 
@@ -818,6 +826,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Common Mistakes
 
             Do not stop after only listing routes when the task is concrete.
+
+            ## Chat Response
+
+            Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -1079,7 +1091,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
             "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade. Consult `isomer-misc-pkg-specifics` before generic package routing and record `no package-specific rule` when no page exists.",
             "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions. Use `isomer-misc-pkg-specifics` evidence or `no package-specific rule` from the target spec before package mutation.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `AGENTS.md`, `CLAUDE.md`, agent guidance posture, guidance block version, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. Report `per_agent_readiness_status: not checked` and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
+            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `AGENTS.md`, `CLAUDE.md`, agent guidance posture, guidance block version, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. State naturally that per-Agent readiness was not checked and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
             "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, any user downgrade, `isomer-misc-pkg-specifics`, and `no package-specific rule`.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
@@ -1341,7 +1353,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         skill_path = root / "skillset" / "operator" / "isomer-op-topic-team-specialize" / "SKILL.md"
         skill_path.write_text(
             skill_path.read_text(encoding="utf-8").replace(
-                "complete, verbose, audit, debug, full handoff, JSON, or full output",
+                "complete, verbose, audit, debug, full handoff, or full output",
                 "complete output",
             ),
             encoding="utf-8",
@@ -1350,7 +1362,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS003", codes(diagnostics))
-        self.assertTrue(any("complete, verbose, audit, debug, full handoff, JSON, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("complete, verbose, audit, debug, full handoff, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_complete_output_as_default(self) -> None:
         root = self.make_root()
@@ -1385,6 +1397,103 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS007", codes(diagnostics))
         self.assertTrue(any("Complete Output" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_chat_output_validator_requires_shared_natural_language_policy(self) -> None:
+        root = self.make_root()
+        write(
+            root / "skillset" / "toolboxes" / "example" / "SKILL.md",
+            """
+            ---
+            name: example
+            description: Example skill.
+            ---
+
+            # Example
+            """,
+        )
+
+        diagnostics = validator.validate_chat_output_presentation(
+            root,
+            (root / "skillset" / "toolboxes",),
+            code="SKL006",
+        )
+
+        self.assertIn("SKL006", codes(diagnostics))
+        self.assertTrue(any("natural-language chat presentation" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_chat_output_validator_rejects_machine_shaped_chat_contract_items(self) -> None:
+        root = self.make_root()
+        chat_policy = "\n".join(validator.CHAT_RESPONSE_REQUIRED_TERMS)
+        write(
+            root / "skillset" / "toolboxes" / "example" / "SKILL.md",
+            f"""
+            ---
+            name: example
+            description: Example skill.
+            ---
+
+            # Example
+
+            ## Output Contract
+
+            - `interpreted_goal`: State the interpreted goal.
+
+            ## Chat Response
+
+            {chat_policy}
+            """,
+        )
+
+        diagnostics = validator.validate_chat_output_presentation(
+            root,
+            (root / "skillset" / "toolboxes",),
+            code="SKL006",
+        )
+
+        self.assertIn("SKL006", codes(diagnostics))
+        self.assertTrue(any("`snake_case: details`" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_chat_output_validator_accepts_natural_chat_and_structured_artifact_schema(self) -> None:
+        root = self.make_root()
+        chat_policy = "\n".join(validator.CHAT_RESPONSE_REQUIRED_TERMS)
+        skill_dir = root / "skillset" / "toolboxes" / "example"
+        write(
+            skill_dir / "SKILL.md",
+            f"""
+            ---
+            name: example
+            description: Example skill.
+            ---
+
+            # Example
+
+            ## Output Contract
+
+            Explain the interpreted goal and availability in natural prose. If the user explicitly asks for JSON, return the same information in JSON.
+
+            ## Chat Response
+
+            {chat_policy}
+            """,
+        )
+        write(
+            skill_dir / "references" / "terminal-report.md",
+            """
+            # Terminal Report
+
+            ## Durable Artifact Schema
+
+            - `interpreted_goal`: The normalized goal stored in the report artifact.
+            """,
+        )
+
+        diagnostics = validator.validate_chat_output_presentation(
+            root,
+            (root / "skillset" / "toolboxes",),
+            code="SKL006",
+        )
+
+        self.assertEqual([], messages(diagnostics))
 
     def test_global_cli_validator_rejects_non_dev_pixi_isomer_cli_wrapper(self) -> None:
         root = self.make_root()
@@ -2339,12 +2448,12 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_topic_manager_skill(root)
         self.write_deepsci_mini_guide(root)
         path = root / "skillset" / "operator" / "isomer-op-topic-mgr" / "references" / "env-update-packages.md"
-        path.write_text(path.read_text(encoding="utf-8").replace("package_specifics", ""), encoding="utf-8")
+        path.write_text(path.read_text(encoding="utf-8").replace("package-specific guidance", ""), encoding="utf-8")
 
         diagnostics = validator.validate_operator_skillset(root)
 
         self.assertIn("OPS006", codes(diagnostics))
-        self.assertTrue(any("package_specifics" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("package-specific guidance" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_topic_manager_isomer_managed_terms(self) -> None:
         root = self.make_root()
@@ -2506,7 +2615,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         skill_path = root / "skillset" / "service" / "isomer-srv-topic-env-setup" / "SKILL.md"
         skill_path.write_text(
             skill_path.read_text(encoding="utf-8").replace(
-                "complete, verbose, audit, debug, full handoff, JSON, or full output",
+                "complete, verbose, audit, debug, full handoff, or full output",
                 "complete output",
             ),
             encoding="utf-8",
@@ -2515,7 +2624,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertIn("SVS002", codes(diagnostics))
-        self.assertTrue(any("complete, verbose, audit, debug, full handoff, JSON, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("complete, verbose, audit, debug, full handoff, or full output" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_rejects_legacy_env_setup_folder(self) -> None:
         root = self.make_root()
@@ -2570,13 +2679,13 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_service_validator_requires_per_agent_readiness_not_checked_reference(self) -> None:
         root = self.make_root()
-        self.write_topic_env_setup_service(root, omit_reference_term="per_agent_readiness_status: not checked")
+        self.write_topic_env_setup_service(root, omit_reference_term="per-Agent readiness was not checked")
         self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)
 
         self.assertIn("SVS002", codes(diagnostics))
-        self.assertTrue(any("per_agent_readiness_status: not checked" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("per-Agent readiness was not checked" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_service_validator_requires_tmp_label_posture_reference_terms(self) -> None:
         root = self.make_root()

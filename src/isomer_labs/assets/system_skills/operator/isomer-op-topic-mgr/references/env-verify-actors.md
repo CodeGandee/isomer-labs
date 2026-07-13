@@ -15,7 +15,7 @@ If the user's task does not map cleanly to these steps, verify only the named ac
 
 ## Output
 
-Report `status`, `topic`, selected actors, actor cwd paths, derived `topic.env.actor_env_gates` path, commands run, verification evidence, support labels, blockers, and `next_action`.
+Report the verification outcome and selected Research Topic, then summarize selected actors, their cwd paths, the derived actor environment gate, commands and evidence, support labels, blockers, and the next action.
 
 ## Guardrails
 

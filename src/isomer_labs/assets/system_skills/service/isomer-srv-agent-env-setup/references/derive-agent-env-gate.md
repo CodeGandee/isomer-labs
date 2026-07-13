@@ -92,7 +92,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ### Gate Checklist
 
-- Treat `## Gate Checklist` as the required per-agent readiness work contract, not a progress decoration. Every item in this section is required for the relevant per-agent readiness status, and full-matrix items are required for `overall_readiness_status: ready`.
+- Treat `## Gate Checklist` as the required per-agent readiness work contract, not a progress decoration. Every item in this section is required for the relevant per-agent readiness status, and full-matrix items are required before claiming overall readiness.
 - Use Markdown checkboxes for required actionable gate work: `- [ ]` before work runs and `- [x]` only after evidence exists.
 - Include predecessor checks, worktree checks, semantic path checks, projection visibility checks, resource probes, bounded real-path verification commands, expected-result checks, and blocker-resolution items.
 - For each required checklist item, state the pass condition, evidence source, bounded-run guidance source when heavy, affected Agent Name or matrix scope, and blocker condition either in the item text or in the matching `## Verification Matrix`, `## Expected Results`, `## Resource Check Plan`, `## Blockers`, or `## Execution Log` entry.
@@ -176,7 +176,7 @@ Example for per-agent CUDA cwd verification:
 
 - State pass/fail criteria for each matrix command.
 - State expected files, outputs, metrics, device visibility, projection visibility, or command output snippets.
-- State when selected-agent partial evidence is insufficient for `overall_readiness_status: ready`.
+- State when selected-agent partial evidence is insufficient to claim overall readiness.
 - For commands classified as `heavy` or `unknown-risk`, include the expected evidence that the bounded real-path command exercised the source-agent cwd command path, not merely a supporting smoke check.
 
 ### Blockers

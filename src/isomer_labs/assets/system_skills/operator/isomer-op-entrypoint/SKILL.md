@@ -41,31 +41,17 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: routed, executed, explained, blocked, or unchanged.
-- `interpreted_goal`: the normalized task, prompt, file, topic, actor, agent, extension, or CLI request.
-- `selected_route`: route kind plus selected skill or CLI family.
-- `context_used`: prompt evidence, file evidence, Project context, Research Topic, Topic Actor, Agent, or read-only command evidence used to route.
-- `what_changed`: important mutation, generated output, inspection result, or `none`.
-- `blockers`: missing context, unsafe mutation, unresolved topic or identity, missing readiness, unsupported CLI action, or owner-boundary conflict.
-- `next_action`: continue through the selected route, provide missing input, approve mutation, inspect readiness, or stop.
+Lead with whether the request was routed, executed, explained, blocked, or left unchanged. Explain in natural language how you understood the goal, name the selected skill or CLI family, and cite only the context that materially affected routing. Summarize important changes or inspection results, then state any blocker and the next action.
 
 ### Complete Output
 
-When requested, include:
+Group the complete explanation by routing alternatives and rationale, commands and their mutation posture, selected Project or research context, extension readiness, bounded service delegation, and any retired routes excluded from consideration.
 
-- `route_candidates`: plausible route candidates and why they were accepted or rejected.
-- `routing_rationale`: owner-boundary, extension-readiness, CLI-family, and service-support reasoning.
-- `commands_run`: read-only and mutation commands, with command posture.
-- `selected_context`: Project root, Research Topic, Topic Workspace, Topic Actor, Agent, Domain Agent Team Template, DeepSci skill, or CLI family.
-- `extension_skill_readiness`: DeepSci workspace, topic, actor, agent, latest-context, placeholder-binding, and worker-output readiness checks when relevant.
-- `service_delegation_notes`: bounded support delegation and why the service skill was not treated as the normal first-click owner route.
-- `retired_route_exclusions`: retired or stale skill names excluded from active routing when relevant.
+When this skill proceeds through another owner skill, compose the final answer around the user-visible outcome. Do not concatenate or merge the parent and child skills' field inventories.
 
 ## Guardrails
 
@@ -93,3 +79,7 @@ Do not use repo-local Pixi wrapper command guidance for Isomer CLI in operator s
 - Skipping the latest-context preflight or worker-output policy checks required by the selected research route.
 - Repeating the full CLI help text inside this skill. Name the command family and inspect CLI help or owner skill guidance when details are needed.
 - Treating generated links, worker-local files, chat memory, or old rendered Markdown as durable research truth before the selected DeepSci skill's latest-context and recording rules accept them.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

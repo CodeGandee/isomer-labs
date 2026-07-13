@@ -20,3 +20,7 @@ This prior steers multi-stage GPU analytical-modeling passes toward the evidence
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `evidence-route` | Pipeline prior for selecting the next GPU modeling evidence route | `commands/evidence-route.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -18,7 +18,7 @@ When this subcommand is selected, execute the following steps in order.
    - Include missing delegated `isomer-srv-agent-env-setup` evidence when per-Agent Workspace cwd verification was requested.
    - Include incomplete required `## Gate Checklist` items, smoke-test downgrades, selected-agent partial evidence, and next repair actions when delegated env setup evidence is not fully ready.
    - Include active Topic Actor bindings and Topic Actor Workspace refs under their own section, and preserve them as coexistence context rather than formal team membership.
-5. Report `isomer_topic_summary_path`, `topic_team_validation_status`, blockers, deferrals, and next operator action.
+5. Report the Isomer Topic summary path, Topic Team validation outcome, blockers, deferrals, and next operator action in natural language.
 6. Stop at the final summary boundary unless the user explicitly asks for `approve-profile` or `materialize-profile`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step static finalization plan from the topic-team artifacts, setup records, validation outputs, and guardrails, then execute the plan.

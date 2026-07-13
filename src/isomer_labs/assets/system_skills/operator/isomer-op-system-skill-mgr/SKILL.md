@@ -42,20 +42,13 @@ For installation, choose the root used by the current Project Operator Session, 
 
 Registration is additive and idempotent through `isomer-cli project system-extensions remember <extension-id>`. Never call `forget` because one operator root or inventory lacks an extension. Detection, status, internal inspection, and user opt-out remain non-mutating.
 
-If installation succeeds but registration fails, report a partial outcome with `installed=true` and `registered=false`. On retry, inspect first and finish registration without reinstalling a complete compatible family. After new installation, report `host_refresh_required` unless the host can confirm the skills in a refreshed live inventory.
+If installation succeeds but registration fails, explain that the extension files are installed while Project registration remains incomplete. On retry, inspect first and finish registration without reinstalling a complete compatible family. After a new installation, state that a host refresh is required unless the host can confirm the skills in a refreshed live inventory.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
-- `status`: ready, detected, reconciled, installed, partial, stale-declaration, missing, or blocked.
-- `project`: selected Project and whether the extension is declared.
-- `extension`: extension id and complete, partial, or missing members.
-- `evidence_basis`: `project_manifest`, `managed_receipt`, `managed_legacy_receipt`, `live_inventory`, or `none`.
-- `what_changed`: installed files and added declarations, or `none`.
-- `compatibility`: current, compatible older, obsolete, newer than CLI, drifted, unversioned, malformed, or unknown.
-- `host_refresh_required`: boolean plus the safe refresh action when true.
-- `next_action`: route, repair, install, refresh, retry registration, or stop.
+Lead with whether the requested extension work is ready, detected, reconciled, installed, partial, stale, missing, or blocked. Name the selected Project and extension, summarize declared state and member coverage, explain whether the evidence came from the Project Manifest, a managed receipt, or live inventory, and state compatibility. Mention installed files or declarations only when they changed, explain any host refresh requirement, and end with the next action.
 
 ## Guardrails
 
@@ -73,3 +66,7 @@ Do not claim current-session availability after installation unless the host inv
 - [references/install-extension.md](references/install-extension.md): selected-root installation, verification, registration, and refresh.
 - [references/status.md](references/status.md): read-only status reporting.
 - [references/repair.md](references/repair.md): plan-first repair routes and stale declaration handling.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -47,42 +47,15 @@ If the request does not map cleanly to a known pack, use your native planning to
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: resolved, ambiguous, unknown, or blocked.
-- `canonical_toolset`: resolved pack name when available.
-- `matched_aliases`: aliases used by the request, if any.
-- `includes`: included pack names.
-- `required`: required tools grouped by dependency kind.
-- `optional`: optional tools or fallback tools.
-- `install_route`: CLI tool route and Python package target summary.
-- `verification`: checks the setup caller should record.
-- `routes`: helper skills to consult.
-- `next_action`: usually ask whether to hand the contract to topic env setup or keep it as planning context.
+Say whether the toolset request was resolved, remains ambiguous or unknown, or is blocked. Name the canonical pack and matched aliases when known, then summarize included packs, required and optional tools, installation routes, verification checks, and relevant helper skills. End with whether to hand the contract to Topic environment setup or retain it as planning context.
 
 ### Complete Output
 
-When requested, include:
-
-- `canonical_toolset`
-- `aliases`
-- `matched_aliases`
-- `purpose`
-- `includes`
-- `dependency_contract`
-- `required_tools`
-- `optional_tools`
-- `package_source_hints`
-- `host_or_external_tool_expectations`
-- `verification_checks`
-- `blockers`
-- `helper_skill_routes`
-- `setup_owner`
-- `notes`
+Group the complete contract by toolset identity and purpose, included packs and dependencies, required and optional tools, package-source and host-tool expectations, verification, blockers, helper routes, setup owner, and notes.
 
 ## Common Mistakes
 
@@ -93,3 +66,7 @@ When requested, include:
 - Including the R figure stack in `paper-writing` by default.
 - Copying production DeepSci skill paths into this tool-pack catalog.
 - Treating a successful package install as readiness without running the verification checks from the contract.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

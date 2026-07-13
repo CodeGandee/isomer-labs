@@ -62,3 +62,7 @@ Acquisition is not evidence acceptance. Pin and verify the acquired material bef
 - Recording only a local checkout path. Keep the canonical external locator and immutable identity.
 - Treating an access failure as evidence that the material does not exist. Return an access blocker.
 - Hiding substitutions. Record requested versus observed materials and their effect on fidelity.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

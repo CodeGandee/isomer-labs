@@ -41,20 +41,11 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-Report:
-
-- `status`: launched, inspected, refreshed, diagnosed, routed, blocked, or unchanged.
-- `project`: resolved Project root when known.
-- `gui`: service URL, command, route family, or selected browser-visible surface.
-- `cache_mode`: `normal`, `debug`, unknown, or not applicable.
-- `commands_or_routes`: important CLI commands, HTTP routes, or GUI actions used.
-- `diagnostics`: concise health, cache, index, recent-errors, or API observations.
-- `blockers`: missing Project context, service not running, port conflict, invalid Project, stale index, unsupported graph scope, unsafe repair boundary, or code defect.
-- `next_action`: start service, restart in debug mode, refresh browser, inspect recent errors, validate/rebuild index, route to another owner, or stop.
+State whether the GUI was launched, inspected, refreshed, diagnosed, routed, blocked, or unchanged. Name the Project when known and provide the relevant service URL, command, HTTP route family, or browser surface. Summarize cache posture, actions taken, health or index observations, blockers, and the next operator action.
 
 ### Complete Output
 
@@ -85,3 +76,7 @@ Route invalid Project configuration to `isomer-op-project-mgr`. Route initialize
 - Restarting repeatedly in normal cache mode while debugging frontend assets. Use `--cache-mode debug` when cache interference is plausible.
 - Treating browser refresh as data repair. Use recent-errors and index validation to distinguish stale UI state from non-interpretable records or stale query-index rows.
 - Listing backend API routes as schemas. Detailed GUI payload expectations live in `docs/ui/contracts/`.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

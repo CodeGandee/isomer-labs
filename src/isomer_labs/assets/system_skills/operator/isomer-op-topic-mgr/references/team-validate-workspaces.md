@@ -28,7 +28,7 @@ When this subcommand is selected, execute the following steps in order.
    - Confirm it names write ownership, Peer Read Access, branch rules, generated-link status, topic-owned writable policy when needed, and advisory boundary status when expected.
    - Reject boundary material that describes tmp contents as Peer Read Access, generated-link target material, handoff material, shared material, or durable readiness evidence.
 11. If `isomer-srv-agent-env-setup` evidence is present, consume it as separate agent environment evidence:
-   - Report `source_agent_env_gate_path`, `agent_env_gate_path`, readiness by agent, overall readiness, commands run, blockers, and next action.
+   - Report the source and derived Agent environment gate paths, readiness by Agent, overall readiness, commands run, blockers, and next action in natural language.
    - Do not rerun gate commands from this Git-only validator.
 12. Report validation status without crossing runtime boundaries:
    - Include ready entries, blockers, deferrals, and next operator action.

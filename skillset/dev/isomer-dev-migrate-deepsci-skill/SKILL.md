@@ -34,3 +34,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Refactor explicit form: `$isomer-dev-migrate-deepsci-skill refactor-migrate <source-skill> to <target-skill>`.
 - Diff explicit form: `$isomer-dev-migrate-deepsci-skill find-diff <target-skill>`.
 - If the user asks to migrate a skill but does not name a mode, choose `copy-migrate`.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

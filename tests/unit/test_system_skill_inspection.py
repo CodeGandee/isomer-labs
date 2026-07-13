@@ -185,7 +185,7 @@ class SystemSkillInspectionTests(unittest.TestCase):
         self.assertLess(manager.index("Managed explicit root"), manager.index("Live inventory"))
         self.assertIn("Registration is additive and idempotent", manager)
         self.assertIn("Never call `forget`", manager)
-        self.assertIn("host_refresh_required", manager)
+        self.assertIn("host refresh is required", manager)
         self.assertIn("unless the user explicitly opts out", project_init.lower())
         self.assertIn("distinct partial outcome", project_init)
         self.assertIn("isomer-op-system-skill-mgr", entrypoint)

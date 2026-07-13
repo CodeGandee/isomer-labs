@@ -70,3 +70,7 @@ A complete-looking matrix is weaker than an honest sparse one if its cells hide 
 - Letting source availability determine the dimensions. Start from the domain question and accepted source basis.
 - Ranking unclear or disputed cells. Preserve their state.
 - Reusing old Runs without verifying their identities and Comparison Contract compatibility.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

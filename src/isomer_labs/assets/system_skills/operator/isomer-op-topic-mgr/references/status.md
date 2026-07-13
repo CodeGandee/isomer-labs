@@ -24,4 +24,4 @@ Runtime Agent Team Instance creation later consumes validated `agent_name`, bran
 
 ## Output
 
-Report `status`, `topic`, `semantic_paths`, `topic_main`, `topic_actors`, `agent_workspaces`, `environment`, `reset_checkpoint`, `tmp_posture`, `changed_paths` when known, blockers, and `next_action`.
+Report initialized-topic readiness and the selected Research Topic, then summarize relevant semantic paths, Topic Main Development Repository, Topic Actors, Agent Workspaces, environment, reset checkpoint, temporary-path posture, known changed paths, blockers, and the next action.

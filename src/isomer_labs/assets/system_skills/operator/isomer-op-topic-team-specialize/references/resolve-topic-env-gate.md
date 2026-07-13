@@ -17,7 +17,7 @@ When this subcommand is selected, execute the following steps in order.
    - Keep this source intent user-editable.
    - Avoid concrete install commands, package-source choices, cwd matrices, execution logs, or verification command detail unless the user explicitly supplied them as intent.
 5. If the topic environment needs are too vague to derive a service target spec later:
-   - Write open questions or report `topic_env_source_status: blocked`.
+   - Write open questions or explain that Topic environment source intent is blocked.
    - Stop before `setup-topic-env`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.intent.overview`, user-provided environment needs, Workspace Path Resolution output, and this reference page, then execute the plan.
@@ -56,25 +56,15 @@ When the runnable need is too vague, ask the user what the Topic Workspace shoul
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `topic_env_source_status`: ready, revised, blocked, or not changed.
-- `topic_env_source_path`: resolved path for `topic.intent.topic_env_requirements`.
-- `blockers`: source-intent blockers or open questions.
-- `next_operator_action`: usually `setup-topic-env` when source intent is usable, or ask the user to answer open questions.
+State whether the Topic environment source intent is ready, revised, blocked, or unchanged. Give the resolved requirements path, source-intent blockers or open questions, and the next operator action.
 
 ### Complete Output
 
-- `topic_env_source_status`
-- `topic_env_source_label`
-- `topic_env_source_path`
-- `topic_env_source_storage_profile`
-- `topic_env_source`
-- `topic_env_source_detail`
-- `topic_env_source_diagnostics`
-- `next_operator_action`
+Group the complete explanation by source-intent status, semantic label and path, storage profile, source and diagnostics, and next operator action.
 
 ## Guardrails
 

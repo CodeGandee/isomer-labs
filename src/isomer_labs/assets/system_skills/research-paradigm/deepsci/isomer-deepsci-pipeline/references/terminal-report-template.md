@@ -1,6 +1,6 @@
 # Pipeline Terminal Report Template
 
-Use this template for the `pipeline-terminal-report` produced at the end of every pipeline run.
+Use this template for the durable `pipeline-terminal-report` artifact produced at the end of every pipeline run. The field tables and YAML example define the stored artifact, not the chat response. After recording the artifact, summarize the pipeline outcome, accepted outputs, blocker or resume point, and recommended next action in natural-language Markdown.
 
 ## Required fields
 

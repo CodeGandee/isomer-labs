@@ -61,3 +61,7 @@ Synthesis organizes accepted evidence; it does not manufacture missing evidence 
 - Writing from memory instead of accepted refs. Build every section from the audited evidence set.
 - Turning `unclear` or `disputed` into a neutral score. Preserve the state and source basis.
 - Claiming the field is complete. State the bounded search and remaining frontier.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

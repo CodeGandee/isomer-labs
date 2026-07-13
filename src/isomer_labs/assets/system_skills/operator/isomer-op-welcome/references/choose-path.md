@@ -10,13 +10,13 @@
 6. Prefer `isomer-op-toolbox-mgr` for project-local Toolbox creation, conversion, install, inspection, update, disable, uninstall, callback insertion, callback insertion-point discovery, Runtime Params, and effective Toolbox state.
 7. Prefer `isomer-op-topic-mgr` for initialized-topic storage, Topic Actors after handoff, package mutation, environment verification, reset checkpoints, and diagnostics.
 8. For Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping explanation, choose the owning operator workflow first: `isomer-op-project-mgr` for Project bootstrap or checks, and `isomer-op-topic-team-specialize` for Topic Team Specialization or launch-facing support. Mention that the owner workflow may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
-9. Return `status`, `interpreted_goal`, `recommended_workflow`, `owner_skill`, `safe_first_command`, `blockers`, and `next_action` without mutating state.
+9. Without mutating state, explain how you understood the goal, recommend the visible workflow and owner skill, provide the safe first invocation, name any blockers, and state the next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to compare the active owner routes, then ask for the missing distinction instead of guessing between manual research and Topic Team Specialization.
 
 ## Routing Notes
 
-`choose-path` recommends visible paths; it does not hide or replace them. When a visible path fits, set `recommended_workflow` to `start-research-manually` or `start-research-by-agent-team`.
+`choose-path` recommends visible paths; it does not hide or replace them. When a visible path fits, recommend `start-research-manually` or `start-research-by-agent-team` by name.
 
 Manual, human-orchestrated, or multiple manually controlled coding-agent research requests route to `isomer-op-topic-creator`, not to `isomer-op-topic-team-specialize`, unless the prompt explicitly asks for a Domain Agent Team Template.
 

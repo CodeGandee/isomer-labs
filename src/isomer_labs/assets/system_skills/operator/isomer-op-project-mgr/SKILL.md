@@ -50,18 +50,11 @@ Load only the subcommand pages needed for the user's task.
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output. When important handoff detail is omitted, say that Complete Output is available on request.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format. When important handoff detail is omitted, say that Complete Output is available on request.
 
 ### Essential Output
 
-Report:
-
-- `status`: Project lifecycle, cleanup, relocation, runtime, or validation result.
-- `project`: resolved `project_root` and Project Manifest status.
-- `topic`: selected Research Topic or Topic Workspace when relevant.
-- `what_changed`: important created, moved, removed, or validated paths.
-- `blockers`: user-actionable blockers, warnings, or diagnostics.
-- `next_action`: usually initialize, repair, validate, prepare runtime, run topic-team specialization, or stop on blockers.
+Lead with the Project lifecycle, cleanup, relocation, runtime, or validation outcome. Name the resolved Project and its manifest posture, the selected Research Topic when relevant, and the important paths created, moved, removed, or validated. Close with actionable warnings or blockers and the next safe operator step.
 
 ### Complete Output
 
@@ -108,3 +101,7 @@ Do not duplicate Topic Team Specialization. When the user asks to adapt or insta
 - [references/move-content.md](references/move-content.md): generated content-root relocation planning, confirmation, manifest updates, and runtime warnings.
 - [references/houmao-bootstrap.md](references/houmao-bootstrap.md): Project-level Houmao bootstrap and status checks.
 - [references/runtime-boundaries.md](references/runtime-boundaries.md): Workspace Runtime, readiness, and launch boundary rules.
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

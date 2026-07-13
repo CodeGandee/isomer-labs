@@ -36,19 +36,12 @@ Treat the first explicitly declared `index-url` as the user's preference. If onl
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `subcommand`: `uv-resolve`.
-- `recommended_index_url`: the URL to pass to uv.
-- `status`: reachable, blocked, or not tested.
-- `blockers`: missing package context or no reachable index.
+Recommend the index URL for uv and state whether it is reachable, blocked, or untested. Name missing package context or the absence of a reachable index as a blocker.
 
 ### Complete Output
 
-- `pypi_reachable`
-- `local_index_urls`
-- `recommended_index_url`
-- `tested_indexes`
-- `blockers`
+Group the complete explanation by PyPI reachability, locally configured and tested indexes, the recommendation, and blockers.

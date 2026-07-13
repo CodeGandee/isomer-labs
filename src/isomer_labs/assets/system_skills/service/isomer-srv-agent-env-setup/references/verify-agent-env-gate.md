@@ -48,7 +48,7 @@ When this subcommand is selected, execute the following steps in order.
    - If classification evidence or required bounded guidance is missing, report `blocked` and ask for `derive-agent-env-gate` to repair the target spec before verification.
    - Use lightweight read-only probes before commands classified as `heavy` or `unknown-risk`, including CPU load, available memory, available disk space, and GPU availability or active GPU processes when relevant.
    - Prefer the smallest real command that satisfies the gate, for example selected-agent partial run, reduced parallelism, selected build target, tiny model or tensor shape, sample data, reduced iterations, reduced batch size, selected tests, or short benchmark case.
-   - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the required path. Report `blocked` with `resource_check_status: blocked`, the capacity reason, and the bounded real-path command that should be retried later. Selected-agent partial evidence must remain partial.
+   - If resources are insufficient, ambiguous, or already busy, do not run an unrelated smoke test in place of the required path. Explain naturally that the resource check is blocked, give the capacity reason and bounded real-path retry command, and keep selected-Agent partial evidence partial.
 9. **Run verification commands** from the resolved `agent.workspace` cwd:
    - Do not rely on an activated shell, ambient Python environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script.
 10. **Compare results to expected outputs** from the target spec and mark each agent command and its targeted checklist item as ready, failed, or blocked.
@@ -56,7 +56,7 @@ When this subcommand is selected, execute the following steps in order.
    - Include Agent Name, cwd, resource check evidence, bounded real-path execution decisions, command, exit status, output summary, pass/fail result, partial scope when selected, blockers, any required unchecked checklist item, and next repair action.
 12. **Report readiness**:
    - Use per-agent `ready` only when every targeted required `## Gate Checklist` item for that Agent Name is checked with cwd evidence from the resolved Agent Workspace.
-   - Use `overall_readiness_status: ready` only when every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required checklist item for every planned Agent Name is covered by a passed verification command or bounded real-path command from that agent's cwd.
+   - Claim overall readiness only when every planned agent has a ready worktree, required support paths, complete path evidence, cwd-friendly query evidence, and every required checklist item for every planned Agent Name is covered by a passed verification command or bounded real-path command from that agent's cwd.
    - If any targeted required checklist item is unchecked, report `blocked`, `failed`, or `not checked` with the exact checklist item, Agent Name, reason, and next safe action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from `topic.env.agent_setup_target_spec`, parent guardrails, and user request, then execute the plan.
@@ -68,7 +68,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 - `blocked`: predecessor artifacts, Topic Main Development Repository evidence, projection evidence, Pixi files, worktrees, support paths, path evidence, cwd query evidence, commands, expected results, or a targeted required checklist item are missing or cannot be completed. Name the exact checklist item and Agent Name.
 - `not checked`: verification was explicitly not requested. Do not use `not checked` to bypass a source-agent required cwd command or targeted unchecked checklist item during setup; report `blocked` when a required bounded real-path check cannot be run safely.
 
-Selected-agent direct verification updates that agent's evidence but does not make `overall_readiness_status` ready unless the complete matrix has already passed.
+Selected-agent direct verification updates that agent's evidence but does not make the overall result ready unless the complete matrix has already passed.
 
 ## Guardrails
 

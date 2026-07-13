@@ -20,3 +20,7 @@ This prior keeps GPU analytical-modeling ideas physically grounded while they ar
 | Subcommand | Use For | Detail |
 | --- | --- | --- |
 | `hypothesis-model-contract` | Source-backed hypothesis and model-shape prior | `commands/hypothesis-model-contract.md` |
+
+## Chat Response
+
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

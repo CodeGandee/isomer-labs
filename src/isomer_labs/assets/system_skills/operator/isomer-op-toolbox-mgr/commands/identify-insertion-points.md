@@ -12,5 +12,4 @@ If the insertion-point request does not map cleanly to these steps, use your nat
 
 ## Output
 
-Report `target_skill`, `stage`, `group`, `extension_id`, `description`, `available`, `diagnostics`, and `next_action`.
-
+Report the target skill, callback stage, catalog group and extension when relevant, description, availability, diagnostics, and next action in natural language.

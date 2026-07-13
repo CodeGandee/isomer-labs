@@ -37,23 +37,12 @@ Do not use this skill for full Topic Team Specialization, approval, profile mate
 
 ## Output Contract
 
-Default to **Essential Output** in chat. Print **Complete Output** only when the user asks for complete, verbose, audit, debug, full handoff, JSON, or full output.
+Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
 ### Essential Output
 
-- `mode`
-- `key_files`
-- `commands`
-- `blockers`
-- `next_action`
+Summarize the selected mode, key files, relevant commands, blockers, and next action.
 
 ### Complete Output
 
-- `mode`
-- `houmao_source_root`
-- `key_files`
-- `concept_mapping`
-- `customization_points`
-- `commands`
-- `blockers`
-- `next_action`
+Group the complete explanation by mode, Houmao source root, key files, concept mapping, customization points, commands, blockers, and next action.
