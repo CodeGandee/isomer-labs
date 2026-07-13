@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "predictive-memory-tiering-survey"
+topic_statement = "Survey predictive memory tiering systems (MEXT/AMD, Meta TMO, Google far memory, Linux DAMON/MGLRU, academic systems like HeMem/TPP/FarSight, and ML prefetching), compare claims with evidence, identify best-fit workloads, and produce a source-grounded survey dossier."
+measurable_objectives = []
