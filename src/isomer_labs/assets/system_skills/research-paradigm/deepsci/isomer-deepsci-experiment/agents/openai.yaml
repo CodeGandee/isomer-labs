@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-experiment"
   short_description: "Test one selected hypothesis and interpret the result."

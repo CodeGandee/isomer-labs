@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-entrypoint"
   short_description: "Routes informed Isomer tasks to the right system skill or CLI surface and proceeds."

@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+from packaging.version import InvalidVersion, Version
+import yaml
+
 
 @dataclass(frozen=True)
 class FamilyConfig:
@@ -811,6 +814,9 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
     if not manifest.exists():
         add(diagnostics, repo_root, skill_dir, 1, "RPS006", "agents/openai.yaml is required")
         return
+    expected_version = package_release_version(repo_root)
+    if expected_version is not None:
+        validate_release_version_metadata(manifest, expected_version, repo_root, diagnostics, "RPS006")
     fields = parse_interface_fields(read_lines(manifest))
     display_name = fields.get("display_name")
     if display_name is None:
@@ -824,7 +830,6 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
             "RPS006",
             f"interface.display_name must be '{skill_name}'",
         )
-
     default_prompt = fields.get("default_prompt")
     if default_prompt is None:
         add(diagnostics, repo_root, manifest, 1, "RPS006", "interface.default_prompt is required")
@@ -838,6 +843,48 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
             f"interface.default_prompt must invoke ${skill_name}",
         )
 
+
+def package_release_version(repo_root: Path) -> str | None:
+    pyproject = repo_root / "pyproject.toml"
+    if not pyproject.is_file():
+        return None
+    raw = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    project = raw.get("project")
+    version = project.get("version") if isinstance(project, dict) else None
+    return version if isinstance(version, str) and version else None
+
+
+def validate_release_version_metadata(
+    manifest: Path,
+    expected_version: str,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    code: str,
+) -> None:
+    try:
+        raw = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        add(diagnostics, repo_root, manifest, 1, code, f"agents/openai.yaml is invalid YAML: {exc}")
+        return
+    metadata = raw.get("metadata") if isinstance(raw, dict) else None
+    version = metadata.get("version") if isinstance(metadata, dict) else None
+    if not isinstance(version, str) or not version:
+        add(diagnostics, repo_root, manifest, 1, code, "agents/openai.yaml metadata.version is required")
+        return
+    try:
+        Version(version)
+    except InvalidVersion:
+        add(diagnostics, repo_root, manifest, 1, code, f"agents/openai.yaml metadata.version is not valid PEP 440: {version!r}")
+        return
+    if version != expected_version:
+        add(
+            diagnostics,
+            repo_root,
+            manifest,
+            1,
+            code,
+            f"agents/openai.yaml metadata.version must match Isomer release {expected_version!r}",
+        )
 
 def clean_reference(raw: str) -> str | None:
     value = raw.strip().strip("<>").strip()

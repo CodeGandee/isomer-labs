@@ -6,7 +6,8 @@
 2. If the user explicitly names a skill or CLI family, prefer that route unless it conflicts with owner boundaries or required readiness.
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
 4. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
-5. Select one route, proceed with that selected route by default, and report blockers instead of presenting a menu when a concrete task can be routed.
+5. Before automatic optional-extension routing, require a Project declaration plus a compatible target-specific detection result. Never turn detection into a declaration.
+6. Select one route, proceed with that selected route by default, and report blockers instead of presenting a menu when a concrete task can be routed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build the smallest safe routing plan from candidate routes, owner boundaries, read-only context evidence, and missing inputs, then execute the plan or stop on a concrete blocker.
 
@@ -35,6 +36,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 Proceed when the user supplied a concrete task and the selected route owns it. Do not stop after only listing possible routes unless the user asked for route explanation, multiple alternatives, or a non-mutating status.
 
 Block when required context cannot be resolved safely, when the selected route would bypass owner workflow boundaries, when mutation needs approval not present in the prompt, or when the selected research extension's readiness is missing and no setup route can run without more input.
+
+A direct extension-skill invocation preserves explicit user intent, but it does not override a target compatibility blocker. Compatible detected-but-undeclared extensions receive declaration advice; unavailable or incompatible extensions receive detector repair advice.
 
 ## Boundary Rules
 

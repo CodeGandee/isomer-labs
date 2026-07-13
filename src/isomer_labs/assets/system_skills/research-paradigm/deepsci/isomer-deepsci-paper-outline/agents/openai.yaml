@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-paper-outline"
   short_description: "Turn evidence into a paper-native outline."

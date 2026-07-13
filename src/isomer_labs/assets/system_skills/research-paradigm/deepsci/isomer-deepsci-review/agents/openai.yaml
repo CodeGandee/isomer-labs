@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-review"
   short_description: "Audit a draft or paper-like report skeptically."

@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-workspace-mgr"
   short_description: "Prepare production DeepSci research workspace storage bootstrap."

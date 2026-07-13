@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-rebuttal"
   short_description: "Turn reviewer feedback into response and revision work."

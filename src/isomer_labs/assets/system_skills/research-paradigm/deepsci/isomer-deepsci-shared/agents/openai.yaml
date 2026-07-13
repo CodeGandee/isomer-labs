@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-shared"
   short_description: "Shared production DeepSci research loop and semantic placeholder contract."

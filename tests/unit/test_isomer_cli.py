@@ -2724,6 +2724,71 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(1, status, output)
         self.assertEqual([], data["extensions"])
 
+    def test_system_extension_detection_and_init_advice_are_read_only(self) -> None:
+        root = self.make_root()
+        status, output = self.run_cli(
+            ["system-skills", "install", "--target", "generic", "--extension", "kaoju", "--json"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        status, output = self.run_cli(
+            ["project", "--root", str(root), "init", "--json"],
+            cwd=root,
+            env=self.fake_houmao_env(root),
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        init_observation = next(
+            item
+            for item in data["system_extension_observations"]
+            if item["extension_id"] == "kaoju" and item["target"] == "generic"
+        )
+        self.assertEqual("detected_undeclared", init_observation["status"])
+        self.assertIn("remember kaoju", init_observation["advice"])
+        manifest_path = root / ".isomer-labs" / "manifest.toml"
+        manifest_before = manifest_path.read_text(encoding="utf-8")
+        self.assertNotIn("operator.system_extensions", manifest_before)
+
+        status, output = self.run_cli(
+            ["project", "system-extensions", "detect", "--target", "generic", "--json"],
+            cwd=root,
+        )
+        detected = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(detected["mutated"])
+        kaoju = next(item for item in detected["observations"] if item["extension_id"] == "kaoju")
+        self.assertEqual("detected_undeclared", kaoju["status"])
+        self.assertEqual("current", kaoju["version_status"])
+        self.assertEqual(manifest_before, manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "system-extensions", "remember", "kaoju", "--json"],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        status, output = self.run_cli(
+            ["project", "system-extensions", "detect", "--target", "generic", "--json"],
+            cwd=root,
+        )
+        declared = json.loads(output)
+        self.assertEqual(0, status, output)
+        kaoju = next(item for item in declared["observations"] if item["extension_id"] == "kaoju")
+        self.assertEqual("ready", kaoju["status"])
+
+        (root / ".agents" / "skills" / "isomer-kaoju-audit").rename(
+            root / ".agents" / "skills" / "isomer-kaoju-audit.removed"
+        )
+        status, output = self.run_cli(
+            ["project", "system-extensions", "detect", "--target", "generic", "--json"],
+            cwd=root,
+        )
+        partial = json.loads(output)
+        self.assertEqual(0, status, output)
+        kaoju = next(item for item in partial["observations"] if item["extension_id"] == "kaoju")
+        self.assertEqual("partial", kaoju["status"])
+        self.assertIn("isomer-kaoju-audit", kaoju["missing_skills"])
+
     def test_skill_callback_insertion_points_query_catalog_and_project_declarations(self) -> None:
         root = self.make_root()
         self.init_project(root, create_topic=False)

@@ -22,6 +22,8 @@ Use these before ambiguous mutation:
 - `isomer-cli doctor`
 - `isomer-cli project topics list`
 - `isomer-cli project context show`
+- `isomer-cli project system-extensions list`
+- `isomer-cli project system-extensions detect --target <operator-target>`
 - `isomer-cli project paths get`
 - `isomer-cli project paths explain`
 - `isomer-cli project paths list`
@@ -44,6 +46,7 @@ Use these before ambiguous mutation:
 | Toolbox registration, validation, install, enable, disable, update-source, uninstall, show, list, or explain. | `isomer-cli project toolboxes ...` |
 | Toolbox callback insertion points, callback registry rows, callback resolution, validation, install, or refresh. | `isomer-cli project skill-callbacks ...` |
 | Toolbox Runtime Param set, unset, import, get, explain, or validate. | `isomer-cli project toolbox-params ...` |
+| Project extension declarations and target-specific advisory detection. | `isomer-cli project system-extensions ...` |
 
 ## Research Records and Artifact Formats
 

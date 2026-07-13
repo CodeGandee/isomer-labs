@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-srv-agent-env-setup"
   short_description: "Prepare Agent Workspace cwd readiness."

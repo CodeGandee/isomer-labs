@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-kaoju-audit"
   short_description: "Audit survey evidence without repairing it."

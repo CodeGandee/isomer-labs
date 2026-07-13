@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-kaoju-examine"
   short_description: "Inspect survey sources at exact locators."

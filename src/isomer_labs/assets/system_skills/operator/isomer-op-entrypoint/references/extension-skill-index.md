@@ -3,10 +3,12 @@
 ## Workflow
 
 1. Determine whether the task is production DeepSci hypothesis-driven work, DeepSci paper-companion work, or Kaoju evidence-led survey work.
-2. Check base Topic Workspace, selected Topic Actor or Agent workspace, extension-specific readiness, and required owner or Gate evidence before a research skill can run.
-3. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route extension readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
-4. Route prepared work to the matching `isomer-deepsci-*` or `isomer-kaoju-*` skill, using the family pipeline for a named procedure.
-5. Preserve the selected family's callbacks, evidence, lineage, recording, owner, Gate, and blocker rules.
+2. Read the Project declaration and run `isomer-cli project system-extensions detect --target <operator-target>` before automatic routing. A route is available only when its extension is declared and the target observation is `ready` with `current` or `compatible_older` version status.
+3. If compatible installation is detected but undeclared, advise `isomer-cli project system-extensions remember <extension-id>` without running it. For missing, partial, unversioned, malformed, drifted, obsolete, or newer-than-CLI observations, stop automatic routing and return detector advice.
+4. Check base Topic Workspace, selected Topic Actor or Agent workspace, extension-specific readiness, required owner or Gate evidence, the selected route's latest-context preflight, and its worker-output policy before a research skill can run.
+5. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route extension readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
+6. Route prepared work to the matching `isomer-deepsci-*` or `isomer-kaoju-*` skill, using the family pipeline for a named procedure.
+7. Preserve the selected family's callbacks, evidence, lineage, recording, owner, Gate, and blocker rules.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build an extension route plan from the Research Topic context, readiness evidence, selected skill set, durable records, and missing inputs, then execute the plan or report the blocker.
 
@@ -63,4 +65,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Build a complete Chinese PPTX presentation from a scientific paper, abstract, legends, or notes. | `isomer-deepsci-nature-paper2ppt` |
 | Polish, restructure, or translate academic prose into Nature-leaning English without inventing claims. | `isomer-deepsci-nature-polishing` |
 
-Do not let ordinary research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, extension readiness, dataset registration, or owner evidence. Route setup first, then return to the selected extension skill.
+Do not let ordinary DeepSci research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, extension readiness, dataset registration, or owner evidence. Route setup first, then return to the selected extension skill. Apply the same rule to ordinary Kaoju research-stage skills.

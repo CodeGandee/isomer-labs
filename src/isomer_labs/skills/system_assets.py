@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 import re
 from typing import Any, Sequence
 
+from packaging.version import InvalidVersion, Version
 import tomlkit
 
 
@@ -31,6 +32,7 @@ class SystemSkillGroup:
     skills: tuple[str, ...]
     kind: str
     always_available: bool
+    minimum_compatible_skill_version: str
     extension_id: str | None = None
     entry_skill: str | None = None
     commands: tuple[str, ...] = ()
@@ -46,6 +48,15 @@ class SystemSkillExtension:
     skills: tuple[str, ...]
     entry_skill: str
     commands: tuple[str, ...]
+    minimum_compatible_skill_version: str
+
+
+@dataclass(frozen=True)
+class SystemSkillCatalogMetadata:
+    """Package-owned metadata for one system skill."""
+
+    callback_insertion_points: tuple[str, ...] = ()
+    minimum_compatible_version: str | None = None
 
 
 @dataclass(frozen=True)
@@ -122,6 +133,7 @@ def iter_system_skill_extensions() -> tuple[SystemSkillExtension, ...]:
                 skills=group.skills,
                 entry_skill=group.entry_skill,
                 commands=group.commands,
+                minimum_compatible_skill_version=group.minimum_compatible_skill_version,
             )
         )
     return tuple(extensions)
@@ -163,7 +175,8 @@ def iter_system_skill_callback_insertion_points(
         if not include_group:
             continue
         for skill_path in group.skills:
-            for point_stage in skill_metadata.get(skill_path, ()):
+            metadata = skill_metadata.get(skill_path, SystemSkillCatalogMetadata())
+            for point_stage in metadata.callback_insertion_points:
                 if point_stage not in stages:
                     raise SystemSkillAssetError(f"Unknown callback insertion point stage {point_stage!r} for {skill_path}.")
                 target_skill = Path(skill_path).name
@@ -234,6 +247,10 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
         extension_id = value.get("extension_id")
         entry_skill = value.get("entry_skill")
         commands = value.get("commands")
+        minimum_compatible_skill_version = _required_pep440_version(
+            value.get("minimum_compatible_skill_version"),
+            f"System-skill group {name!r} minimum_compatible_skill_version",
+        )
         if kind == "core":
             if extension_id is not None:
                 raise SystemSkillAssetError(f"Core system-skill group {name!r} must not define extension_id.")
@@ -269,6 +286,7 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
                 skills=tuple(_normalize_relative_path(item) for item in skills),
                 kind=str(kind),
                 always_available=always_available,
+                minimum_compatible_skill_version=minimum_compatible_skill_version,
                 extension_id=str(extension_id) if isinstance(extension_id, str) else None,
                 entry_skill=str(entry_skill) if isinstance(entry_skill, str) else None,
                 commands=tuple(str(item) for item in commands) if isinstance(commands, list) else (),
@@ -297,14 +315,14 @@ def _parse_callback_stages(manifest: dict[str, Any]) -> tuple[CallbackInsertionP
     return tuple(stages)
 
 
-def _parse_skill_metadata(manifest: dict[str, Any]) -> dict[str, tuple[str, ...]]:
+def _parse_skill_metadata(manifest: dict[str, Any]) -> dict[str, SystemSkillCatalogMetadata]:
     raw_metadata = manifest.get("skill_metadata")
     if raw_metadata is None:
         return {}
     if not isinstance(raw_metadata, dict):
         raise SystemSkillAssetError("Packaged system-skill manifest skill_metadata must be a table.")
     known_paths = set(iter_system_skill_paths())
-    parsed: dict[str, tuple[str, ...]] = {}
+    parsed: dict[str, SystemSkillCatalogMetadata] = {}
     for raw_path, value in raw_metadata.items():
         skill_path = _normalize_relative_path(str(raw_path))
         if skill_path not in known_paths:
@@ -314,8 +332,46 @@ def _parse_skill_metadata(manifest: dict[str, Any]) -> dict[str, tuple[str, ...]
         raw_points = value.get("callback_insertion_points", ())
         if not isinstance(raw_points, list) or not all(isinstance(item, str) and item for item in raw_points):
             raise SystemSkillAssetError(f"System-skill metadata {skill_path!r} callback_insertion_points must be a string list.")
-        parsed[skill_path] = tuple(dict.fromkeys(str(item) for item in raw_points))
+        minimum = value.get("minimum_compatible_version")
+        if minimum is not None:
+            minimum = _required_pep440_version(
+                minimum,
+                f"System-skill metadata {skill_path!r} minimum_compatible_version",
+            )
+        parsed[skill_path] = SystemSkillCatalogMetadata(
+            callback_insertion_points=tuple(dict.fromkeys(str(item) for item in raw_points)),
+            minimum_compatible_version=minimum,
+        )
     return parsed
+
+
+def system_skill_catalog_metadata() -> dict[str, SystemSkillCatalogMetadata]:
+    """Return package-owned per-skill metadata keyed by manifest-relative path."""
+
+    return _parse_skill_metadata(load_system_skill_manifest())
+
+
+def minimum_compatible_system_skill_version(skill_path: str) -> str:
+    """Resolve the package-owned compatibility floor for one packaged skill."""
+
+    normalized = _normalize_relative_path(skill_path)
+    metadata = system_skill_catalog_metadata().get(normalized)
+    if metadata is not None and metadata.minimum_compatible_version is not None:
+        return metadata.minimum_compatible_version
+    for group in iter_system_skill_groups():
+        if normalized in group.skills:
+            return group.minimum_compatible_skill_version
+    raise SystemSkillAssetError(f"Unknown packaged system skill: {normalized}")
+
+
+def _required_pep440_version(value: object, field: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise SystemSkillAssetError(f"{field} must be a non-empty PEP 440 version.")
+    try:
+        Version(value)
+    except InvalidVersion as exc:
+        raise SystemSkillAssetError(f"{field} must be a valid PEP 440 version: {value!r}") from exc
+    return value
 
 
 def iter_system_skill_paths(groups: Sequence[str] | None = None) -> tuple[str, ...]:

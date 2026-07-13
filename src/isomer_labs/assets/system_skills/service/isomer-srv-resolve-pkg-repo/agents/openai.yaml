@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-srv-resolve-pkg-repo"
   short_description: "Resolve reachable package repositories and channels"

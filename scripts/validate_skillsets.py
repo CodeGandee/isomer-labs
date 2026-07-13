@@ -13,6 +13,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from packaging.version import InvalidVersion, Version
+import yaml
+
 import validate_research_paradigm_skillset as research_validator
 
 
@@ -2069,6 +2072,9 @@ def validate_manifest(
         if manifest_required:
             add(diagnostics, repo_root, skill_dir, 1, code, "agents/openai.yaml is required")
         return
+    expected_version = research_validator.package_release_version(repo_root)
+    if expected_version is not None:
+        validate_release_version_metadata(manifest, expected_version, repo_root, diagnostics, code)
     fields = parse_interface_fields(read_lines(manifest))
     display_name = fields.get("display_name")
     if display_name is None:
@@ -2080,6 +2086,39 @@ def validate_manifest(
         add(diagnostics, repo_root, manifest, 1, code, "interface.default_prompt is required")
     elif f"${skill_name}" not in default_prompt[0]:
         add(diagnostics, repo_root, manifest, default_prompt[1], code, f"interface.default_prompt must invoke ${skill_name}")
+
+
+def validate_release_version_metadata(
+    manifest: Path,
+    expected_version: str,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    code: str,
+) -> None:
+    try:
+        raw = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        add(diagnostics, repo_root, manifest, 1, code, f"agents/openai.yaml is invalid YAML: {exc}")
+        return
+    metadata = raw.get("metadata") if isinstance(raw, dict) else None
+    version = metadata.get("version") if isinstance(metadata, dict) else None
+    if not isinstance(version, str) or not version:
+        add(diagnostics, repo_root, manifest, 1, code, "agents/openai.yaml metadata.version is required")
+        return
+    try:
+        Version(version)
+    except InvalidVersion:
+        add(diagnostics, repo_root, manifest, 1, code, f"agents/openai.yaml metadata.version is not valid PEP 440: {version!r}")
+        return
+    if version != expected_version:
+        add(
+            diagnostics,
+            repo_root,
+            manifest,
+            1,
+            code,
+            f"agents/openai.yaml metadata.version must match Isomer release {expected_version!r}",
+        )
 
 
 def validate_local_references(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], code: str) -> None:

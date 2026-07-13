@@ -28,6 +28,7 @@ from isomer_labs.cli.handlers.project import (
     _cmd_skill_callbacks_show,
     _cmd_skill_callbacks_validate,
     _cmd_system_extensions_forget,
+    _cmd_system_extensions_detect,
     _cmd_system_extensions_list,
     _cmd_system_extensions_remember,
     _cmd_topics_create,
@@ -469,6 +470,36 @@ def register_project_commands(app: click.Group) -> None:
                 manifest=manifest,
                 output_format=output_format,
                 json_output=json_output,
+            )
+        )
+
+
+    @system_extensions_group.command(name="detect", help="Detect target-specific system extensions without changing declarations.")
+    @_common_options
+    @click.option(
+        "--target",
+        "system_extension_targets",
+        multiple=True,
+        type=click.Choice(("claude-code", "codex", "kimi-code", "generic")),
+        help="Agent skill target to inspect; repeat as needed. Defaults to Project-local targets.",
+    )
+    @click.pass_context
+    def system_extensions_detect_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        system_extension_targets: tuple[str, ...] = (),
+    ) -> int:
+        return _cmd_system_extensions_detect(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                system_extension_targets=system_extension_targets,
             )
         )
 

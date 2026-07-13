@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-pipeline"
   short_description: "Execute a named single-pass sequence of production DeepSci skills with automatic artifact handoffs."

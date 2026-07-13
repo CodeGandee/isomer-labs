@@ -129,6 +129,7 @@ from isomer_labs.teams.instantiation import parse_topic_team_instantiation_packe
 from isomer_labs.core.toml_loader import load_toml
 from isomer_labs.project.validation import build_project_state
 from isomer_labs.project.system_extensions import (
+    detect_project_system_extensions,
     forget_project_system_extension,
     list_project_system_extensions,
     remember_project_system_extension,

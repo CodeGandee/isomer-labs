@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-project-mgr"
   short_description: "Manage Isomer Project setup and checks"

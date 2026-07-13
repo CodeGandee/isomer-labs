@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -101,14 +102,60 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertFalse((skill_dir / OLD_MARKER_FILENAME).exists())
         self.assertFalse((target.skill_root / "operator" / "isomer-op-entrypoint").exists())
         manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
-        self.assertEqual("isomer-labs-skill-manifest.v1", manifest["schema_version"])
+        self.assertEqual("isomer-labs-skill-manifest.v2", manifest["schema_version"])
         self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in manifest["skills"]])
         self.assertEqual("operator/isomer-op-entrypoint", manifest["skills"][0]["source_path"])
+        self.assertEqual(selection.skills[0].skill_version, manifest["skills"][0]["skill_version"])
 
         status = inspect_system_skills(target, selection)
         self.assertEqual(["isomer-op-entrypoint"], [record.name for record in status.installed])
         self.assertEqual((), status.missing)
         self.assertIsNotNone(status.manifest)
+        self.assertEqual("current", status.installed[0].compatibility_status)
+        self.assertTrue(status.installed[0].installation_verified)
+
+    def test_legacy_receipt_is_read_and_classified_unversioned(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, selection)
+        receipt_path = target.skill_root / SKILL_MANIFEST_FILENAME
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["schema_version"] = "isomer-labs-skill-manifest.v1"
+        receipt["skills"][0].pop("skill_version")
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+        status = inspect_system_skills(target, selection)
+
+        self.assertEqual("unversioned", status.installed[0].compatibility_status)
+        self.assertFalse(status.installed[0].installation_verified)
+
+    def test_status_reports_receipt_drift_obsolete_and_compatible_older(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", home=root / "skills")[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, selection)
+        record = selection.skills[0]
+        yaml_path = target.skill_root / record.name / "agents" / "openai.yaml"
+        yaml_text = yaml_path.read_text(encoding="utf-8")
+        yaml_path.write_text(yaml_text.replace(record.skill_version, "0.2.2"), encoding="utf-8")
+
+        drift = inspect_system_skills(target, selection)
+        self.assertEqual("receipt_drift", drift.installed[0].compatibility_status)
+
+        receipt_path = target.skill_root / SKILL_MANIFEST_FILENAME
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["skills"][0]["skill_version"] = "0.2.2"
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+        compatible_record = replace(record, minimum_compatible_version="0.2.0")
+        compatible_selection = replace(selection, skills=(compatible_record,))
+
+        compatible = inspect_system_skills(target, compatible_selection)
+        self.assertEqual("compatible_older", compatible.installed[0].compatibility_status)
+        self.assertTrue(compatible.installed[0].installation_verified)
+
+        obsolete = inspect_system_skills(target, selection)
+        self.assertEqual("obsolete_incompatible", obsolete.installed[0].compatibility_status)
 
     def test_symlink_projection_does_not_write_per_skill_marker(self) -> None:
         root = self.make_root()

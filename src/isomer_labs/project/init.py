@@ -22,6 +22,10 @@ from isomer_labs.project import (
     houmao_project_dir_for_root,
     root_houmao_overlay_dir_for_root,
 )
+from isomer_labs.project.system_extensions import (
+    ProjectSystemExtensionObservation,
+    detect_project_extension_installations,
+)
 
 @dataclass(frozen=True)
 class ProjectInitializationResult:
@@ -33,6 +37,7 @@ class ProjectInitializationResult:
     houmao_overlay_dir: Path
     houmao_bootstrap_result: HoumaoCommandResult | None
     diagnostics: list[Diagnostic]
+    system_extension_observations: tuple[ProjectSystemExtensionObservation, ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -120,6 +125,7 @@ def initialize_project(
     (content_root / "README.md").write_text(CONTENT_ROOT_README_TEXT, encoding="utf-8")
     (content_root / ".gitignore").write_text(CONTENT_ROOT_GITIGNORE_TEXT, encoding="utf-8")
     manifest_path.write_text(_manifest_text(path_defaults), encoding="utf-8")
+    extension_detection = detect_project_extension_installations(root, env=env)
     return ProjectInitializationResult(
         project_root=root,
         project_manifest_path=manifest_path,
@@ -129,6 +135,7 @@ def initialize_project(
         houmao_overlay_dir=houmao_overlay_dir,
         houmao_bootstrap_result=houmao_result,
         diagnostics=diagnostics,
+        system_extension_observations=extension_detection.observations,
     )
 
 

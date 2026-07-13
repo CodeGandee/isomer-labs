@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-switch-identity"
   short_description: "Switch operator identity posture to a Topic Actor or Agent workspace cwd."

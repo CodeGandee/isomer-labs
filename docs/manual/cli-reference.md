@@ -45,7 +45,7 @@ The `system-skills` namespace discovers and installs packaged Isomer system skil
 - `system-skills upgrade`
 - `system-skills uninstall`
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`. Every packaged skill carries its PEP 440 Isomer release version in `agents/openai.yaml`; install receipts snapshot each skill version, and status reports receipt drift and compatibility against package-owned minimum floors.
 
 **Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `extensions list`, `extensions show`, `list`, and `status` are read-only.
 
@@ -177,7 +177,7 @@ isomer-cli project init
 isomer-cli project init --content-dir custom-content
 ```
 
-`--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`.
+`--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`. Successful initialization also performs read-only detection in the Project-local Claude Code, Kimi Code, and generic skill roots and returns advisory `system_extension_observations`; it does not declare, install, upgrade, or remove extensions.
 
 ### `project content-root move`
 
@@ -329,15 +329,19 @@ System skill families use `isomer-<extension-name>-<purpose>` names for domain e
 
 ### `project system-extensions`
 
-List and maintain user-declared Project operator system extensions. These declarations live in the Project Manifest under `[operator.system_extensions]` and mean the user says the Project operator has the optional extension installed; Isomer does not inspect or verify manually copied operator skill files.
+List and maintain user-declared Project operator system extensions, or inspect target-specific installations. Declarations live in the Project Manifest under `[operator.system_extensions]` and remain user-controlled policy. Detection reads projected `agents/openai.yaml` versions and Isomer receipts as advisory evidence; it never turns one agent target's installation into a Project declaration.
 
-**Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` is read-only.
+**Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` and `detect` are read-only. With no `--target`, `detect` checks Project-local `claude-code`, `kimi-code`, and `generic` roots. Pass `--target codex` explicitly to inspect `$CODEX_HOME/skills` or `~/.codex/skills`.
 
 ```bash
 isomer-cli --print-json project system-extensions list
+isomer-cli --print-json project system-extensions detect
+isomer-cli --print-json project system-extensions detect --target codex
 isomer-cli --print-json project system-extensions remember deepsci
 isomer-cli --print-json project system-extensions forget deepsci
 ```
+
+Detection reports each extension separately for each target. `ready` observations have complete family coverage, a versioned receipt matching projected skill metadata, and either `current` or `compatible_older` compatibility. Missing, partial, unversioned, malformed, drifted, obsolete, and newer-than-CLI observations include bounded install, repair, or CLI-upgrade advice.
 
 ### `project toolboxes`
 

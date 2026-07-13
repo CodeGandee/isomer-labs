@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-misc-pkg-specifics"
   short_description: "Package source routing and variant checks"

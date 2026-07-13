@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-misc-bounded-run-tips"
   short_description: "Classify operation risk and plan bounded execution"

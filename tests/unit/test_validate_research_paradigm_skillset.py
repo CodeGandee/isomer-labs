@@ -42,6 +42,27 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(root / "pyproject.toml", "[project]\nname = \"fixture\"\n")
         return root
 
+    def test_release_version_metadata_rejects_missing_malformed_and_mismatched_values(self) -> None:
+        root = self.make_root()
+        manifest = root / "agents" / "openai.yaml"
+        cases = (
+            ("interface: {}\n", "metadata.version is required"),
+            ('metadata:\n  version: "latest"\n', "not valid PEP 440"),
+            ('metadata:\n  version: "0.2.2"\n', "must match Isomer release"),
+        )
+        for yaml_text, expected_message in cases:
+            with self.subTest(expected_message=expected_message):
+                write(manifest, yaml_text)
+                diagnostics: list[object] = []
+                validator.validate_release_version_metadata(
+                    manifest,
+                    "0.3.0rc1",
+                    root,
+                    diagnostics,
+                    "RPS006",
+                )
+                self.assertTrue(any(expected_message in message for message in messages(diagnostics)))
+
     def make_valid_skillset(self) -> tuple[Path, Path]:
         root = self.make_root()
         target = root / "skillset" / "research-paradigm"

@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-nature-paper2ppt"
   short_description: "Build a Chinese PPTX from a scientific paper."

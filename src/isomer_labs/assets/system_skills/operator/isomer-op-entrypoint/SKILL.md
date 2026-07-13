@@ -21,10 +21,11 @@ When this skill is invoked, execute the following steps in order.
 
 1. **Parse the task input**. Identify whether the user supplied a plain prompt, file path, Project root, Research Topic, Topic Workspace, Topic Actor, Agent, Domain Agent Team Template, DeepSci stage, Kaoju survey intent, CLI action, or explicit skill name. See [references/input-surfaces.md](references/input-surfaces.md).
 2. **Run safe context discovery when useful**. Prefer read-only evidence such as `isomer-cli project self queries`, `isomer-cli project self show`, `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, or Workspace Path Resolution commands before ambiguous mutation. See [references/cli-index.md](references/cli-index.md).
-3. **Classify exactly one route**. Use [references/routing-rules.md](references/routing-rules.md), [references/system-skill-index.md](references/system-skill-index.md), and [references/extension-skill-index.md](references/extension-skill-index.md) to select one owner skill, extension skill, or CLI family.
-4. **Check owner boundaries**. Confirm the selected route owns the requested work, service skills are only bounded support unless explicitly invoked, misc helpers are explicit helper routes, and retired operator compatibility skills are not active routes.
-5. **Proceed with the selected route**. Unless the user asked only for route explanation, load the selected owner skill or reference, follow its workflow, or run the selected CLI command family with the required read-only or mutation posture. Do not stop after only listing candidate routes.
-6. **Report the entrypoint result** using **Essential Output** by default and **Complete Output** when requested.
+3. **Check optional-extension availability**. Before automatically selecting a DeepSci or Kaoju route, read the Project declaration and run `isomer-cli project system-extensions detect --target <operator-target>`. Treat only a declared `ready` observation with `current` or `compatible_older` version status as available. Detection is advisory and never authorizes an automatic declaration, install, upgrade, or removal.
+4. **Classify exactly one route**. Use [references/routing-rules.md](references/routing-rules.md), [references/system-skill-index.md](references/system-skill-index.md), and [references/extension-skill-index.md](references/extension-skill-index.md) to select one owner skill, extension skill, or CLI family.
+5. **Check owner boundaries**. Confirm the selected route owns the requested work, service skills are only bounded support unless explicitly invoked, misc helpers are explicit helper routes, and retired operator compatibility skills are not active routes.
+6. **Proceed with the selected route**. Unless the user asked only for route explanation, load the selected owner skill or reference, follow its workflow, or run the selected CLI command family with the required read-only or mutation posture. Do not stop after only listing candidate routes.
+7. **Report the entrypoint result** using **Essential Output** by default and **Complete Output** when requested.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan from this skill, the route references, current user request, available Project context, owner boundaries, and blockers, then execute the plan or stop on a concrete blocker.
 
@@ -70,6 +71,8 @@ When requested, include:
 
 Prefer read-only context discovery before ambiguous mutation. Proceed only when the task implies action and the selected owner workflow or CLI command family owns that action.
 
+For optional extensions, preserve an explicit user invocation but honor compatibility blockers. When a compatible extension is detected but undeclared, advise `isomer-cli project system-extensions remember <extension-id>` and stop automatic extension routing. When detection reports missing, partial, unversioned, malformed, receipt drift, obsolete, or newer-than-CLI state, return its repair or upgrade advice.
+
 Keep `isomer-op-welcome` read-only. Use it for welcome menus and safe recommendations; use `isomer-op-entrypoint` for informed-user routing and execution.
 
 Do not make this skill the authority for lower-level mutation. It routes to owner skills and CLI families, then follows their workflows and guardrails.
@@ -87,5 +90,6 @@ Do not use repo-local Pixi wrapper command guidance for Isomer CLI in operator s
 - Listing several possible routes and stopping even though the user gave a concrete task. Select the best route, proceed, or report the blocker.
 - Treating service skills as normal first-click owner routes. Route through the owning operator workflow unless the user explicitly invoked the service skill.
 - Starting an ordinary DeepSci research-stage skill before Topic Workspace, actor or agent workspace, and DeepSci bootstrap readiness are proven or routed for setup.
+- Skipping the latest-context preflight or worker-output policy checks required by the selected research route.
 - Repeating the full CLI help text inside this skill. Name the command family and inspect CLI help or owner skill guidance when details are needed.
 - Treating generated links, worker-local files, chat memory, or old rendered Markdown as durable research truth before the selected DeepSci skill's latest-context and recording rules accept them.

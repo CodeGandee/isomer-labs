@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-welcome"
   short_description: "Shows Isomer Labs operator workflow options and routes users to the active owner skill."

@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-paper-plot"
   short_description: "Create first-pass publication figures from templates."

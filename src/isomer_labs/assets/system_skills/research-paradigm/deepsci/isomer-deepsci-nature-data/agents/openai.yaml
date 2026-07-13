@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-nature-data"
   short_description: "Prepare Nature-style data availability material."

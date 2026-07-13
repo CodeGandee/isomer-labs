@@ -113,6 +113,13 @@ isomer-cli system-skills status --target codex
 isomer-cli system-skills uninstall --target codex
 ```
 
+Inside a Project, inspect extension availability for the active agent target before routing. Detection is read-only and does not add Project declarations:
+
+```bash
+isomer-cli --print-json project system-extensions detect --target codex
+isomer-cli project system-extensions remember kaoju
+```
+
 ## Getting Started With CLI Agent
 
 After the CLI and skills are installed, drive Isomer from your coding agent with short skill calls and follow-up prompts.

@@ -64,6 +64,7 @@ class CliOptions:
     callback_all_catalog_extensions: bool = False
     callback_core_only: bool = False
     extension_id: str | None = None
+    system_extension_targets: tuple[str, ...] = ()
     toolbox_dir: str | None = None
     toolbox_id: str | None = None
     toolbox_source_path: str | None = None

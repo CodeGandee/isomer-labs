@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-srv-topic-env-setup"
   short_description: "Prepare enclosed Isomer Pixi environments"

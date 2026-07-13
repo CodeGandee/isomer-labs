@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-toolbox-mgr"
   short_description: "Create and manage project-local Isomer Toolboxes."

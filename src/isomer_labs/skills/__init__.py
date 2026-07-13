@@ -26,6 +26,7 @@ from isomer_labs.skills.installer import (
     uninstall_system_skills,
     upgrade_system_skills,
 )
+from isomer_labs.skills.versioning import SkillVersionObservation, inspect_skill_version, require_skill_version
 
 __all__ = [
     "CONCRETE_TARGETS",
@@ -35,8 +36,10 @@ __all__ = [
     "SystemSkillGroup",
     "SystemSkillInstallError",
     "SystemSkillMaterializationResult",
+    "SkillVersionObservation",
     "inspect_system_skills",
     "install_system_skills",
+    "inspect_skill_version",
     "iter_system_skill_groups",
     "iter_system_skill_paths",
     "list_packaged_system_skills",
@@ -45,6 +48,7 @@ __all__ = [
     "resolve_system_skill_selection",
     "resolve_system_skill",
     "resolve_targets",
+    "require_skill_version",
     "system_skills_root",
     "uninstall_system_skills",
     "upgrade_system_skills",

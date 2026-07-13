@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-gui-mgr"
   short_description: "Manage Project Web GUI lifecycle guidance, API reference, refresh, and troubleshooting."

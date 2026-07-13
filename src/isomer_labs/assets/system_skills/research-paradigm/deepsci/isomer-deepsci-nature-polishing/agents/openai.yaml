@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-nature-polishing"
   short_description: "Polish academic prose without hiding evidence gaps."

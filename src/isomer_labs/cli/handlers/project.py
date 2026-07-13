@@ -28,6 +28,7 @@ from isomer_labs.cli.handlers.shared import (
     default_semantic_path,
     default_topic_workspace_path,
     delete_research_topic,
+    detect_project_system_extensions,
     diagnose_topic_actor,
     Diagnostic,
     discover_domain_agent_team_templates,
@@ -212,6 +213,9 @@ def _cmd_init(options: CliOptions) -> int:
         "houmao_project_dir": str(result.houmao_project_dir),
         "houmao_overlay_dir": str(result.houmao_overlay_dir),
         "houmao_bootstrap": houmao_bootstrap,
+        "system_extension_observations": [
+            observation.to_json() for observation in result.system_extension_observations
+        ],
     }
     lines = []
     if not diagnostics:
@@ -224,6 +228,9 @@ def _cmd_init(options: CliOptions) -> int:
             f"Houmao Overlay: {result.houmao_overlay_dir}",
             "Research Topics: none registered; create one with `isomer-cli project topics create <topic-id> --statement \"<research topic>\"`.",
         ]
+        if result.system_extension_observations:
+            lines.append("System Extension Observations:")
+            lines.extend(_render_system_extension_observations(result.system_extension_observations))
     return _emit("init", options, payload, diagnostics, lines)
 
 
@@ -656,6 +663,31 @@ def _cmd_system_extensions_list(options: CliOptions) -> int:
         result.to_json(),
         list(result.diagnostics),
         _render_system_extensions_result("Project System Extensions", result.to_json()),
+    )
+
+
+def _cmd_system_extensions_detect(options: CliOptions) -> int:
+    project, diagnostics = _discover(options)
+    if project is None or has_errors(diagnostics):
+        return _emit(
+            "system-extensions detect",
+            options,
+            {"ok": False, "mutated": False, "observations": []},
+            diagnostics,
+            [],
+        )
+    result = detect_project_system_extensions(
+        project,
+        targets=tuple(_value(options, "system_extension_targets") or ()),
+        env=os.environ,
+    )
+    diagnostics.extend(result.diagnostics)
+    return _emit(
+        "system-extensions detect",
+        options,
+        result.to_json(),
+        diagnostics,
+        ["Project System Extension Detection", *_render_system_extension_observations(result.observations)],
     )
 
 
@@ -1282,6 +1314,23 @@ def _render_system_extensions_result(title: str, payload: dict[str, object]) -> 
             continue
         declared = "declared" if extension.get("declared_installed") is True else "not declared"
         lines.append(f"- {extension.get('extension_id')} ({extension.get('group')}, {declared}, not filesystem-verified)")
+    return lines
+
+
+def _render_system_extension_observations(observations: Sequence[Any]) -> list[str]:
+    if not observations:
+        return ["- none detected"]
+    lines: list[str] = []
+    for item in observations:
+        observation = item.to_json() if hasattr(item, "to_json") else item
+        if not isinstance(observation, dict):
+            continue
+        version = f", version={observation.get('version_status')}" if observation.get("version_status") else ""
+        lines.append(
+            f"- {observation.get('extension_id')} on {observation.get('target')}: {observation.get('status')}{version}"
+        )
+        if observation.get("advice"):
+            lines.append(f"  Advice: {observation.get('advice')}")
     return lines
 
 

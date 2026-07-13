@@ -20,7 +20,9 @@ isomer-cli system-skills install --target codex --extension kaoju
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Target defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible projection.
 
-Packaged skill names are reserved install slots in each target skill root. Installation no longer writes per-skill ownership markers; instead, successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, target, source paths, projection modes, and tracked skill names. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
+Packaged skill names are reserved install slots in each target skill root. Every packaged skill stores the Isomer release version, including release candidates, in `agents/openai.yaml` at `metadata.version`. Successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, target, source paths, projection modes, tracked skill names, and per-skill version snapshots. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
+
+Compatibility policy belongs to `src/isomer_labs/assets/system_skills/manifest.toml`. Each group declares `minimum_compatible_skill_version`, and an optional per-skill `minimum_compatible_version` overrides that floor. Status compares versions with PEP 440: older skills at or above the floor remain compatible, skills below the floor are obsolete, and skills newer than the CLI require a CLI upgrade before automatic routing. Legacy unversioned receipts remain readable but unverified until upgrade.
 
 Use `system-skills upgrade` after installing a newer Isomer CLI package when packaged skills may have been renamed or removed. Upgrade reads the target-root manifest, refreshes the currently selected packaged skills, and removes stale manifest-tracked skill paths that are no longer in the selected set:
 
@@ -29,6 +31,15 @@ isomer-cli system-skills upgrade --target codex
 isomer-cli system-skills upgrade --target codex --extension deepsci
 isomer-cli system-skills upgrade --target codex --extension kaoju
 ```
+
+Within an initialized Project, detect extension installations per agent target without changing declarations or skill roots:
+
+```bash
+isomer-cli --print-json project system-extensions detect
+isomer-cli --print-json project system-extensions detect --target codex
+```
+
+The no-target form checks only Project-local Claude Code, Kimi Code, and generic roots. Codex is explicit because its default root is user-global. Detection reports complete extension-family coverage, receipt and projected-version agreement, compatibility, and bounded repair advice. A compatible detected extension remains undeclared until the user runs `isomer-cli project system-extensions remember <extension-id>`. Project initialization includes the same Project-local observations in its output and never writes declarations from them.
 
 Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
 

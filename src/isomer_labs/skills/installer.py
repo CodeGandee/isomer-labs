@@ -4,24 +4,36 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import lru_cache
 from importlib import metadata
 from importlib.resources.abc import Traversable
 import json
 import os
 from pathlib import Path
 import shutil
-from typing import Literal, Sequence
+from typing import Literal, Mapping, Sequence
+
+from packaging.version import InvalidVersion, Version
 
 from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.skills.install_results import (
+    SystemSkillInstallResult,
+    SystemSkillStatusResult,
+    SystemSkillUninstallResult,
+    SystemSkillUpgradeResult,
+)
 from isomer_labs.skills.system_assets import (
     SystemSkillAssetError,
     iter_system_skill_groups,
+    minimum_compatible_system_skill_version,
     resolve_system_skill,
 )
+from isomer_labs.skills.versioning import inspect_skill_version, require_skill_version
 
 
 SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
-SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v1"
+SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v2"
+LEGACY_SKILL_MANIFEST_SCHEMAS = ("isomer-labs-skill-manifest.v1",)
 CONCRETE_TARGETS = ("claude-code", "codex", "kimi-code", "generic")
 SUPPORTED_TARGETS = (*CONCRETE_TARGETS, "all")
 ProjectionMode = Literal["copy", "symlink"]
@@ -40,6 +52,8 @@ class SystemSkillRecord:
     group: str
     group_kind: str
     extension_id: str | None
+    skill_version: str
+    minimum_compatible_version: str
     description: str | None = None
 
     def to_json(self) -> dict[str, object]:
@@ -49,6 +63,8 @@ class SystemSkillRecord:
             "group": self.group,
             "group_kind": self.group_kind,
             "extension_id": self.extension_id,
+            "skill_version": self.skill_version,
+            "minimum_compatible_version": self.minimum_compatible_version,
             "description": self.description,
         }
 
@@ -91,6 +107,11 @@ class InstalledSystemSkill:
     path: Path
     source_path: str | None
     projection_mode: str | None
+    skill_version: str | None = None
+    receipt_skill_version: str | None = None
+    minimum_compatible_version: str | None = None
+    compatibility_status: str = "unversioned"
+    installation_verified: bool = False
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -98,6 +119,11 @@ class InstalledSystemSkill:
             "path": str(self.path),
             "source_path": self.source_path,
             "projection_mode": self.projection_mode,
+            "skill_version": self.skill_version,
+            "receipt_skill_version": self.receipt_skill_version,
+            "minimum_compatible_version": self.minimum_compatible_version,
+            "compatibility_status": self.compatibility_status,
+            "installation_verified": self.installation_verified,
         }
 
 
@@ -138,12 +164,14 @@ class SystemSkillManifestRecord:
     name: str
     source_path: str
     projection_mode: ProjectionMode
+    skill_version: str | None = None
 
-    def to_json(self) -> dict[str, str]:
+    def to_json(self) -> dict[str, object]:
         return {
             "name": self.name,
             "source_path": self.source_path,
             "projection_mode": self.projection_mode,
+            "skill_version": self.skill_version,
         }
 
 
@@ -182,134 +210,7 @@ class SystemSkillRootManifest:
         }
 
 
-@dataclass(frozen=True)
-class SystemSkillStatusResult:
-    """Status for one target skill root."""
-
-    target: SystemSkillTarget
-    installed: tuple[InstalledSystemSkill, ...]
-    missing: tuple[str, ...]
-    invalid_projections: tuple[InvalidSystemSkillProjection, ...]
-    selection: SystemSkillSelection
-    manifest: SystemSkillRootManifest | None
-    diagnostics: tuple[Diagnostic, ...]
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
-            "manifest": self.manifest.to_json() if self.manifest is not None else None,
-            "installed": [record.to_json() for record in self.installed],
-            "installed_skills": [record.name for record in self.installed],
-            "missing_skills": list(self.missing),
-            "invalid_projections": [projection.to_json() for projection in self.invalid_projections],
-            "selection": self.selection.to_json(),
-        }
-
-
-@dataclass(frozen=True)
-class SystemSkillInstallResult:
-    """Install result for one target skill root."""
-
-    target: SystemSkillTarget
-    selection: SystemSkillSelection
-    installed: tuple[InstalledSystemSkill, ...]
-    preserved_existing: tuple[ExistingSystemSkillPath, ...]
-    replaced: tuple[ExistingSystemSkillPath, ...]
-    projection_mode: ProjectionMode
-    manifest: SystemSkillRootManifest | None
-    diagnostics: tuple[Diagnostic, ...]
-
-    @property
-    def ok(self) -> bool:
-        return True
-
-    @property
-    def mutated(self) -> bool:
-        return bool(self.installed or self.replaced)
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
-            "projection_mode": self.projection_mode,
-            "manifest": self.manifest.to_json() if self.manifest is not None else None,
-            "installed": [record.to_json() for record in self.installed],
-            "installed_skills": [record.name for record in self.installed],
-            "preserved_existing": [record.to_json() for record in self.preserved_existing],
-            "replaced": [record.to_json() for record in self.replaced],
-            "replaced_skills": [record.name for record in self.replaced],
-            "selection": self.selection.to_json(),
-        }
-
-
-@dataclass(frozen=True)
-class SystemSkillUninstallResult:
-    """Uninstall result for one target skill root."""
-
-    target: SystemSkillTarget
-    removed: tuple[InstalledSystemSkill, ...]
-    absent: tuple[str, ...]
-    selection: SystemSkillSelection
-    manifest: SystemSkillRootManifest | None
-    diagnostics: tuple[Diagnostic, ...]
-
-    @property
-    def ok(self) -> bool:
-        return True
-
-    @property
-    def mutated(self) -> bool:
-        return bool(self.removed)
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
-            "manifest": self.manifest.to_json() if self.manifest is not None else None,
-            "removed": [record.to_json() for record in self.removed],
-            "removed_skills": [record.name for record in self.removed],
-            "absent_skills": list(self.absent),
-            "selection": self.selection.to_json(),
-        }
-
-
-@dataclass(frozen=True)
-class SystemSkillUpgradeResult:
-    """Upgrade result for one target skill root."""
-
-    target: SystemSkillTarget
-    selection: SystemSkillSelection
-    refreshed: tuple[InstalledSystemSkill, ...]
-    stale_removed: tuple[InstalledSystemSkill, ...]
-    stale_absent: tuple[str, ...]
-    projection_mode_override: ProjectionMode | None
-    manifest: SystemSkillRootManifest | None
-    diagnostics: tuple[Diagnostic, ...]
-
-    @property
-    def ok(self) -> bool:
-        return True
-
-    @property
-    def mutated(self) -> bool:
-        return bool(self.refreshed or self.stale_removed or self.stale_absent)
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
-            "projection_mode_override": self.projection_mode_override,
-            "manifest": self.manifest.to_json() if self.manifest is not None else None,
-            "refreshed": [record.to_json() for record in self.refreshed],
-            "refreshed_skills": [record.name for record in self.refreshed],
-            "stale_removed": [record.to_json() for record in self.stale_removed],
-            "stale_removed_skills": [record.name for record in self.stale_removed],
-            "stale_absent_skills": list(self.stale_absent),
-            "selection": self.selection.to_json(),
-        }
-
-
+@lru_cache(maxsize=1)
 def list_packaged_system_skills() -> tuple[SystemSkillRecord, ...]:
     """Return installable packaged Isomer system skills in manifest order."""
 
@@ -328,6 +229,8 @@ def list_packaged_system_skills() -> tuple[SystemSkillRecord, ...]:
                     group=group.name,
                     group_kind=group.kind,
                     extension_id=group.extension_id,
+                    skill_version=_packaged_skill_version(source_path),
+                    minimum_compatible_version=minimum_compatible_system_skill_version(source_path),
                     description=_read_skill_description(source_path),
                 )
             )
@@ -398,7 +301,13 @@ def resolve_system_skill_selection(
     )
 
 
-def resolve_targets(target: str, *, home: Path | None = None, cwd: Path | None = None) -> tuple[SystemSkillTarget, ...]:
+def resolve_targets(
+    target: str,
+    *,
+    home: Path | None = None,
+    cwd: Path | None = None,
+    env: Mapping[str, str] | None = None,
+) -> tuple[SystemSkillTarget, ...]:
     """Resolve a CLI target selector to concrete skill roots."""
 
     if target not in SUPPORTED_TARGETS:
@@ -407,9 +316,9 @@ def resolve_targets(target: str, *, home: Path | None = None, cwd: Path | None =
     if target == "all":
         if home is not None:
             raise SystemSkillInstallError("--home can only be used with one concrete --target, not --target all.")
-        return tuple(resolve_targets(item, cwd=cwd)[0] for item in CONCRETE_TARGETS)
+        return tuple(resolve_targets(item, cwd=cwd, env=env)[0] for item in CONCRETE_TARGETS)
 
-    root = _default_skill_root(target, cwd=cwd) if home is None else home.expanduser()
+    root = _default_skill_root(target, cwd=cwd, env=env) if home is None else home.expanduser()
     return (SystemSkillTarget(target=target, skill_root=root.resolve(strict=False)),)
 
 
@@ -440,11 +349,13 @@ def install_system_skills(
             _remove_path(destination)
             replaced.append(existing)
         _project_skill(record.source_path, destination, projection_mode=projection_mode)
-        installed.append(_installed_record(record, destination, projection_mode))
+        receipt_record = _manifest_record_for(record, projection_mode)
+        installed.append(_installed_record(record, destination, projection_mode, receipt_record))
         manifest_records[record.name] = SystemSkillManifestRecord(
             name=record.name,
             source_path=record.source_path,
             projection_mode=projection_mode,
+            skill_version=record.skill_version,
         )
 
     updated_manifest = manifest
@@ -466,6 +377,7 @@ def inspect_system_skills(target: SystemSkillTarget, selection: SystemSkillSelec
     """Inspect selected packaged skill projections for one target skill root."""
 
     manifest, diagnostics = _read_manifest(target)
+    manifest_records = manifest.record_map() if manifest is not None else {}
     installed: list[InstalledSystemSkill] = []
     missing: list[str] = []
     invalid: list[InvalidSystemSkillProjection] = []
@@ -473,9 +385,9 @@ def inspect_system_skills(target: SystemSkillTarget, selection: SystemSkillSelec
     for record in selection.skills:
         destination = target.skill_root / record.name
         if destination.is_symlink():
-            installed.append(_installed_record(record, destination, "symlink"))
+            installed.append(_installed_record(record, destination, "symlink", manifest_records.get(record.name)))
         elif destination.is_dir():
-            installed.append(_installed_record(record, destination, "copy"))
+            installed.append(_installed_record(record, destination, "copy", manifest_records.get(record.name)))
         elif destination.exists():
             issue = InvalidSystemSkillProjection(
                 name=record.name,
@@ -509,7 +421,14 @@ def uninstall_system_skills(target: SystemSkillTarget, selection: SystemSkillSel
     for record in selection.skills:
         destination = target.skill_root / record.name
         if destination.exists() or destination.is_symlink():
-            removed.append(_installed_record(record, destination, _detected_projection_mode(destination)))
+            removed.append(
+                _installed_record(
+                    record,
+                    destination,
+                    _detected_projection_mode(destination),
+                    manifest_records.get(record.name),
+                )
+            )
             _remove_path(destination)
         else:
             absent.append(record.name)
@@ -572,8 +491,9 @@ def upgrade_system_skills(
         if destination.exists() or destination.is_symlink():
             _remove_path(destination)
         _project_skill(record.source_path, destination, projection_mode=mode)
-        refreshed.append(_installed_record(record, destination, mode))
-        manifest_records[record.name] = _manifest_record_for(record, mode)
+        refreshed_record = _manifest_record_for(record, mode)
+        refreshed.append(_installed_record(record, destination, mode, refreshed_record))
+        manifest_records[record.name] = refreshed_record
 
     updated_manifest = _write_manifest(target, manifest_records)
     return SystemSkillUpgradeResult(
@@ -588,12 +508,18 @@ def upgrade_system_skills(
     )
 
 
-def _default_skill_root(target: str, *, cwd: Path | None = None) -> Path:
+def _default_skill_root(
+    target: str,
+    *,
+    cwd: Path | None = None,
+    env: Mapping[str, str] | None = None,
+) -> Path:
     base = (cwd or Path.cwd()).resolve()
     if target == "claude-code":
         return base / ".claude" / "skills"
     if target == "codex":
-        codex_home = os.environ.get("CODEX_HOME", "").strip()
+        effective_env = os.environ if env is None else env
+        codex_home = effective_env.get("CODEX_HOME", "").strip()
         if codex_home:
             return Path(codex_home).expanduser() / "skills"
         return Path.home() / ".codex" / "skills"
@@ -648,7 +574,8 @@ def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest |
         return None, (_manifest_diagnostic(manifest_path, f"Cannot read Isomer skill manifest: {exc}"),)
     if not isinstance(raw, dict):
         return None, (_manifest_diagnostic(manifest_path, "Isomer skill manifest must be a JSON object."),)
-    if raw.get("schema_version") != SKILL_MANIFEST_SCHEMA:
+    schema_version = raw.get("schema_version")
+    if schema_version not in (SKILL_MANIFEST_SCHEMA, *LEGACY_SKILL_MANIFEST_SCHEMAS):
         return None, (_manifest_diagnostic(manifest_path, "Unsupported Isomer skill manifest schema version."),)
 
     skills: list[SystemSkillManifestRecord] = []
@@ -661,13 +588,25 @@ def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest |
         name = item.get("name")
         source_path = item.get("source_path")
         projection_mode = item.get("projection_mode")
+        skill_version = item.get("skill_version")
         if not isinstance(name, str) or not isinstance(source_path, str) or projection_mode not in {"copy", "symlink"}:
             return None, (_manifest_diagnostic(manifest_path, f"Isomer skill manifest skill record {index} is invalid."),)
+        if schema_version == SKILL_MANIFEST_SCHEMA:
+            if skill_version is not None and (not isinstance(skill_version, str) or not _is_pep440_version(skill_version)):
+                return None, (
+                    _manifest_diagnostic(
+                        manifest_path,
+                        f"Isomer skill manifest skill record {index} has an invalid skill_version.",
+                    ),
+                )
+        else:
+            skill_version = None
         skills.append(
             SystemSkillManifestRecord(
                 name=name,
                 source_path=source_path,
                 projection_mode=projection_mode,
+                skill_version=skill_version if isinstance(skill_version, str) else None,
             )
         )
 
@@ -678,7 +617,7 @@ def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest |
     package_name = raw.get("package_name")
     return (
         SystemSkillRootManifest(
-            schema_version=SKILL_MANIFEST_SCHEMA,
+            schema_version=str(schema_version),
             target=target_name if isinstance(target_name, str) else target.target,
             skill_root=target.skill_root,
             package_name=package_name if isinstance(package_name, str) else "isomer-labs",
@@ -722,16 +661,58 @@ def _manifest_record_for(record: SystemSkillRecord, projection_mode: ProjectionM
         name=record.name,
         source_path=record.source_path,
         projection_mode=projection_mode,
+        skill_version=record.skill_version,
     )
 
 
-def _installed_record(record: SystemSkillRecord, destination: Path, projection_mode: str | None) -> InstalledSystemSkill:
+def _installed_record(
+    record: SystemSkillRecord,
+    destination: Path,
+    projection_mode: str | None,
+    receipt_record: SystemSkillManifestRecord | None = None,
+) -> InstalledSystemSkill:
+    observation = inspect_skill_version(destination)
+    receipt_version = receipt_record.skill_version if receipt_record is not None else None
     return InstalledSystemSkill(
         name=record.name,
         path=destination,
         source_path=record.source_path,
         projection_mode=projection_mode,
+        skill_version=observation.raw_version,
+        receipt_skill_version=receipt_version,
+        minimum_compatible_version=record.minimum_compatible_version,
+        compatibility_status=_skill_compatibility_status(record, observation.raw_version, observation.status, receipt_record),
+        installation_verified=(
+            receipt_record is not None
+            and receipt_version is not None
+            and observation.status == "valid"
+            and receipt_version == observation.raw_version
+        ),
     )
+
+
+def _skill_compatibility_status(
+    record: SystemSkillRecord,
+    observed_version: str | None,
+    metadata_status: str,
+    receipt_record: SystemSkillManifestRecord | None,
+) -> str:
+    if metadata_status != "valid" or observed_version is None:
+        return metadata_status
+    if receipt_record is not None and receipt_record.skill_version is None:
+        return "unversioned"
+    if receipt_record is not None and receipt_record.skill_version != observed_version:
+        return "receipt_drift"
+    observed = Version(observed_version)
+    minimum = Version(record.minimum_compatible_version)
+    current = Version(record.skill_version)
+    if observed < minimum:
+        return "obsolete_incompatible"
+    if observed < current:
+        return "compatible_older"
+    if observed == current:
+        return "current"
+    return "newer_than_cli"
 
 
 def _detected_projection_mode(path: Path) -> str | None:
@@ -796,3 +777,18 @@ def _package_version() -> str | None:
         return metadata.version("isomer-labs")
     except metadata.PackageNotFoundError:
         return None
+
+
+def _packaged_skill_version(source_path: str) -> str:
+    try:
+        return require_skill_version(resolve_system_skill(source_path))
+    except (SystemSkillAssetError, ValueError) as exc:
+        raise SystemSkillInstallError(f"Packaged system skill {source_path!r} has invalid version metadata: {exc}") from exc
+
+
+def _is_pep440_version(value: str) -> bool:
+    try:
+        Version(value)
+    except InvalidVersion:
+        return False
+    return True

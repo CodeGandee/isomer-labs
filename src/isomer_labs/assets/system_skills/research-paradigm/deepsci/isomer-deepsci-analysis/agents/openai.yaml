@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-deepsci-analysis"
   short_description: "Run focused follow-up analysis for a result."

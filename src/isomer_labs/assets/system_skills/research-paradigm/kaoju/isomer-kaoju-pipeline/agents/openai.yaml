@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-kaoju-pipeline"
   short_description: "Route one bounded Kaoju survey procedure."

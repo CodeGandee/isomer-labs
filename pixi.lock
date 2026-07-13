@@ -663,13 +663,15 @@ packages:
 - pypi: ./
   name: isomer-labs
   version: 0.2.3
-  sha256: 4f43368b69f1bf4caba08e10c98fa2ae129969b351bb1d2de3e784bdd416b991
+  sha256: 1cf6b076de75ddb4b2f439743e29f04d16401b684761dbba6c73e20c2940033b
   requires_dist:
   - click>=8.4.1,<9
   - fastapi>=0.139.0,<0.140
   - jinja2>=3.1.6,<4
   - jsonschema>=4.26.0,<5
+  - packaging>=24,<27
   - pydantic>=2.12,<3
+  - pyyaml>=6,<7
   - sqlalchemy>=2.0,<3
   - tomlkit>=0.15.0,<0.16
   - uvicorn[standard]>=0.38.0,<0.39

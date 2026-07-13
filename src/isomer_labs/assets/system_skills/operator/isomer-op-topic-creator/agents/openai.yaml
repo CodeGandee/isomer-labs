@@ -1,3 +1,6 @@
+metadata:
+  version: "0.2.3"
+
 interface:
   display_name: "isomer-op-topic-creator"
   short_description: "Create Topic Actor-ready Isomer topics"

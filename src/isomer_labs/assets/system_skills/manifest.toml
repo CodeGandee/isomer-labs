@@ -4,6 +4,7 @@ schema_version = "isomer-skillset-manifest.v2"
 description = "Core Isomer operator, service, and miscellaneous skills."
 kind = "core"
 always_available = true
+minimum_compatible_skill_version = "0.2.3"
 skills = [
   "misc/isomer-misc-bounded-run-tips",
   "misc/isomer-misc-nvidia-tools",
@@ -41,6 +42,7 @@ commands = [
   "submission-pass",
 ]
 always_available = false
+minimum_compatible_skill_version = "0.2.3"
 skills = [
   "research-paradigm/deepsci/isomer-deepsci-analysis",
   "research-paradigm/deepsci/isomer-deepsci-baseline",
@@ -83,6 +85,7 @@ commands = [
   "manage-dataset",
 ]
 always_available = false
+minimum_compatible_skill_version = "0.2.3"
 skills = [
   "research-paradigm/kaoju/isomer-kaoju-pipeline",
   "research-paradigm/kaoju/isomer-kaoju-shared",
