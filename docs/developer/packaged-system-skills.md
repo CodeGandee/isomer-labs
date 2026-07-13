@@ -32,16 +32,28 @@ isomer-cli system-skills upgrade --target codex --extension deepsci
 isomer-cli system-skills upgrade --target codex --extension kaoju
 ```
 
-Within an initialized Project, detect extension installations per agent target without changing declarations or skill roots:
+The internal inspection namespace lets version-aligned system skills inspect one agent-supplied root or classify a host-supplied live inventory without knowing receipt filenames, schemas, or extension membership:
+
+```bash
+isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --category extensions
+isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --extension kaoju
+isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-kaoju-pipeline --skill-name isomer-kaoju-shared
+```
+
+Both commands are read-only, return `mutated: false`, and use `isomer-internal-system-skill-inspection.v1`. Root inspection reads only the supplied root. It reports current or legacy receipt state, real-directory and symlink projections, broken links, unmanaged same-name directories, complete or partial family coverage, and version compatibility. Inventory classification maps only names supplied by the current host; optional paths remain descriptive input and are not scanned.
+
+Within an initialized Project, direct detection accepts only explicit skill roots. With no root, it reports catalog and declaration state without filesystem discovery:
 
 ```bash
 isomer-cli --print-json project system-extensions detect
-isomer-cli --print-json project system-extensions detect --target codex
+isomer-cli --print-json project system-extensions detect --skill-root /explicit/agent/skill-root
 ```
 
-The no-target form checks only Project-local Claude Code, Kimi Code, and generic roots. Codex is explicit because its default root is user-global. Detection reports complete extension-family coverage, receipt and projected-version agreement, compatibility, and bounded repair advice. A compatible detected extension remains undeclared until the user runs `isomer-cli project system-extensions remember <extension-id>`. Project initialization includes the same Project-local observations in its output and never writes declarations from them.
+Direct `project init`, low-level `system-skills install`, and internal inspection do not register extensions. The core `isomer-op-system-skill-mgr` skill adds operator-aware automation because the working agent knows its own project-scope roots and live inventory. It trusts Project declarations first, then complete compatible Isomer receipts in host-supplied roots, then complete live-inventory families. During operator-controlled Project initialization, explicit reconciliation, extension installation, or a concrete extension-use request, it remembers complete extensions additively unless the user opts out. It never forgets a declaration because another agent exposes a different inventory.
 
-Core operator skills include `isomer-op-entrypoint` for informed routing and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
+Core operator skills include `isomer-op-entrypoint` for informed routing, `isomer-op-system-skill-mgr` for extension management, and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
+
+Project declarations are authoritative claimed state, not proof that every current agent host can load the extension. A declared-but-unavailable route is stale user-controlled state and receives repair advice without automatic removal. Receipt and projection compatibility remains advisory beneath a declaration. Newly installed skills may require a new turn, thread, or host-native reload; operator workflows report `host_refresh_required` instead of claiming current-session activation.
 
 Select `deepsci` for hypothesis-driven research that develops or evaluates a new route. Select `kaoju` for evidence-led literature and codebase surveys, including source examination, first-hand paper-method trials, and controlled comparisons. Selecting one extension includes core skills and that family only; use the existing all-extensions selector or select both when an agent needs both families.
 

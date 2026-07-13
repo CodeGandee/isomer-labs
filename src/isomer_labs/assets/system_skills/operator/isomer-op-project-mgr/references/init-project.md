@@ -20,9 +20,14 @@ When this subcommand is selected, execute the following steps in order.
    - Isomer-managed Houmao Project directory `.isomer-labs/`.
    - Isomer-managed Houmao overlay `.isomer-labs/.houmao/`.
    - Diagnostics and next operator action.
-6. State Research Topic creation status:
+6. Unless the user explicitly opts out of detected-extension registration, delegate `isomer-op-system-skill-mgr reconcile-extensions` after Project initialization succeeds:
+   - Let that owner trust Project declarations, inspect only agent-known project roots, then classify the current host's live inventory.
+   - Let it remember complete usable receipt-backed or live-inventory extensions additively.
+   - If reconciliation fails, preserve the successful Project result, report extension reconciliation as a distinct partial outcome, and offer `isomer-op-system-skill-mgr reconcile-extensions` as the retry route.
+   - If the user opts out, skip registration and optionally delegate `detect-extensions` for read-only observations.
+7. State Research Topic creation status:
    - The Project has no Research Topic until the user runs `isomer-cli project topics create <topic-id> --statement "<research topic>"` or a topic-team specialization flow routes through that command.
-7. Explain selected content root policy:
+8. Explain selected content root policy:
    - The selected content root's `README.md` and `.gitignore` are generated policy files.
    - Generated content under the selected root is ignored by default unless the user intentionally tracks selected files.
 
@@ -33,3 +38,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 - Do not create `.isomer-labs/` by hand when `isomer-cli project init` can run.
 - Do not treat a failed Houmao bootstrap as a successful Project init.
 - Do not run `project runtime init`, `project runtime prepare`, or team launch commands from this subcommand unless the user explicitly asks for a later step.
+- Do not imply that direct `isomer-cli project init` performs agent-host discovery or extension registration. Those are separate operator-skill actions.

@@ -11,11 +11,10 @@ if TYPE_CHECKING:
         ExistingSystemSkillPath,
         InstalledSystemSkill,
         InvalidSystemSkillProjection,
-        ProjectionMode,
-        SystemSkillRootManifest,
         SystemSkillSelection,
         SystemSkillTarget,
     )
+    from isomer_labs.skills.receipts import ProjectionMode, SystemSkillRootManifest
 
 
 @dataclass(frozen=True)

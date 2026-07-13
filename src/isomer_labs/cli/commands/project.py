@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import click
@@ -474,14 +475,14 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @system_extensions_group.command(name="detect", help="Detect target-specific system extensions without changing declarations.")
+    @system_extensions_group.command(name="detect", help="Inspect explicit system-skill roots without changing declarations.")
     @_common_options
     @click.option(
-        "--target",
-        "system_extension_targets",
+        "--skill-root",
+        "system_extension_skill_roots",
         multiple=True,
-        type=click.Choice(("claude-code", "codex", "kimi-code", "generic")),
-        help="Agent skill target to inspect; repeat as needed. Defaults to Project-local targets.",
+        type=click.Path(path_type=Path, file_okay=True, dir_okay=True),
+        help="Explicit agent-known skill root to inspect; repeat as needed. No provider roots are inferred.",
     )
     @click.pass_context
     def system_extensions_detect_command(
@@ -490,7 +491,7 @@ def register_project_commands(app: click.Group) -> None:
         manifest: str | None = None,
         output_format: str | None = None,
         json_output: bool = False,
-        system_extension_targets: tuple[str, ...] = (),
+        system_extension_skill_roots: tuple[Path, ...] = (),
     ) -> int:
         return _cmd_system_extensions_detect(
             _merge_options(
@@ -499,7 +500,7 @@ def register_project_commands(app: click.Group) -> None:
                 manifest=manifest,
                 output_format=output_format,
                 json_output=json_output,
-                system_extension_targets=system_extension_targets,
+                system_extension_skill_roots=system_extension_skill_roots,
             )
         )
 

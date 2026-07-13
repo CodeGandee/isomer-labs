@@ -47,6 +47,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertIn("core", core.selected_groups)
         self.assertIn("isomer-op-entrypoint", [skill.name for skill in core.skills])
         self.assertIn("isomer-op-gui-mgr", [skill.name for skill in core.skills])
+        self.assertIn("isomer-op-system-skill-mgr", [skill.name for skill in core.skills])
         self.assertNotIn("deepsci", core.selected_extensions)
         self.assertNotIn("kaoju", core.selected_extensions)
 

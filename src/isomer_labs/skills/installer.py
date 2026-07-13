@@ -11,9 +11,9 @@ import json
 import os
 from pathlib import Path
 import shutil
-from typing import Literal, Mapping, Sequence
+from typing import Mapping, Sequence
 
-from packaging.version import InvalidVersion, Version
+from packaging.version import Version
 
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.skills.install_results import (
@@ -21,6 +21,15 @@ from isomer_labs.skills.install_results import (
     SystemSkillStatusResult,
     SystemSkillUninstallResult,
     SystemSkillUpgradeResult,
+)
+from isomer_labs.skills.receipts import (
+    ProjectionMode,
+    SKILL_MANIFEST_FILENAME as SKILL_MANIFEST_FILENAME,
+    SKILL_MANIFEST_SCHEMA,
+    SystemSkillManifestInspection,
+    SystemSkillManifestRecord,
+    SystemSkillRootManifest,
+    inspect_system_skill_receipt,
 )
 from isomer_labs.skills.system_assets import (
     SystemSkillAssetError,
@@ -31,12 +40,8 @@ from isomer_labs.skills.system_assets import (
 from isomer_labs.skills.versioning import inspect_skill_version, require_skill_version
 
 
-SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
-SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v2"
-LEGACY_SKILL_MANIFEST_SCHEMAS = ("isomer-labs-skill-manifest.v1",)
 CONCRETE_TARGETS = ("claude-code", "codex", "kimi-code", "generic")
 SUPPORTED_TARGETS = (*CONCRETE_TARGETS, "all")
-ProjectionMode = Literal["copy", "symlink"]
 
 
 class SystemSkillInstallError(RuntimeError):
@@ -154,59 +159,6 @@ class InvalidSystemSkillProjection:
             "path": str(self.path),
             "path_kind": self.path_kind,
             "message": self.message,
-        }
-
-
-@dataclass(frozen=True)
-class SystemSkillManifestRecord:
-    """One skill record tracked in the target-root manifest."""
-
-    name: str
-    source_path: str
-    projection_mode: ProjectionMode
-    skill_version: str | None = None
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "name": self.name,
-            "source_path": self.source_path,
-            "projection_mode": self.projection_mode,
-            "skill_version": self.skill_version,
-        }
-
-
-@dataclass(frozen=True)
-class SystemSkillRootManifest:
-    """Target-root manifest for Isomer-managed system skill projections."""
-
-    schema_version: str
-    target: str
-    skill_root: Path
-    package_name: str
-    package_version: str | None
-    installed_by: str
-    updated_at: str
-    skills: tuple[SystemSkillManifestRecord, ...]
-
-    @property
-    def path(self) -> Path:
-        return self.skill_root / SKILL_MANIFEST_FILENAME
-
-    def record_map(self) -> dict[str, SystemSkillManifestRecord]:
-        return {record.name: record for record in self.skills}
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "schema_version": self.schema_version,
-            "target": self.target,
-            "skill_root": str(self.skill_root),
-            "package_name": self.package_name,
-            "package_version": self.package_version,
-            "installed_by": self.installed_by,
-            "updated_at": self.updated_at,
-            "skills": [record.to_json() for record in self.skills],
-            "skill_names": [record.name for record in self.skills],
-            "path": str(self.path),
         }
 
 
@@ -384,8 +336,17 @@ def inspect_system_skills(target: SystemSkillTarget, selection: SystemSkillSelec
     status_diagnostics = list(diagnostics)
     for record in selection.skills:
         destination = target.skill_root / record.name
-        if destination.is_symlink():
+        if destination.is_symlink() and destination.is_dir():
             installed.append(_installed_record(record, destination, "symlink", manifest_records.get(record.name)))
+        elif destination.is_symlink():
+            issue = InvalidSystemSkillProjection(
+                name=record.name,
+                path=destination,
+                path_kind="broken_symlink" if not destination.exists() else "symlink_to_non_directory",
+                message="Selected packaged system-skill symlink does not resolve to a skill directory.",
+            )
+            invalid.append(issue)
+            status_diagnostics.append(_projection_diagnostic(issue))
         elif destination.is_dir():
             installed.append(_installed_record(record, destination, "copy", manifest_records.get(record.name)))
         elif destination.exists():
@@ -564,70 +525,15 @@ def _remove_path(path: Path) -> None:
         shutil.rmtree(path)
 
 
+def inspect_system_skill_manifest(target: SystemSkillTarget) -> SystemSkillManifestInspection:
+    """Inspect the Isomer receipt in exactly one supplied system-skill root."""
+
+    return inspect_system_skill_receipt(target.skill_root, target.target)
+
+
 def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest | None, tuple[Diagnostic, ...]]:
-    manifest_path = target.skill_root / SKILL_MANIFEST_FILENAME
-    if not manifest_path.exists():
-        return None, ()
-    try:
-        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        return None, (_manifest_diagnostic(manifest_path, f"Cannot read Isomer skill manifest: {exc}"),)
-    if not isinstance(raw, dict):
-        return None, (_manifest_diagnostic(manifest_path, "Isomer skill manifest must be a JSON object."),)
-    schema_version = raw.get("schema_version")
-    if schema_version not in (SKILL_MANIFEST_SCHEMA, *LEGACY_SKILL_MANIFEST_SCHEMAS):
-        return None, (_manifest_diagnostic(manifest_path, "Unsupported Isomer skill manifest schema version."),)
-
-    skills: list[SystemSkillManifestRecord] = []
-    raw_skills = raw.get("skills", [])
-    if not isinstance(raw_skills, list):
-        return None, (_manifest_diagnostic(manifest_path, "Isomer skill manifest `skills` field must be a list."),)
-    for index, item in enumerate(raw_skills):
-        if not isinstance(item, dict):
-            return None, (_manifest_diagnostic(manifest_path, f"Isomer skill manifest skill record {index} must be an object."),)
-        name = item.get("name")
-        source_path = item.get("source_path")
-        projection_mode = item.get("projection_mode")
-        skill_version = item.get("skill_version")
-        if not isinstance(name, str) or not isinstance(source_path, str) or projection_mode not in {"copy", "symlink"}:
-            return None, (_manifest_diagnostic(manifest_path, f"Isomer skill manifest skill record {index} is invalid."),)
-        if schema_version == SKILL_MANIFEST_SCHEMA:
-            if skill_version is not None and (not isinstance(skill_version, str) or not _is_pep440_version(skill_version)):
-                return None, (
-                    _manifest_diagnostic(
-                        manifest_path,
-                        f"Isomer skill manifest skill record {index} has an invalid skill_version.",
-                    ),
-                )
-        else:
-            skill_version = None
-        skills.append(
-            SystemSkillManifestRecord(
-                name=name,
-                source_path=source_path,
-                projection_mode=projection_mode,
-                skill_version=skill_version if isinstance(skill_version, str) else None,
-            )
-        )
-
-    package_version = raw.get("package_version")
-    updated_at = raw.get("updated_at")
-    target_name = raw.get("target")
-    installed_by = raw.get("installed_by")
-    package_name = raw.get("package_name")
-    return (
-        SystemSkillRootManifest(
-            schema_version=str(schema_version),
-            target=target_name if isinstance(target_name, str) else target.target,
-            skill_root=target.skill_root,
-            package_name=package_name if isinstance(package_name, str) else "isomer-labs",
-            package_version=package_version if isinstance(package_version, str) else None,
-            installed_by=installed_by if isinstance(installed_by, str) else "isomer-cli",
-            updated_at=updated_at if isinstance(updated_at, str) else "",
-            skills=tuple(skills),
-        ),
-        (),
-    )
+    inspection = inspect_system_skill_manifest(target)
+    return inspection.manifest, inspection.diagnostics
 
 
 def _write_manifest(
@@ -735,16 +641,6 @@ def _path_kind(path: Path) -> str:
     return "missing"
 
 
-def _manifest_diagnostic(path: Path, message: str) -> Diagnostic:
-    return Diagnostic(
-        code="ISOSKILL001",
-        severity="warning",
-        concept="system-skill-manifest",
-        path=path,
-        message=message,
-    )
-
-
 def _projection_diagnostic(issue: InvalidSystemSkillProjection) -> Diagnostic:
     return Diagnostic(
         code="ISOSKILL002",
@@ -784,11 +680,3 @@ def _packaged_skill_version(source_path: str) -> str:
         return require_skill_version(resolve_system_skill(source_path))
     except (SystemSkillAssetError, ValueError) as exc:
         raise SystemSkillInstallError(f"Packaged system skill {source_path!r} has invalid version metadata: {exc}") from exc
-
-
-def _is_pep440_version(value: str) -> bool:
-    try:
-        Version(value)
-    except InvalidVersion:
-        return False
-    return True

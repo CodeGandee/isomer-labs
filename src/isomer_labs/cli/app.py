@@ -138,6 +138,7 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.deepsci_ext import register_deepsci_ext_commands
     from isomer_labs.cli.commands.doctor import register_doctor_commands
     from isomer_labs.cli.commands.handoffs import register_handoff_commands
+    from isomer_labs.cli.commands.internals import register_internal_commands
     from isomer_labs.cli.commands.project import register_project_commands, register_schema_commands
     from isomer_labs.cli.commands.research_records_ext import register_research_record_ext_commands
     from isomer_labs.cli.commands.runtime import register_runtime_commands
@@ -150,6 +151,7 @@ def _register_commands() -> None:
     from isomer_labs.cli.commands.web import register_web_commands
 
     register_doctor_commands(app)
+    register_internal_commands(app)
     register_project_commands(project_group)
     register_runtime_commands(project_group)
     register_artifact_format_commands(project_group)

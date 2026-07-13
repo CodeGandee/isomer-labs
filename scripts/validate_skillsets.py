@@ -26,6 +26,7 @@ LOCAL_REFERENCE_PREFIXES = ("references/", "assets/", "scripts/", "subcommands/"
 TOPIC_TEAM_SPECIALIZATION_SKILL = "isomer-op-topic-team-specialize"
 ENTRYPOINT_SKILL = "isomer-op-entrypoint"
 PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
+SYSTEM_SKILL_MANAGER_SKILL = "isomer-op-system-skill-mgr"
 GUI_MANAGER_SKILL = "isomer-op-gui-mgr"
 SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
@@ -910,11 +911,73 @@ ENTRYPOINT_REFERENCES = (
 ENTRYPOINT_ACTIVE_OWNER_SKILLS = (
     WELCOME_SKILL,
     PROJECT_MANAGER_SKILL,
+    SYSTEM_SKILL_MANAGER_SKILL,
     GUI_MANAGER_SKILL,
     SWITCH_IDENTITY_SKILL,
     TOPIC_CREATOR_SKILL,
     TOPIC_MANAGER_SKILL,
     TOPIC_TEAM_SPECIALIZATION_SKILL,
+)
+
+SYSTEM_SKILL_MANAGER_REFERENCES = (
+    "evidence-and-mutation.md",
+    "detect-extensions.md",
+    "reconcile-extensions.md",
+    "install-extension.md",
+    "status.md",
+    "repair.md",
+)
+
+SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
+    "## Workflow",
+    "## Subcommands",
+    "## Evidence Order",
+    "## Host Context Boundary",
+    "## Mutation Rules",
+    "## Output Contract",
+    "detect-extensions",
+    "reconcile-extensions",
+    "install-extension",
+    "status",
+    "repair",
+    "Project declaration",
+    "Managed explicit root",
+    "Live inventory",
+    "isomer-cli internals inspect-system-skill-root",
+    "isomer-cli internals classify-system-skill-inventory",
+    "isomer-cli project system-extensions remember",
+    "Never call `forget`",
+    "opted out",
+    "idempotent",
+    "one operator root or inventory",
+    "partial outcome",
+    "host_refresh_required",
+    "Default to **Essential Output** in chat.",
+    "Complete Output",
+)
+
+SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
+    "evidence-and-mutation.md": (
+        "Use global `isomer-cli`",
+        "project system-extensions list",
+        "internals inspect-system-skill-root",
+        "internals classify-system-skill-inventory",
+        "project system-extensions remember",
+        "Never call `forget`",
+        "host_refresh_required",
+    ),
+    "detect-extensions.md": ("read-only", "Project", "project-scope skill roots", "host-visible skill names"),
+    "reconcile-extensions.md": ("additive", "Project", "remember", "Never infer removal"),
+    "install-extension.md": ("Select the skill root", "--home", "Verify with", "registration", "host_refresh_required"),
+    "status.md": ("non-mutating", "declarations", "host-known roots", "stale user-controlled state"),
+    "repair.md": ("stale declaration", "malformed", "obsolete", "newer-than-CLI", "explicit user request"),
+}
+
+SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS = (
+    ".claude/skills",
+    ".codex/skills",
+    ".kimi-code/skills",
+    ".agents/skills",
 )
 
 ENTRYPOINT_SERVICE_SKILLS = (
@@ -2970,6 +3033,79 @@ def _line_is_allowed_entrypoint_service_boundary(line: str) -> bool:
     )
 
 
+def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    skill_dir = repo_root / "skillset" / "operator" / SYSTEM_SKILL_MANAGER_SKILL
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        add(diagnostics, repo_root, skill_md, 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} is required")
+        return diagnostics
+    if (skill_dir / "evals").exists():
+        add(diagnostics, repo_root, skill_dir / "evals", 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must not contain evals/")
+
+    lines = read_lines(skill_md)
+    text = "\n".join(lines)
+    frontmatter = parse_frontmatter(lines)
+    if frontmatter.get("name") != SYSTEM_SKILL_MANAGER_SKILL:
+        add(diagnostics, repo_root, skill_md, 2, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} frontmatter name must match the skill folder")
+    if not frontmatter.get("description"):
+        add(diagnostics, repo_root, skill_md, 3, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} frontmatter description is required")
+    validate_manifest(skill_dir, repo_root, diagnostics, "OPS014", manifest_required=True)
+    validate_local_references(skill_dir, repo_root, diagnostics, "OPS014")
+    add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS014", require_contract=True)
+
+    for term in SYSTEM_SKILL_MANAGER_REQUIRED_TERMS:
+        if term not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "# Isomer"), "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must document '{term}'")
+    declaration_index = text.find("Project declaration")
+    receipt_index = text.find("Managed explicit root")
+    inventory_index = text.find("Live inventory")
+    if not 0 <= declaration_index < receipt_index < inventory_index:
+        add(
+            diagnostics,
+            repo_root,
+            skill_md,
+            first_line_containing(lines, "## Evidence Order"),
+            "OPS014",
+            f"{SYSTEM_SKILL_MANAGER_SKILL} must preserve declaration, managed-root receipt, then live-inventory order",
+        )
+
+    references_dir = skill_dir / "references"
+    allowed_references = set(SYSTEM_SKILL_MANAGER_REFERENCES)
+    for reference_path in sorted(references_dir.glob("*.md")):
+        if reference_path.name not in allowed_references:
+            add(diagnostics, repo_root, reference_path, 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} has unexpected reference page references/{reference_path.name}")
+    for reference_name in SYSTEM_SKILL_MANAGER_REFERENCES:
+        reference_path = references_dir / reference_name
+        if not reference_path.exists():
+            add(diagnostics, repo_root, reference_path, 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must include references/{reference_name}")
+            continue
+        if f"references/{reference_name}" not in text:
+            add(diagnostics, repo_root, skill_md, first_line_containing(lines, "## Local References"), "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must link references/{reference_name}")
+        reference_text = reference_path.read_text(encoding="utf-8")
+        for term in SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS.get(reference_name, ()):
+            if term not in reference_text:
+                add(diagnostics, repo_root, reference_path, 1, "OPS014", f"references/{reference_name} must document '{term}'")
+
+    for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
+        for line_number, line in enumerate(read_lines(skill_file), start=1):
+            for provider_path in SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS:
+                if provider_path not in line:
+                    continue
+                lower_line = line.lower()
+                if any(marker in lower_line for marker in ("do not", "never", "not ", "avoid", "without")):
+                    continue
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_file,
+                    line_number,
+                    "OPS014",
+                    f"{SYSTEM_SKILL_MANAGER_SKILL} must not treat provider path '{provider_path}' as universal discovery authority",
+                )
+    return diagnostics
+
+
 def validate_entrypoint_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = repo_root / "skillset" / "operator" / ENTRYPOINT_SKILL
@@ -3127,6 +3263,8 @@ def validate_operator_manifest_inventory(repo_root: Path) -> list[Diagnostic]:
         add(diagnostics, repo_root, manifest_path, 1, "OPS012", f"skillset manifest must include operator/{SWITCH_IDENTITY_SKILL}")
     if f"operator/{ENTRYPOINT_SKILL}" not in skills:
         add(diagnostics, repo_root, manifest_path, 1, "OPS013", f"skillset manifest must include operator/{ENTRYPOINT_SKILL}")
+    if f"operator/{SYSTEM_SKILL_MANAGER_SKILL}" not in skills:
+        add(diagnostics, repo_root, manifest_path, 1, "OPS014", f"skillset manifest must include operator/{SYSTEM_SKILL_MANAGER_SKILL}")
     if f"operator/{GUI_MANAGER_SKILL}" not in skills:
         add(diagnostics, repo_root, manifest_path, 1, "OPS011", f"skillset manifest must include operator/{GUI_MANAGER_SKILL}")
     for retired_skill in WELCOME_RETIRED_ROUTE_SKILLS:
@@ -3263,6 +3401,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_topic_creator_module(repo_root))
     diagnostics.extend(validate_topic_manager_module(repo_root))
     diagnostics.extend(validate_welcome_module(repo_root))
+    diagnostics.extend(validate_system_skill_manager_module(repo_root))
     diagnostics.extend(validate_entrypoint_module(repo_root))
     diagnostics.extend(validate_switch_identity_module(repo_root))
     diagnostics.extend(validate_operator_manifest_inventory(repo_root))

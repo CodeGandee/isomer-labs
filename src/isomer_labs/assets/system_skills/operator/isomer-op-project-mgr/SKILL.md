@@ -21,7 +21,8 @@ When this skill is invoked, execute the following steps in order.
    - Include any local support reference it names.
    - Execute that workflow for one bounded manual operation.
 5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
-6. **Hand off topic-oriented work** to the narrow owner:
+6. **Reconcile operator extensions after initialization**. When `init-project` succeeds, delegate additive extension reconciliation to `isomer-op-system-skill-mgr` unless the user opted out. Report initialization and reconciliation as separate outcomes.
+7. **Hand off topic-oriented work** to the narrow owner:
    - Use `isomer-op-topic-creator` for blank-state topic creation, topic initialization, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
    - Use `isomer-op-topic-mgr` for initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, package mutation, environment verification routing, and topology repair.
    - Use `isomer-op-topic-team-specialize` only when the user explicitly asks to adapt or instantiate a Domain Agent Team Template.
@@ -76,6 +77,8 @@ When requested, include grouped handoff and audit fields:
 ## Guardrails
 
 Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), generated content-root policy files, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create a Research Topic, Topic Workspace, Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
+
+Direct `isomer-cli project init` does not know the active agent inventory and does not register extensions. During operator-controlled `init-project`, delegate the separate post-init reconciliation to `isomer-op-system-skill-mgr`; skip mutation when the user explicitly opts out.
 
 Use `isomer-cli project topics create <topic-id> --statement "<research topic>"` as the authoritative Research Topic creation path. It normally creates `isomer-content/topic-ws/<topic-id>/`; when init selected `--content-dir <content-dir>`, it normally creates `<content-dir>/topic-ws/<topic-id>/`. Use `project topics show`, `project topics update`, and plan-first `project topics delete <topic-id> --dry-run` before `project topics delete <topic-id> --yes` for topic lifecycle changes.
 

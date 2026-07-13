@@ -1,0 +1,6 @@
+interface:
+  display_name: "isomer-op-system-skill-mgr"
+  short_description: "Manage Isomer system-skill extensions"
+  default_prompt: "Use $isomer-op-system-skill-mgr to detect, reconcile, install, or repair Isomer system-skill extensions."
+metadata:
+  version: "0.2.3"

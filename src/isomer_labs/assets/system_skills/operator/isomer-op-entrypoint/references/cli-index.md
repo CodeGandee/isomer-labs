@@ -23,7 +23,9 @@ Use these before ambiguous mutation:
 - `isomer-cli project topics list`
 - `isomer-cli project context show`
 - `isomer-cli project system-extensions list`
-- `isomer-cli project system-extensions detect --target <operator-target>`
+- `isomer-cli project system-extensions detect --skill-root <host-known-root>`
+- `isomer-cli internals inspect-system-skill-root --skill-root <host-known-root>`
+- `isomer-cli internals classify-system-skill-inventory --skill-name <host-visible-name>`
 - `isomer-cli project paths get`
 - `isomer-cli project paths explain`
 - `isomer-cli project paths list`
@@ -46,7 +48,8 @@ Use these before ambiguous mutation:
 | Toolbox registration, validation, install, enable, disable, update-source, uninstall, show, list, or explain. | `isomer-cli project toolboxes ...` |
 | Toolbox callback insertion points, callback registry rows, callback resolution, validation, install, or refresh. | `isomer-cli project skill-callbacks ...` |
 | Toolbox Runtime Param set, unset, import, get, explain, or validate. | `isomer-cli project toolbox-params ...` |
-| Project extension declarations and target-specific advisory detection. | `isomer-cli project system-extensions ...` |
+| Project extension declarations and explicit-root advisory detection. | `isomer-cli project system-extensions ...` |
+| Provider-neutral explicit-root and live-inventory classification for version-aligned system skills. | `isomer-cli internals ...` |
 
 ## Research Records and Artifact Formats
 

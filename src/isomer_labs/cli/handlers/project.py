@@ -213,9 +213,7 @@ def _cmd_init(options: CliOptions) -> int:
         "houmao_project_dir": str(result.houmao_project_dir),
         "houmao_overlay_dir": str(result.houmao_overlay_dir),
         "houmao_bootstrap": houmao_bootstrap,
-        "system_extension_observations": [
-            observation.to_json() for observation in result.system_extension_observations
-        ],
+        "system_extension_reconciliation": "not_performed_by_direct_cli",
     }
     lines = []
     if not diagnostics:
@@ -228,9 +226,6 @@ def _cmd_init(options: CliOptions) -> int:
             f"Houmao Overlay: {result.houmao_overlay_dir}",
             "Research Topics: none registered; create one with `isomer-cli project topics create <topic-id> --statement \"<research topic>\"`.",
         ]
-        if result.system_extension_observations:
-            lines.append("System Extension Observations:")
-            lines.extend(_render_system_extension_observations(result.system_extension_observations))
     return _emit("init", options, payload, diagnostics, lines)
 
 
@@ -678,8 +673,7 @@ def _cmd_system_extensions_detect(options: CliOptions) -> int:
         )
     result = detect_project_system_extensions(
         project,
-        targets=tuple(_value(options, "system_extension_targets") or ()),
-        env=os.environ,
+        skill_roots=tuple(_value(options, "system_extension_skill_roots") or ()),
     )
     diagnostics.extend(result.diagnostics)
     return _emit(
@@ -1319,18 +1313,25 @@ def _render_system_extensions_result(title: str, payload: dict[str, object]) -> 
 
 def _render_system_extension_observations(observations: Sequence[Any]) -> list[str]:
     if not observations:
-        return ["- none detected"]
+        return ["- no explicit skill roots supplied; no filesystem discovery performed"]
     lines: list[str] = []
     for item in observations:
         observation = item.to_json() if hasattr(item, "to_json") else item
         if not isinstance(observation, dict):
             continue
-        version = f", version={observation.get('version_status')}" if observation.get("version_status") else ""
         lines.append(
-            f"- {observation.get('extension_id')} on {observation.get('target')}: {observation.get('status')}{version}"
+            f"- {observation.get('skill_root')}: {observation.get('root_status')} ({observation.get('evidence_basis')})"
         )
-        if observation.get("advice"):
-            lines.append(f"  Advice: {observation.get('advice')}")
+        extensions = observation.get("extensions")
+        if not isinstance(extensions, list):
+            continue
+        for extension in extensions:
+            if not isinstance(extension, dict):
+                continue
+            declared = ", declared" if extension.get("declared_installed") is True else ""
+            lines.append(
+                f"  - {extension.get('extension_id')}: {extension.get('coverage_status')} ({extension.get('evidence_basis')}{declared})"
+            )
     return lines
 
 

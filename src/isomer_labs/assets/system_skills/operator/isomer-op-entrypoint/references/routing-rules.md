@@ -6,7 +6,7 @@
 2. If the user explicitly names a skill or CLI family, prefer that route unless it conflicts with owner boundaries or required readiness.
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
 4. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
-5. Before automatic optional-extension routing, require a Project declaration plus a compatible target-specific detection result. Never turn detection into a declaration.
+5. Before optional-extension routing, trust a Project declaration first. For an undeclared extension, delegate receipt-backed explicit-root and live-inventory resolution plus any authorized additive registration to `isomer-op-system-skill-mgr`.
 6. Select one route, proceed with that selected route by default, and report blockers instead of presenting a menu when a concrete task can be routed.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build the smallest safe routing plan from candidate routes, owner boundaries, read-only context evidence, and missing inputs, then execute the plan or stop on a concrete blocker.
@@ -20,6 +20,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | User names a valid skill directly. | Load that skill unless readiness or ownership makes it unsafe. |
 | User names a valid `isomer-cli` command family. | Inspect CLI help and run the smallest safe command. |
 | Project bootstrap, validation, cleanup, relocation, context, or runtime setup. | `isomer-op-project-mgr`. |
+| System-skill extension detection, reconciliation, installation, status, registration, or repair. | `isomer-op-system-skill-mgr`. |
 | Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-toolbox-mgr`. |
 | New or partial Research Topic setup. | `isomer-op-topic-creator`. |
 | Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-topic-mgr`. |
@@ -37,7 +38,7 @@ Proceed when the user supplied a concrete task and the selected route owns it. D
 
 Block when required context cannot be resolved safely, when the selected route would bypass owner workflow boundaries, when mutation needs approval not present in the prompt, or when the selected research extension's readiness is missing and no setup route can run without more input.
 
-A direct extension-skill invocation preserves explicit user intent, but it does not override a target compatibility blocker. Compatible detected-but-undeclared extensions receive declaration advice; unavailable or incompatible extensions receive detector repair advice.
+A direct extension-skill invocation preserves explicit user intent. A Project declaration is authoritative routing state; later load failure receives stale-state repair guidance. An undeclared extension routes through `isomer-op-system-skill-mgr`, which may reconcile a complete family when the concrete request authorizes Project bookkeeping or return installation, compatibility, or refresh advice.
 
 ## Boundary Rules
 
@@ -48,5 +49,7 @@ Houmao-backed work stays Isomer-first. Use `isomer-cli project integrations houm
 Misc helper skills are explicit helper routes. `isomer-misc-tool-packs` can resolve a named toolset contract only when explicitly requested as a helper, but package mutation for a Topic Workspace remains owned by topic or environment setup workflows.
 
 Project-local Toolbox requests route to `isomer-op-toolbox-mgr`. Do not treat Toolbox callback management, insertion points, or Runtime Params as installable toolset requests.
+
+Provider-specific project roots, user-home roots, plugin roots, and discovery layouts are not entrypoint rules. The system-skill manager obtains roots and live inventory from the current host and passes only explicit inputs to `isomer-cli`.
 
 Retired compatibility skills are not active routes. Do not invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, or old `isomer-admin-*` names.

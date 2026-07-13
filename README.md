@@ -79,7 +79,7 @@ The Project Manifest records where each Topic Workspace lives, while `topic-work
 
 ## Install System Skills
 
-Install packaged Isomer skills with `isomer-cli system-skills install`. The entrypoint skill is included in the core group and is the best starting point for operators because it routes known tasks to the right Isomer skill or CLI command.
+Install packaged Isomer skills with `isomer-cli system-skills install`. The core group includes the entrypoint and `isomer-op-system-skill-mgr`; together they route known tasks and reconcile optional extensions from the current operator host.
 
 Discover optional agent-skill extensions and inspect their entry skills, public commands, and installation guidance before selecting one:
 
@@ -113,12 +113,15 @@ isomer-cli system-skills status --target codex
 isomer-cli system-skills uninstall --target codex
 ```
 
-Inside a Project, inspect extension availability for the active agent target before routing. Detection is read-only and does not add Project declarations:
+Direct CLI detection is read-only and inspects only roots supplied by the caller. With no root, it reports declarations and catalog state without scanning provider directories:
 
 ```bash
-isomer-cli --print-json project system-extensions detect --target codex
+isomer-cli --print-json project system-extensions detect
+isomer-cli --print-json project system-extensions detect --skill-root /explicit/agent/skill-root
 isomer-cli project system-extensions remember kaoju
 ```
+
+For normal agent-driven operation, use `$isomer-op-system-skill-mgr`. It trusts existing Project declarations, checks Isomer receipts in roots known to the current host, falls back to the host-visible skill inventory, and adds complete extensions to the Project during authorized reconciliation or installation unless the user opts out. It never removes a declaration because a different agent lacks the same installation. A new installation may require a new turn, thread, or host-native skill reload.
 
 ## Getting Started With CLI Agent
 

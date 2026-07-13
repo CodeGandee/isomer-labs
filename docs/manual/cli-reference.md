@@ -64,6 +64,25 @@ isomer-cli --print-json system-skills status --target generic
 isomer-cli system-skills uninstall --target codex
 ```
 
+### Internal System Skill Inspection Commands
+
+The `internals` namespace exposes provider-neutral, read-only primitives for version-aligned Isomer system skills:
+
+- `internals inspect-system-skill-root`
+- `internals classify-system-skill-inventory`
+
+`inspect-system-skill-root` requires one explicit `--skill-root` and accepts `--category core|extensions|all`, `--extension <id>`, and `--group <name>` filters. It inspects no parent, home, plugin, provider configuration, or conventional tool path. The result distinguishes absent roots, current and legacy receipts, malformed or unsupported receipts, copy and symlink projections, broken or invalid projections, unmanaged same-name directories, family coverage, and compatibility state.
+
+`classify-system-skill-inventory` accepts repeated `--skill-name` values and optional versioned JSON through `--inventory-json <file>` or `--inventory-json -` for stdin. Structured input uses `isomer-system-skill-inventory.v1`. The command maps supplied names to package-catalog groups and reports complete, partial, missing, and unmatched ambient entries without inspecting the supplied paths.
+
+**Side effects:** none. Both commands return the standard output wrapper, `mutated: false`, and the `isomer-internal-system-skill-inspection.v1` payload contract.
+
+```bash
+isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --extension kaoju
+isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-kaoju-pipeline --skill-name isomer-kaoju-shared
+isomer-cli --print-json internals classify-system-skill-inventory --inventory-json inventory.json
+```
+
 ### Extension Research Commands
 
 The `ext research` namespace manages GUI-readable research records and idea lineage metadata:
@@ -177,7 +196,7 @@ isomer-cli project init
 isomer-cli project init --content-dir custom-content
 ```
 
-`--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`. Successful initialization also performs read-only detection in the Project-local Claude Code, Kimi Code, and generic skill roots and returns advisory `system_extension_observations`; it does not declare, install, upgrade, or remove extensions.
+`--content-dir <content-dir>` must resolve inside the Project root and must not live inside `.isomer-labs/` or collide with root `.houmao/`. When omitted, init uses `isomer-content/`. Create Research Topics with `project topics create`, not `project init`. Direct initialization does not inspect agent skill roots, read a live agent inventory, or register optional extensions. When an active Project Operator Session uses `isomer-op-project-mgr init-project`, that higher-level skill delegates separate additive reconciliation to `isomer-op-system-skill-mgr` unless the user opts out.
 
 ### `project content-root move`
 
@@ -329,19 +348,19 @@ System skill families use `isomer-<extension-name>-<purpose>` names for domain e
 
 ### `project system-extensions`
 
-List and maintain user-declared Project operator system extensions, or inspect target-specific installations. Declarations live in the Project Manifest under `[operator.system_extensions]` and remain user-controlled policy. Detection reads projected `agents/openai.yaml` versions and Isomer receipts as advisory evidence; it never turns one agent target's installation into a Project declaration.
+List and maintain user-declared Project operator system extensions, or inspect caller-supplied skill roots. Declarations live in the Project Manifest under `[operator.system_extensions]` and remain authoritative user-controlled policy, not proof that every current agent host can load an extension. Detection delegates each explicit root to the internal inspector and never turns an observation into a Project declaration.
 
-**Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` and `detect` are read-only. With no `--target`, `detect` checks Project-local `claude-code`, `kimi-code`, and `generic` roots. Pass `--target codex` explicitly to inspect `$CODEX_HOME/skills` or `~/.codex/skills`.
+**Side effects:** `remember` and `forget` mutate only the Project Manifest declaration list. `list` and `detect` are read-only. With no `--skill-root`, `detect` reports declarations and catalog state without scanning any filesystem root. Repeat `--skill-root` to inspect roots already known to the current caller.
 
 ```bash
 isomer-cli --print-json project system-extensions list
 isomer-cli --print-json project system-extensions detect
-isomer-cli --print-json project system-extensions detect --target codex
+isomer-cli --print-json project system-extensions detect --skill-root /explicit/agent/skill-root
 isomer-cli --print-json project system-extensions remember deepsci
 isomer-cli --print-json project system-extensions forget deepsci
 ```
 
-Detection reports each extension separately for each target. `ready` observations have complete family coverage, a versioned receipt matching projected skill metadata, and either `current` or `compatible_older` compatibility. Missing, partial, unversioned, malformed, drifted, obsolete, and newer-than-CLI observations include bounded install, repair, or CLI-upgrade advice.
+Detection keeps observations separated by supplied root and reports managed receipt evidence, projection state, complete and missing members, and version compatibility. Use `isomer-op-system-skill-mgr` for operator-aware declaration-first routing, live-inventory fallback, additive reconciliation, selected-root installation, stale declaration repair, and `host_refresh_required` guidance. Automated reconciliation never forgets declarations when different agents expose different extension inventories.
 
 ### `project toolboxes`
 

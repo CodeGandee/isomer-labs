@@ -3,10 +3,10 @@
 ## Workflow
 
 1. Determine whether the task is production DeepSci hypothesis-driven work, DeepSci paper-companion work, or Kaoju evidence-led survey work.
-2. Read the Project declaration and run `isomer-cli project system-extensions detect --target <operator-target>` before automatic routing. A route is available only when its extension is declared and the target observation is `ready` with `current` or `compatible_older` version status.
-3. If compatible installation is detected but undeclared, advise `isomer-cli project system-extensions remember <extension-id>` without running it. For missing, partial, unversioned, malformed, drifted, obsolete, or newer-than-CLI observations, stop automatic routing and return detector advice.
+2. Read the Project declaration first. If the Project declares the selected extension, trust that state and attempt the extension route without preemptive filesystem verification.
+3. If the extension is undeclared, delegate to `isomer-op-system-skill-mgr`. Its ordered evidence is Project declaration, managed receipt in a host-supplied root, then live skill inventory. Use `detect-extensions` for read-only requests and `reconcile-extensions` when the concrete request authorizes additive Project bookkeeping.
 4. Check base Topic Workspace, selected Topic Actor or Agent workspace, extension-specific readiness, required owner or Gate evidence, the selected route's latest-context preflight, and its worker-output policy before a research skill can run.
-5. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route extension readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
+5. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route missing extension installation or compatibility to `isomer-op-system-skill-mgr`; route extension workspace readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
 6. Route prepared work to the matching `isomer-deepsci-*` or `isomer-kaoju-*` skill, using the family pipeline for a named procedure.
 7. Preserve the selected family's callbacks, evidence, lineage, recording, owner, Gate, and blocker rules.
 
@@ -66,3 +66,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Polish, restructure, or translate academic prose into Nature-leaning English without inventing claims. | `isomer-deepsci-nature-polishing` |
 
 Do not let ordinary DeepSci research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, extension readiness, dataset registration, or owner evidence. Route setup first, then return to the selected extension skill. Apply the same rule to ordinary Kaoju research-stage skills.
+
+If a Project-declared extension later fails to load, report stale user-controlled state and route `isomer-op-system-skill-mgr repair`. Never remove a declaration because one agent host has a different installed inventory.

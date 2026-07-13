@@ -224,6 +224,10 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_welcome_skill(root)
         self.write_entrypoint_skill(root)
         self.write_switch_identity_skill(root)
+        shutil.copytree(
+            REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr",
+            root / "skillset" / "operator" / "isomer-op-system-skill-mgr",
+        )
 
     def write_topic_team_dependency_contract(self, root: Path) -> None:
         skill_dir = root / "skillset" / "operator" / "isomer-op-topic-team-specialize"
@@ -809,7 +813,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
+            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-system-skill-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
 
             ## Common Mistakes
 
@@ -862,7 +866,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-op-entrypoint`.
+                `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-system-skill-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-op-entrypoint`.
                 `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, `isomer-srv-topic-service-agent-support`.
                 `isomer-misc-tool-packs` is explicitly requested.
             """,
@@ -1465,6 +1469,41 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
 
+    def test_operator_validator_accepts_system_skill_manager_contract(self) -> None:
+        diagnostics = validator.validate_system_skill_manager_module(REPO_ROOT)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_rejects_system_skill_manager_universal_provider_path(self) -> None:
+        root = self.make_root()
+        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        shutil.copytree(source, target)
+        skill_md = target / "SKILL.md"
+        skill_md.write_text(
+            skill_md.read_text(encoding="utf-8") + "\nAlways discover project extensions from `.claude/skills`.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_system_skill_manager_module(root)
+
+        self.assertIn("OPS014", codes(diagnostics))
+        self.assertTrue(any("universal discovery authority" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_rejects_system_skill_manager_trust_order_regression(self) -> None:
+        root = self.make_root()
+        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        shutil.copytree(source, target)
+        skill_md = target / "SKILL.md"
+        text = skill_md.read_text(encoding="utf-8")
+        skill_md.write_text(text.replace("# Isomer Operator", "Live inventory first.\n\n# Isomer Operator", 1), encoding="utf-8")
+
+        diagnostics = validator.validate_system_skill_manager_module(root)
+
+        self.assertIn("OPS014", codes(diagnostics))
+        self.assertTrue(any("declaration, managed-root receipt, then live-inventory order" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_entrypoint_deepsci_extension_coverage(self) -> None:
         root = self.make_root()
         self.write_entrypoint_skill(root, omit_reference_term="isomer-deepsci-scout")
@@ -1513,6 +1552,7 @@ class SkillsetValidatorTests(unittest.TestCase):
               "operator/isomer-op-welcome",
               "operator/isomer-op-switch-identity",
               "operator/isomer-op-project-mgr",
+              "operator/isomer-op-system-skill-mgr",
             ]
             """,
         )

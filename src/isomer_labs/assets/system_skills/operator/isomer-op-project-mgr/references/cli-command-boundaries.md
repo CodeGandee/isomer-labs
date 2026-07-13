@@ -13,6 +13,8 @@ isomer-cli project --root <project-root> init --content-dir <content-dir>
 
 Omit `--content-dir <content-dir>` to use `isomer-content/`. Include it only when the Project should store generated content under a different project-local root; the derived Topic Workspace base for later topic creation is `<content-dir>/topic-ws/`.
 
+Direct Project initialization does not scan agent skill roots or register optional extensions. An operator-controlled `init-project` delegates the separate additive reconciliation step to `isomer-op-system-skill-mgr` unless the user opts out.
+
 Research Topic lifecycle:
 
 ```bash
