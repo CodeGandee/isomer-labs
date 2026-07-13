@@ -1,0 +1,8 @@
+interface:
+  display_name: "isomer-dev-testing"
+  short_description: "Install editable local builds with uv"
+  default_prompt: "Use $isomer-dev-testing install-to-uv to install the current Isomer Labs checkout as an editable user-space uv tool with a local build version."
+metadata:
+  version: "0.2.3"
+policy:
+  allow_implicit_invocation: false
