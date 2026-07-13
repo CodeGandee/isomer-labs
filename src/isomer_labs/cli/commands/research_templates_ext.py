@@ -7,22 +7,30 @@ import os
 import shutil
 import subprocess
 import textwrap
+from dataclasses import replace
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 import click
 
+from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import (
     common_options as _common_options,
+    merge_options as _merge_options,
     topic_selection_options as _topic_selection_options,
 )
+from isomer_labs.cli.output import emit_output
+from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.deepsci_ext.tools import dumps_raw_json
 from isomer_labs.project.context import EffectiveTopicContext
+from isomer_labs.project.validation import ProjectValidationScope
 from isomer_labs.records.index import query_index_list
 from isomer_labs.records.store import (
+    ResearchRecordError,
     ResearchRecordRequest,
     archive_record,
     create_record,
-    list_records,
+    effective_records_list_limit,
     revise_record,
     show_record,
 )
@@ -33,16 +41,13 @@ TEMPLATE_RELATIVE_ROOT = Path("intent") / "derived" / "writing-template"
 TEMPLATE_SEMANTIC_ID = "kaoju:writing-template"
 TEMPLATE_PROFILE_REF = "isomer:research/record-format/profile/kaoju/control/writing-template/v1"
 
-WithContext = Callable[..., int]
-JsonErrorPayload = Callable[[Exception], dict[str, object]]
+TemplateCallback = Callable[
+    [EffectiveTopicContext, ResearchRecordRequest | None],
+    tuple[dict[str, Any], list[Any]],
+]
 
 
-def register_research_templates_commands(
-    research_group: click.Group,
-    *,
-    with_context: WithContext,
-    json_error_payload: JsonErrorPayload,
-) -> None:
+def register_research_templates_commands(research_group: click.Group) -> None:
     @research_group.group(name="templates", help="Manage paper-writing LaTeX templates.")
     def templates_group() -> None:
         pass
@@ -86,7 +91,7 @@ def register_research_templates_commands(
             payload["preview_build"] = build_result
             return payload, diagnostics
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
 
     @templates_group.command(name="list", help="List writing-template records.")
     @_common_options
@@ -96,27 +101,40 @@ def register_research_templates_commands(
     @click.pass_context
     def list_command(ctx: click.Context, venue: str | None, paper_type: str | None, **kwargs: Any) -> int:
         def callback(context: EffectiveTopicContext, _request: ResearchRecordRequest | None) -> tuple[dict[str, Any], list[Any]]:
-            payload, diagnostics = list_records(
+            limit_diagnostics: list[Diagnostic] = []
+            selected_limit = effective_records_list_limit(context, None, limit_diagnostics)
+            indexed_payload, diagnostics = query_index_list(
                 context,
                 env=os.environ,
                 semantic_id=TEMPLATE_SEMANTIC_ID,
-                limit=None,
+                limit=selected_limit,
             )
-            records = payload.get("records", [])
+            records = indexed_payload.get("records", [])
             filtered: list[dict[str, Any]] = []
-            for record in records:
-                meta = record.get("transition_metadata", {}) or {}
-                is_default = meta.get("template_name") == DEFAULT_TEMPLATE_NAME
-                record["is_default"] = is_default
+            if not isinstance(records, list):
+                records = []
+            for row in records:
+                if not isinstance(row, dict):
+                    continue
+                record = _template_summary_from_index_row(row)
+                if record is None:
+                    continue
+                meta = record["transition_metadata"]
                 if venue is not None and meta.get("venue") != venue:
                     continue
                 if paper_type is not None and meta.get("paper_type") != paper_type:
                     continue
                 filtered.append(record)
-            payload["records"] = filtered
-            return payload, diagnostics
+            payload = {
+                **indexed_payload,
+                "operation": "list",
+                "count": len(filtered),
+                "limit": selected_limit,
+                "records": filtered,
+            }
+            return payload, [*limit_diagnostics, *diagnostics]
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
 
     @templates_group.command(name="show", help="Show a writing template record and file tree.")
     @_common_options
@@ -144,7 +162,7 @@ def register_research_templates_commands(
                 detail["readme"] = readme.read_text(encoding="utf-8")
             return detail, diagnostics
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
 
     @templates_group.command(name="refresh", help="Regenerate template files and create a descendant record.")
     @_common_options
@@ -190,7 +208,7 @@ def register_research_templates_commands(
             payload["preview_build"] = build_result
             return payload, diagnostics
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
 
     @templates_group.command(name="compile", help="Recompile the preview PDF for an existing template.")
     @_common_options
@@ -235,7 +253,7 @@ def register_research_templates_commands(
                 payload["ok"] = False
             return payload, diagnostics
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
 
     @templates_group.command(name="remove", help="Archive a writing-template record.")
     @_common_options
@@ -257,7 +275,120 @@ def register_research_templates_commands(
                 payload["template_dir_removed"] = str(template_dir)
             return payload, diagnostics
 
-        return with_context(ctx, kwargs, callback, build_request=False)
+        return _with_template_context(ctx, kwargs, callback)
+
+
+def _with_template_context(
+    ctx: click.Context,
+    values: dict[str, Any],
+    callback: TemplateCallback,
+) -> int:
+    options = _merge_options(
+        ctx,
+        project=values.get("project"),
+        manifest=values.get("manifest"),
+        output_format=values.get("output_format"),
+        json_output=bool(values.get("json_output", False)),
+        research_topic_id=values.get("research_topic_id"),
+        topic_workspace_id=values.get("topic_workspace_id"),
+        research_inquiry_id=values.get("research_inquiry_id"),
+        research_task_id=values.get("research_task_id"),
+        run_id=values.get("run_id"),
+        agent_team_instance_id=values.get("agent_team_instance_id"),
+        agent_instance_id=values.get("agent_instance_id"),
+        topic_agent_team_profile_id=values.get("topic_agent_team_profile_id"),
+    )
+    command = f"ext research templates {ctx.command.name}"
+    context, diagnostics = _context_for_options(
+        options,
+        validation_scope=ProjectValidationScope.RESEARCH_TEMPLATES,
+    )
+    if context is None or has_errors(diagnostics):
+        payload: dict[str, Any] = {
+            "ok": False,
+            "mutated": False,
+            "error": {
+                "code": "context_resolution_failed",
+                "message": "Research template commands require a selected Isomer Topic Workspace.",
+            },
+        }
+        return _emit_template_failure(command, options, payload, _context_guidance(diagnostics))
+    try:
+        payload, callback_diagnostics = callback(context, None)
+    except ResearchRecordError as exc:
+        payload = exc.to_payload()
+        payload.setdefault("mutated", False)
+        return _emit_template_failure(
+            command,
+            options,
+            payload,
+            [*diagnostics, *_diagnostics_from_payload(payload)],
+        )
+    typed_callback_diagnostics = [
+        diagnostic
+        for diagnostic in callback_diagnostics
+        if isinstance(diagnostic, Diagnostic)
+    ]
+    all_diagnostics = [*diagnostics, *typed_callback_diagnostics]
+    if payload.get("ok") is False or has_errors(typed_callback_diagnostics):
+        payload.setdefault("mutated", False)
+        payload.setdefault(
+            "error",
+            {
+                "code": "template_operation_failed",
+                "message": f"Research template {ctx.command.name} failed.",
+            },
+        )
+        return _emit_template_failure(command, options, payload, all_diagnostics)
+    click.echo(dumps_raw_json(payload))
+    return 0
+
+
+def _emit_template_failure(
+    command: str,
+    options: Any,
+    payload: dict[str, Any],
+    diagnostics: list[Diagnostic],
+) -> int:
+    error = payload.get("error")
+    error_data = error if isinstance(error, dict) else {}
+    code = str(error_data.get("code") or "template_operation_failed")
+    message = str(error_data.get("message") or "Research template operation failed.")
+    text_lines = [f"ERROR | {code} | {message}"]
+    if isinstance(payload.get("mutated"), bool):
+        text_lines.append(f"Mutated: {str(payload['mutated']).lower()}")
+    return emit_output(command, options, payload, diagnostics, text_lines)
+
+
+def _context_guidance(diagnostics: list[Diagnostic]) -> list[Diagnostic]:
+    hint = "Pass --topic <topic-id>, run inside a registered Topic Workspace, or configure Project Manifest defaults."
+    return [
+        replace(diagnostic, hint=hint)
+        if diagnostic.code == "ISO013" and diagnostic.hint is None
+        else diagnostic
+        for diagnostic in diagnostics
+    ]
+
+
+def _diagnostics_from_payload(payload: dict[str, Any]) -> list[Diagnostic]:
+    raw_diagnostics = payload.get("diagnostics")
+    if not isinstance(raw_diagnostics, list):
+        return []
+    diagnostics: list[Diagnostic] = []
+    for item in raw_diagnostics:
+        if not isinstance(item, dict):
+            continue
+        severity: Literal["error", "warning"] = "warning" if item.get("severity") == "warning" else "error"
+        diagnostics.append(
+            Diagnostic(
+                code=str(item.get("code") or "query_index_diagnostic"),
+                severity=severity,
+                concept=str(item.get("concept") or "Research Record Query Index"),
+                message=str(item.get("message") or "The research-record query index reported an error."),
+                hint=str(item["hint"]) if item.get("hint") is not None else None,
+            )
+        )
+    return diagnostics
 
 
 def _template_dir(context: EffectiveTopicContext, template_name: str) -> Path:
@@ -485,6 +616,36 @@ def _parents_json(record_id: str) -> list[dict[str, Any]]:
     return [{"record_id": record_id, "lineage_kind": "derived_from", "status": "ready"}]
 
 
+def _template_summary_from_index_row(row: dict[str, Any]) -> dict[str, Any] | None:
+    record_id = row.get("record_id")
+    if not isinstance(record_id, str) or not record_id:
+        return None
+    metadata = row.get("metadata")
+    metadata = metadata if isinstance(metadata, dict) else {}
+    transition_metadata = metadata.get("transition_metadata")
+    transition_metadata = transition_metadata if isinstance(transition_metadata, dict) else {}
+    lifecycle_refs = metadata.get("lifecycle_refs")
+    lifecycle_refs = lifecycle_refs if isinstance(lifecycle_refs, dict) else {}
+    template_name = transition_metadata.get("template_name")
+    return {
+        "id": record_id,
+        "record_kind": row.get("record_kind"),
+        "research_topic_id": row.get("research_topic_id"),
+        "topic_workspace_id": row.get("topic_workspace_id"),
+        "status": row.get("status"),
+        "created_at": row.get("created_at"),
+        "updated_at": row.get("updated_at"),
+        "content_path": row.get("content_path"),
+        "lifecycle_refs": lifecycle_refs,
+        "transition_metadata": transition_metadata,
+        "template_name": template_name,
+        "venue": transition_metadata.get("venue"),
+        "paper_type": transition_metadata.get("paper_type"),
+        "preview_status": transition_metadata.get("preview_status"),
+        "is_default": template_name == DEFAULT_TEMPLATE_NAME,
+    }
+
+
 def _find_template_record(context: EffectiveTopicContext, template_name: str) -> dict[str, Any] | None:
     payload, _ = query_index_list(
         context,
@@ -493,23 +654,32 @@ def _find_template_record(context: EffectiveTopicContext, template_name: str) ->
         status="ready",
         limit=None,
     )
+    if payload.get("ok") is False:
+        error = payload.get("error")
+        error_data = error if isinstance(error, dict) else {}
+        raise ResearchRecordError(
+            str(error_data.get("message") or "The research-record query index could not select a writing template."),
+            code=str(error_data.get("code") or "query_index_unavailable"),
+            payload={
+                "mutated": False,
+                "operation": payload.get("operation", "query.list"),
+                "diagnostics": payload.get("diagnostics", []),
+            },
+        )
     records = payload.get("records", [])
     if not isinstance(records, list):
         return None
-    for record in records:
-        if not isinstance(record, dict):
+    for row in records:
+        if not isinstance(row, dict):
+            continue
+        record = _template_summary_from_index_row(row)
+        if record is None:
             continue
         if record.get("status") == "archived":
             continue
-        meta = (record.get("metadata") or {}).get("transition_metadata", {}) or {}
-        if not isinstance(meta, dict):
-            continue
+        meta = record["transition_metadata"]
         if meta.get("template_name") == template_name:
-            return {
-                "id": record["record_id"],
-                "status": record["status"],
-                "transition_metadata": meta,
-            }
+            return record
     return None
 
 

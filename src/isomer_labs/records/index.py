@@ -8,6 +8,7 @@ from typing import Any, Mapping
 
 from sqlalchemy import Table, and_, create_engine, delete, or_, select, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import OperationalError
 
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.records import ResearchRecordLineageEdge, RuntimeLifecycleRecord
@@ -29,9 +30,9 @@ from .lineage_index import (
     replace_all_canonical_lineage_rows,
     replace_canonical_lineage_rows_for_record,
 )
-from .semantic_index import index_diagnostic as _diag
-from .semantic_index import invalid_query_payload as _invalid_query_payload
+from .semantic_index import index_diagnostic as _diag, invalid_query_payload as _invalid_query_payload
 from .semantic_index import latest_record_candidates, records_by_id, valid_semantic_id
+from .semantic_index import query_index_schema_unavailable_payload as _query_index_schema_unavailable_payload
 from .index_schema import (
     EXPORT_VIEWS,
     QUERY_FACETS,
@@ -213,31 +214,36 @@ def query_index_list(
         return _runtime_missing_payload("query.list", diagnostics), diagnostics
     engine = _engine_for_db_path(store.db_path, read_only=True)
     try:
-        rows = _query_records(
-            engine,
-            context,
-            record_kind=record_kind,
-            status=status,
-            profile=profile,
-            artifact_family=artifact_family,
-            semantic_id=semantic_id,
-            procedure=procedure,
-            facet=facet,
-            limit=limit,
-        )
-        latest_diagnostics: list[dict[str, object]] = []
-        if latest_only:
-            rows, latest_diagnostics = latest_record_candidates(rows)
-        return {
-            "ok": True,
-            "mutated": False,
-            "operation": "query.list",
-            **index_revision_payload(engine, context),
-            "count": len(rows),
-            "records": rows,
-            "latest_only": latest_only,
-            "diagnostics": latest_diagnostics,
-        }, diagnostics
+        try:
+            rows = _query_records(
+                engine,
+                context,
+                record_kind=record_kind,
+                status=status,
+                profile=profile,
+                artifact_family=artifact_family,
+                semantic_id=semantic_id,
+                procedure=procedure,
+                facet=facet,
+                limit=limit,
+            )
+            latest_diagnostics: list[dict[str, object]] = []
+            if latest_only:
+                rows, latest_diagnostics = latest_record_candidates(rows)
+            return {
+                "ok": True,
+                "mutated": False,
+                "operation": "query.list",
+                **index_revision_payload(engine, context),
+                "count": len(rows),
+                "records": rows,
+                "latest_only": latest_only,
+                "diagnostics": latest_diagnostics,
+            }, diagnostics
+        except OperationalError as exc:
+            if not any(marker in str(exc).lower() for marker in ("no such column", "no such table")):
+                raise
+            return _query_index_schema_unavailable_payload("query.list", diagnostics)
     finally:
         engine.dispose()
         store.close()

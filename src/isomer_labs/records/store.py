@@ -352,7 +352,7 @@ def list_records(
     if runtime_store is None:
         return _runtime_missing_payload("list", diagnostics), diagnostics
     try:
-        selected_limit = _effective_records_list_limit(context, limit, diagnostics)
+        selected_limit = effective_records_list_limit(context, limit, diagnostics)
         structured_by_record_id = {
             payload.record_id: payload
             for payload in runtime_store.list_structured_payloads(
@@ -2913,7 +2913,7 @@ def _read_structured_payload_json(
     return payload, diagnostics
 
 
-def _effective_records_list_limit(
+def effective_records_list_limit(
     context: EffectiveTopicContext,
     requested_limit: int | None,
     diagnostics: list[Diagnostic],

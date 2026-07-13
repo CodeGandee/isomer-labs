@@ -127,7 +127,7 @@ from isomer_labs.teams.templates import (
 )
 from isomer_labs.teams.instantiation import parse_topic_team_instantiation_packet
 from isomer_labs.core.toml_loader import load_toml
-from isomer_labs.project.validation import build_project_state
+from isomer_labs.project.validation import ProjectValidationScope, build_project_state
 from isomer_labs.project.system_extensions import (
     detect_project_system_extensions,
     forget_project_system_extension,
@@ -152,12 +152,14 @@ _IMPLICIT_TOPIC_SELECTION_SOURCES = {
 }
 
 
-def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | None, list[Diagnostic]]:
+def _context_for_options(
+    options: CliOptions,
+    *,
+    validation_scope: ProjectValidationScope = ProjectValidationScope.FULL,
+) -> tuple[EffectiveTopicContext | None, list[Diagnostic]]:
     project, diagnostics = _discover(options)
     if project is None:
         return None, diagnostics
-    state = build_project_state(project)
-    diagnostics.extend(state.diagnostics)
     request = SelectionRequest(
         research_topic_id=_value(options, "research_topic_id"),
         topic_workspace_id=_value(options, "topic_workspace_id"),
@@ -168,6 +170,33 @@ def _context_for_options(options: CliOptions) -> tuple[EffectiveTopicContext | N
         agent_instance_id=_value(options, "agent_instance_id"),
         topic_agent_team_profile_id=_value(options, "topic_agent_team_profile_id"),
     )
+    if validation_scope is ProjectValidationScope.RESEARCH_TEMPLATES:
+        selection_state = build_project_state(
+            project,
+            validation_scope=validation_scope,
+            research_topic_ids=(),
+        )
+        selection_context, selection_diagnostics = resolve_effective_topic_context(
+            selection_state,
+            request,
+            cwd=Path.cwd(),
+            env=os.environ,
+        )
+        scoped_diagnostics = [
+            *diagnostics,
+            *selection_state.diagnostics,
+            *selection_diagnostics,
+        ]
+        if selection_context is None or has_errors(scoped_diagnostics):
+            return selection_context, scoped_diagnostics
+        state = build_project_state(
+            project,
+            validation_scope=validation_scope,
+            research_topic_ids=(selection_context.research_topic.id,),
+        )
+    else:
+        state = build_project_state(project, validation_scope=validation_scope)
+    diagnostics.extend(state.diagnostics)
     context, context_diagnostics = resolve_effective_topic_context(
         state,
         request,

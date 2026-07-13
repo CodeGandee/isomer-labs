@@ -72,11 +72,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
         with_context=_with_context,
         json_error_payload=_json_error_payload,
     )
-    register_research_templates_commands(
-        research_group,
-        with_context=_with_context,
-        json_error_payload=_json_error_payload,
-    )
+    register_research_templates_commands(research_group)
 
     @records_group.command(name="create", help="Create a topic-scoped research record.")
     @_common_options

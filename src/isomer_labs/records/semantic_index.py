@@ -8,6 +8,7 @@ from typing import Any, Iterable, Mapping
 
 from sqlalchemy import create_engine, select, text
 
+from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.store import open_workspace_runtime
 
@@ -33,6 +34,31 @@ def invalid_query_payload(operation: str, message: str) -> tuple[dict[str, objec
         "error": {"code": "invalid_query_index_request", "message": message},
         "diagnostics": [],
     }, []
+
+
+def query_index_schema_unavailable_payload(
+    operation: str,
+    diagnostics: list[Any],
+) -> tuple[dict[str, object], list[Any]]:
+    """Build a non-mutating response for an absent or outdated query-index schema."""
+
+    diagnostic = Diagnostic(
+        code="query_index_schema_unavailable",
+        severity="error",
+        concept="Research Record Query Index",
+        message="The query index cannot satisfy this read because its schema is missing or out of date.",
+        hint="Run `isomer-cli ext research records index rebuild` for the selected Topic Workspace, then retry.",
+    )
+    return {
+        "ok": False,
+        "mutated": False,
+        "operation": operation,
+        "error": {
+            "code": "query_index_unavailable",
+            "message": "The research-record query index is unavailable or uses an older schema.",
+        },
+        "diagnostics": [diagnostic.to_json()],
+    }, [*diagnostics, diagnostic]
 
 
 def index_diagnostic(severity: str, code: str, message: str, **details: object) -> dict[str, object]:

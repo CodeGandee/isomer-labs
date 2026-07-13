@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections import Counter
+from collections.abc import Collection
+from enum import Enum
 from pathlib import Path
 
 from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
@@ -90,19 +92,39 @@ INLINE_CALLBACK_BODY_KEYS = {
 }
 
 
-def build_project_state(project: Project) -> ProjectState:
+class ProjectValidationScope(str, Enum):
+    """Capability boundary for Project state validation."""
+
+    FULL = "full"
+    RESEARCH_TEMPLATES = "research_templates"
+
+
+def build_project_state(
+    project: Project,
+    *,
+    validation_scope: ProjectValidationScope = ProjectValidationScope.FULL,
+    research_topic_ids: Collection[str] | None = None,
+) -> ProjectState:
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
     diagnostics.extend(_validate_path_defaults(project))
-    diagnostics.extend(_duplicate_id_diagnostics(project))
+    diagnostics.extend(
+        _duplicate_id_diagnostics(
+            project,
+            include_capability_registrations=validation_scope is ProjectValidationScope.FULL,
+        )
+    )
     diagnostics.extend(_validate_workspace_registrations(project))
-    diagnostics.extend(_validate_environment_bindings(project))
-    diagnostics.extend(_validate_template_registrations(project))
-    diagnostics.extend(_validate_profile_registrations(project))
-    diagnostics.extend(validate_project_toolboxes(project))
+    if validation_scope is ProjectValidationScope.FULL:
+        diagnostics.extend(_validate_environment_bindings(project))
+        diagnostics.extend(_validate_template_registrations(project))
+        diagnostics.extend(_validate_profile_registrations(project))
+        diagnostics.extend(validate_project_toolboxes(project))
 
     topic_configs: dict[str, ResearchTopicConfig] = {}
     for topic in project.manifest.research_topics:
+        if research_topic_ids is not None and topic.id not in research_topic_ids:
+            continue
         config_path = resolve_project_path(project.root, topic.config_path_input)
         if not is_within(config_path, project.root):
             diagnostics.append(
@@ -138,9 +160,10 @@ def build_project_state(project: Project) -> ProjectState:
             )
         topic_configs.setdefault(topic.id, config)
 
-    diagnostics.extend(_validate_topic_config_profile_defaults(project, topic_configs))
-    diagnostics.extend(validate_callback_registry_refs(project, topic_configs))
-    diagnostics.extend(_validate_profile_files(project))
+    if validation_scope is ProjectValidationScope.FULL:
+        diagnostics.extend(_validate_topic_config_profile_defaults(project, topic_configs))
+        diagnostics.extend(validate_callback_registry_refs(project, topic_configs))
+        diagnostics.extend(_validate_profile_files(project))
 
     local_context = None
     local_path = project.config_dir / "local.toml"
@@ -166,12 +189,14 @@ def scan_for_forbidden_fields(data: object, concept: str, path: Path) -> list[Di
     return diagnostics
 
 
-def _duplicate_id_diagnostics(project: Project) -> list[Diagnostic]:
+def _duplicate_id_diagnostics(
+    project: Project,
+    *,
+    include_capability_registrations: bool = True,
+) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     topic_counts = Counter(topic.id for topic in project.manifest.research_topics)
     workspace_counts = Counter(workspace.id for workspace in project.manifest.topic_workspaces)
-    template_counts = Counter(template.id for template in project.manifest.domain_agent_team_templates)
-    profile_counts = Counter(profile.id for profile in project.manifest.topic_agent_team_profiles)
     for topic_id in sorted(id_ for id_, count in topic_counts.items() if count > 1):
         diagnostics.append(
             Diagnostic(
@@ -194,28 +219,31 @@ def _duplicate_id_diagnostics(project: Project) -> list[Diagnostic]:
                 message=f"Duplicate Topic Workspace id is registered: {workspace_id}.",
             )
         )
-    for template_id in sorted(id_ for id_, count in template_counts.items() if count > 1):
-        diagnostics.append(
-            Diagnostic(
-                code="ISO004",
-                severity="error",
-                concept="Project Manifest",
-                path=project.manifest_path,
-                field="domain_agent_team_templates.id",
-                message=f"Duplicate Domain Agent Team Template id is registered: {template_id}.",
+    if include_capability_registrations:
+        template_counts = Counter(template.id for template in project.manifest.domain_agent_team_templates)
+        profile_counts = Counter(profile.id for profile in project.manifest.topic_agent_team_profiles)
+        for template_id in sorted(id_ for id_, count in template_counts.items() if count > 1):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO004",
+                    severity="error",
+                    concept="Project Manifest",
+                    path=project.manifest_path,
+                    field="domain_agent_team_templates.id",
+                    message=f"Duplicate Domain Agent Team Template id is registered: {template_id}.",
+                )
             )
-        )
-    for profile_id in sorted(id_ for id_, count in profile_counts.items() if count > 1):
-        diagnostics.append(
-            Diagnostic(
-                code="ISO004",
-                severity="error",
-                concept="Project Manifest",
-                path=project.manifest_path,
-                field="topic_agent_team_profiles.id",
-                message=f"Duplicate Topic Agent Team Profile id is registered: {profile_id}.",
+        for profile_id in sorted(id_ for id_, count in profile_counts.items() if count > 1):
+            diagnostics.append(
+                Diagnostic(
+                    code="ISO004",
+                    severity="error",
+                    concept="Project Manifest",
+                    path=project.manifest_path,
+                    field="topic_agent_team_profiles.id",
+                    message=f"Duplicate Topic Agent Team Profile id is registered: {profile_id}.",
+                )
             )
-        )
     return diagnostics
 
 
