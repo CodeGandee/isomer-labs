@@ -1,6 +1,6 @@
 import { MarkerType, type Edge, type Node } from "@xyflow/react";
-import ELK from "elkjs/lib/elk.bundled.js";
 import type { GraphScope, RendererChoice, TopicGraphView } from "./types";
+import { IDEA_GRAPH_NODE_HEIGHT, IDEA_GRAPH_NODE_WIDTH } from "./features/idea-lineage/layout-registry";
 
 export type IdeaFlowNodeData = {
   [key: string]: unknown;
@@ -24,23 +24,24 @@ export function ideaNodeVisibleLabel(node: Pick<TopicGraphView["nodes"][number],
   return status ? `${heading}\n${status}` : heading;
 }
 
-export function selectRenderer(graphScope: GraphScope, rendererHint: string, nodeCount: number): "react-flow" | "sigma" {
+export function selectRenderer(graphScope: GraphScope, rendererHint: string, _nodeCount: number): "react-flow" | "sigma" {
+  if (graphScope === "idea-lineage") {
+    return "react-flow";
+  }
   if (rendererHint === "sigma-overview") {
     return "sigma";
-  }
-  if (graphScope === "idea-lineage" && nodeCount <= 120) {
-    return "react-flow";
   }
   return "sigma";
 }
 
 export function requestedRenderer(graphScope: GraphScope): RendererChoice {
-  return graphScope === "idea-lineage" ? "auto" : "sigma";
+  return graphScope === "idea-lineage" ? "react-flow" : "sigma";
 }
 
 export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
   return graph.nodes.map((node, index) => ({
     id: node.id,
+    type: "idea",
     className: [
       "idea-flow-node",
       `material-${flowClassToken(node.material_kind || "artifact")}`,
@@ -63,7 +64,8 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
     style: {
       fontSize: 12,
       whiteSpace: "pre-line",
-      width: 240,
+      width: IDEA_GRAPH_NODE_WIDTH,
+      height: IDEA_GRAPH_NODE_HEIGHT,
     },
   }));
 }
@@ -71,7 +73,18 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
 export function graphContentSignature(graph: TopicGraphView): string {
   return JSON.stringify({
     graph_scope: graph.graph_scope,
-    renderer_hint: graph.renderer_hint,
+    topology_complete: graph.topology_complete ?? false,
+    total_node_count: graph.total_node_count ?? graph.nodes.length,
+    total_edge_count: graph.total_edge_count ?? graph.edges.length,
+    projection: graph.projection ? {
+      seed_node_ids: graph.projection.seed_node_ids,
+      hop_radius: graph.projection.hop_radius,
+      direction: graph.projection.direction,
+      relation_kinds: graph.projection.relation_kinds,
+      edge_mode: graph.projection.edge_mode,
+      source_index_revision: graph.projection.source_index_revision || null,
+      topology_complete: graph.projection.topology_complete,
+    } : null,
     nodes: graph.nodes.map((node) => ({
       id: node.id,
       record_id: node.record_id,
@@ -123,24 +136,4 @@ export function toFlowEdges(graph: TopicGraphView): Edge[] {
 
 function flowClassToken(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unknown";
-}
-
-export async function layoutFlowGraph(nodes: Node<IdeaFlowNodeData>[], edges: Edge[]): Promise<Node<IdeaFlowNodeData>[]> {
-  const elk = new ELK();
-  const layout = await elk.layout({
-    id: "root",
-    layoutOptions: {
-      "elk.algorithm": "layered",
-      "elk.direction": "RIGHT",
-      "elk.spacing.nodeNode": "50",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "80",
-    },
-    children: nodes.map((node) => ({ id: node.id, width: 250, height: 90 })),
-    edges: edges.map((edge) => ({ id: edge.id, sources: [edge.source], targets: [edge.target] })),
-  });
-  const positions = new Map((layout.children || []).map((child) => [child.id, { x: child.x || 0, y: child.y || 0 }]));
-  return nodes.map((node) => ({
-    ...node,
-    position: positions.get(node.id) || node.position,
-  }));
 }

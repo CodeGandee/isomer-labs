@@ -12,6 +12,7 @@ export type IdeaLineageHoverEvent = {
 
 export type IdeaLineageNodeEvent = {
   nodeId: string;
+  toggle?: boolean;
 };
 
 export type IdeaLineageTouchStartEvent = IdeaLineageHoverEvent & {
@@ -186,7 +187,7 @@ export function createIdeaLineageInteractionBoundary({
     nodeClick(event) {
       if (!disposed) {
         nodeClick$.next(event);
-        dispatch({ type: "nodeSelected", nodeId: event.nodeId });
+        dispatch(event.toggle ? { type: "selectionToggled", nodeId: event.nodeId } : { type: "nodeSelected", nodeId: event.nodeId });
       }
     },
     nodeOpen(event) {

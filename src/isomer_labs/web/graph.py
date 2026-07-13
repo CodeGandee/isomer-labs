@@ -9,11 +9,12 @@ from typing import Any
 from isomer_labs.models import EffectiveTopicContext
 
 from .graph_edges import idea_graph_edges
+from .graph_projection import project_graph_neighborhood, projection_input_error
 from .idea_graph import canonical_idea_edges, canonical_idea_groups, canonical_idea_nodes
 
 GRAPH_SCOPES = {"idea-lineage"}
 RENDERERS = {"auto", "react-flow", "sigma"}
-SPARSE_GRAPH_LIMIT = 120
+DEFAULT_GRAPH_TRANSFER_LIMIT = 1000
 
 
 def build_topic_graph_view(
@@ -30,6 +31,10 @@ def build_topic_graph_view(
     limit: int | None = None,
     cursor: str | None = None,
     include_secondary: bool = False,
+    seed_node_ids: list[str] | None = None,
+    hop_radius: int | None = None,
+    direction: str = "both",
+    edge_mode: str = "induced",
 ) -> dict[str, Any]:
     """Build a renderer-neutral graph view from query-index export data."""
 
@@ -42,6 +47,15 @@ def build_topic_graph_view(
         )
     if renderer not in RENDERERS:
         return _error_payload(context, graph_scope, "unsupported_renderer", f"Unsupported renderer: {renderer}")
+    projection_error = projection_input_error(
+        seed_node_ids=seed_node_ids,
+        hop_radius=hop_radius,
+        direction=direction,
+        edge_mode=edge_mode,
+    )
+    if projection_error is not None:
+        code, message = projection_error
+        return _error_payload(context, graph_scope, code, message)
 
     records = _records(export_payload)
     edges = _rows(export_payload, "edges")
@@ -91,6 +105,43 @@ def build_topic_graph_view(
     nodes = _filter_nodes(nodes, status=status, producer=producer, time_range=time_range, search=search)
     allowed_node_ids = {str(node["id"]) for node in nodes}
     graph_edges = [edge for edge in graph_edges if edge["source"] in allowed_node_ids and edge["target"] in allowed_node_ids]
+    source_node_count = len(nodes)
+    source_edge_count = len(graph_edges)
+    projection: dict[str, Any] | None = None
+    if seed_node_ids or hop_radius is not None:
+        projected = project_graph_neighborhood(
+            nodes,
+            graph_edges,
+            seed_node_ids=seed_node_ids or [],
+            hop_radius=1 if hop_radius is None else hop_radius,
+            direction=direction,
+            relation_kinds=_split_filter(relation_kind),
+            edge_mode=edge_mode,
+        )
+        projection_diagnostics.extend(projected["diagnostics"])
+        if not projected["ok"]:
+            payload = _base_payload(context, graph_scope, export_payload, renderer_hint=_renderer_hint(graph_scope, renderer))
+            payload.update(
+                {
+                    "ok": False,
+                    "error": projected["error"],
+                    "nodes": [],
+                    "edges": [],
+                    "groups": [],
+                    "facets": {"counts": {}},
+                    "topology_complete": False,
+                    "total_node_count": source_node_count,
+                    "total_edge_count": source_edge_count,
+                    "projection": projected["projection"],
+                    "paging": {"cursor": None, "next_cursor": None, "truncated": True},
+                    "diagnostics": diagnostics + projection_diagnostics,
+                }
+            )
+            return payload
+        nodes = projected["nodes"]
+        graph_edges = projected["edges"]
+        projection = {**projected["projection"], "source_index_revision": export_payload.get("index_revision")}
+
     groups = (canonical_idea_groups(nodes, graph_edges, canonical_idea_generation_groups) + _groups(nodes, graph_edges, [])) if graph_scope == "idea-lineage" and canonical_ideas else _groups(nodes, graph_edges, edges)
     facets = _facets(ideas=ideas, routes=routes, metrics=metrics, claims=claims, facts=facts, files=files, filters={
         "status": status,
@@ -102,7 +153,7 @@ def build_topic_graph_view(
     })
 
     offset = _cursor_offset(cursor)
-    selected_limit = limit or SPARSE_GRAPH_LIMIT
+    selected_limit = limit or DEFAULT_GRAPH_TRANSFER_LIMIT
     total_nodes = len(nodes)
     truncated = offset > 0 or total_nodes > offset + selected_limit
     paged_nodes = nodes[offset : offset + selected_limit]
@@ -110,34 +161,20 @@ def build_topic_graph_view(
     paged_edges = [edge for edge in graph_edges if edge["source"] in paged_node_ids and edge["target"] in paged_node_ids]
     next_cursor = str(offset + selected_limit) if total_nodes > offset + selected_limit else None
 
-    renderer_hint = _renderer_hint(graph_scope, len(nodes), renderer)
-    if renderer == "react-flow" and len(nodes) > SPARSE_GRAPH_LIMIT:
-        payload = _base_payload(context, graph_scope, export_payload, renderer_hint="sigma-overview")
-        payload.update(
-            {
-                "ok": False,
-                "error": {
-                    "code": "graph_too_large_for_renderer",
-                    "message": "The requested graph is too large for the React Flow detail renderer.",
-                    "fallback_renderer": "sigma",
-                },
-                "nodes": paged_nodes,
-                "edges": paged_edges,
-                "groups": groups,
-                "facets": facets,
-                "paging": {"cursor": cursor, "next_cursor": next_cursor, "truncated": True},
-                "diagnostics": diagnostics + projection_diagnostics,
-            }
-        )
-        return payload
-
-    payload = _base_payload(context, graph_scope, export_payload, renderer_hint=renderer_hint)
+    topology_complete = not truncated
+    if projection is not None:
+        projection = {**projection, "topology_complete": topology_complete and bool(projection["topology_complete"])}
+    payload = _base_payload(context, graph_scope, export_payload, renderer_hint=_renderer_hint(graph_scope, renderer))
     payload.update(
         {
             "nodes": paged_nodes,
             "edges": paged_edges,
             "groups": groups,
             "facets": facets,
+            "topology_complete": topology_complete,
+            "total_node_count": source_node_count,
+            "total_edge_count": source_edge_count,
+            "projection": projection,
             "paging": {"cursor": cursor, "next_cursor": next_cursor, "truncated": truncated},
             "diagnostics": diagnostics + projection_diagnostics,
         }
@@ -183,6 +220,10 @@ def _error_payload(
         "edges": [],
         "groups": [],
         "facets": {"counts": {}},
+        "topology_complete": False,
+        "total_node_count": 0,
+        "total_edge_count": 0,
+        "projection": None,
         "paging": {"cursor": None, "next_cursor": None, "truncated": False},
         "error": {"code": code, "message": message},
         "diagnostics": [_diag("error", code, message)],
@@ -605,12 +646,10 @@ def _facets(
     }
 
 
-def _renderer_hint(graph_scope: str, node_count: int, renderer: str) -> str:
+def _renderer_hint(graph_scope: str, renderer: str) -> str:
     if renderer == "sigma":
         return "sigma-overview"
-    if renderer == "react-flow" and node_count <= SPARSE_GRAPH_LIMIT:
-        return "react-flow-detail"
-    if graph_scope == "idea-lineage" and node_count <= SPARSE_GRAPH_LIMIT:
+    if graph_scope == "idea-lineage":
         return "react-flow-detail"
     return "sigma-overview"
 

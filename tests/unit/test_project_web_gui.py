@@ -712,6 +712,9 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertFalse(graph["mutated"])
         self.assertEqual("idea-lineage", graph["graph_scope"])
         self.assertEqual("react-flow-detail", graph["renderer_hint"])
+        self.assertTrue(graph["topology_complete"])
+        self.assertEqual(len(graph["nodes"]), graph["total_node_count"])
+        self.assertEqual(len(graph["edges"]), graph["total_edge_count"])
         self.assertIn("index_revision", graph)
         self.assertGreaterEqual(len(graph["nodes"]), 2)
         self.assertTrue(all(node["material_kind"] == "idea" for node in graph["nodes"]))
@@ -725,6 +728,12 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertEqual("collapsed-projection", collapsed_edges[0]["source_classification"])
         self.assertGreaterEqual(graph["facets"]["counts"]["ideas"], 2)
         self.assertFalse(any(node["record_id"] == "route-record" for node in graph["nodes"]))
+
+        limited_graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="react-flow", limit=1)
+        validate_gui_payload(limited_graph, TopicGraphResponseContract)
+        self.assertTrue(limited_graph["ok"], limited_graph)
+        self.assertFalse(limited_graph["topology_complete"])
+        self.assertEqual(graph["total_node_count"], limited_graph["total_node_count"])
 
         graph_with_supporting = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto", include_secondary=True)
         validate_gui_payload(graph_with_supporting, TopicGraphResponseContract)

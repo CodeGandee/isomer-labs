@@ -160,6 +160,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         limit: int | None = Query(default=None, ge=1, le=5000),
         cursor: str | None = None,
         include_secondary: bool = False,
+        seed_node_id: list[str] = Query(default=[]),
+        hop_radius: int | None = Query(default=None, ge=0, le=8),
+        direction: str = Query(default="both"),
+        edge_mode: str = Query(default="induced"),
     ) -> JSONResponse:
         return _json(
             read_model.topic_graph(
@@ -174,6 +178,10 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
                 limit=limit,
                 cursor=cursor,
                 include_secondary=include_secondary,
+                seed_node_ids=seed_node_id,
+                hop_radius=hop_radius,
+                direction=direction,
+                edge_mode=edge_mode,
             )
         )
 

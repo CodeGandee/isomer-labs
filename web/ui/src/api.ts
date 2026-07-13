@@ -24,6 +24,12 @@ export type GraphFilters = {
   timeRange?: string;
   search?: string;
   includeSecondary?: boolean;
+  limit?: number;
+  cursor?: string;
+  seedNodeIds?: string[];
+  hopRadius?: number;
+  direction?: "incoming" | "outgoing" | "both";
+  edgeMode?: "induced" | "traversal";
 };
 
 async function fetchJson(path: string, init?: RequestInit): Promise<unknown> {
@@ -38,9 +44,17 @@ async function fetchJson(path: string, init?: RequestInit): Promise<unknown> {
   return payload;
 }
 
-function params(values: Record<string, string | number | boolean | undefined>): string {
+function params(values: Record<string, string | number | boolean | readonly string[] | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(values)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item) {
+          search.append(key, item);
+        }
+      }
+      continue;
+    }
     if (value !== undefined && value !== "") {
       search.set(key, String(value));
     }
@@ -117,6 +131,12 @@ export async function getTopicGraph(topicId: string, graphScope: GraphScope, ren
         time_range: filters.timeRange,
         search: filters.search,
         include_secondary: filters.includeSecondary,
+        limit: filters.limit,
+        cursor: filters.cursor,
+        seed_node_id: filters.seedNodeIds,
+        hop_radius: filters.hopRadius,
+        direction: filters.direction,
+        edge_mode: filters.edgeMode,
       })}`,
     ),
   );

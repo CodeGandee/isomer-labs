@@ -304,6 +304,10 @@ class ProjectWebReadModel:
         limit: int | None = None,
         cursor: str | None = None,
         include_secondary: bool = False,
+        seed_node_ids: list[str] | None = None,
+        hop_radius: int | None = None,
+        direction: str = "both",
+        edge_mode: str = "induced",
     ) -> dict[str, Any]:
         payload = self._with_context(
             topic_id,
@@ -319,6 +323,10 @@ class ProjectWebReadModel:
                 limit=limit,
                 cursor=cursor,
                 include_secondary=include_secondary,
+                seed_node_ids=seed_node_ids,
+                hop_radius=hop_radius,
+                direction=direction,
+                edge_mode=edge_mode,
             ),
         )
         self._recent_errors.record_payload(topic_id, f"graph:{graph_scope}", payload)
@@ -574,6 +582,10 @@ class ProjectWebReadModel:
         limit: int | None,
         cursor: str | None,
         include_secondary: bool,
+        seed_node_ids: list[str] | None,
+        hop_radius: int | None,
+        direction: str,
+        edge_mode: str,
     ) -> tuple[dict[str, Any], list[Diagnostic]]:
         export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
         graph_payload = build_topic_graph_view(
@@ -589,6 +601,10 @@ class ProjectWebReadModel:
             limit=limit,
             cursor=cursor,
             include_secondary=include_secondary,
+            seed_node_ids=seed_node_ids,
+            hop_radius=hop_radius,
+            direction=direction,
+            edge_mode=edge_mode,
         )
         return ensure_gui_payload(graph_payload, TopicGraphResponseContract, contract_name="topic-graph"), diagnostics
 

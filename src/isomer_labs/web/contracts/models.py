@@ -89,6 +89,22 @@ class TopicGraphPagingContract(GuiContractModel):
     truncated: bool
 
 
+class TopicGraphProjectionContract(GuiContractModel):
+    seed_node_ids: list[str]
+    resolved_seed_node_ids: list[str]
+    unresolved_seed_node_ids: list[str]
+    hop_radius: int
+    direction: str
+    relation_kinds: list[str]
+    edge_mode: str
+    source_node_count: int
+    source_edge_count: int
+    visible_node_count: int
+    visible_edge_count: int
+    source_index_revision: str | None = None
+    topology_complete: bool
+
+
 class TopicGraphResponseContract(GuiContractModel):
     ok: bool
     mutated: bool
@@ -102,7 +118,11 @@ class TopicGraphResponseContract(GuiContractModel):
     groups: list[TopicGraphGroupContract]
     facets: dict[str, Any]
     diagnostics: list[DiagnosticContract]
+    topology_complete: bool = False
+    total_node_count: int = 0
+    total_edge_count: int = 0
     paging: TopicGraphPagingContract | None = None
+    projection: TopicGraphProjectionContract | None = None
     error: ErrorContract | None = None
 
 

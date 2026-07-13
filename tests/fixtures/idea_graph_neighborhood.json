@@ -1,0 +1,38 @@
+{
+  "nodes": [
+    {"id": "idea:a", "record_id": "a", "material_kind": "idea", "density_class": "sparse", "title": "Alpha"},
+    {"id": "idea:b", "record_id": "b", "material_kind": "idea", "density_class": "sparse", "title": "Beta"},
+    {"id": "idea:c", "record_id": "c", "material_kind": "idea", "density_class": "sparse", "title": "Gamma"},
+    {"id": "idea:d", "record_id": "d", "material_kind": "idea", "density_class": "sparse", "title": "Delta"},
+    {"id": "idea:x", "record_id": "x", "material_kind": "idea", "density_class": "sparse", "title": "External"}
+  ],
+  "edges": [
+    {"id": "a-b", "source": "idea:a", "target": "idea:b", "relation_kind": "derived_from", "canonical": true},
+    {"id": "b-c", "source": "idea:b", "target": "idea:c", "relation_kind": "derived_from", "canonical": true},
+    {"id": "c-d", "source": "idea:c", "target": "idea:d", "relation_kind": "follow_up_to", "canonical": true},
+    {"id": "x-c", "source": "idea:x", "target": "idea:c", "relation_kind": "derived_from", "canonical": true},
+    {"id": "cycle", "source": "idea:c", "target": "idea:a", "relation_kind": "derived_from", "canonical": true}
+  ],
+  "cases": [
+    {
+      "name": "multi_seed_both_induced",
+      "seed_node_ids": ["idea:a", "idea:d"],
+      "hop_radius": 1,
+      "direction": "both",
+      "relation_kinds": [],
+      "edge_mode": "induced",
+      "expected_node_ids": ["idea:a", "idea:b", "idea:c", "idea:d"],
+      "expected_edge_ids": ["a-b", "b-c", "c-d", "cycle"]
+    },
+    {
+      "name": "outgoing_relation_filtered",
+      "seed_node_ids": ["idea:b"],
+      "hop_radius": 1,
+      "direction": "outgoing",
+      "relation_kinds": ["derived_from"],
+      "edge_mode": "induced",
+      "expected_node_ids": ["idea:b", "idea:c"],
+      "expected_edge_ids": ["b-c"]
+    }
+  ]
+}

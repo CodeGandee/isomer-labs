@@ -90,12 +90,34 @@ export const TopicGraphViewSchema = z
     edges: z.array(TopicGraphEdgeSchema),
     groups: z.array(TopicGraphGroupSchema),
     facets: z.record(z.string(), z.unknown()),
+    topology_complete: z.boolean().optional(),
+    total_node_count: z.number().int().nonnegative().optional(),
+    total_edge_count: z.number().int().nonnegative().optional(),
     paging: z
       .object({
         cursor: z.string().nullable().optional(),
         next_cursor: z.string().nullable().optional(),
         truncated: z.boolean(),
       })
+      .optional(),
+    projection: z
+      .object({
+        seed_node_ids: z.array(z.string()),
+        resolved_seed_node_ids: z.array(z.string()),
+        unresolved_seed_node_ids: z.array(z.string()),
+        hop_radius: z.number().int().nonnegative(),
+        direction: z.enum(["incoming", "outgoing", "both"]),
+        relation_kinds: z.array(z.string()),
+        edge_mode: z.enum(["induced", "traversal"]),
+        source_node_count: z.number().int().nonnegative(),
+        source_edge_count: z.number().int().nonnegative(),
+        visible_node_count: z.number().int().nonnegative(),
+        visible_edge_count: z.number().int().nonnegative(),
+        source_index_revision: z.string().nullable().optional(),
+        topology_complete: z.boolean(),
+      })
+      .passthrough()
+      .nullable()
       .optional(),
     diagnostics: z.array(DiagnosticSchema),
     error: z

@@ -1,12 +1,11 @@
-import { Background, Controls, ReactFlow, ReactFlowProvider, useReactFlow, type ColorMode, type NodeMouseHandler } from "@xyflow/react";
+import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, SelectionMode, useReactFlow, type ColorMode, type NodeMouseHandler, type NodeProps, type Viewport } from "@xyflow/react";
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { getIdeaDetail, getTopicGraph } from "../../api";
 import { GraphSummary } from "../graph/GraphPanels";
 import { openRecordFromNode } from "../graph/open-record";
-import { SigmaGraph } from "../graph/SigmaGraph";
-import { graphContentSignature, ideaNodeVisibleLabel, layoutFlowGraph, requestedRenderer, selectRenderer, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
+import { ideaNodeVisibleLabel, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
 import { buildJsonMarkdownPreview } from "../../markdown-doc";
 import { MarkdownView } from "../../markdown-view";
 import { useGuiTheme } from "../../theme-provider";
@@ -27,12 +26,17 @@ import {
   type IdeaLineageStore,
 } from "./idea-lineage-state";
 import { createIdeaLineageInteractionBoundary } from "./idea-lineage-interactions";
+import { projectIdeaGraphNeighborhood } from "./idea-graph-focus";
+import { IdeaGraphControls } from "./IdeaGraphControls";
+import { layoutFingerprint } from "./layout-protocol";
+import type { IdeaGraphLayoutConfiguration } from "./layout-registry";
+import { IdeaGraphLayoutWorkerClient } from "./layout-worker-client";
 
 const NODE_DOUBLE_CLICK_MS = 500;
 const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
 const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
-const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: false };
+const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: false, limit: 1000 };
 
 export type IdeaGraphPanelProps = {
   topicId?: string;
@@ -62,17 +66,23 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   const [searchText, setSearchText] = useState("");
   const [baseNodes, setBaseNodes] = useState<IdeaFlowNode[]>([]);
   const [baseEdges, setBaseEdges] = useState<ReturnType<typeof toFlowEdges>>([]);
-  const selectedNodeId = useStoreSelector(store, (state) => state.selectedNodeId);
+  const [lowZoom, setLowZoom] = useState(false);
+  const selectedNodeIds = useStoreSelector(store, (state) => state.selectedNodeIds, sameStrings);
+  const focus = useStoreSelector(store, (state) => state.focus);
+  const layoutDraft = useStoreSelector(store, (state) => state.layoutDraft);
+  const appliedLayout = useStoreSelector(store, (state) => state.appliedLayout);
   const hoverPreview = useStoreSelector(store, visibleHoverPreview, sameHoverPreview);
   const openIntent = useStoreSelector(store, (state) => state.openIntent, sameOpenIntent);
-  const flowNodes = useMemo(() => selectIdeaFlowNodes(baseNodes, baseEdges, selectedNodeId), [baseEdges, baseNodes, selectedNodeId]);
-  const flowEdges = useMemo(() => selectIdeaFlowEdges(baseEdges, selectedNodeId), [baseEdges, selectedNodeId]);
-  const selectedFlowNode = useMemo(() => flowNodes.find((node) => node.selected), [flowNodes]);
+  const flowNodes = useMemo(() => selectIdeaFlowNodes(baseNodes, baseEdges, selectedNodeIds), [baseEdges, baseNodes, selectedNodeIds]);
+  const highlightedEdges = useMemo(() => selectIdeaFlowEdges(baseEdges, selectedNodeIds), [baseEdges, selectedNodeIds]);
+  const flowEdges = useMemo(() => lowZoom ? highlightedEdges.map((edge) => edge.label === undefined ? edge : { ...edge, label: undefined }) : highlightedEdges, [highlightedEdges, lowZoom]);
   const hoverPreviewDelayMsRef = useRef(hoverPreviewDelayMs);
   const lastNodeClickRef = useRef<{ nodeId: string; at: number; x: number; y: number } | null>(null);
   const renderedGraphSignatureRef = useRef<string | null>(null);
   const renderedGraphRevisionRef = useRef<string | null>(null);
   const renderedGraphRef = useRef<TopicGraphView | null>(null);
+  const nextLayoutJobIdRef = useRef(1);
+  const layoutWorker = useMemo(() => new IdeaGraphLayoutWorkerClient(), []);
   hoverPreviewDelayMsRef.current = hoverPreviewDelayMs;
   const interactionBoundary = useMemo(
     () =>
@@ -85,13 +95,35 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     [store],
   );
   const graph = useQuery({
-    queryKey: ["topic", topicId, "graph", selectedGraphScope, requestedRenderer(selectedGraphScope), "overview"],
-    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, requestedRenderer(selectedGraphScope), IDEA_LINEAGE_OVERVIEW_FILTERS),
+    queryKey: ["topic", topicId, "graph", selectedGraphScope, "react-flow", "overview", IDEA_LINEAGE_OVERVIEW_FILTERS.limit],
+    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, "react-flow", IDEA_LINEAGE_OVERVIEW_FILTERS),
     enabled: Boolean(topicId),
   });
-  const filteredGraph = useMemo(() => filterIdeaLineageGraphForSearch(graph.data, searchText), [graph.data, searchText]);
+  const backendFocusGraph = useQuery({
+    queryKey: ["topic", topicId, "graph", selectedGraphScope, "react-flow", "focus", selectedNodeIds, focus.hopRadius, focus.direction, focus.relationKinds, focus.edgeMode],
+    queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, "react-flow", {
+      includeSecondary: false,
+      seedNodeIds: selectedNodeIds,
+      hopRadius: focus.hopRadius,
+      direction: focus.direction,
+      relationKind: focus.relationKinds.join(",") || undefined,
+      edgeMode: focus.edgeMode,
+    }),
+    enabled: Boolean(topicId && focus.enabled && selectedNodeIds.length > 0 && graph.data && graph.data.topology_complete !== true),
+  });
+  const focusedGraph = useMemo(() => {
+    if (!graph.data || !focus.enabled) {
+      return graph.data;
+    }
+    if (graph.data.topology_complete === true) {
+      return projectIdeaGraphNeighborhood(graph.data, selectedNodeIds, focus);
+    }
+    return backendFocusGraph.data;
+  }, [backendFocusGraph.data, focus, graph.data, selectedNodeIds]);
+  const filteredGraph = useMemo(() => filterIdeaLineageGraphForSearch(focusedGraph, searchText), [focusedGraph, searchText]);
 
   useEffect(() => () => interactionBoundary.dispose(), [interactionBoundary]);
+  useEffect(() => () => layoutWorker.terminate(), [layoutWorker]);
 
   const openFlowNode = useCallback((nodeId: string) => {
     interactionBoundary.nodeOpen({ nodeId });
@@ -126,7 +158,7 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
       openFlowNode(node.id);
       return;
     }
-    interactionBoundary.nodeClick({ nodeId: node.id });
+    interactionBoundary.nodeClick({ nodeId: node.id, toggle: event.ctrlKey || event.metaKey });
     lastNodeClickRef.current = { nodeId: node.id, at: now, x: event.clientX, y: event.clientY };
   }, [interactionBoundary, openFlowNode]);
 
@@ -191,12 +223,6 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     interactionBoundary.touchLongPressEnd({ pointerId: event.pointerId });
   }, [interactionBoundary]);
 
-  const openSelectedFlowNode = useCallback(() => {
-    if (selectedFlowNode) {
-      openFlowNode(selectedFlowNode.id);
-    }
-  }, [openFlowNode, selectedFlowNode]);
-
   const handleNodeMouseEnter = useCallback<NodeMouseHandler<IdeaFlowNode>>((event, node) => {
     interactionBoundary.nodeEnter({ nodeId: node.id, data: node.data, x: event.clientX, y: event.clientY });
   }, [interactionBoundary]);
@@ -209,71 +235,86 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     interactionBoundary.nodeLeave({ nodeId: node.id });
   }, [interactionBoundary]);
 
+  const requestLayout = useCallback(async (targetGraph: TopicGraphView, configuration: IdeaGraphLayoutConfiguration, force = false) => {
+    if (!targetGraph.ok || targetGraph.error) {
+      return;
+    }
+    const nodes = toFlowNodes(targetGraph);
+    const edges = toFlowEdges(targetGraph);
+    const layoutNodes = nodes.map((node) => ({ id: node.id, label: node.data.label }));
+    const layoutEdges = edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, relationKind: String(edge.label || "") }));
+    const fingerprint = layoutFingerprint(layoutNodes, layoutEdges, configuration);
+    const contentSignature = fingerprint;
+    if (!force && renderedGraphSignatureRef.current === contentSignature) {
+      return;
+    }
+    const jobId = nextLayoutJobIdRef.current++;
+    store.dispatch({ type: "layoutJobStarted", jobId, fingerprint });
+    try {
+      const result = await layoutWorker.run({ type: "layout", jobId, fingerprint, nodes: layoutNodes, edges: layoutEdges, configuration });
+      if (!result.ok) {
+        store.dispatch({ type: "layoutJobFailed", jobId, fingerprint, diagnostics: result.diagnostics.map((diagnostic) => diagnostic.message) });
+        return;
+      }
+      const layoutedNodes = nodes.map((node) => ({ ...node, position: result.positions[node.id] || node.position }));
+      renderedGraphSignatureRef.current = contentSignature;
+      renderedGraphRevisionRef.current = targetGraph.index_revision || null;
+      renderedGraphRef.current = targetGraph;
+      setBaseEdges(edges);
+      setBaseNodes(layoutedNodes);
+      store.dispatch({
+        type: "layoutJobSucceeded",
+        jobId,
+        fingerprint,
+        positions: result.positions,
+        durationMs: result.durationMs,
+        configuration,
+        diagnostics: result.diagnostics.map((diagnostic) => diagnostic.message),
+      });
+    } catch (error) {
+      store.dispatch({ type: "layoutJobFailed", jobId, fingerprint, diagnostics: [error instanceof Error ? error.message : String(error)] });
+    }
+  }, [layoutWorker, store]);
+
   useEffect(() => {
-    let cancelled = false;
     if (!topicId) {
       renderedGraphSignatureRef.current = null;
       renderedGraphRevisionRef.current = null;
       renderedGraphRef.current = null;
       setBaseEdges([]);
       setBaseNodes([]);
-      store.dispatch({ type: "graphDataLoaded", nodeIds: [], selectedNodeId: null });
-      return () => {
-        cancelled = true;
-      };
+      store.dispatch({ type: "graphDataLoaded", nodeIds: [] });
+      return;
     }
-    if (!filteredGraph) {
-      return () => {
-        cancelled = true;
-      };
+    if (graph.data?.ok && !graph.data.error) {
+      store.dispatch({ type: "graphDataLoaded", nodeIds: graph.data.nodes.map((node) => node.id) });
     }
-    if (!filteredGraph.ok || filteredGraph.error) {
-      if (renderedGraphRef.current) {
-        return () => {
-          cancelled = true;
-        };
-      }
-      renderedGraphSignatureRef.current = null;
-      renderedGraphRevisionRef.current = null;
-      setBaseEdges([]);
-      setBaseNodes([]);
-      store.dispatch({ type: "graphDataLoaded", nodeIds: [], selectedNodeId: null });
-      return () => {
-        cancelled = true;
-      };
+  }, [graph.data, store, topicId]);
+
+  useEffect(() => {
+    if (!filteredGraph?.ok || filteredGraph.error) {
+      return;
     }
     const revision = filteredGraph.index_revision || null;
-    const signature = graphContentSignature(filteredGraph);
-    if (signature === renderedGraphSignatureRef.current) {
-      return () => {
-        cancelled = true;
-      };
+    if (filteredGraph.nodes.length === 0 && !searchText.trim() && renderedGraphRef.current && revision && revision === renderedGraphRevisionRef.current) {
+      return;
     }
-    const nodes = toFlowNodes(filteredGraph);
-    const edges = toFlowEdges(filteredGraph);
-    if (nodes.length === 0 && !searchText.trim() && renderedGraphRef.current && revision && revision === renderedGraphRevisionRef.current) {
-      return () => {
-        cancelled = true;
-      };
+    void requestLayout(filteredGraph, appliedLayout);
+  }, [appliedLayout, filteredGraph, requestLayout, searchText]);
+
+  const previewLayout = useCallback(() => {
+    if (filteredGraph?.ok && !filteredGraph.error) {
+      void requestLayout(filteredGraph, layoutDraft, true);
     }
-    layoutFlowGraph(nodes, edges).then((layouted) => {
-      if (cancelled) {
-        return;
-      }
-      renderedGraphSignatureRef.current = signature;
-      renderedGraphRevisionRef.current = revision;
-      renderedGraphRef.current = filteredGraph || null;
-      setBaseEdges(edges);
-      setBaseNodes(layouted);
-      store.dispatch({
-        type: "graphDataLoaded",
-        nodeIds: nodes.map((node) => node.id),
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [filteredGraph, searchText, store, topicId]);
+  }, [filteredGraph, layoutDraft, requestLayout]);
+
+  const handleSelectionChange = useCallback(({ nodes }: { nodes: IdeaFlowNode[] }) => {
+    store.dispatch({ type: "selectionReplaced", nodeIds: nodes.map((node) => node.id) });
+  }, [store]);
+
+  const handleMoveEnd = useCallback((_event: MouseEvent | TouchEvent | null, viewport: Viewport) => {
+    setLowZoom((current) => viewport.zoom < 0.45 ? true : viewport.zoom > 0.5 ? false : current);
+  }, []);
 
   useEffect(() => {
     if (!openIntent) {
@@ -284,12 +325,10 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   }, [filteredGraph, openIntent, store, topicId]);
 
   return (
-    <section className="panel-body">
+    <section className="panel-body idea-graph-panel">
       <IdeaLineageSearch value={searchText} onChange={setSearchText} />
-      {filteredGraph && selectRenderer(selectedGraphScope, filteredGraph.renderer_hint, filteredGraph.nodes.length) === "sigma" ? (
-        <SigmaGraph graph={filteredGraph} />
-      ) : (
-        <ReactFlowProvider>
+      <IdeaGraphControls graph={focusedGraph} onPreview={previewLayout} store={store} />
+      <ReactFlowProvider>
           <div
             className="flow-frame idea-lineage-flow"
             onClickCapture={handleFlowClickCapture}
@@ -304,13 +343,22 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
               nodes={flowNodes}
               edges={flowEdges}
               fitView
+              multiSelectionKeyCode={["Meta", "Control"]}
+              nodeTypes={IDEA_GRAPH_NODE_TYPES}
+              onlyRenderVisibleElements
+              onMoveEnd={handleMoveEnd}
               onNodeClick={handleNodeClick}
               onNodeDoubleClick={handleNodeDoubleClick}
               onNodeMouseEnter={handleNodeMouseEnter}
               onNodeMouseMove={handleNodeMouseMove}
               onNodeMouseLeave={handleNodeMouseLeave}
+              onPaneClick={() => store.dispatch({ type: "selectionCleared" })}
+              onSelectionChange={handleSelectionChange}
+              panOnDrag={[1, 2]}
+              selectionMode={SelectionMode.Partial}
+              selectionOnDrag
             >
-              <FlowAutoFit edgeCount={flowEdges.length} nodeCount={flowNodes.length} />
+              <FlowAutoFit edgeCount={flowEdges.length} layoutSignature={renderedGraphSignatureRef.current || ""} nodeCount={flowNodes.length} />
               <Background />
               <Controls />
             </ReactFlow>
@@ -322,14 +370,22 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
             />
           </div>
         </ReactFlowProvider>
-      )}
-      <GraphSummary graph={filteredGraph} isLoading={graph.isLoading} />
-      {selectedFlowNode ? (
+      <GraphSummary graph={filteredGraph} isLoading={graph.isLoading || backendFocusGraph.isLoading} />
+      {selectedNodeIds.length > 0 ? (
         <div className="selected-node-actions">
-          <span>Selected: {String(selectedFlowNode.data.title || selectedFlowNode.id)}</span>
-          <ToolbarButton type="button" onClick={openSelectedFlowNode}>
-            Open
-          </ToolbarButton>
+          <span>{selectedNodeIds.length} selected</span>
+          <div className="idea-graph-selection-chips">
+            {selectedNodeIds.map((nodeId) => {
+              const sourceNode = graph.data?.nodes.find((node) => node.id === nodeId);
+              return (
+                <span className="idea-graph-selection-chip" key={nodeId}>
+                  {String(sourceNode?.title || nodeId)}
+                  <ToolbarButton aria-label={`Open ${String(sourceNode?.title || nodeId)}`} onClick={() => openFlowNode(nodeId)} type="button">Open</ToolbarButton>
+                  <ToolbarButton aria-label={`Remove ${String(sourceNode?.title || nodeId)} from selection`} onClick={() => store.dispatch({ type: "selectionRemoved", nodeId })} type="button">×</ToolbarButton>
+                </span>
+              );
+            })}
+          </div>
         </div>
       ) : null}
     </section>
@@ -390,7 +446,19 @@ function normalizeVisibleLabel(value: string): string {
     .trim();
 }
 
-function FlowAutoFit({ edgeCount, nodeCount }: { edgeCount: number; nodeCount: number }) {
+const IdeaFlowCard = memo(function IdeaFlowCard({ data }: NodeProps<IdeaFlowNode>) {
+  return (
+    <div className="idea-flow-card">
+      <Handle aria-hidden="true" position={Position.Left} type="target" />
+      <span>{data.label}</span>
+      <Handle aria-hidden="true" position={Position.Right} type="source" />
+    </div>
+  );
+});
+
+const IDEA_GRAPH_NODE_TYPES = { idea: IdeaFlowCard };
+
+function FlowAutoFit({ edgeCount, layoutSignature, nodeCount }: { edgeCount: number; layoutSignature: string; nodeCount: number }) {
   const { fitView } = useReactFlow();
   useEffect(() => {
     if (!nodeCount) {
@@ -403,7 +471,7 @@ function FlowAutoFit({ edgeCount, nodeCount }: { edgeCount: number; nodeCount: n
       window.cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", fit);
     };
-  }, [edgeCount, fitView, nodeCount]);
+  }, [edgeCount, fitView, layoutSignature, nodeCount]);
   return null;
 }
 
@@ -505,4 +573,8 @@ function sameHoverPreview(left: ReturnType<typeof visibleHoverPreview>, right: R
 
 function sameOpenIntent(left: IdeaLineageOpenIntent | null, right: IdeaLineageOpenIntent | null) {
   return left?.intentId === right?.intentId && left?.nodeId === right?.nodeId;
+}
+
+function sameStrings(left: string[], right: string[]) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }

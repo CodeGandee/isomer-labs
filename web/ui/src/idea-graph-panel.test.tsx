@@ -39,19 +39,24 @@ type MockFlowProps = {
   onNodeMouseEnter?: (event: React.MouseEvent<HTMLButtonElement>, node: MockNode) => void;
   onNodeMouseMove?: (event: React.MouseEvent<HTMLButtonElement>, node: MockNode) => void;
   onNodeMouseLeave?: (event: React.MouseEvent<HTMLButtonElement>, node: MockNode) => void;
+  onPaneClick?: () => void;
+  onSelectionChange?: (selection: { nodes: MockNode[]; edges: MockEdge[] }) => void;
   children?: React.ReactNode;
 };
 
 vi.mock("@xyflow/react", () => ({
   Background: () => null,
   Controls: () => null,
+  Handle: () => null,
   MarkerType: {
     Arrow: "arrow",
     ArrowClosed: "arrowclosed",
   },
+  Position: { Left: "left", Right: "right" },
+  SelectionMode: { Partial: "partial" },
   ReactFlowProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   useReactFlow: () => ({ fitView: vi.fn() }),
-  ReactFlow: ({ nodes = [], edges = [], onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, children }: MockFlowProps) => {
+  ReactFlow: ({ nodes = [], edges = [], onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onPaneClick, onSelectionChange, children }: MockFlowProps) => {
     flowRenderMock.snapshots.push({ nodes, edges });
     return (
       <div data-testid="react-flow">
@@ -80,6 +85,8 @@ vi.mock("@xyflow/react", () => ({
             key={edge.id}
           />
         ))}
+        <button data-testid="graph-area-select" onClick={() => onSelectionChange?.({ nodes: nodes.slice(0, 2), edges: [] })} type="button">Area select</button>
+        <button data-testid="graph-pane" onClick={() => onPaneClick?.()} type="button">Pane</button>
         {children}
       </div>
     );
@@ -91,11 +98,6 @@ vi.mock("sigma", () => ({
     on() {}
     kill() {}
   },
-}));
-
-vi.mock("./graph-utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("./graph-utils")>()),
-  layoutFlowGraph: vi.fn(async (nodes: unknown) => nodes),
 }));
 
 vi.mock("./api", async (importOriginal) => ({
@@ -117,20 +119,18 @@ vi.mock("./ui-settings", () => ({
 import { getIdeaDetail, getTopicGraph } from "./api";
 import { workbenchCommands$ } from "./events";
 import { filterIdeaLineageGraphForSearch, IdeaGraphPanel } from "./features/idea-lineage/IdeaLineagePanel";
-import { layoutFlowGraph } from "./graph-utils";
 import type { TopicGraphView } from "./types";
 
 const getIdeaDetailMock = vi.mocked(getIdeaDetail);
 const getTopicGraphMock = vi.mocked(getTopicGraph);
-const layoutFlowGraphMock = vi.mocked(layoutFlowGraph);
 
 describe("Idea graph panel interactions", () => {
   beforeEach(() => {
+    window.localStorage.clear();
     settingsMock.hoverPreviewDelayMs = 1500;
     flowRenderMock.snapshots = [];
     getIdeaDetailMock.mockResolvedValue(ideaDetailPayload());
     getTopicGraphMock.mockResolvedValue(graphPayload());
-    layoutFlowGraphMock.mockClear();
   });
 
   afterEach(() => {
@@ -138,7 +138,6 @@ describe("Idea graph panel interactions", () => {
     vi.useRealTimers();
     getIdeaDetailMock.mockReset();
     getTopicGraphMock.mockReset();
-    layoutFlowGraphMock.mockClear();
     settingsMock.refreshGuiSettings.mockReset();
     settingsMock.setHoverPreviewDelayMs.mockReset();
   });
@@ -152,8 +151,26 @@ describe("Idea graph panel interactions", () => {
     expect(screen.queryByLabelText("Relation filter")).toBeNull();
     expect(screen.queryByLabelText("Show supporting records")).toBeNull();
     await waitFor(() => {
-      expect(getTopicGraphMock).toHaveBeenCalledWith("alpha", "idea-lineage", "auto", { includeSecondary: false });
+      expect(getTopicGraphMock).toHaveBeenCalledWith("alpha", "idea-lineage", "react-flow", { includeSecondary: false, limit: 1000 });
     });
+  });
+
+  it("renders every usable Idea Graph through React Flow despite a legacy Sigma hint", async () => {
+    getTopicGraphMock.mockResolvedValue({ ...graphPayload(), renderer_hint: "sigma-overview" });
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    expect(await screen.findByTestId("react-flow")).toBeTruthy();
+    expect(await screen.findByTestId("graph-node-idea:idea-1")).toBeTruthy();
+  });
+
+  it("keeps graph controls local to the Idea Graph panel", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    expect(await screen.findByText("Graph Controls")).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Focus" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Layout" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Preview Layout" })).toBeTruthy();
+    expect(screen.getByLabelText("Graph layout preset")).toBeTruthy();
+    expect(screen.getByLabelText("Import graph layout presets")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Export Preset" })).toBeTruthy();
   });
 
   it("filters idea nodes locally and restores the overview when search is cleared", async () => {
@@ -232,6 +249,96 @@ describe("Idea graph panel interactions", () => {
     fireEvent.doubleClick(node);
     expect(events).toEqual([{ type: "open-idea", topicId: "alpha", ideaId: "idea-1" }]);
     subscription.unsubscribe();
+  });
+
+  it("supports modifier multi-selection, area replacement, chip removal, and clear", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    const parent = await screen.findByTestId("graph-node-idea:parent");
+    const main = screen.getByTestId("graph-node-idea:idea-1");
+    fireEvent.click(parent);
+    fireEvent.click(main, { ctrlKey: true });
+    expect(screen.getByText("2 selected")).toBeTruthy();
+    expect(parent.className).toContain("ui-selected");
+    expect(main.className).toContain("ui-selected");
+
+    fireEvent.click(screen.getByTestId("graph-area-select"));
+    expect(screen.getByText("2 selected")).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: /Remove .* from selection/ })[0]);
+    expect(screen.getByText("1 selected")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Clear Selection" }));
+    expect(screen.queryByText(/ selected$/)).toBeNull();
+  });
+
+  it("applies N-hop focus before local search and exits focus without clearing selection", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    fireEvent.click(await screen.findByTestId("graph-node-idea:idea-1"));
+    fireEvent.click(screen.getByLabelText("Enable N-hop focus"));
+    await waitFor(() => expect(screen.queryByTestId("graph-node-idea:unrelated")).toBeNull());
+
+    fireEvent.change(screen.getByLabelText("Focus hop radius"), { target: { value: "0" } });
+    await waitFor(() => {
+      expect(screen.getByTestId("graph-node-idea:idea-1")).toBeTruthy();
+      expect(screen.queryByTestId("graph-node-idea:parent")).toBeNull();
+    });
+    const search = screen.getByRole("searchbox", { name: "Search ideas" });
+    fireEvent.change(search, { target: { value: "Precision" } });
+    expect(screen.getByTestId("graph-node-idea:idea-1")).toBeTruthy();
+    fireEvent.change(search, { target: { value: "" } });
+    expect(screen.getByTestId("graph-node-idea:idea-1")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Exit Focus" }));
+    await waitFor(() => expect(screen.getByTestId("graph-node-idea:unrelated")).toBeTruthy());
+    expect(screen.getByText("1 selected")).toBeTruthy();
+  });
+
+  it("requests a bounded backend projection only when source topology is incomplete", async () => {
+    getTopicGraphMock.mockResolvedValueOnce({ ...graphPayload(), topology_complete: false });
+    getTopicGraphMock.mockResolvedValueOnce({
+      ...graphPayload(),
+      nodes: graphPayload().nodes.slice(0, 3),
+      edges: graphPayload().edges.slice(0, 2),
+      projection: {
+        seed_node_ids: ["idea:idea-1"],
+        resolved_seed_node_ids: ["idea:idea-1"],
+        unresolved_seed_node_ids: [],
+        hop_radius: 1,
+        direction: "both",
+        relation_kinds: [],
+        edge_mode: "induced",
+        source_node_count: 4,
+        source_edge_count: 3,
+        visible_node_count: 3,
+        visible_edge_count: 2,
+        topology_complete: true,
+      },
+    });
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    fireEvent.click(await screen.findByTestId("graph-node-idea:idea-1"));
+    fireEvent.click(screen.getByLabelText("Enable N-hop focus"));
+
+    await waitFor(() => expect(getTopicGraphMock).toHaveBeenCalledTimes(2));
+    expect(getTopicGraphMock.mock.calls[1]).toEqual(["alpha", "idea-lineage", "react-flow", expect.objectContaining({
+      seedNodeIds: ["idea:idea-1"],
+      hopRadius: 1,
+      direction: "both",
+      edgeMode: "induced",
+    })]);
+  });
+
+  it("previews a draft layout and saves the applied recipe in browser-local storage", async () => {
+    renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
+    await screen.findByTestId("graph-node-idea:idea-1");
+    fireEvent.change(screen.getByLabelText("Graph layout algorithm"), { target: { value: "grid" } });
+    expect(screen.getByText("Draft changes have not been previewed.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Preview Layout" }));
+    await waitFor(() => expect(screen.getByText(/Layout completed in \d+ ms/)).toBeTruthy());
+    expect(screen.queryByText("Draft changes have not been previewed.")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Graph layout preset name"), { target: { value: "Local grid" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save as New" }));
+    const stored = window.localStorage.getItem("isomer-web-idea-graph-layout-presets-v1") || "";
+    expect(stored).toContain("Local grid");
+    expect(stored).toContain('"algorithm":"grid"');
   });
 
   it("shows loading before rendering the full Markdown hover preview", async () => {
@@ -512,7 +619,6 @@ describe("Idea graph panel interactions", () => {
     });
 
     expect(getTopicGraphMock).toHaveBeenCalledTimes(2);
-    expect(layoutFlowGraphMock).toHaveBeenCalledTimes(1);
     expect(lastFlowSnapshot().nodes).toBe(afterSelect.nodes);
     expect(lastFlowSnapshot().edges).toBe(afterSelect.edges);
     expect(screen.getByTestId("graph-node-idea:parent").className).toContain("lineage-parent");
@@ -678,6 +784,9 @@ function graphPayload(): TopicGraphView {
     groups: [],
     facets: {},
     diagnostics: [],
+    topology_complete: true,
+    total_node_count: 4,
+    total_edge_count: 3,
   };
 }
 

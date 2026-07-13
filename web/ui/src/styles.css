@@ -1381,11 +1381,182 @@ tbody tr:hover {
 }
 
 .idea-lineage-flow .react-flow__node.idea-flow-node {
+  width: 250px;
+  height: 90px;
   border: 1px solid var(--flow-node-border);
   border-radius: var(--radius);
   background: var(--flow-node);
   color: var(--card-foreground);
   box-shadow: var(--flow-node-shadow);
+}
+
+.idea-flow-card {
+  display: grid;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px;
+  white-space: pre-line;
+}
+
+.idea-graph-controls {
+  position: relative;
+  z-index: 2;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.idea-graph-panel {
+  grid-template-rows: auto auto minmax(var(--viewer-min-height), 1fr) auto auto;
+  overflow: auto;
+}
+
+.idea-graph-controls > summary {
+  cursor: pointer;
+  padding: 9px 12px;
+  font-weight: 600;
+}
+
+.idea-graph-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+
+.idea-graph-control-section {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 8px 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.idea-graph-control-section > legend {
+  padding: 0 5px;
+  font-weight: 600;
+}
+
+.idea-graph-control-section > label:not(.idea-graph-check),
+.idea-graph-relations {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.idea-graph-control-section input,
+.idea-graph-control-section select {
+  min-width: 0;
+  border: 1px solid var(--input);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 6px 8px;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.idea-graph-check {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+
+.idea-graph-check input {
+  min-width: auto;
+}
+
+.idea-graph-relations,
+.idea-graph-focus-seeds,
+.idea-graph-control-actions,
+.idea-graph-counts,
+.idea-graph-draft,
+.idea-graph-control-section > p {
+  grid-column: 1 / -1;
+}
+
+.idea-graph-focus-seeds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  grid-column: 1 / -1;
+}
+
+.idea-graph-focus-seeds > span {
+  overflow: hidden;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.idea-graph-control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.idea-graph-control-actions button,
+.idea-graph-control-section > button,
+.idea-graph-file-button {
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  padding: 5px 8px;
+  color: var(--foreground);
+  background: var(--secondary);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.idea-graph-control-actions button:disabled,
+.idea-graph-control-section > button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.idea-graph-file-button input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.idea-graph-counts,
+.idea-graph-control-section > p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.idea-graph-draft {
+  color: var(--chart-3) !important;
+}
+
+.idea-graph-selection-chips {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.idea-graph-selection-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 5px 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--muted);
 }
 
 .idea-lineage-flow .react-flow__node.idea-flow-node.ui-selected,
@@ -1511,6 +1682,10 @@ tbody tr:hover {
   .segmented {
     flex: 1 1 auto;
   }
+
+  .idea-graph-controls-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1529,6 +1704,14 @@ tbody tr:hover {
 
   .toolbar > button {
     width: 100%;
+  }
+
+  .idea-graph-control-section {
+    grid-template-columns: 1fr;
+  }
+
+  .idea-graph-control-section > * {
+    grid-column: 1;
   }
 
   .json-modal {

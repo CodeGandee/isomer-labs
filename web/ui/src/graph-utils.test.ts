@@ -40,10 +40,11 @@ const graph = TopicGraphViewSchema.parse({
 });
 
 describe("graph utilities", () => {
-  it("selects React Flow only for sparse detail graphs", () => {
+  it("always selects React Flow for the Idea Graph, including legacy Sigma hints", () => {
     expect(selectRenderer("idea-lineage", "react-flow-detail", 12)).toBe("react-flow");
     expect(selectRenderer("idea-timeline", "sigma-overview", 12)).toBe("sigma");
-    expect(selectRenderer("idea-lineage", "react-flow-detail", 121)).toBe("sigma");
+    expect(selectRenderer("idea-lineage", "react-flow-detail", 121)).toBe("react-flow");
+    expect(selectRenderer("idea-lineage", "sigma-overview", 500)).toBe("react-flow");
   });
 
   it("converts graph API payloads into React Flow objects", () => {

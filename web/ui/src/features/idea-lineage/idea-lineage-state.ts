@@ -1,6 +1,8 @@
 import type { Edge, Node } from "@xyflow/react";
 import type { IdeaFlowNodeData } from "../../graph-utils";
 import { createProjectWebStore, PanelScopedStoreRegistry, type ProjectWebStore } from "../../state/observable-store";
+import { DEFAULT_IDEA_GRAPH_FOCUS, type IdeaGraphFocusConfiguration } from "./idea-graph-focus";
+import { DEFAULT_LAYOUT_CONFIGURATIONS, cloneLayoutConfiguration, type IdeaGraphLayoutConfiguration } from "./layout-registry";
 
 export type IdeaFlowNode = Node<IdeaFlowNodeData>;
 
@@ -32,7 +34,21 @@ export type IdeaLineageOpenIntent = {
 };
 
 export type IdeaLineageState = {
+  selectedNodeIds: string[];
+  /** Compatibility alias for consumers that only display the primary selection. */
   selectedNodeId: string | null;
+  focus: IdeaGraphFocusConfiguration;
+  layoutDraft: IdeaGraphLayoutConfiguration;
+  appliedLayout: IdeaGraphLayoutConfiguration;
+  appliedPresetId: string | null;
+  positions: Record<string, { x: number; y: number }>;
+  layoutJob: {
+    status: "idle" | "running" | "succeeded" | "failed";
+    jobId: number;
+    fingerprint: string | null;
+    durationMs: number | null;
+    diagnostics: string[];
+  };
   hover: IdeaLineageHoverState;
   touchLongPress: TouchLongPressState;
   openIntent: IdeaLineageOpenIntent | null;
@@ -42,6 +58,18 @@ export type IdeaLineageState = {
 export type IdeaLineageAction =
   | { type: "graphDataLoaded"; nodeIds: string[]; selectedNodeId?: string | null }
   | { type: "nodeSelected"; nodeId: string }
+  | { type: "selectionReplaced"; nodeIds: string[] }
+  | { type: "selectionToggled"; nodeId: string }
+  | { type: "selectionRemoved"; nodeId: string }
+  | { type: "selectionCleared" }
+  | { type: "focusChanged"; focus: Partial<IdeaGraphFocusConfiguration> }
+  | { type: "focusExited" }
+  | { type: "layoutDraftChanged"; configuration: IdeaGraphLayoutConfiguration }
+  | { type: "layoutDraftReverted" }
+  | { type: "layoutPresetApplied"; presetId: string | null; configuration: IdeaGraphLayoutConfiguration }
+  | { type: "layoutJobStarted"; jobId: number; fingerprint: string }
+  | { type: "layoutJobSucceeded"; jobId: number; fingerprint: string; positions: Record<string, { x: number; y: number }>; durationMs: number; configuration: IdeaGraphLayoutConfiguration; diagnostics?: string[] }
+  | { type: "layoutJobFailed"; jobId: number; fingerprint: string; diagnostics: string[] }
   | { type: "nodeOpened"; nodeId: string }
   | { type: "openIntentConsumed"; intentId: number }
   | { type: "hoverStarted"; sessionId: IdeaLineageHoverSessionId; preview: IdeaNodeHoverPreview }
@@ -57,7 +85,14 @@ export type IdeaLineageStore = ProjectWebStore<IdeaLineageState, IdeaLineageActi
 export const ideaLineageStoreRegistry = new PanelScopedStoreRegistry<IdeaLineageStore>();
 
 export const initialIdeaLineageState: IdeaLineageState = {
+  selectedNodeIds: [],
   selectedNodeId: null,
+  focus: { ...DEFAULT_IDEA_GRAPH_FOCUS },
+  layoutDraft: cloneLayoutConfiguration(DEFAULT_LAYOUT_CONFIGURATIONS.layered),
+  appliedLayout: cloneLayoutConfiguration(DEFAULT_LAYOUT_CONFIGURATIONS.layered),
+  appliedPresetId: "builtin-layered",
+  positions: {},
+  layoutJob: { status: "idle", jobId: 0, fingerprint: null, durationMs: null, diagnostics: [] },
   hover: { status: "idle" },
   touchLongPress: null,
   openIntent: null,
@@ -70,16 +105,87 @@ export function createIdeaLineageStore(initialState: IdeaLineageState = initialI
 
 export function ideaLineageReducer(state: IdeaLineageState, action: IdeaLineageAction): IdeaLineageState {
   if (action.type === "graphDataLoaded") {
-    const selectedNodeId = state.selectedNodeId && action.nodeIds.includes(state.selectedNodeId) ? state.selectedNodeId : action.selectedNodeId || null;
-    return selectedNodeId === state.selectedNodeId ? state : { ...state, selectedNodeId };
+    const available = new Set(action.nodeIds);
+    const selectedNodeIds = state.selectedNodeIds.filter((nodeId) => available.has(nodeId));
+    if (selectedNodeIds.length === 0 && action.selectedNodeId && available.has(action.selectedNodeId)) {
+      selectedNodeIds.push(action.selectedNodeId);
+    }
+    const selectedNodeId = selectedNodeIds[0] || null;
+    const positions = Object.fromEntries(Object.entries(state.positions).filter(([nodeId]) => available.has(nodeId)));
+    if (sameStrings(selectedNodeIds, state.selectedNodeIds) && selectedNodeId === state.selectedNodeId && Object.keys(positions).length === Object.keys(state.positions).length) {
+      return state;
+    }
+    return { ...state, selectedNodeIds, selectedNodeId, positions };
   }
   if (action.type === "nodeSelected") {
-    return state.selectedNodeId === action.nodeId ? state : { ...state, selectedNodeId: action.nodeId };
+    return sameStrings(state.selectedNodeIds, [action.nodeId]) ? state : { ...state, selectedNodeIds: [action.nodeId], selectedNodeId: action.nodeId };
   }
-  if (action.type === "nodeOpened") {
+  if (action.type === "selectionReplaced") {
+    const selectedNodeIds = [...new Set(action.nodeIds.filter(Boolean))];
+    return sameStrings(state.selectedNodeIds, selectedNodeIds) ? state : { ...state, selectedNodeIds, selectedNodeId: selectedNodeIds[0] || null };
+  }
+  if (action.type === "selectionToggled") {
+    const selectedNodeIds = state.selectedNodeIds.includes(action.nodeId)
+      ? state.selectedNodeIds.filter((nodeId) => nodeId !== action.nodeId)
+      : [...state.selectedNodeIds, action.nodeId];
+    return { ...state, selectedNodeIds, selectedNodeId: selectedNodeIds[0] || null };
+  }
+  if (action.type === "selectionRemoved") {
+    if (!state.selectedNodeIds.includes(action.nodeId)) {
+      return state;
+    }
+    const selectedNodeIds = state.selectedNodeIds.filter((nodeId) => nodeId !== action.nodeId);
+    return { ...state, selectedNodeIds, selectedNodeId: selectedNodeIds[0] || null };
+  }
+  if (action.type === "selectionCleared") {
+    return state.selectedNodeIds.length === 0 ? state : { ...state, selectedNodeIds: [], selectedNodeId: null };
+  }
+  if (action.type === "focusChanged") {
+    const focus = { ...state.focus, ...action.focus };
+    return { ...state, focus };
+  }
+  if (action.type === "focusExited") {
+    return state.focus.enabled ? { ...state, focus: { ...state.focus, enabled: false } } : state;
+  }
+  if (action.type === "layoutDraftChanged") {
+    return { ...state, layoutDraft: cloneLayoutConfiguration(action.configuration) };
+  }
+  if (action.type === "layoutDraftReverted") {
+    return { ...state, layoutDraft: cloneLayoutConfiguration(state.appliedLayout) };
+  }
+  if (action.type === "layoutPresetApplied") {
     return {
       ...state,
-      selectedNodeId: action.nodeId,
+      appliedPresetId: action.presetId,
+      layoutDraft: cloneLayoutConfiguration(action.configuration),
+    };
+  }
+  if (action.type === "layoutJobStarted") {
+    return { ...state, layoutJob: { status: "running", jobId: action.jobId, fingerprint: action.fingerprint, durationMs: null, diagnostics: [] } };
+  }
+  if (action.type === "layoutJobSucceeded") {
+    if (state.layoutJob.jobId !== action.jobId || state.layoutJob.fingerprint !== action.fingerprint) {
+      return state;
+    }
+    return {
+      ...state,
+      positions: action.positions,
+      appliedLayout: cloneLayoutConfiguration(action.configuration),
+      layoutJob: { status: "succeeded", jobId: action.jobId, fingerprint: action.fingerprint, durationMs: action.durationMs, diagnostics: action.diagnostics || [] },
+    };
+  }
+  if (action.type === "layoutJobFailed") {
+    if (state.layoutJob.jobId !== action.jobId || state.layoutJob.fingerprint !== action.fingerprint) {
+      return state;
+    }
+    return { ...state, layoutJob: { status: "failed", jobId: action.jobId, fingerprint: action.fingerprint, durationMs: null, diagnostics: action.diagnostics } };
+  }
+  if (action.type === "nodeOpened") {
+    const selectedNodeIds = state.selectedNodeIds.length > 0 ? state.selectedNodeIds : [action.nodeId];
+    return {
+      ...state,
+      selectedNodeIds,
+      selectedNodeId: selectedNodeIds[0] || null,
       hover: { status: "idle" },
       touchLongPress: null,
       openIntent: { intentId: state.nextOpenIntentId, nodeId: action.nodeId },
@@ -164,6 +270,7 @@ const LINEAGE_NODE_STATE_CLASSES = ["ui-selected", "lineage-parent", "lineage-ch
 const LINEAGE_EDGE_STATE_CLASSES = ["lineage-incoming", "lineage-outgoing"];
 
 export type IdeaLineageNeighborhood = {
+  selectedNodeIds: string[];
   selectedNodeId: string | null;
   parentNodeIds: Set<string>;
   childNodeIds: Set<string>;
@@ -171,32 +278,36 @@ export type IdeaLineageNeighborhood = {
   outgoingEdgeIds: Set<string>;
 };
 
-export function selectIdeaLineageNeighborhood(edges: Edge[], selectedNodeId: string | null): IdeaLineageNeighborhood {
+export function selectIdeaLineageNeighborhood(edges: Edge[], selection: string | null | string[]): IdeaLineageNeighborhood {
+  const selectedNodeIds = Array.isArray(selection) ? selection : selection ? [selection] : [];
+  const selected = new Set(selectedNodeIds);
+  const selectedNodeId = selectedNodeIds[0] || null;
   const parentNodeIds = new Set<string>();
   const childNodeIds = new Set<string>();
   const incomingEdgeIds = new Set<string>();
   const outgoingEdgeIds = new Set<string>();
   if (!selectedNodeId) {
-    return { selectedNodeId, parentNodeIds, childNodeIds, incomingEdgeIds, outgoingEdgeIds };
+    return { selectedNodeIds, selectedNodeId, parentNodeIds, childNodeIds, incomingEdgeIds, outgoingEdgeIds };
   }
   for (const edge of edges) {
-    if (edge.target === selectedNodeId) {
+    if (selected.has(edge.target)) {
       parentNodeIds.add(edge.source);
       incomingEdgeIds.add(edge.id);
     }
-    if (edge.source === selectedNodeId) {
+    if (selected.has(edge.source)) {
       childNodeIds.add(edge.target);
       outgoingEdgeIds.add(edge.id);
     }
   }
-  return { selectedNodeId, parentNodeIds, childNodeIds, incomingEdgeIds, outgoingEdgeIds };
+  return { selectedNodeIds, selectedNodeId, parentNodeIds, childNodeIds, incomingEdgeIds, outgoingEdgeIds };
 }
 
-export function selectIdeaFlowNodes(nodes: IdeaFlowNode[], edges: Edge[], selectedNodeId: string | null): IdeaFlowNode[] {
-  const neighborhood = selectIdeaLineageNeighborhood(edges, selectedNodeId);
+export function selectIdeaFlowNodes(nodes: IdeaFlowNode[], edges: Edge[], selection: string | null | string[]): IdeaFlowNode[] {
+  const neighborhood = selectIdeaLineageNeighborhood(edges, selection);
+  const selectedNodeIds = new Set(neighborhood.selectedNodeIds);
   let changed = false;
   const nextNodes = nodes.map((node) => {
-    const selected = node.id === selectedNodeId;
+    const selected = selectedNodeIds.has(node.id);
     const className = withControlledClasses(node.className, LINEAGE_NODE_STATE_CLASSES, lineageNodeClassState(node.id, neighborhood));
     if (Boolean(node.selected) === selected && node.className === className) {
       return node;
@@ -207,8 +318,8 @@ export function selectIdeaFlowNodes(nodes: IdeaFlowNode[], edges: Edge[], select
   return changed ? nextNodes : nodes;
 }
 
-export function selectIdeaFlowEdges(edges: Edge[], selectedNodeId: string | null): Edge[] {
-  const neighborhood = selectIdeaLineageNeighborhood(edges, selectedNodeId);
+export function selectIdeaFlowEdges(edges: Edge[], selection: string | null | string[]): Edge[] {
+  const neighborhood = selectIdeaLineageNeighborhood(edges, selection);
   let changed = false;
   const nextEdges = edges.map((edge) => {
     const className = withControlledClasses(edge.className, LINEAGE_EDGE_STATE_CLASSES, lineageEdgeClassState(edge, neighborhood));
@@ -230,7 +341,7 @@ function lineageNodeClassState(nodeId: string, neighborhood: IdeaLineageNeighbor
     return [];
   }
   return [
-    nodeId === neighborhood.selectedNodeId ? "ui-selected" : "",
+    neighborhood.selectedNodeIds.includes(nodeId) ? "ui-selected" : "",
     neighborhood.parentNodeIds.has(nodeId) ? "lineage-parent" : "",
     neighborhood.childNodeIds.has(nodeId) ? "lineage-child" : "",
   ].filter(Boolean);
@@ -256,4 +367,8 @@ function withControlledClasses(className: string | undefined, controlledClasses:
   }
   const nextClassName = Array.from(tokens).join(" ");
   return nextClassName || undefined;
+}
+
+function sameStrings(left: string[], right: string[]) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
