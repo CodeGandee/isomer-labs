@@ -71,7 +71,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
         self.assertTrue(installed.ok)
         kaoju_names = sorted(record.name for record in installed.installed if record.name.startswith("isomer-kaoju-"))
-        self.assertEqual(11, len(kaoju_names))
+        self.assertEqual(12, len(kaoju_names))
         self.assertTrue((target.skill_root / "isomer-kaoju-pipeline" / "commands" / "comparative-pass.md").is_file())
         self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
@@ -80,13 +80,13 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
         status = inspect_system_skills(target, selection)
         self.assertEqual((), status.missing)
-        self.assertEqual(11, len(tuple(record for record in status.installed if record.name.startswith("isomer-kaoju-"))))
+        self.assertEqual(12, len(tuple(record for record in status.installed if record.name.startswith("isomer-kaoju-"))))
 
         upgraded = upgrade_system_skills(target, selection)
-        self.assertEqual(11, len(tuple(record for record in upgraded.refreshed if record.name.startswith("isomer-kaoju-"))))
+        self.assertEqual(12, len(tuple(record for record in upgraded.refreshed if record.name.startswith("isomer-kaoju-"))))
 
         removed = uninstall_system_skills(target, selection)
-        self.assertEqual(11, len(tuple(record for record in removed.removed if record.name.startswith("isomer-kaoju-"))))
+        self.assertEqual(12, len(tuple(record for record in removed.removed if record.name.startswith("isomer-kaoju-"))))
         self.assertFalse((target.skill_root / "isomer-kaoju-pipeline").exists())
 
     def test_copy_projection_is_flat_and_manifest_tracked(self) -> None:

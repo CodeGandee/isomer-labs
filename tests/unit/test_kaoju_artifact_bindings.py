@@ -18,7 +18,7 @@ class KaojuArtifactBindingTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         registry_ids = set(re.findall(r"`(kaoju:[a-z0-9-]+)`", registry_text))
         binding_paths = sorted(KAOJU_ROOT.glob("isomer-kaoju-*/artifact-bindings.md"))
-        self.assertEqual(10, len(binding_paths))
+        self.assertEqual(11, len(binding_paths))
         binding_ids: list[str] = []
         for path in binding_paths:
             text = path.read_text(encoding="utf-8")
@@ -27,7 +27,7 @@ class KaojuArtifactBindingTests(unittest.TestCase):
                 self.assertIn(term, text, (path, term))
         catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
         catalog_ids = {f"{entry['family']}:{entry['semantic_id']}" for entry in catalog["profiles"]}
-        self.assertEqual(25, len(registry_ids))
+        self.assertEqual(31, len(registry_ids))
         self.assertEqual(registry_ids, set(binding_ids))
         self.assertEqual(len(binding_ids), len(set(binding_ids)))
         self.assertEqual(registry_ids, catalog_ids)

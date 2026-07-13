@@ -20,15 +20,18 @@ EXPECTED_SKILLS = {
     "isomer-kaoju-shared",
     "isomer-kaoju-synthesize",
     "isomer-kaoju-workspace-mgr",
+    "isomer-kaoju-write",
 }
 
 PROCEDURES = {
     "audit-survey-pass",
     "comparative-pass",
+    "create-paper-template",
     "curated-intake-pass",
     "direction-expansion-pass",
     "landscape-pass",
     "method-trial-pass",
+    "paper-pass",
     "theory-comparison-pass",
 }
 

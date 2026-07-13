@@ -90,6 +90,7 @@ EXPECTED_KAOJU_SKILLS = frozenset(
         "isomer-kaoju-shared",
         "isomer-kaoju-synthesize",
         "isomer-kaoju-workspace-mgr",
+        "isomer-kaoju-write",
     }
 )
 
@@ -127,6 +128,7 @@ FAMILY_CONFIGS = (
                 "isomer-kaoju-reproduce",
                 "isomer-kaoju-synthesize",
                 "isomer-kaoju-workspace-mgr",
+                "isomer-kaoju-write",
             }
         ),
         required_binding_fields=(
@@ -149,12 +151,14 @@ EXPECTED_KAOJU_COMMANDS = frozenset(
     {
         "audit-survey-pass",
         "comparative-pass",
+        "create-paper-template",
         "curated-intake-pass",
         "direction-expansion-pass",
         "landscape-pass",
         "manage-dataset",
         "manage-survey",
         "method-trial-pass",
+        "paper-pass",
         "theory-comparison-pass",
     }
 )
@@ -163,10 +167,12 @@ EXPECTED_KAOJU_PROCEDURES = frozenset(
     {
         "audit-survey-pass",
         "comparative-pass",
+        "create-paper-template",
         "curated-intake-pass",
         "direction-expansion-pass",
         "landscape-pass",
         "method-trial-pass",
+        "paper-pass",
         "theory-comparison-pass",
     }
 )

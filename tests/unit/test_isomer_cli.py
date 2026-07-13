@@ -2859,7 +2859,7 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(66, len(data["insertion_points"]))
+        self.assertEqual(68, len(data["insertion_points"]))
 
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--core-only", "--json"], cwd=root)
         data = json.loads(output)

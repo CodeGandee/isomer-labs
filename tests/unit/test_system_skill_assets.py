@@ -66,25 +66,27 @@ class SystemSkillAssetTests(unittest.TestCase):
                 "method-trial-pass",
                 "comparative-pass",
                 "audit-survey-pass",
+                "paper-pass",
+                "create-paper-template",
                 "manage-survey",
                 "manage-dataset",
             ),
             extensions[1].commands,
         )
         self.assertIn("research-paradigm/deepsci/isomer-deepsci-scout", extensions[0].skills)
-        self.assertEqual(11, len(extensions[1].skills))
+        self.assertEqual(12, len(extensions[1].skills))
         self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", extensions[1].skills)
 
     def test_manifest_declares_callback_insertion_points(self) -> None:
         self.assertEqual(("begin", "end"), callback_insertion_point_stage_names())
         points = iter_system_skill_callback_insertion_points(include_core=True, include_all_extensions=True)
-        self.assertEqual(66, len(points))
+        self.assertEqual(68, len(points))
         self.assertEqual(
             ("isomer-deepsci-analysis", "begin"),
             (points[0].target_skill, points[0].stage),
         )
         self.assertEqual(
-            ("isomer-kaoju-synthesize", "end"),
+            ("isomer-kaoju-write", "end"),
             (points[-1].target_skill, points[-1].stage),
         )
         scout_begin = iter_system_skill_callback_insertion_points(
@@ -183,7 +185,7 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertEqual(("core", "kaoju"), result.groups)
             kaoju = target / "research-paradigm" / "kaoju"
             self.assertEqual(
-                11,
+                12,
                 len(tuple(path for path in kaoju.glob("isomer-kaoju-*") if path.is_dir())),
             )
             self.assertTrue((kaoju / "isomer-kaoju-pipeline" / "commands" / "landscape-pass.md").is_file())
@@ -191,7 +193,7 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-recording.md").is_file())
             binding_pages = tuple(kaoju.glob("isomer-kaoju-*/artifact-bindings.md"))
-            self.assertEqual(10, len(binding_pages))
+            self.assertEqual(11, len(binding_pages))
             self.assertFalse((target / "research-paradigm" / "deepsci").exists())
 
     def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:
@@ -295,6 +297,7 @@ class SystemSkillAssetTests(unittest.TestCase):
             "isomer-kaoju-compare",
             "isomer-kaoju-audit",
             "isomer-kaoju-synthesize",
+            "isomer-kaoju-write",
         ):
             self.assertIn(name, extension_index)
 
