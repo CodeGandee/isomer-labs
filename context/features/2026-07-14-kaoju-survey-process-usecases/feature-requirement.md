@@ -25,7 +25,7 @@ Define a coherent set of user-facing use cases for the Kaoju evidence-led survey
 - Form structured records (Source Digests, Claim-Evidence Ledger entries, Discovery Ledger) that conform to Kaoju artifact semantics and are registered in the topic workspace state database with metadata and filesystem links.
 - Optionally route executable claims to code testing or first-hand trials.
 - Support iteration: return to discovery or examination when audit identifies gaps.
-- Produce synthesis records (Field Summary, Related-Work Catalog, Claim Status Table) and, when requested, a paper bundle.
+- Produce synthesis records (Field Summary, Related-Work Catalog, Claim Status Table) and, when requested, a MyST paper draft via a two-stage structure-then-fill workflow. Markdown and LaTeX/PDF are derived views.
 
 ## System Boundaries
 
@@ -37,7 +37,7 @@ Define a coherent set of user-facing use cases for the Kaoju evidence-led survey
 - Each claim-bearing procedure must be audited before synthesis.
 - Online collection must record query provenance and source identity.
 - Structured records must use canonical Kaoju semantic ids and profiles.
-- Paper production must be Tectonic-first `.tex`, not Markdown-to-PDF.
+- Paper production is MyST-first and content-focused. Markdown is an automatically derived review view; LaTeX formatting, PDF rendering, and citation styling are handled separately by converting the MyST draft to TeX.
 
 ## Assumptions
 

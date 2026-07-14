@@ -16,7 +16,7 @@ Capture refined, user-facing use cases for the Kaoju evidence-led survey workflo
 
 ## Current Stage
 
-Feature requirement drafted; use cases `uc-01` (survey direction), `uc-02` (online collection and reading list), and `uc-03` (ingest reading item in depth) are designed. Remaining use cases will cover code testing, synthesis, and paper writing.
+Feature requirement drafted; use cases `uc-01` through `uc-06` are designed. Remaining optional use cases may cover code testing, audit gates, or additional export workflows.
 
 ## Related Context
 
