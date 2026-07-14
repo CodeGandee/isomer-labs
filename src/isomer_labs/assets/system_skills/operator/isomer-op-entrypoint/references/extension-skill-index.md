@@ -6,7 +6,7 @@
 2. Read the Project declaration first. If the Project declares the selected extension, trust that state and attempt the extension route without preemptive filesystem verification.
 3. If the extension is undeclared, delegate to `isomer-op-system-skill-mgr`. Its ordered evidence is Project declaration, managed receipt in a host-supplied root, then live skill inventory. Use `detect-extensions` for read-only requests and `reconcile-extensions` when the concrete request authorizes additive Project bookkeeping.
 4. Check base Topic Workspace, selected Topic Actor or Agent workspace, extension-specific readiness, required owner or Gate evidence, the selected route's latest-context preflight, and its worker-output policy before a research skill can run.
-5. Route missing platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, or the applicable service owner; route missing extension installation or compatibility to `isomer-op-system-skill-mgr`; route extension workspace readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
+5. Route missing base topic, Topic Actor, environment, runtime, or other platform readiness to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, or the applicable service owner. Route missing formal-team readiness to `isomer-op-topic-team-specialize` only when the selected topology already includes a formal Agent Team layer established by a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence. Route missing extension installation or compatibility to `isomer-op-system-skill-mgr`; route extension workspace readiness to `isomer-deepsci-workspace-mgr` or `isomer-kaoju-workspace-mgr`.
 6. Route prepared work to the matching `isomer-deepsci-*` or `isomer-kaoju-*` skill, using the family pipeline for a named procedure.
 7. Preserve the selected family's callbacks, evidence, lineage, recording, owner, Gate, and blocker rules.
 
@@ -67,5 +67,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Polish, restructure, or translate academic prose into Nature-leaning English without inventing claims. | `isomer-deepsci-nature-polishing` |
 
 Do not let ordinary DeepSci research-stage skills fabricate missing Topic Workspace, Topic Actor, Agent Workspace, extension readiness, dataset registration, or owner evidence. Route setup first, then return to the selected extension skill. Apply the same rule to ordinary Kaoju research-stage skills.
+
+Do not infer a formal Agent Team layer from missing readiness, missing `isomer-topic-summary.md`, missing Agent Workspace evidence, or generic topic preparation. If no formal Agent Team target is selected, use the owner of the missing base or extension layer instead of Topic Team Specialization.
 
 If a Project-declared extension later fails to load, report stale user-controlled state and route `isomer-op-system-skill-mgr repair`. Never remove a declaration because one agent host has a different installed inventory.

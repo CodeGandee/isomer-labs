@@ -25,7 +25,7 @@ When this skill is invoked, execute the following steps in order.
 7. **Hand off topic-oriented work** to the narrow owner:
    - Use `isomer-op-topic-creator` for blank-state topic creation, topic initialization, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
    - Use `isomer-op-topic-mgr` for initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, package mutation, environment verification routing, and topology repair.
-   - Use `isomer-op-topic-team-specialize` only when the user explicitly asks to adapt or instantiate a Domain Agent Team Template.
+   - Use `isomer-op-topic-team-specialize` only when the user explicitly invokes specialization or asks to deploy, specialize, instantiate, materialize, validate, repair, launch, or use a formal Agent Team established by the prompt or authoritative context.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the project context, subcommands, CLI boundaries, output contract, and guardrails in this skill, then execute the plan.
 
@@ -89,9 +89,9 @@ Hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestr
 
 Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template. Use `isomer-op-topic-creator`, with Topic Manager actor management underneath, for those requests.
+Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team. Use `isomer-op-topic-creator`, with Topic Manager actor management underneath, for other manual-research requests.
 
-Do not duplicate Topic Team Specialization. When the user asks to adapt or instantiate a Domain Agent Team Template for a Research Topic, use `specialize-team` to hand off to `isomer-op-topic-team-specialize fast-forward`.
+Do not duplicate Topic Team Specialization. When the user explicitly invokes specialization or asks to adapt, deploy, specialize, instantiate, materialize, validate, repair, launch, or use a formal Agent Team established by a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence, use `specialize-team` to hand off to `isomer-op-topic-team-specialize fast-forward`. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish that intent.
 
 ## Local References
 

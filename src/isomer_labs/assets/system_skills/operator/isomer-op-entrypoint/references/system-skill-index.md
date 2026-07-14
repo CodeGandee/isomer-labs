@@ -22,10 +22,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Initialized Research Topic storage, Topic Actors, actor workspaces, packages, environment verification, reset checkpoints, branch helpers, or diagnostics. | `isomer-op-topic-mgr` | `Use $isomer-op-topic-mgr <subcommand>`. |
 | Switch the Project Operator to act as or on behalf of a selected Topic Actor or Agent workspace cwd. | `isomer-op-switch-identity` | `Use $isomer-op-switch-identity switch`, `act-as`, `status`, or `reset`. |
 | Project-local Toolbox creation, conversion, install, inspection, update, disable, uninstall, callback insertion, insertion-point discovery, Runtime Params, or effective-state diagnostics. | `isomer-op-toolbox-mgr` | `Use $isomer-op-toolbox-mgr help` or a specific Toolbox subcommand. |
-| Domain Agent Team Template adaptation, Topic Team Specialization, static team validation, profile approval, materialization, or launch-facing preparation. | `isomer-op-topic-team-specialize` | `Use $isomer-op-topic-team-specialize fast-forward`, `step-by-step`, or a procedural subcommand. |
+| Explicit Topic Team Specialization, or adaptation, deployment, use, static validation, approval, materialization, repair, or launch of a formal Agent Team identified by the prompt or authoritative context. Generic topic preparation and launch-facing work are excluded. | `isomer-op-topic-team-specialize` | `Use $isomer-op-topic-team-specialize fast-forward`, `step-by-step`, or a procedural subcommand, and name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence. |
 | Informed-user dispatch from a concrete task to a system skill or CLI family. | `isomer-op-entrypoint` | Parse, route, and proceed with the selected skill or CLI family. |
 
 `isomer-op-welcome` is read-only orientation. `isomer-op-entrypoint` is route-and-proceed dispatch.
+
+Topic Team Specialization requires an explicit skill or specialization-route invocation, or a formal Agent Team target established by the prompt or authoritative Project context. A Research Topic, Topic Workspace, readiness gap, missing summary, missing Agent Workspace, or generic launch-facing request alone does not satisfy this route.
 
 ## Service Skills
 

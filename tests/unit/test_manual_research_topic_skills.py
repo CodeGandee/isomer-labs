@@ -128,6 +128,42 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         )
         self.assertNotIn("isomer-op-topic-prepare", combined)
 
+    def test_team_specialization_routing_requires_explicit_or_contextual_team_intent(self) -> None:
+        entrypoint = read_repo_file("skillset/operator/isomer-op-entrypoint/SKILL.md")
+        routing = read_repo_file("skillset/operator/isomer-op-entrypoint/references/routing-rules.md")
+        welcome = read_repo_file("skillset/operator/isomer-op-welcome/SKILL.md")
+        project_manager = read_repo_file("skillset/operator/isomer-op-project-mgr/SKILL.md")
+        topic_creator = read_repo_file("skillset/operator/isomer-op-topic-creator/SKILL.md")
+        specialization = read_repo_file("skillset/operator/isomer-op-topic-team-specialize/SKILL.md")
+        workspace_blockers = read_repo_file(
+            "skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/references/validation-and-blockers.md"
+        )
+        combined = "\n".join(
+            (
+                entrypoint,
+                routing,
+                welcome,
+                project_manager,
+                topic_creator,
+                specialization,
+                workspace_blockers,
+            )
+        )
+
+        self.assertContainsAll(
+            combined,
+            (
+                "Establish formal Agent Team intent before specialization",
+                "explicitly invokes that skill or a named specialization route",
+                "`prepare the topic <topic-name>` with no formal Agent Team target",
+                "contextually selected formal Agent Team",
+                "Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish Agent Team intent",
+                "A delegated request must preserve prompt or authoritative context that identifies a formal Agent Team target",
+                "When the selected topology includes a formal Agent Team layer",
+                "When no formal Agent Team layer is selected",
+            ),
+        )
+
     def test_v2_workspace_manager_owns_research_bootstrap_contract(self) -> None:
         skill = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/SKILL.md")
         bootstrap = read_repo_file("skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/references/bootstrap-workflow.md")

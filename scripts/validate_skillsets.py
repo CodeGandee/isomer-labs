@@ -75,6 +75,7 @@ COPIED_TOPIC_MAIN_GUIDANCE_TERMS = (
 )
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
+    "Use only when the user explicitly invokes Topic Team Specialization",
     "Default help mode",
     "invoked without a prompt",
     "Manual mode",
@@ -98,6 +99,7 @@ TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
     "load only its detail page",
     "static material readiness",
     "durable setup state",
+    "A delegated request must preserve prompt or authoritative context that identifies a formal Agent Team target",
     "topic-overview.md",
     "concrete Research Topic",
     "default Research Topic",
@@ -720,6 +722,9 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "blocks progress",
     "next action",
     "isomer-misc-tool-packs",
+    "formal Agent Team target",
+    "generic topic preparation",
+    "missing Agent Workspaces",
 )
 
 WELCOME_SUBCOMMANDS = (
@@ -1063,6 +1068,9 @@ ENTRYPOINT_REQUIRED_SKILL_TERMS = (
     "rationale",
     "extension readiness",
     "retired routes excluded",
+    "Establish formal Agent Team intent before specialization",
+    "generic topic preparation",
+    "missing Agent Workspaces",
 )
 
 ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
@@ -1084,6 +1092,9 @@ ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
         "owner boundaries",
         "Service skills are only bounded support",
         "Retired compatibility skills are not active routes",
+        "## Topic Team Specialization Examples",
+        "`prepare the topic <topic-name>` with no formal Agent Team target",
+        "contextually selected formal Agent Team",
     ),
     "system-skill-index.md": (
         "Operator Skills",

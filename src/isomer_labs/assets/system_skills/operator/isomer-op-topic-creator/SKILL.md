@@ -110,7 +110,7 @@ Do not infer Research Topics or Topic Workspaces by scanning sibling directories
 
 Do not treat `topic.repos.main`, Topic Actor Workspaces, Agent Workspaces, or tmp surfaces as accepted research truth.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template. Hand off formal team work to `isomer-op-topic-team-specialize`.
+Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target. A Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence can establish that target when the requested action applies to the team. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces cannot. Hand off valid formal team work to `isomer-op-topic-team-specialize`.
 
 Do not silently recreate the default `operator` Topic Actor after an explicit opt-out. Report a blocker if a later step requires it.
 

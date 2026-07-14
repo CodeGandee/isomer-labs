@@ -54,7 +54,8 @@ Do not imply production DeepSci bootstrap setup will survive Topic Workspace res
 
 ## Readiness Decision Rules
 
-- Missing `isomer-topic-summary.md` means Topic Team Specialization has not reached the final summary boundary; route back to `isomer-op-topic-team-specialize finalize-topic-team`.
+- When the selected topology includes a formal Agent Team layer established by a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence, missing `isomer-topic-summary.md` means Topic Team Specialization has not reached the final summary boundary; route back to `isomer-op-topic-team-specialize finalize-topic-team` and name that evidence.
+- When no formal Agent Team layer is selected, absence of `isomer-topic-summary.md`, Agent Workspace evidence, or worker-access evidence is not a Topic Team Specialization blocker. Validate Topic Creator, Topic Manager, Topic Actor, environment, runtime, semantic-label, and research-bootstrap evidence without inferring specialization.
 - A summary that reports provisional registration, blocked validation, not-checked validation, stale setup evidence, or relevant blockers means bootstrap is blocked.
 - A ready-with-deferrals summary can pass only when each deferral is unrelated to production DeepSci research bootstrap, Workspace Runtime readiness, topic-team profile material, and Agent Workspace access.
 - Fresh runtime inspection or validation output must agree with the summary. If it contradicts the summary, treat the summary as stale.

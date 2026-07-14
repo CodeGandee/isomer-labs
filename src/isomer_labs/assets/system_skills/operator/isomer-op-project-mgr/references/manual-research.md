@@ -13,7 +13,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not route human-orchestrated research to `isomer-op-topic-team-specialize fast-forward` unless the user explicitly asks for Domain Agent Team Template specialization.
+- Do not route human-orchestrated research to `isomer-op-topic-team-specialize fast-forward` unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team. Generic topic preparation, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
 - Do not split normal manual research setup across retired compatibility skills; route it to `isomer-op-topic-creator`.
 - Do not make all manually controlled workers share `topic.repos.main` as cwd. Each prepared worker should receive its own `topic.actors.workspace` cwd when it needs independent work.
 - Do not fabricate Agent Team Instance, Agent Instance, or Agent Workspace refs for Topic Actors.

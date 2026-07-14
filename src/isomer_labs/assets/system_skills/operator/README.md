@@ -29,7 +29,7 @@ Use this flow when a user asks the operator to create, diagnose, or prepare an I
 5. Use `init-runtime` and `prep-runtime` only when the user explicitly wants Workspace Runtime state and launch-facing readiness.
 6. When the user asks to create, prepare, or start a Research Topic for manual or future research work without choosing a mode, call `isomer-op-topic-creator run-to finalize`; the `finalize` target is included by default. Use `fast-forward` only when the user explicitly asks for automatic or fast-forward setup, use `step-by-step` when the user asks for guided acknowledgement, and use explicit wording such as `stop before finalize` when the user wants exclusion.
 7. When the user asks for a narrow Project-only route, `prepare-topic` and `manual-research` hand off to `isomer-op-topic-creator`.
-8. When the user asks to specialize a Domain Agent Team Template over a Research Topic, call `specialize-team`; it resolves Project context and hands off to `isomer-op-topic-team-specialize fast-forward` rather than to the internal `adapt-team-template` stage.
+8. Call `specialize-team` only when the user explicitly invokes specialization or asks to deploy, specialize, instantiate, materialize, validate, repair, launch, or use a formal Agent Team established by the prompt or authoritative context. It resolves Project context and hands off to `isomer-op-topic-team-specialize fast-forward` rather than to the internal `adapt-team-template` stage. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces do not establish Agent Team intent.
 
 ## Example: Route an Informed User Task
 
@@ -119,7 +119,7 @@ sequenceDiagram
 
 ## Example: Route Houmao Support During Topic Team Work
 
-Use this flow when a topic-team specialization or launch task touches Houmao-managed agents.
+Use this flow when a topic-team specialization or formal Agent Team launch task touches Houmao-managed agents. A generic launch task without a formal Agent Team target retains its actual runtime, Topic Service Master, GUI, topic, or service owner.
 
 1. Keep the visible first command on the operator workflow that owns the user request, usually `isomer-op-topic-team-specialize` for Topic Team Specialization or `isomer-op-project-mgr` for Project bootstrap and checks.
 2. When the operator workflow needs Houmao loop explanation, adapter customization guidance, Domain Agent Team Template mapping, mailbox or gateway inspection, or runtime inspection, route that bounded support to `isomer-srv-houmao-interop`.

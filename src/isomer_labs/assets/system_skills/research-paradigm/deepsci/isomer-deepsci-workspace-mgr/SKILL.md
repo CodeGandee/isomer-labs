@@ -38,7 +38,7 @@ Do not use this skill when:
 
 - The task is only operator topology inspection, branch helper work, or legacy diagnostics. Use `isomer-op-topic-mgr` for that boundary.
 - The selected Topic Workspace lacks base topic readiness, has only provisional registration evidence, or has missing topic environment, topic-main, runtime, or record-label readiness. Route back to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, or the relevant setup service first.
-- Formal team material is selected but `isomer-topic-summary.md` is missing, blocked, stale, or not checked. Route back to `isomer-op-topic-team-specialize` or the relevant setup service first.
+- Formal team material is selected by the prompt or authoritative context but `isomer-topic-summary.md` is missing, blocked, stale, or not checked. Route back to `isomer-op-topic-team-specialize` or the relevant setup service first and name the selected Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or equivalent evidence. Without a selected formal Agent Team layer, a missing summary does not establish Topic Team Specialization intent.
 - Topic Actor Workspace readiness or formal Agent Workspace cwd proof has not completed for the selected topology. Route Topic Actor topology to `isomer-op-topic-mgr` and formal Agent Workspace cwd proof to `isomer-srv-agent-env-setup`.
 - The user is asking for domain research work such as scouting, baseline selection, idea generation, experiment execution, analysis, writing, review, rebuttal, or finalization.
 
@@ -57,6 +57,8 @@ When this skill is invoked, execute the following steps in order.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-workspace-mgr --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
+
+Do not infer a formal Agent Team layer from missing `isomer-topic-summary.md`, missing Agent Workspace or worker-access evidence, generic topic preparation, launch-facing language, or readiness gaps. Human-orchestrated Topic Actor topology continues through Topic Creator, Topic Manager, and the applicable setup services unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target.
 
 ## Reference Routing
 

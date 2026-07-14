@@ -1,6 +1,6 @@
 ---
 name: isomer-op-topic-team-specialize
-description: "Initialize and specialize Isomer Research Topics into static topic-team material. Use when an operator needs topic-team setup for one Research Topic, including direct requests like specialize a team path over a topic, help, init-topic, resolve-topic-intent, clarify-topic, ensure-topic-registration, resolve-topic-env-gate, adapt-team-template, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, resolve-agent-env-gate, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
+description: "Use only when the user explicitly invokes Topic Team Specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team. Initialize and specialize one Isomer Research Topic into static topic-team material through direct requests such as specialize a team path over a topic, help, init-topic, resolve-topic-intent, clarify-topic, ensure-topic-registration, resolve-topic-env-gate, adapt-team-template, clarify-topic-team, setup-topic-env through isomer-srv-topic-env-setup, resolve-agent-env-gate, setup-agent-workspace, validate-topic-team, finalize-topic-team, approval, or materialization boundaries for a Domain Agent Team Template."
 ---
 
 # Isomer Admin Topic Team Specialize
@@ -16,6 +16,8 @@ Topic Team Specialization is a complicated, multi-stage process with many predec
 Treat natural-language requests such as `specialize <team-path> over topic <topic>`, `specialize this team for this topic`, or `adapt this template to this research topic` as full Topic Team Specialization requests. Select `fast-forward` by default, carrying the supplied team path as the selected Domain Agent Team Template and the supplied topic as the Research Topic input. Select `step-by-step` only when the user asks to proceed interactively or confirm each stage.
 
 Do not route direct "specialize team" language to `adapt-team-template`. That subcommand is an internal stage for adapting copied template material after topic intent, registration, and environment predecessor work exist. Route directly to `adapt-team-template` only when the user explicitly names `adapt-team-template` or asks for the internal template-adaptation stage and the required predecessor artifacts already exist.
+
+Before planning, template discovery, or mutation, confirm how this skill was selected. A direct user invocation of `isomer-op-topic-team-specialize` or a named specialization subcommand establishes specialization intent. A delegated request must preserve prompt or authoritative context that identifies a formal Agent Team target and asks to deploy, specialize, instantiate, materialize, validate, repair, launch, or use that team. If a delegated request contains only generic topic preparation, launch-facing language, readiness gaps, missing summaries, missing Agent Workspaces, a Research Topic, or Topic Workspace context, return it to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, or the applicable setup owner without entering automatic mode or searching for a Domain Agent Team Template.
 
 ## Workflow
 
@@ -34,7 +36,7 @@ When this skill is invoked, execute the following steps in order.
    - Match when the user asks to specialize step by step, proceed interactively, or confirm each stage.
    - Select `step-by-step`, load [references/step-by-step.md](references/step-by-step.md), and execute the static topic-team setup path one step at a time.
 4. **Automatic mode**:
-   - Match when the user asks to fully specialize, prepare, adapt end-to-end, says `fast-forward`, or gives a direct command like `specialize <team-path> over topic <topic>`.
+   - Match when direct invocation or preserved formal Agent Team context is established and the user asks to fully specialize, prepare the selected Agent Team, adapt the selected team end-to-end, says `fast-forward`, or gives a direct command like `specialize <team-path> over topic <topic>`.
    - Select `fast-forward`, load [references/fast-forward.md](references/fast-forward.md), and execute the static topic-team setup path through `finalize-topic-team`.
    - If prepared-topic evidence is missing, create or consume topic setup evidence before team-specific stages.
    - Stop at the approval or materialization boundary unless explicitly instructed otherwise.

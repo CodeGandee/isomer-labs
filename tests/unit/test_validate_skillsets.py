@@ -82,7 +82,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         skill_text = f"""
             ---
             name: isomer-op-topic-team-specialize
-            description: Valid fixture skill.
+            description: Use only when the user explicitly invokes Topic Team Specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
             ---
 
             # Isomer Admin Topic Team Specialize
@@ -95,6 +95,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             4. **Automatic mode**: Run `fast-forward`.
 
             {fallback}
+
+            A delegated request must preserve prompt or authoritative context that identifies a formal Agent Team target. Generic preparation, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
 
             Use `references/step-dependencies.json` and `scripts/query_step_dependencies.py` for procedural dependency paths.
 
@@ -646,6 +648,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             Route Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
+            Route Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
 
             ## Chat Response
 
@@ -797,9 +800,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             1. Parse the task input.
             2. Run safe read-only context discovery.
             3. Classify exactly one route.
-            4. Check owner boundaries because service skills are only bounded support.
-            5. Proceed with the selected route.
-            6. Report the entrypoint result.
+            4. Establish formal Agent Team intent before specialization.
+            5. Check owner boundaries because service skills are only bounded support.
+            6. Proceed with the selected route.
+            7. Report the entrypoint result.
 
             If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan, then execute the plan.
 
@@ -822,6 +826,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Guardrails
 
             Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-system-skill-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
+            Select Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
 
             ## Common Mistakes
 
@@ -865,6 +870,13 @@ class SkillsetValidatorTests(unittest.TestCase):
                 5. Retired compatibility skills are not active routes.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                ## Topic Team Specialization Examples
+
+                | Request or Context | Route |
+                | --- | --- |
+                | `prepare the topic <topic-name>` with no formal Agent Team target | `isomer-op-topic-creator` |
+                | Deploy or use a contextually selected formal Agent Team | `isomer-op-topic-team-specialize` |
             """,
             "system-skill-index.md": """
                 # System Skill Index
@@ -1346,6 +1358,18 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
 
+    def test_operator_validator_requires_topic_team_defensive_inbound_gate(self) -> None:
+        root = self.make_root()
+        self.write_topic_team_specialization_skill(
+            root,
+            omit_skill_term="A delegated request must preserve prompt or authoritative context that identifies a formal Agent Team target",
+        )
+
+        diagnostics = validator.validate_topic_team_specialization_module(root)
+
+        self.assertIn("OPS003", codes(diagnostics))
+        self.assertTrue(any("delegated request must preserve" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_split_output_contract_trigger(self) -> None:
         root = self.make_root()
         self.write_topic_team_specialization_skill(root)
@@ -1520,6 +1544,20 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
 
+    def test_operator_validator_requires_welcome_formal_team_gate(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root)
+        skill_path = root / "skillset" / "operator" / "isomer-op-welcome" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace("formal Agent Team target", "team target"),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("formal Agent Team target" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_welcome_usage_paths_in_skill_md(self) -> None:
         root = self.make_root()
         self.write_welcome_skill(root, omit_skill_term="start-research-by-agent-team")
@@ -1577,6 +1615,23 @@ class SkillsetValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_entrypoint_module(root)
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_formal_team_gate(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root)
+        skill_path = root / "skillset" / "operator" / "isomer-op-entrypoint" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "Establish formal Agent Team intent before specialization",
+                "Check specialization intent",
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("Establish formal Agent Team intent before specialization" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_accepts_system_skill_manager_contract(self) -> None:
         diagnostics = validator.validate_system_skill_manager_module(REPO_ROOT)

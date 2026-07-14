@@ -1978,6 +1978,39 @@ def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnos
                 )
 
 
+def validate_workspace_manager_team_specialization_gate(
+    target: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    reference_path = (
+        target
+        / "deepsci"
+        / "isomer-deepsci-workspace-mgr"
+        / "references"
+        / "validation-and-blockers.md"
+    )
+    if not reference_path.exists():
+        return
+    lines = read_lines(reference_path)
+    text = "\n".join(lines)
+    required_terms = (
+        "When the selected topology includes a formal Agent Team layer",
+        "When no formal Agent Team layer is selected",
+        "without inferring specialization",
+    )
+    for term in required_terms:
+        if term not in text:
+            add(
+                diagnostics,
+                repo_root,
+                reference_path,
+                1,
+                "RPS025",
+                f"DeepSci workspace readiness must document the Topic Team Specialization gate phrase '{term}'",
+            )
+
+
 def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagnostic]:
     target = target.resolve()
     repo_root = (repo_root or find_repo_root(target)).resolve()
@@ -2090,6 +2123,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_active_guidance(document, repo_root, diagnostics)
     validate_deepsci_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_deepsci_payload_first_bindings(skill_dirs, repo_root, diagnostics)
+    validate_workspace_manager_team_specialization_gate(target, repo_root, diagnostics)
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     kaoju_root = target / "kaoju"
     if kaoju_root.exists():

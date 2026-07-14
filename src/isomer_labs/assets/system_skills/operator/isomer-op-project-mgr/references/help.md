@@ -27,6 +27,6 @@ When this subcommand is selected, execute the following steps in order.
    - Topic creation and Topic Actor-ready setup belong to `isomer-op-topic-creator`.
    - Initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped diagnostics, optional topology inspection, branch helpers, package mutation, and environment verification routing belong to `isomer-op-topic-mgr`.
    - Human-orchestrated manual research setup is fronted by `isomer-op-topic-creator`.
-   - Topic Team Specialization belongs to `isomer-op-topic-team-specialize` only when the user explicitly asks for a Domain Agent Team Template.
+   - Topic Team Specialization belongs to `isomer-op-topic-team-specialize` only when the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies a deploy, specialize, instantiate, materialize, validate, repair, launch, or use action to that team. Generic topic preparation and readiness gaps stay with their actual owners.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to decide which parts of the skill usage information to print, then execute the plan.

@@ -9,10 +9,10 @@
 5. Route lower-level initialized-topic storage, Topic Actor repair, package mutation, environment verification, reset checkpoints, and diagnostics to `isomer-op-topic-mgr` after Topic Creator handoff.
 6. Report the mutation boundary: this welcome skill does not initialize the Project, create the Research Topic, mutate the Topic Workspace, or create Topic Actor Workspaces.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to decide whether the user is asking for manual Topic Actor research or formal Domain Agent Team Template specialization, then recommend the matching visible usage path or ask for that distinction.
+If the user's task does not map cleanly to these steps, use your native planning tool to decide whether the user is asking for manual Topic Actor research or work on a formal Agent Team established by an explicit specialization invocation, a named formal-team artifact, or authoritative context, then recommend the matching visible usage path or ask for that distinction.
 
 ## Output Guidance
 
 Recommend the manual research path in natural language and route it to `isomer-op-topic-creator`. Give `Use $isomer-op-topic-creator fast-forward` or `Use $isomer-op-topic-creator step-by-step` as the safe first invocation. Name any missing Research Topic, Project decision, or mutation authority, then state whether to invoke the owner or provide the missing topic substance.
 
-Do not route this usage path to `isomer-op-topic-team-specialize` unless the user explicitly asks for a Domain Agent Team Template.
+Do not route this usage path to `isomer-op-topic-team-specialize` unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and asks to deploy, specialize, instantiate, materialize, validate, repair, launch, or use that team. Generic preparation, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.

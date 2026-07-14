@@ -89,15 +89,17 @@ Route blank or partial Research Topic creation and manual-research-ready topic p
 
 Route initialized-topic storage, Topic Actors, package mutation, environment verification, reset checkpoints, and diagnostics to `isomer-op-topic-mgr`.
 
-Route Topic Team Specialization to `isomer-op-topic-team-specialize` only when the user asks for a Domain Agent Team Template or formal Agent Team path.
+Route Topic Team Specialization to `isomer-op-topic-team-specialize` only when the user explicitly invokes that skill or a named specialization route, or when the prompt or authoritative context establishes a formal Agent Team target such as a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team material.
 
-Route Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping questions to the owning operator workflow first. Project bootstrap or check questions belong to `isomer-op-project-mgr`; Topic Team Specialization and launch-facing questions belong to `isomer-op-topic-team-specialize`. Those workflows may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
+Route Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping questions to the owning operator workflow first. Project bootstrap or check questions belong to `isomer-op-project-mgr`; launch-facing work belongs to `isomer-op-topic-team-specialize` only when the launch target is a formal Agent Team established by the prompt or authoritative context. Runtime, Topic Service Master, GUI, topic preparation, and other launch-facing requests retain their actual owners. Those workflows may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
+
+Do not infer a formal Agent Team target from generic topic preparation, launch-facing language, readiness gaps, missing summaries, missing Agent Workspaces, or Topic Workspace context alone. When a contextual formal-team route is valid, name the evidence in the recommendation.
 
 Route project-local Toolbox creation, conversion, install, inspection, callback insertion, callback insertion-point, Runtime Param, disable, uninstall, or source-update questions to `isomer-op-toolbox-mgr`. This welcome skill may recommend the owner route, but it must not author Toolbox files, install Toolboxes, mutate callback registries, or mutate Runtime Params itself.
 
 Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; those are retired operator compatibility skills, not active routes.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly asks for a Domain Agent Team Template.
+Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
 
 Do not automatically route to `isomer-misc-tool-packs`. Mention `isomer-misc-tool-packs` only as a manual skill when the user explicitly asks for installable toolsets, and keep package mutation routing with the active owner skill.
 

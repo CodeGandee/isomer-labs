@@ -21,7 +21,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Act from a selected Topic Actor or Agent workspace cwd. | Operator identity posture switch. | `isomer-op-switch-identity` | `Use $isomer-op-switch-identity switch`, `act-as`, `status`, or `reset`. |
 | Create, convert, install, inspect, update, disable, uninstall, or explain project-local Toolboxes, callback insertion points, callback declarations, or Toolbox Runtime Params. | Toolbox management workflow. | `isomer-op-toolbox-mgr` | `Use $isomer-op-toolbox-mgr help` or a specific Toolbox subcommand. |
 | Manage an initialized Research Topic after Topic Creator handoff. | Initialized-topic management workflow. | `isomer-op-topic-mgr` | `Use $isomer-op-topic-mgr status` or a scoped initialized-topic subcommand. |
-| Need Houmao adapter support during Project bootstrap, Topic Team Specialization, or launch-facing work. | Owning operator workflow with service support. | `isomer-op-project-mgr` or `isomer-op-topic-team-specialize` | Use the owning operator workflow; it may delegate bounded support to `isomer-srv-houmao-interop`. |
+| Need Houmao adapter support during Project bootstrap or formal Agent Team work. | Owning operator workflow with service support. | `isomer-op-project-mgr`, or `isomer-op-topic-team-specialize` only when prompt or authoritative context establishes the formal Agent Team target | Use the owning operator workflow; it may delegate bounded support to `isomer-srv-houmao-interop`. Generic launch-facing work does not imply Topic Team Specialization. |
 
 Retired operator compatibility skills are not active owner routes.
 

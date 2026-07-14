@@ -22,12 +22,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Act from a selected Topic Actor or Agent workspace cwd for takeover or one-time prompt execution. | `isomer-op-switch-identity` | `Use $isomer-op-switch-identity switch` or `Use $isomer-op-switch-identity act-as`. |
 | Manage an initialized Research Topic, Topic Actors, package mutation, environment verification, reset checkpoints, or diagnostics. | `isomer-op-topic-mgr` | `Use $isomer-op-topic-mgr status` or a scoped initialized-topic subcommand. |
 | Create, convert, install, inspect, update, disable, uninstall, or explain project-local Toolboxes, callback insertion points, callback declarations, or Toolbox Runtime Params. | `isomer-op-toolbox-mgr` | `Use $isomer-op-toolbox-mgr help` or a specific Toolbox subcommand. |
-| Need Houmao adapter support during Project or Topic Team work. | Owning operator workflow | Use `isomer-op-project-mgr` for Project bootstrap or checks, or `isomer-op-topic-team-specialize` for Topic Team Specialization and launch-facing work. |
+| Need Houmao adapter support during Project or formal Agent Team work. | Owning operator workflow | Use `isomer-op-project-mgr` for Project bootstrap or checks. Use `isomer-op-topic-team-specialize` only for Topic Team Specialization or launch-facing work when the prompt or authoritative context establishes a formal Agent Team target. |
 
 Do not list `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session` as active invocations.
 
 Do not list `isomer-srv-houmao-interop` as a direct first-click owner route; it is bounded service support delegated by the owning operator workflow.
 
 Do not automatically route to `isomer-misc-tool-packs`; mention it only when the user explicitly asks for installable toolsets.
+
+Do not infer a formal Agent Team from generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces. Recommend the specialization owner only after an explicit invocation or contextual formal Agent Team target, and name that evidence.
 
 Do not mutate Toolbox source, callback registries, or Runtime Params from this welcome surface; recommend `isomer-op-toolbox-mgr` as the owner workflow.

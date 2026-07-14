@@ -42,6 +42,49 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(root / "pyproject.toml", "[project]\nname = \"fixture\"\n")
         return root
 
+    def test_workspace_manager_requires_qualified_team_specialization_gate(self) -> None:
+        root = self.make_root()
+        target = root / "skillset" / "research-paradigm"
+        reference = (
+            target
+            / "deepsci"
+            / "isomer-deepsci-workspace-mgr"
+            / "references"
+            / "validation-and-blockers.md"
+        )
+        write(reference, "# Validation and Blockers\n\nA missing summary always routes to Topic Team Specialization.\n")
+        diagnostics: list[object] = []
+
+        validator.validate_workspace_manager_team_specialization_gate(target, root, diagnostics)
+
+        self.assertIn("RPS025", codes(diagnostics))
+        self.assertTrue(any("Topic Team Specialization gate phrase" in message for message in messages(diagnostics)))
+
+    def test_workspace_manager_accepts_formal_team_and_non_team_branches(self) -> None:
+        root = self.make_root()
+        target = root / "skillset" / "research-paradigm"
+        reference = (
+            target
+            / "deepsci"
+            / "isomer-deepsci-workspace-mgr"
+            / "references"
+            / "validation-and-blockers.md"
+        )
+        write(
+            reference,
+            """
+            # Validation and Blockers
+
+            When the selected topology includes a formal Agent Team layer, a missing summary is a specialization blocker.
+            When no formal Agent Team layer is selected, validate base readiness without inferring specialization.
+            """,
+        )
+        diagnostics: list[object] = []
+
+        validator.validate_workspace_manager_team_specialization_gate(target, root, diagnostics)
+
+        self.assertEqual([], messages(diagnostics))
+
     def test_release_version_metadata_rejects_missing_malformed_and_mismatched_values(self) -> None:
         root = self.make_root()
         manifest = root / "agents" / "openai.yaml"

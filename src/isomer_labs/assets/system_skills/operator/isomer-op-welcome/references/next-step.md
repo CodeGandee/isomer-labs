@@ -32,4 +32,6 @@ Existing prepared Topic Workspace plus explicit Domain Agent Team Template inten
 
 Existing initialized topic management, package mutation, environment verification, reset checkpoints, or diagnostics usually recommends `isomer-op-topic-mgr`.
 
-Houmao Project bootstrap or check questions usually recommend `isomer-op-project-mgr`. Houmao runtime, mailbox, gateway, launch profile, or template-mapping questions during Topic Team Specialization or launch-facing work usually recommend `isomer-op-topic-team-specialize`, which may delegate bounded adapter support to `isomer-srv-houmao-interop`.
+Houmao Project bootstrap or check questions usually recommend `isomer-op-project-mgr`. Houmao runtime, mailbox, gateway, launch profile, or template-mapping questions recommend `isomer-op-topic-team-specialize` only when the selected work concerns a formal Agent Team target established by the prompt or authoritative context; the recommendation names the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence. Other launch-facing work retains its runtime, Topic Service Master, GUI, topic, or service owner.
+
+Missing readiness, missing `isomer-topic-summary.md`, missing Agent Workspace evidence, a Research Topic, or generic preparation or launch-facing language does not establish a formal Agent Team target by itself.
