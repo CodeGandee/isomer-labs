@@ -193,12 +193,12 @@ AI:
 >
 > Status: draft. Approve, ask for deeper inspection, or request re-ingestion.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: The actor may provide either a repository URL or a name; names are resolved through online search before cloning.
 - Assumption: If the repository cannot be found or accessed, the system reports a blocker rather than proceeding with a guess.
 - Assumption: The repository is git-based and can be cloned with `git clone --depth 1` when a valid URL is resolved.
 - Assumption: The actor provides either a focus area or accepts the agent's default broad inspection.
 - Assumption: `isomer-cli` can resolve extern-repo paths for the cloned repository.
-- Open question: Should the agent automatically search for an associated paper when given a repository URL, or only when explicitly asked?
-- Open question: Should large repositories be shallow-cloned and then selectively deepened for the focus area, or is `--depth 1` always sufficient?
+- Decision: When given a repository, the agent automatically performs bounded associated-paper metadata discovery. A candidate paper receives no evidentiary authority or deep ingestion until its relationship is verified and it passes the normal selection and approval path.
+- Decision: Repository acquisition uses depth one by default and deepens history only when identity resolution or the approved inspection requires historical evidence. Repository size or focus-area inspection alone does not require full history.

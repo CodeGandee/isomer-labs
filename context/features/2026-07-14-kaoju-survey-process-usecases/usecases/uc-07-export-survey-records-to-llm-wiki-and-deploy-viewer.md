@@ -6,37 +6,37 @@ As a researcher or Topic Actor, I want to export the survey records into an LLM 
 
 ## Use Case
 
-The system reads the accepted Kaoju survey artifacts from the state database — `kaoju:direction-set`, `kaoju:reading-list`, `kaoju:source-digest`, `kaoju:claim-evidence-ledger`, `kaoju:field-summary`, `kaoju:related-work-catalog`, and `kaoju:paper-draft-myst` — and converts them into the LLM Wiki format expected by the viewer bundled with `extern/orphan/houmao-agents/skillset/imsight-skills/imsight-llm-wiki`. The conversion is implemented as a self-contained Isomer Labs system extension or CLI command; it does **not** invoke the external `imsight-llm-wiki` skill workflow. The conversion produces both human-readable wiki pages under `wiki/` and computer-friendly metadata files (JSON/YAML) that describe the exported records so that future conversions or tooling can consume them reliably. The wiki is written to a user-given path inside or outside the topic workspace. The system then supports deploying the bundled web viewer to another user-given directory; the deployment includes a manifest file inside the viewer directory that points to the wiki root. Finally, when the user says "start the viewer," the system launches the viewer on a local port so the wiki can be browsed.
+The system reads accepted Kaoju survey artifacts from the state database and converts them into the LLM Wiki representation consumed by a package-owned compatible viewer. The implementation does **not** invoke the external `imsight-llm-wiki` skill workflow. It produces human-readable pages under `wiki/` and one canonical JSON metadata file that maps exact artifact revisions to generated paths. Unless the actor supplies an override, `isomer-cli` resolves managed wiki and viewer targets inside the Topic Workspace. Re-export updates recognized managed files in place through staged writes, preserves unrecognized files, and records a changelog. The deployed viewer manifest points to the wiki root, and the viewer launcher serves the wiki on a local port.
 
 ## Supported Actions
 
 ### Convert Records To LLM Wiki
 
-Export Kaoju survey records into an LLM Wiki at a user-given path.
+Export Kaoju survey records into an LLM Wiki at the resolved Topic Workspace default or an actor-supplied path.
 
 - context
   - Actor **has** accepted survey artifacts in the topic workspace state database.
-  - System **has** the artifact records, the LLM Wiki skill conventions, and a target path.
+  - System **has** the artifact records, the LLM Wiki representation contract, and a resolved or actor-supplied target path.
 - intent
   - Actor **wants** the survey materials converted into a browseable wiki.
   - Actor **wonders** "Convert the records into an LLM Wiki in `~/wikis/predictive-memory-tiering`."
 - action
-  - Actor then **provides** a target directory and asks the system to convert the records.
+  - Actor then **asks** the system to convert the records and may provide a target-directory override.
 - result
   - Actor **gets** a populated LLM Wiki directory and a durable `kaoju:llm-wiki-export` record with metadata and a link to the wiki root.
 
 ### Deploy Viewer To Target Wiki
 
-Deploy the bundled LLM Wiki web viewer to a user-given directory, configured to point at the wiki.
+Deploy the package-owned compatible viewer to the resolved Topic Workspace default or an actor-supplied directory, configured to point at the wiki.
 
 - context
   - Actor **has** an LLM Wiki export at a known path.
-  - System **has** the viewer source bundled in `imsight-llm-wiki`.
+  - System **has** the viewer assets in installed Isomer Labs package resources.
 - intent
   - Actor **wants** a local web viewer for the exported wiki.
   - Actor **wonders** "Deploy a viewer to `~/viewer/predictive-memory-tiering` targeting that wiki."
 - action
-  - Actor then **provides** a viewer installation directory and asks the system to deploy the viewer.
+  - Actor then **asks** the system to deploy the viewer and may provide an installation-directory override.
 - result
   - Actor **gets** a deployed viewer directory with a manifest file pointing to the wiki root, plus a `kaoju:llm-wiki-viewer` record.
 
@@ -57,11 +57,11 @@ Launch the deployed viewer on a local port.
 
 ## Main Flow
 
-1. Actor asks the system to convert the survey records into an LLM Wiki at a given path.
+1. Actor asks the system to convert the survey records into an LLM Wiki, optionally at a supplied path.
 2. System reads the accepted survey artifacts from the topic workspace state database.
 3. System creates the LLM Wiki directory structure: `README.md`, `wiki/index.md`, `wiki/concepts/`, `wiki/entities/`, `wiki/summaries/`, `raw/`, `audit/`, `log/`, `outputs/`.
 4. System converts each survey artifact into wiki pages with YAML frontmatter and canonical wikilinks.
-5. System writes computer-friendly metadata files (JSON/YAML) describing the exported records, their provenance, and the mapping from Kaoju artifact ids to wiki page paths.
+5. System writes canonical JSON metadata describing the exported records, their provenance, and the mapping from Kaoju artifact ids to wiki page paths.
 6. System registers the export as `kaoju:llm-wiki-export` in the state database with metadata and a filesystem link.
 7. Actor asks the system to deploy a viewer to a target directory, pointing at the wiki.
 8. System copies the bundled viewer source to the target directory and writes a `viewer-manifest.json` (or YAML) file containing the wiki root path, viewer version, deployment timestamp, and default port.
@@ -72,8 +72,8 @@ Launch the deployed viewer on a local port.
 
 ## Alternative And Exception Flows
 
-- **A1. Wiki already exists**: If the target wiki directory already exists, the system offers to overwrite, merge/update, or cancel.
-- **A2. Viewer already deployed**: If the viewer directory already exists, the system offers to refresh, reconfigure, or force-redeploy.
+- **A1. Managed wiki already exists**: If the target contains a recognized export manifest, the system stages and applies an in-place update of managed files and writes a changelog. An unrecognized non-empty target requires clarification.
+- **A2. Viewer already deployed**: If the viewer directory contains a recognized viewer manifest, the system refreshes managed assets in place and records the change. An unrecognized non-empty target requires clarification.
 - **A3. Port in use**: If the default port is busy, the system tries the next available port and reports the actual port.
 - **A4. Partial export**: If some survey artifacts are missing, the system exports what is available and records the gaps in the metadata.
 - **E1. Missing viewer dependencies**: If `node`/`npm` and `bun` are unavailable, the system reports a blocker with installation guidance.
@@ -89,7 +89,7 @@ flowchart LR
     ReadRecords[Read survey records from state DB]
     CreateWiki[Create LLM Wiki structure]
     Convert[Convert records to wiki pages]
-    WriteMeta[Write JSON/YAML metadata]
+    WriteMeta[Write JSON metadata and changelog]
     RegisterExport[Register kaoju:llm-wiki-export]
     DeployViewer[Deploy viewer + manifest]
     RegisterViewer[Register kaoju:llm-wiki-viewer]
@@ -120,7 +120,7 @@ sequenceDiagram
   Researcher->>System: Convert the records into LLM Wiki in ~/wikis/pmt-survey
   System->>System: Read direction-set, reading-list, source-digests, synthesis records
   System->>System: Create wiki structure and pages
-  System->>System: Write metadata JSON/YAML
+  System->>System: Write JSON metadata and changelog
   System-->>Researcher: kaoju:llm-wiki-export ref + wiki path
   Researcher->>System: Deploy a viewer to ~/viewer/pmt-wiki targeting that wiki
   System->>System: Copy bundled viewer and write viewer-manifest.json
@@ -135,7 +135,7 @@ sequenceDiagram
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem or the user-specified export path, so the agent can look it up by querying the state DB rather than scanning directories.
 
 - `kaoju:llm-wiki-export` — record of the exported LLM Wiki, including wiki root path and exported artifact ids.
-- `kaoju:llm-wiki-metadata` — JSON/YAML metadata describing the exported records, page mappings, and provenance.
+- `kaoju:llm-wiki-metadata` — canonical JSON metadata describing the exported records, page mappings, provenance, and managed-path ownership.
 - `kaoju:llm-wiki-viewer` — record of the deployed viewer, including viewer directory and target wiki.
 - `kaoju:llm-wiki-viewer-manifest` — manifest file inside the viewer directory pointing to the wiki root and recording deployment settings.
 
@@ -157,18 +157,26 @@ Survey artifacts map to LLM Wiki pages as follows:
 
 The `kaoju:llm-wiki-metadata` file includes at minimum:
 
-```yaml
-wiki_root: "~/wikis/pmt-survey"
-exported_at: "2026-07-14T12:00:00Z"
-source_topic_workspace: "predictive-memory-tiering-survey"
-artifact_mapping:
-  - kaoju_id: "kaoju:direction-set"
-    wiki_page: "wiki/concepts/Survey-Scope.md"
-  - kaoju_id: "kaoju:source-digest:vllm-cacheconfig"
-    wiki_page: "wiki/summaries/vllm-cacheconfig.md"
-viewer:
-  default_port: 8080
-  manifest_path: "~/viewer/pmt-wiki/viewer-manifest.json"
+```json
+{
+  "wiki_root": "~/wikis/pmt-survey",
+  "exported_at": "2026-07-14T12:00:00Z",
+  "source_topic_workspace": "predictive-memory-tiering-survey",
+  "artifact_mapping": [
+    {
+      "kaoju_id": "kaoju:direction-set",
+      "wiki_page": "wiki/concepts/Survey-Scope.md"
+    },
+    {
+      "kaoju_id": "kaoju:source-digest:vllm-cacheconfig",
+      "wiki_page": "wiki/summaries/vllm-cacheconfig.md"
+    }
+  ],
+  "viewer": {
+    "default_port": 8080,
+    "manifest_path": "~/viewer/pmt-wiki/viewer-manifest.json"
+  }
+}
 ```
 
 ## Example Prompt And Expected AI Response
@@ -187,7 +195,7 @@ AI:
 >
 > Created the wiki structure and exported 1 direction set, 2 reading lists, 6 source digests, 1 claim-evidence ledger, 1 field summary, 1 related-work catalog, and 1 paper draft.
 >
-> I also wrote `kaoju:llm-wiki-metadata.yaml` with the artifact-to-page mapping.
+> I also wrote `kaoju:llm-wiki-metadata.json` with the artifact-to-page mapping and recorded the managed-file changelog.
 >
 > Registered as `kaoju:llm-wiki-export` (`export-...`). Next, you can deploy a viewer.
 
@@ -207,12 +215,12 @@ AI:
 >
 > Started the viewer at `http://127.0.0.1:8080`.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: The export and viewer deployment are implemented as a self-contained Isomer Labs system extension or CLI command, not by invoking the external `imsight-llm-wiki` skill.
-- Assumption: The exported wiki format is compatible with the viewer bundled in `imsight-llm-wiki`.
-- Assumption: The bundled LLM Wiki viewer from `imsight-llm-wiki` can be copied to an arbitrary installation directory and started independently.
+- Assumption: The exported wiki representation is compatible with the package-owned viewer selected after license and provenance review.
+- Assumption: The package-owned viewer can be deployed to a resolved Topic Workspace target or an actor-supplied installation directory and started independently.
 - Assumption: The target wiki path and viewer path are either user-supplied or resolved through `isomer-cli`; both are recorded in the state database.
-- Open question: Should the viewer deployment be inside the topic workspace by default, or always user-specified?
-- Open question: Should the metadata file be JSON, YAML, or both?
-- Open question: How should the system handle re-export when the underlying survey records change — overwrite, version, or create a changelog?
+- Decision: The default wiki and viewer targets resolve inside the Topic Workspace. The actor may override either target explicitly.
+- Decision: The mapping metadata uses one canonical JSON representation; the exporter does not maintain a second YAML form.
+- Decision: Re-export updates recognized managed files in place through staged writes, preserves unrecognized files, reports created, changed, unchanged, stale, and removed managed paths, and writes a changelog. Artifact revisions and checksummed manifests retain durable export history even though the target tree presents the current export.

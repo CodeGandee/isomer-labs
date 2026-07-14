@@ -5,13 +5,18 @@ The system SHALL derive candidate survey directions from the active Research Top
 
 #### Scenario: Agent proposes bounded directions
 - **WHEN** the actor asks for useful next survey directions from a Research Topic
-- **THEN** the frame skill proposes multiple distinct directions and explains their relationship to the topic
+- **THEN** the frame skill proposes three distinct directions by default and explains their relationship to the topic
 - **AND** each direction contains a stable direction id, scoped question, boundary, expected source classes, coverage date, expected evidence depth, and deliverables
 
 #### Scenario: Human controls the selected set
 - **WHEN** the actor reviews proposed directions
 - **THEN** the system permits multi-selection, rejection, revision, and actor-authored custom directions
 - **AND** it does not create the accepted direction set until the actor confirms the selection
+
+#### Scenario: Current host affects empirical feasibility
+- **WHEN** one or more proposed directions depend on empirical work whose feasibility varies with the current host hardware or environment
+- **THEN** the system records a feasibility annotation with the relevant observed capability and limits
+- **AND** it does not exclude or rank other directions solely because of the current host
 
 #### Scenario: Direction set becomes discovery input
 - **WHEN** the actor accepts one or more directions
@@ -30,6 +35,11 @@ The system SHALL maintain one scoped current `kaoju:reading-list` for each selec
 - **WHEN** bounded discovery cannot identify three suitable priority and three suitable secondary items
 - **THEN** the system records the reachable list and a non-blocking coverage warning
 - **AND** the actor may approve the shorter list or request further discovery
+
+#### Scenario: Candidate is blocked during discovery
+- **WHEN** a selected candidate cannot be accessed or its identity cannot be resolved
+- **THEN** the system preserves the candidate and blocker in discovery provenance without counting it toward the reachable 3+3 target
+- **AND** it performs bounded backfill before reporting any remaining coverage deficit
 
 #### Scenario: Different directions do not collide
 - **WHEN** a topic contains reading lists for two accepted directions
@@ -101,6 +111,11 @@ An accepted `kaoju:source-digest` SHALL distinguish source statements, agent int
 - **WHEN** a paper or report is read in depth
 - **THEN** the source digest records identity and version, scope, method, assumptions, main claims, evidence, limitations, relationships, relevant artifacts, and exact page, section, figure, table, or quoted-span locators where available
 - **AND** each claim-bearing finding links to the Claim-Evidence Ledger with an evidence verdict and verification depth
+
+#### Scenario: A selected claim depends on a figure or table
+- **WHEN** a paper figure or table supports a selected claim and automated extraction is useful
+- **THEN** the system may extract the relevant visual or tabular evidence with an exact locator and mark the extraction provisional
+- **AND** it does not accept the extracted evidence until it is verified against the original source or a human resolves an unreliable comparison
 
 #### Scenario: Source code is digested
 - **WHEN** a local source repository is inspected in depth

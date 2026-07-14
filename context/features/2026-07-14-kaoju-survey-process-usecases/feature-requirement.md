@@ -46,8 +46,8 @@ Define a coherent set of user-facing use cases for the Kaoju evidence-led survey
 - Internet access is available for online source collection.
 - Users accept clarification-first mode for material ambiguities.
 
-## Open Questions
+## Decisions
 
-- Should direction proposal be fully automated, clarification-driven, or both?
-- Which existing CLI commands or skills should the use cases invoke under the hood?
-- Should use cases be exposed as a new top-level skill, new `isomer-kaoju-pipeline` subcommands, or operator-level recipes?
+- Direction proposal is agent-driven, clarification-first for material ambiguity, and subject to explicit human selection before the direction set becomes accepted input.
+- `isomer-kaoju-pipeline` remains a thin intent router to capability-owning Kaoju skills. The skills use typed `isomer-cli project` and `isomer-cli ext kaoju` services for deterministic operations defined by the OpenSpec design.
+- The use cases do not introduce another top-level workflow skill. They are public intent procedures with compatibility routes from existing pipeline procedures and operator-facing documentation.

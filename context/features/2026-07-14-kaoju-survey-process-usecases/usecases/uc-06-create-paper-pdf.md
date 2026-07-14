@@ -88,7 +88,7 @@ Fix TeX-level issues and recompile.
 - **A1. No MyST draft**: If `kaoju:paper-draft-myst` is missing, the system routes to UC-04 and reports a blocker.
 - **A2. TeX template already exists**: If a TeX template exists, the system offers to reuse, replace, or version it.
 - **A3. Compile warning**: If compilation succeeds with warnings, the system reports the warnings and asks whether to fix them or accept the PDF.
-- **A4. Compile failure**: If compilation fails, the system reports the error log, fixes the TeX draft, and retries up to a bounded retry count.
+- **A4. Compile failure**: If compilation fails after the actor has authorized the build, the system reports the error log and may automatically apply presentation-only or syntax-only TeX repairs and retry up to the recorded bound. A repair that changes canonical content, evidence meaning, dependencies, toolchain policy, or resource limits requires a revised plan and human Gate before execution.
 - **E1. Missing compiler**: If no LaTeX compiler is available, the system records a blocker and suggests installing Tectonic or another engine.
 - **E2. MyST directive unsupported**: If a MyST directive cannot be represented in LaTeX, the system records the issue, offers a fallback (plain text, simplified table, or omitted figure), and asks the actor how to proceed.
 
@@ -203,10 +203,10 @@ AI:
 >
 > Updated PDF is ready.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: MyST is the canonical paper format; Markdown and LaTeX are derived views.
 - Assumption: A LaTeX compiler (e.g., Tectonic) is available in the topic workspace environment.
 - Assumption: Scripted MyST-to-LaTeX conversion is only used for initialization; the agent refines the `.tex` file by direct inspection and editing.
-- Open question: Should the TeX template be generated once per paper, or should the agent regenerate it when the MyST structure changes significantly?
-- Open question: Should compile errors automatically trigger agent fixes, or should the agent pause and ask for approval before editing the `.tex` file?
+- Decision: The TeX template remains stable for a paper line and is revised or regenerated only when its compatibility fingerprint changes, including venue or document class, toolchain policy, or the set of required MyST constructs. The TeX draft is regenerated from each selected canonical MyST revision.
+- Decision: After the actor authorizes the build, compile errors may trigger bounded automatic retries and non-material TeX repairs. Material changes require a revised plan and human Gate, and every attempt remains a separate Run with its own compile log.

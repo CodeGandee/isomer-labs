@@ -19,12 +19,17 @@ The system SHALL build an LLM Wiki export from explicit accepted Kaoju artifact 
 - **AND** unregistered files found in the Topic Workspace are not silently included
 
 ### Requirement: Wiki Export Contains Human and Machine Representations
-The system SHALL export human-readable Markdown pages and a versioned machine-readable mapping manifest to an actor-selected wiki root.
+The system SHALL export human-readable Markdown pages and one versioned-schema JSON mapping manifest to a resolved Topic Workspace default or actor-selected wiki root.
 
 #### Scenario: Export succeeds
 - **WHEN** all selected artifacts and the target path pass preflight
-- **THEN** the exporter writes cross-linked Markdown pages and JSON or YAML metadata
+- **THEN** the exporter writes cross-linked Markdown pages and canonical JSON metadata
 - **AND** it registers `kaoju:llm-wiki-export` and `kaoju:llm-wiki-metadata`
+
+#### Scenario: Actor omits the target paths
+- **WHEN** the actor requests wiki export or viewer deployment without an explicit target
+- **THEN** the CLI resolves the applicable managed target inside the Topic Workspace through Semantic Workspace Surface Labels
+- **AND** an actor-supplied authorized path overrides the default and retains its external or managed locator posture
 
 #### Scenario: Mapping metadata preserves provenance
 - **WHEN** the export manifest is inspected
@@ -33,8 +38,8 @@ The system SHALL export human-readable Markdown pages and a versioned machine-re
 
 #### Scenario: Export is repeated
 - **WHEN** an export is rerun for the same target and selection
-- **THEN** the exporter uses an explicit create, update, or overwrite policy and reports created, changed, unchanged, stale, and removed generated paths
-- **AND** it does not overwrite unrecognized human files without authorization
+- **THEN** the exporter stages and applies an in-place update of paths owned by the recognized prior manifest and reports created, changed, unchanged, stale, and removed managed paths in a changelog
+- **AND** it preserves unrecognized files, registers a new checksummed export revision, and exposes the current export at the same target root
 
 ### Requirement: Wiki Functionality Is Self-Contained in Isomer
 The wiki exporter, deployer, and launcher SHALL be implemented as package-owned Isomer Labs code and assets.
@@ -54,8 +59,8 @@ The wiki exporter, deployer, and launcher SHALL be implemented as package-owned 
 - **THEN** packaging remains blocked until license and provenance validation passes
 - **AND** an independently implemented compatible viewer remains the fallback
 
-### Requirement: Viewer Deployment Is Versioned and Registered
-The system SHALL deploy a package-owned compatible viewer to an actor-selected directory and SHALL write a viewer manifest that points to the target wiki.
+### Requirement: Viewer Deployment Is Managed and Registered
+The system SHALL deploy a package-owned compatible viewer to a resolved Topic Workspace default or actor-selected directory and SHALL write a JSON viewer manifest that points to the target wiki.
 
 #### Scenario: Viewer is deployed
 - **WHEN** the actor supplies an authorized viewer target and a registered wiki export
@@ -64,7 +69,7 @@ The system SHALL deploy a package-owned compatible viewer to an actor-selected d
 
 #### Scenario: Viewer target contains another deployment
 - **WHEN** the selected target contains a recognized viewer manifest
-- **THEN** the deployer applies the requested update policy and preserves deployment lineage
+- **THEN** the deployer refreshes its managed assets in place and preserves deployment lineage and a change summary
 - **AND** an unrecognized non-empty target requires clarification or an explicit overwrite decision
 
 #### Scenario: Wiki target becomes stale

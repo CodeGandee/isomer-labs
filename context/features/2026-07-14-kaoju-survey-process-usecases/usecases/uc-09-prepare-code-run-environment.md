@@ -164,11 +164,11 @@ AI:
 >
 > Environment ready. Smoke test passed. You can now run the actual trial.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: Source-code acquisition is handled by UC-03 (associated code for papers) or UC-08 (direct link/name).
 - Assumption: The agent can infer environment requirements from standard dependency files, import statements, and README instructions.
 - Assumption: Pixi is available and the topic workspace has at least a `default` Pixi environment.
 - Assumption: Exact dependency versions from the target repository are not required; Pixi can resolve compatible versions when `"*"` or loose constraints are used.
-- Open question: Should the agent record the exact resolved versions after installation so the run is reproducible?
-- Open question: Should smoke-run scripts be kept next to the source code or in a topic-workspace `tmp/` directory?
+- Decision: `kaoju:pixi-env-ref` records exact resolved versions and lock identity after resolution while the environment plan retains the actor's flexible intent constraints.
+- Decision: The canonical smoke-run script is a file-backed Artifact stored under a resolved owner-preserved `topic.records.*` surface. It is not kept beside external source code or canonically under a Local Tmp Surface; the Run may execute a disposable staged copy.

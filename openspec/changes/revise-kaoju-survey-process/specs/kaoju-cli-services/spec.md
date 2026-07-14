@@ -107,8 +107,23 @@ The CLI SHALL provide `project service-requests create`, `dispatch`, and `status
 
 #### Scenario: Request is dispatched
 - **WHEN** the request is authorized and dispatchable
-- **THEN** the CLI creates or references an Execution Adapter Command Request for dispatch, preflight, monitoring, and recording
+- **THEN** the CLI creates or references an Execution Adapter Command Request for dispatch, preflight, monitoring, and recording and waits for terminal completion or a configured timeout or interruption
 - **AND** provider-specific or Houmao payloads remain outside the Service Request record
+
+#### Scenario: Synchronous dispatch completes
+- **WHEN** the Service Request reaches a normalized terminal state while `dispatch` is waiting
+- **THEN** the command returns the stable Service Request ref, terminal state, completion observations, support Artifact refs, and command-request refs
+- **AND** the first release does not require a separate status command for the successful interactive path
+
+#### Scenario: Synchronous dispatch is interrupted or times out
+- **WHEN** the caller is interrupted or the configured wait timeout expires before normalized terminal completion
+- **THEN** the command returns the stable Service Request ref and latest observed non-terminal or unknown state without inventing completion
+- **AND** `project service-requests status` can reconcile the durable request later
+
+#### Scenario: Asynchronous dispatch is requested
+- **WHEN** a first-release caller requests no-wait or asynchronous Service Request dispatch
+- **THEN** the CLI reports that asynchronous dispatch is unsupported and identifies the synchronous `dispatch` and recovery `status` operations
+- **AND** it does not silently change waiting behavior
 
 #### Scenario: Request status is queried
 - **WHEN** a caller checks Service Request status
@@ -162,6 +177,11 @@ Repository acquisition, package mutation, smoke runs, trials, document builds, a
 - **WHEN** no compatible binding satisfies the required extension point
 - **THEN** preflight returns a capability blocker before execution
 - **AND** the CLI does not fall back to ambient shell behavior
+
+#### Scenario: Execution request is retried or repaired
+- **WHEN** an approved operation fails
+- **THEN** the execution service permits only identical bounded retries or binding-defined non-material repairs under the existing authorization
+- **AND** a material change to dependencies, source, data, wrapper semantics, evaluator, metrics, resources, canonical content, or evidence interpretation requires a revised plan and Gate ref before dispatch
 
 ### Requirement: Legacy Research Commands Remain Explicit Compatibility Surfaces
 The existing `ext research records` and `ext research templates` commands SHALL remain available during migration without becoming alternate canonical implementations.

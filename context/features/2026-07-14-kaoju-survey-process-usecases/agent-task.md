@@ -93,10 +93,11 @@ Document the chosen surface in `design/public-interfaces.md`. Each command must 
 
 #### uc-07 — Export Survey Records To LLM Wiki And Deploy Viewer
 
-- Accept a target path from the user.
-- Export survey records into an LLM Wiki format: human-viewable Markdown cross-linked pages plus machine-friendly metadata (JSON/YAML).
+- Resolve a Topic Workspace default export target unless the user supplies a path override.
+- Export survey records into an LLM Wiki representation: human-viewable Markdown cross-linked pages plus one canonical JSON metadata file.
 - Keep the implementation self-contained inside Isomer Labs; do not route to the external `imsight-llm-wiki` skill.
-- On "deploy a viewer", copy/deploy the bundled web viewer to the user-given path, write a viewer manifest that points at the wiki, and record it in the state DB.
+- On re-export, update recognized managed files in place, preserve unrecognized files, and record a changelog.
+- On "deploy a viewer", deploy the package-owned compatible viewer to the resolved default or user-supplied path, write a JSON viewer manifest that points at the wiki, and record it in the state DB.
 - On "start the viewer", read the manifest and start the viewer on a port.
 
 #### uc-08 — Ingest Source Code By Link Or Name
@@ -168,9 +169,9 @@ Each evidence pack should include:
 - LaTeX engine internals and citation style packages.
 - Houmao agent team launch and runtime topology.
 
-## Open Questions
+## Decisions
 
-- Which public surface should own these use cases: a new top-level skill, `isomer-kaoju-pipeline` subcommands, or operator recipes?
-- Should the workflow be exposed as CLI commands, agent-skill invocations, or both?
-- Should direction proposal be fully automated, clarification-driven, or both?
-- How should the agent handle missing or partial state DB schema for new `kaoju:*` artifact types?
+- `isomer-kaoju-pipeline` owns thin intent routing; the frame, discover, acquire, examine, audit, synthesize, write, export, and trial skills own research behavior. No new all-in-one top-level skill owns the lifecycle.
+- Skills expose research intents and use typed `isomer-cli` services for deterministic operations. Operator recipes document common sequences without becoming a second execution authority.
+- Direction proposal is agent-driven and clarification-first for material ambiguity, and the human explicitly confirms the accepted direction set.
+- Missing Kaoju bindings and formats are added through the versioned binding registry, Artifact Format Profiles, validators, and migrations before producers emit the new records. Agents do not invent partial state-DB schemas at runtime.

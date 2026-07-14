@@ -233,12 +233,12 @@ AI:
 >
 > Status: draft. Approve, ask for deeper inspection, or request re-ingestion.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: `isomer-cli` can resolve workspace path labels such as `topic.repos.extern.*` and `topic.records.artifacts`; the agent does not hard-code directory paths.
 - Assumption: `kaoju:artifact-library` indexes every acquired source by stable identity so the agent can reuse existing copies and avoid repeated downloads.
 - Assumption: Provider restrictions that block download or clone are warnings; the agent falls back to online reading or browsing.
 - Assumption: Web pages and framework documentation are read online, but the system may snapshot them if the source is volatile.
 - Assumption: The agent selects inspection depth from the reading-list item's `estimated_depth` unless the human narrows the scope.
-- Open question: Should the artifact library keep a full git history for repos that will be executed or benchmarked, or is `--depth 1` always sufficient at this stage?
-- Open question: Should the agent attempt to parse figures and tables from PDFs, or only extract text and rely on human review for tabular data?
+- Decision: Repository acquisition uses depth one by default and deepens history only when identity resolution or the approved inspection needs historical evidence. The acquisition record states why and how far history was deepened.
+- Decision: The agent extracts figures and tables only when they support selected claims. Automated visual or tabular extraction remains provisional until verified against the original source, with human review required when the evidence cannot be checked reliably.

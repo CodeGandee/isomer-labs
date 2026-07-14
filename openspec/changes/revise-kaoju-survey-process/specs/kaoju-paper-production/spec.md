@@ -18,8 +18,8 @@ The system SHALL use MyST as the only canonical content format for new Kaoju pap
 
 #### Scenario: Initial paper structure is authored
 - **WHEN** accepted inputs are ready for paper drafting
-- **THEN** the write skill creates `kaoju:paper-structure-myst` with the intended sections, claim and source placeholders, citation roles, display placeholders, and evidence boundaries
-- **AND** the structure is stored as a MyST `.md` file with a registered Artifact Core Record
+- **THEN** the write skill selects a typed structure profile from the accepted direction, records the taxonomy, comparison, empirical, general, or other supported profile and rationale, and creates `kaoju:paper-structure-myst` with intended sections, claim and source placeholders, citation roles, typed display placeholders, and evidence boundaries
+- **AND** the actor may revise the proposed structure before the MyST `.md` file becomes an accepted registered Artifact
 
 #### Scenario: Paper structure is filled
 - **WHEN** the actor accepts the structure or requests the paper draft
@@ -38,6 +38,11 @@ Canonical paper work SHALL maintain `kaoju:citation-map` and `kaoju:paper-revisi
 - **WHEN** the write skill adds or revises a claim, citation, table, figure, limitation, or comparison in the MyST draft
 - **THEN** the citation map records the MyST locator, claim or display role, accepted evidence refs, and support or contradiction posture
 - **AND** the revision log records the actor, reason, input revisions, output revision, affected sections, and validation result
+
+#### Scenario: Figure or table is included
+- **WHEN** the structure or draft requires a figure or table
+- **THEN** the figure or table content is stored as a separate file-backed Artifact and the MyST file contains a typed placeholder with its stable ref
+- **AND** the citation map records the display role, evidence refs, caption or interpretation status, and insertion locator
 
 #### Scenario: Evidence is withdrawn or superseded
 - **WHEN** an accepted input is later withdrawn, refuted, or superseded
@@ -62,8 +67,13 @@ The system SHALL export the current MyST paper structure or template to an actor
 
 #### Scenario: Template export succeeds
 - **WHEN** the actor requests a template export and supplies an authorized path or accepts a resolved Topic Workspace path
-- **THEN** the system writes the MyST template as a `.md` file, writes `kaoju:paper-template-manifest`, and registers `kaoju:paper-template-export`
-- **AND** the manifest records source record id and revision, base digest, source-digest refs, paper line id, tied draft ref, export directory, template filename, and export time
+- **THEN** the system assigns an automatic export revision, writes the MyST template as a `.md` file, writes `kaoju:paper-template-manifest`, and registers `kaoju:paper-template-export`
+- **AND** the manifest records source record id and revision, base digest, source-digest refs, paper line id, tied draft ref, export revision, export directory, template filename, and export time
+
+#### Scenario: Managed export target is selected
+- **WHEN** the actor accepts the default Topic Workspace export target
+- **THEN** the service creates a versioned directory for the automatic export revision
+- **AND** it does not overwrite an earlier export
 
 #### Scenario: Export target is unsafe or ambiguous
 - **WHEN** the target would overwrite unrecognized content, cannot be resolved, or lacks required authorization
@@ -88,13 +98,28 @@ The system SHALL apply an externally edited MyST template only after manifest, c
 - **THEN** the system returns structured diagnostics tied to file locations
 - **AND** it does not create a new active template or draft revision
 
+#### Scenario: Edited template orphans grounded content
+- **WHEN** the edited template removes an optional section that still owns grounded claims or display content
+- **THEN** the system reports each orphaned content ref and requires explicit actor confirmation before apply
+- **AND** removal of a required section remains a validation error that confirmation cannot bypass
+
 ### Requirement: TeX Is Initialized as a Derived Publication Artifact
 The system SHALL create `kaoju:paper-template-tex` and `kaoju:paper-draft-tex` as derived artifacts from selected canonical MyST revisions.
 
 #### Scenario: TeX initialization succeeds with complete conversion
 - **WHEN** the selected MyST template and draft use supported structures
 - **THEN** the paper service creates TeX template and draft files with lineage to their MyST sources
-- **AND** it records conversion tool identity, source checksums, citation inputs, included files, and diagnostics
+- **AND** it records the template compatibility fingerprint, conversion tool identity, source checksums, citation inputs, included files, and diagnostics
+
+#### Scenario: Existing TeX template remains compatible
+- **WHEN** a later MyST revision preserves the selected venue or document class, toolchain policy, and required construct set
+- **THEN** the system reuses the current `kaoju:paper-template-tex` and regenerates only `kaoju:paper-draft-tex`
+- **AND** prior human TeX-template refinements remain intact
+
+#### Scenario: TeX template compatibility changes
+- **WHEN** the venue or document class, toolchain policy, or required MyST construct set changes incompatibly
+- **THEN** the system creates a revision of `kaoju:paper-template-tex` before regenerating the TeX draft
+- **AND** it records the changed fingerprint dimensions and migration diagnostics
 
 #### Scenario: Conversion requires agent repair
 - **WHEN** MyST directives, tables, citations, floats, raw blocks, or venue rules cannot be converted faithfully
@@ -118,6 +143,16 @@ The system SHALL compile an inspected TeX draft through the `document_build` Res
 - **WHEN** the preferred toolchain is unavailable or incompatible
 - **THEN** the system records the concrete blocker or failure before using an authorized fallback
 - **AND** the fallback remains visible in the compile log and PDF revision record
+
+#### Scenario: Approved build admits bounded non-material repair
+- **WHEN** an approved PDF build fails because of a presentation-only or TeX syntax problem that preserves canonical MyST content and evidence meaning
+- **THEN** the write agent may repair the TeX artifact and retry automatically within the recorded attempt bound
+- **AND** every attempt creates a distinct build Run and compile log with the exact repair and lineage
+
+#### Scenario: Build repair would be material
+- **WHEN** a proposed repair changes canonical paper content, evidence meaning, dependencies, toolchain policy, or resource limits
+- **THEN** the system pauses for a revised plan and the applicable human Gate
+- **AND** it does not apply the material repair under the prior build authorization
 
 #### Scenario: PDF validation fails
 - **WHEN** compilation succeeds but PDF inspection finds missing pages, unresolved references, malformed structure, broken citations, clipped displays, or other required validation failures

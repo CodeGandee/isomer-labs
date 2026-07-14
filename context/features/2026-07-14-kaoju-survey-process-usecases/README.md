@@ -1,6 +1,6 @@
 # Kaoju Survey Process Use Cases
 
-Status: Draft
+Status: Proposed
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Capture refined, user-facing use cases for the Kaoju evidence-led survey workflo
 
 ## Current Stage
 
-Feature requirement drafted; use cases `uc-01` through `uc-10` are designed. Remaining optional use cases may cover audit gates or additional export workflows.
+Feature requirement and use cases `uc-01` through `uc-10` are designed. The OpenSpec change `revise-kaoju-survey-process` defines the proposed system-skill and `isomer-cli` refactor, specifications, and implementation tasks.
 
 ## Related Context
 
@@ -24,8 +24,8 @@ Feature requirement drafted; use cases `uc-01` through `uc-10` are designed. Rem
 - Existing analysis of the Kaoju suite: `.imsight-arts/agent-skill-handling/analysis/kaoju-suite/`
 - Current topic workspace example: `isomer-content/topic-ws/predictive-memory-tiering-survey/`
 
-## Open Questions
+## Decisions
 
-- Should these use cases target human researchers, Topic Actors, or both?
-- Should the workflow be exposed as CLI commands, agent-skill invocations, or both?
-- How many use cases are needed to cover the full survey-to-paper lifecycle?
+- The use cases serve human researchers and the Topic Actors conducting their human-orchestrated work. Topic Actor remains the canonical worker identity rather than a synonym for the human.
+- Agent skills own research judgment and user-intent procedures; typed `isomer-cli` services own deterministic persistence, path resolution, acquisition, dispatch, conversion, build, deployment, and launch operations.
+- UC-01 through UC-10 cover the requested survey-to-paper, wiki, source-ingestion, environment-preparation, and trial lifecycle. Additional behavior belongs in refinements unless it introduces a distinct actor goal.

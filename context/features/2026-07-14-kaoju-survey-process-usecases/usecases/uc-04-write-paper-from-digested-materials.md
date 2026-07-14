@@ -191,10 +191,10 @@ AI:
 >
 > The draft is 2,800 words in MyST. Every claim is tied to a Source Digest or Claim Status Table entry. You can ask for section-level revisions or approve the draft.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: Synthesis records (`kaoju:field-summary`, `kaoju:related-work-catalog`, `kaoju:claim-status-table`) have been produced and audited before paper writing begins.
 - Assumption: Source digests are approved before their claims are used in the paper draft.
 - Assumption: The paper is written in MyST, which is the canonical format; a Markdown view can be derived automatically for review; LaTeX/PDF rendering is handled in UC-06.
-- Open question: Should the paper structure be one-size-fits-all, or should the agent pick a structure based on the survey direction (taxonomy, comparison, empirical survey)?
-- Open question: Should the draft include figure/table placeholders, or should figures and tables be produced in separate artifacts?
+- Decision: The agent selects and explains an adaptive typed MyST structure profile based on the accepted survey direction, such as taxonomy, comparison, empirical survey, or general survey; the actor can revise it through the template workflow.
+- Decision: Figures and tables are separate file-backed Artifacts. The MyST structure and draft use typed placeholders that reference those Artifacts, and the citation map preserves their evidence and display roles.

@@ -164,20 +164,20 @@ AI:
 
 > Plan approved.
 >
-> Implemented `tmp/trial-wrapper/run_offload_demo.py` and executed the trial.
+> Registered the minimal wrapper as a file-backed Artifact and executed a Run-tied staged copy.
 >
 > Result (`kaoju:method-trial-result`):
 > - Exit code: 0
 > - Throughput: 12.3 tokens/sec with offloading enabled
 > - Peak GPU memory: 4.1 GB
-> - Output saved to `tmp/trial-outputs/...`
+> - Raw output registered with the immutable trial Run
 >
 > The observed throughput is lower than the 18 tokens/sec reported in the paper; the run log and wrapper are available for review.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: Source-code acquisition is handled by UC-03 (associated code for papers) or UC-08 (direct link/name).
 - Assumption: Environment preparation is handled by UC-09 before this use case runs.
 - Assumption: The actor may provide a dataset path or ask for random/synthetic data.
-- Open question: Should the agent attempt to reproduce the exact command from the paper, or always construct its own minimal wrapper?
-- Open question: Should failed trials be retried automatically with dependency fixes, or only after actor approval?
+- Decision: The agent always records a minimal durable wrapper. When an upstream or paper command fits the approved task and prepared environment, the wrapper invokes that command and records exact-command fidelity. Otherwise it makes the smallest necessary recorded adaptation and does not label the result as exact-command reproduction.
+- Decision: An approved trial may retry an identical request after a transient failure within its recorded bound. Any repair that changes dependencies, source commit, data, wrapper semantics, evaluator or metrics, resource limits, or evidence interpretation requires a revised plan and human Gate; every attempt remains a separate Run.

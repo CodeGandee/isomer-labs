@@ -11,6 +11,7 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 - UC-02 does **not** decide how the next survey direction is selected. Direction selection and sequencing belong to UC-01 and to future scheduling logic. UC-02 assumes the direction is already selected when the reading list is built.
 - The reading list artifact is **direction-owned**: one `kaoju:reading-list` artifact per direction. A direction identifier is part of the artifact metadata so downstream stages know which scope the list covers.
 - A default reading list **targets** 3 priority items and 3 secondary items. The agent tries its best to reach that count on the first attempt, but falling short is a warning rather than a blocker; the human can approve a shorter list or ask the agent to expand coverage.
+- Blocked or identity-unresolved candidates remain in discovery provenance but do not count toward the reachable 3+3 target. The agent performs bounded backfill before reporting a coverage deficit.
 - Each reading-list item includes a `priority` field with values `priority` or `secondary`.
 
 ## Affected Artifacts
@@ -19,6 +20,10 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 - `README.md`: added ADR link to artifact map.
 
 ## Refinement History
+
+### 2026-07-14 - Blocked-Item Backfill
+
+- Resolved the remaining backfill question: blocked items do not satisfy the reachable target, bounded backfill is automatic, and an unresolved shortage remains a non-blocking warning.
 
 ### 2026-07-14 - Initial Decision
 
@@ -29,4 +34,4 @@ The initial UC-02 draft left three questions open: how the next direction is cho
   - Updated Event 001 example response to report 6 sources (3 priority, 3 secondary).
   - Updated Event 002 example response to group items under "Priority reads" and "Secondary reads".
   - Noted that the 3+3 size is a target, not a blocker; the agent tries its best and warns if the target is missed.
-  - Replaced the three resolved open questions with assumptions and one remaining open question about blocked-item backfill behavior.
+  - Replaced the three resolved initial questions with assumptions and deferred blocked-item backfill behavior to a later refinement.

@@ -174,10 +174,10 @@ AI:
 >
 > Updated `kaoju:paper-template-myst` (`template-...`) and regenerated `kaoju:paper-draft-myst` (`draft-...`). The paper now follows your revised section order and includes the new "Bandwidth Assumptions" comparison section.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: The topic workspace has a directory suitable for manual edits, resolvable through `isomer-cli`.
 - Assumption: The human uses a Markdown/MyST-aware editor and edits the MyST template file (`.md` extension); there is no separate Markdown-only template.
 - Assumption: Applying a revised template always regenerates the canonical `kaoju:paper-draft-myst` from source digests and synthesis records, and optionally derives `kaoju:paper-draft-md`.
-- Open question: Should the system version each export automatically (v1, v2, ...), or let the human manage directories?
-- Open question: Should the agent warn if the human removes a section that still has grounded content?
+- Decision: Every template export receives an automatic export revision and manifest. A default managed target uses a versioned directory; an actor-selected target is never overwritten without an explicit update or overwrite choice.
+- Decision: Applying a template that removes a section with grounded content produces an orphaned-content report and requires explicit confirmation. Removing a required section remains a validation error rather than a warning.

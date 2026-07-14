@@ -148,9 +148,9 @@ AI:
 >
 > I recorded this as `kaoju:direction-set` (`artifact-...`). The set contains 3 directions queued for exploration. Next stage is online collection / discovery. Do you want me to freeze a single combined Survey Contract now, or create one contract per direction?
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: The topic already has at least a title and statement; very vague prompts require an extra clarification round.
 - Assumption: The system can read `topic.intent.overview` and existing related-work links if present.
-- Open question: Should the system automatically consider the host's hardware/environment when proposing directions (e.g., "empirical validation possible on B200")?
-- Open question: How many directions should be proposed by default (three plus custom, or fewer)?
+- Decision: The system considers host hardware and environment only when empirical feasibility is relevant. It records feasibility as an annotation and does not exclude or rank other directions solely because of the current host.
+- Decision: The system proposes three directions by default and always permits the actor to add a custom direction.

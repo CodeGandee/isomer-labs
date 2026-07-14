@@ -26,9 +26,14 @@ The system SHALL acquire selected source code through the Project repository ser
 - **AND** the resulting ref is included in `kaoju:associated-source-code` and `kaoju:artifact-library`
 
 #### Scenario: History is required
-- **WHEN** an approved inspection needs history unavailable in the shallow checkout
+- **WHEN** identity resolution or an approved inspection needs historical evidence unavailable in the shallow checkout
 - **THEN** the repository service deepens only the required history and records the reason and resulting commit-graph posture
 - **AND** shallow acquisition remains the default for later unrelated repositories
+
+#### Scenario: Repository may have an associated paper
+- **WHEN** the actor supplies or selects a repository for ingestion
+- **THEN** the acquire skill performs bounded associated-paper metadata discovery and records candidate relationships with their basis
+- **AND** it does not grant a candidate paper evidentiary authority or ingest it in depth until the relationship is verified and the normal selection and approval path accepts it
 
 #### Scenario: Acquisition fails after staging
 - **WHEN** clone, verification, or registration fails
@@ -105,6 +110,11 @@ The environment service SHALL create and execute a minimal smoke-run script that
 - **THEN** the service registers `kaoju:smoke-run-script`, dispatches it through command execution, and records `kaoju:smoke-run-result`
 - **AND** it creates `kaoju:env-gate-revision` and an accepted `kaoju:pixi-env-ref` tied to the successful observation
 
+#### Scenario: Smoke script becomes durable
+- **WHEN** the service creates the smoke-run script
+- **THEN** it registers the script as a file-backed Artifact under a resolved owner-preserved `topic.records.*` surface
+- **AND** it does not treat a source-tree or Local Tmp Surface copy as canonical, although the Run may execute a disposable staged copy
+
 #### Scenario: Smoke run fails
 - **WHEN** import, initialization, minimal inference, compilation, or another task-critical smoke step fails
 - **THEN** the result records command, environment, logs, exit status, observed failure, and bounded repair route
@@ -138,15 +148,30 @@ The system SHALL create `kaoju:method-trial-plan` and obtain a human Gate decisi
 ### Requirement: Trial Runs and Results Are Durable and Immutable
 The system SHALL execute an approved minimal wrapper through registered command execution and SHALL record an immutable Run and result.
 
+#### Scenario: Approved task has a compatible upstream command
+- **WHEN** the paper or repository provides a command that fits the approved task, pinned source, prepared environment, selected data, and resource boundary
+- **THEN** the durable wrapper invokes that command and records exact-command fidelity
+- **AND** any necessary deviation is recorded as an adaptation rather than represented as exact-command reproduction
+
+#### Scenario: Approved task needs an adapted entry point
+- **WHEN** no upstream command fits the approved task and constraints
+- **THEN** the durable wrapper implements the smallest necessary recorded adaptation
+- **AND** the plan and result state the resulting fidelity and interpretation limit
+
 #### Scenario: Trial completes
 - **WHEN** the approved wrapper executes with selected data
 - **THEN** `kaoju:method-trial-run` records exact inputs, source commit, environment and lock identity, wrapper, command request, logs, raw outputs, timing, resources, adaptations, exit status, and terminal state
 - **AND** `kaoju:method-trial-result` records measurements, checks, evidence verdict, verification depth, limitations, and Run refs
 
-#### Scenario: Trial fails and a repair follows
-- **WHEN** the faithful or approved trial fails and the actor authorizes a repaired attempt
-- **THEN** each attempt remains a separate Run with purpose, fidelity, patch or adaptation, inputs, outputs, and lineage
-- **AND** the later result does not overwrite the earlier failure or verdict
+#### Scenario: Trial has a transient failure
+- **WHEN** an approved trial fails without requiring any change to its pinned source, environment, data, wrapper, evaluator, metrics, resources, or interpretation
+- **THEN** the system may retry the identical request automatically within the recorded attempt bound
+- **AND** each attempt remains a separate Run with its own logs, outputs, status, and lineage
+
+#### Scenario: Trial repair would be material
+- **WHEN** a failed trial would require a dependency or lock change, source patch or commit change, different data, changed wrapper semantics or entry point, changed evaluator or metrics, changed resource limits, or changed evidence interpretation
+- **THEN** the system revises the trial plan and waits for the applicable human Gate before executing the repaired attempt
+- **AND** the later Run does not overwrite the earlier failure, fidelity, or verdict
 
 ### Requirement: Random Data Trials Remain Capability Probes
 The system SHALL record generated or random trial input as `kaoju:generated-dataset` and SHALL limit conclusions to the supported capability-probe scope.

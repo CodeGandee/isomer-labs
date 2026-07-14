@@ -8,11 +8,12 @@ Survey records are currently stored as durable Kaoju artifacts in the topic work
 
 ## Current Decision
 
-- UC-07 supports exporting accepted Kaoju survey artifacts into an LLM Wiki at a user-given path.
-- The export produces both human-readable wiki pages and computer-friendly JSON/YAML metadata describing the artifact-to-page mapping and provenance.
+- UC-07 supports exporting accepted Kaoju survey artifacts into an LLM Wiki at a resolved Topic Workspace default or an actor-supplied path.
+- The export produces human-readable wiki pages and one canonical JSON metadata file describing artifact-to-page mapping, provenance, and managed-path ownership.
 - The functionality is implemented as a self-contained Isomer Labs system extension or CLI command; it does not route to or invoke the external `imsight-llm-wiki` skill.
-- The exported wiki format is compatible with the viewer bundled in `imsight-llm-wiki`.
-- The system can deploy the bundled LLM Wiki viewer to a user-given directory and write a manifest inside the viewer directory that points to the wiki root.
+- The exported wiki representation is compatible with a package-owned viewer selected after license and provenance review.
+- The system can deploy the package-owned viewer to a resolved Topic Workspace default or actor-supplied directory and write a JSON manifest inside the viewer directory that points to the wiki root.
+- Re-export and recognized viewer refresh update managed files in place, preserve unrecognized files, and record a changelog while durable Artifact revisions retain history.
 - The system can start the deployed viewer on a local port and report the URL.
 - All exports and deployments are registered in the topic workspace state database with metadata and filesystem links.
 
@@ -23,6 +24,13 @@ Survey records are currently stored as durable Kaoju artifacts in the topic work
 - `README.md`: updated current-stage summary.
 
 ## Refinement History
+
+### 2026-07-14 - Export Update Policy
+
+- Default wiki and viewer targets resolve inside the Topic Workspace, with explicit actor path overrides.
+- JSON is the single canonical machine representation.
+- Re-export stages an in-place update of recognized managed files and records a changelog; unrecognized files remain untouched.
+- Viewer assets must be package-owned. Candidate external source code requires license and provenance validation, with an independent compatible implementation as the fallback.
 
 ### 2026-07-14 - Initial Decision
 

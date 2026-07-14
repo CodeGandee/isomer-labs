@@ -195,10 +195,10 @@ AI:
 >
 > Status: 6 planned (3 priority, 3 secondary), 0 blocked. Approve, remove items, add nominations, or ask me to expand a thread.
 
-## Assumptions And Open Questions
+## Assumptions And Decisions
 
 - Assumption: Search providers can access papers, arXiv, framework docs, and public repositories.
 - Assumption: The direction's source classes and coverage date from UC-01 bound the search.
 - Assumption: One `kaoju:reading-list` artifact is created per direction; this use case does not decide which direction to explore next.
 - Assumption: A default reading list **targets** 3 priority items and 3 secondary items. The agent tries its best to reach that count on the first attempt, but falling short is a warning rather than a blocker; the human can approve a shorter list or ask the agent to expand coverage.
-- Open question: Should blocked items count against the 3+3 target, or should the agent backfill to keep the planned count?
+- Decision: Blocked items remain in discovery provenance but do not count toward the 3+3 reachable target. The agent performs bounded backfill; if suitable reachable sources remain insufficient, it records a coverage warning and lets the human approve the shorter list or request more discovery.
