@@ -55,14 +55,30 @@ Approve the digest, ask for deeper inspection of a section, or reject it and req
 - result
   - Actor **gets** an updated digest and, once approved, a handoff ref to the next item or to synthesis.
 
+### Acquire Associated Source Code For Paper
+
+For a paper reading item, find and acquire its associated source-code repository so it can be inspected alongside the paper.
+
+- context
+  - Actor **has** a paper or report item in `kaoju:reading-list`.
+  - System **has** the item metadata and can search for linked repositories (paper frontmatter, arXiv, project page, GitHub references).
+- intent
+  - Actor **wants** to read the implementation behind the paper.
+  - Actor **wonders** "For this paper, get its source code to read about."
+- action
+  - Actor then **asks** the system to find and acquire the source code associated with the paper.
+- result
+  - Actor **gets** the repository cloned into the artifact library, a new or updated reading-list item for the code, and a note in the paper's source digest linking the paper to its implementation.
+
 ## Main Flow
 
-1. Actor selects a reading item and asks the system to ingest it in depth.
+1. Actor selects a reading item and asks the system to ingest it in depth, or asks specifically for the paper's associated source code.
 2. System resolves the item from `kaoju:reading-list` and determines its source type and estimated depth.
 3. System acquires the source, preferring a local copy already indexed in the topic workspace:
    - Check `kaoju:artifact-library` index for an existing copy. If one exists and is fresh enough, reuse it.
    - For a source-code repository, query `isomer-cli` for the resolved extern-repo path (e.g., `topic.repos.extern.<repo-name>`) and clone with `git clone --depth 1`.
    - For a paper or report, query `isomer-cli` for the resolved artifact-storage path (e.g., `topic.records.artifacts`) and download the PDF or full text there.
+   - For a paper, if the actor asks for associated source code, search for linked repositories, clone the best match into the artifact library, and create or update a reading-list item for the code.
    - If a provider restriction prevents download or clone, read/browse the source online and record the restriction in provenance.
    - For a web page or framework documentation, read it online (with an optional snapshot).
 4. System inspects the source according to the estimated depth and records query/extraction provenance.
@@ -80,7 +96,9 @@ Approve the digest, ask for deeper inspection of a section, or reject it and req
 - **A4. Partial extraction**: If the agent can acquire the source but cannot extract all intended fields, it records which fields are missing and why.
 - **A5. Human asks for section-level depth**: If the human wants only a specific section or file inspected, the system narrows the digest to that scope and records the narrower request.
 - **E1. Git clone failure**: If `git clone --depth 1` fails, the system reports the error, records attempted URL and ref, and asks whether to try a full clone or fall back to online browsing.
+- **A6. No associated source code found**: If the system cannot find a linked repository for a paper, it records the search attempts and asks the actor to supply a URL or skip the code inspection.
 - **E2. PDF parse failure**: If the downloaded PDF cannot be parsed, the system records the parse error and asks whether to try an alternate format or mark the item blocked.
+- **E3. Source code mismatch**: If multiple candidate repositories are found for a paper, the system lists them and asks the actor which one to clone.
 
 ## Mermaid Flow Diagram
 
@@ -140,6 +158,7 @@ Each durable output below is registered as an entry in the topic workspace state
 
 - `kaoju:source-digest` — structured extraction for one reading item, with claims, evidence, locators, excerpts, limitations, and confidence notes.
 - `kaoju:artifact-library` — downloaded paper PDFs, checked-out source code, and optional web snapshots, plus an index that maps source identities to workspace paths so re-ingestion can reuse them.
+- `kaoju:associated-source-code` — when a paper has an acquired implementation repository, a record linking the paper to the cloned repo.
 - `kaoju:discovery-ledger` — acquisition and extraction provenance.
 - `kaoju:source-access-blocker` — for items that cannot be acquired or parsed.
 - `kaoju:claim-evidence-ledger` — extracted claims linked to sources and locators.
@@ -154,6 +173,7 @@ Each `kaoju:source-digest` includes:
 | `reading_list_item_id` | Reference to the parent item in `kaoju:reading-list`. |
 | `source_identity` | Title, authors, version, URL, and stable identifiers. |
 | `artifact_library_ref` | Semantic workspace label (e.g., `topic.repos.extern.vllm`, `topic.records.artifacts`) resolved through `isomer-cli`, plus the local path where the source was stored. |
+| `associated_source_code_ref` | If the item is a paper with an acquired implementation repo, reference to the cloned code in the artifact library. |
 | `inspection_depth` | Abstract, section-level, full-text, or code-level. |
 | `claims` | List of claim objects with text, type, confidence, and locator. |
 | `evidence` | Supporting evidence, figures, tables, or code snippets with locators. |
