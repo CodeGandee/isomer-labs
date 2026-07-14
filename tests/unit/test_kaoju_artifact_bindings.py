@@ -1,75 +1,78 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 from pathlib import Path
 import re
 import unittest
 
+from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, validate_binding_registry_document
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 KAOJU_ROOT = REPO_ROOT / "src/isomer_labs/assets/system_skills/research-paradigm/kaoju"
 CATALOG_PATH = REPO_ROOT / "src/isomer_labs/artifact_formats/assets/research_record_formats/profiles/kaoju.v1.json"
+SCHEMA_PATH = KAOJU_ROOT / "contracts/bindings.v2.schema.json"
 
 
 class KaojuArtifactBindingTests(unittest.TestCase):
-    def test_semantic_registry_bindings_and_profiles_have_exact_bidirectional_coverage(self) -> None:
-        registry_text = (
-            KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-semantics.md"
-        ).read_text(encoding="utf-8")
-        registry_ids = set(re.findall(r"`(kaoju:[a-z0-9-]+)`", registry_text))
-        binding_paths = sorted(KAOJU_ROOT.glob("isomer-kaoju-*/artifact-bindings.md"))
-        self.assertEqual(11, len(binding_paths))
-        binding_ids: list[str] = []
-        for path in binding_paths:
-            text = path.read_text(encoding="utf-8")
-            binding_ids.extend(re.findall(r"^\| `(kaoju:[a-z0-9-]+)` \|", text, re.M))
-            for term in ("--semantic-id", "--record-kind", "--format-profile", "--payload-file", "actor_metadata", "Lifecycle"):
-                self.assertIn(term, text, (path, term))
+    def test_registry_profiles_summaries_and_producers_have_bidirectional_coverage(self) -> None:
+        bindings = load_binding_registry()
+        contract = load_contract()
+        summary_text = (KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-semantics.md").read_text(encoding="utf-8")
+        summary_ids = set(re.findall(r"`(kaoju:[a-z0-9-]+)`", summary_text))
+        self.assertEqual(set(bindings), summary_ids)
+
         catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
-        catalog_ids = {f"{entry['family']}:{entry['semantic_id']}" for entry in catalog["profiles"]}
-        self.assertEqual(31, len(registry_ids))
-        self.assertEqual(registry_ids, set(binding_ids))
-        self.assertEqual(len(binding_ids), len(set(binding_ids)))
-        self.assertEqual(registry_ids, catalog_ids)
-
-    def test_workspace_bootstrap_contract_covers_blockers_latest_reset_and_output_policy(self) -> None:
-        text = (KAOJU_ROOT / "isomer-kaoju-workspace-mgr/SKILL.md").read_text(encoding="utf-8")
-        for term in (
-            "Effective Topic Context",
-            "fresh Workspace Runtime",
-            "topic.records.artifacts",
-            "neutral provider",
-            "artifact-bindings.md",
-            "--latest-only",
-            "actor posture",
-            "worker output policy",
-            "Topic Dataset Manifest",
-            "kaoju:binding-index",
-            "kaoju:workspace-readiness",
-            "storage blocker",
-            "topic-reset update-checkpoint",
-            "subject to the accepted reset plan",
-        ):
-            self.assertIn(term, text)
-
-    def test_manager_contracts_preserve_current_history_exports_and_owner_routing(self) -> None:
-        survey = (KAOJU_ROOT / "isomer-kaoju-pipeline/commands/manage-survey.md").read_text(encoding="utf-8")
-        for term in ("--artifact-family kaoju", "--semantic-id", "--latest-only", "--include-payload", "query lineage", "records render", "ambiguity", "without changing latest state"):
-            self.assertIn(term, survey)
-        dataset = (KAOJU_ROOT / "isomer-kaoju-pipeline/commands/manage-dataset.md").read_text(encoding="utf-8")
-        for term in ("kaoju:topic-dataset-manifest", "Topic Workspace owner", "records revise", "Preserve the prior version", "Never mutate the external target"):
-            self.assertIn(term, dataset)
-
-    def test_bound_stages_route_writes_and_views_remain_derived(self) -> None:
-        for skill_md in sorted(KAOJU_ROOT.glob("isomer-kaoju-*/SKILL.md")):
-            if skill_md.parent.name == "isomer-kaoju-shared":
+        profiles = {f"{entry['family']}:{entry['semantic_id']}": entry for entry in catalog["profiles"]}
+        for semantic_id, binding in bindings.items():
+            if binding.profile_ref is None:
+                self.assertNotEqual("structured_file", binding.content_mode, semantic_id)
                 continue
-            text = skill_md.read_text(encoding="utf-8")
-            self.assertIn("artifact-bindings.md", text, skill_md)
-            self.assertIn("storage blocker", text, skill_md)
+            profile = profiles[semantic_id]
+            expected_ref = f"isomer:research/record-format/profile/{profile['family']}/{profile['artifact_class']}/{profile['semantic_id']}/{profile['version']}"
+            self.assertEqual(expected_ref, binding.profile_ref)
+            self.assertIn(binding.record_kind, profile["compatible_record_kinds"])
+            self.assertTrue(profile["renderer"])
+        self.assertEqual(set(profiles), {semantic_id for semantic_id, binding in bindings.items() if binding.profile_ref})
+
+        produced_by: dict[str, set[str]] = {}
+        for semantic_id, binding in bindings.items():
+            produced_by.setdefault(binding.producer, set()).add(semantic_id)
+            self.assertTrue(set(binding.consumers) <= set(contract.skills) | {"isomer-srv-topic-env-setup"})
+        for producer, expected in produced_by.items():
+            if producer not in contract.skills:
+                continue
+            page = KAOJU_ROOT / producer / "artifact-bindings.md"
+            text = page.read_text(encoding="utf-8")
+            match = re.search(r"(?m)^Produced semantic ids:\s*(.+)$", text)
+            self.assertIsNotNone(match, producer)
+            assert match is not None
+            self.assertEqual(expected, set(re.findall(r"kaoju:[a-z0-9-]+", match.group(1))))
+            self.assertIn("contracts/bindings.v2.json", text)
+            self.assertIn("project artifacts describe", text)
+            self.assertNotRegex(text, r"--(?:record-kind|semantic-label|format-profile|payload-file)")
+
+    def test_registry_invalid_fixtures_are_rejected_deterministically(self) -> None:
+        raw = json.loads((KAOJU_ROOT / "contracts/bindings.v2.json").read_text(encoding="utf-8"))
+        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        duplicate = deepcopy(raw)
+        duplicate["bindings"].append(deepcopy(duplicate["bindings"][0]))
+        malformed = deepcopy(raw)
+        malformed["bindings"][0]["semantic_id"] = "other:wrong"
+        missing_scope = deepcopy(raw)
+        del missing_scope["bindings"][0]["scope_key_policy"]
+        cases = (duplicate, malformed, missing_scope)
+        for fixture in cases:
+            with self.subTest(fixture=fixture["bindings"][0].get("semantic_id")):
+                self.assertTrue(validate_binding_registry_document(fixture, schema=schema))
+
+    def test_workspace_and_shared_contract_cover_scoped_db_only_artifacts(self) -> None:
+        workspace = (KAOJU_ROOT / "isomer-kaoju-workspace-mgr/SKILL.md").read_text(encoding="utf-8")
+        shared = (KAOJU_ROOT / "isomer-kaoju-shared/SKILL.md").read_text(encoding="utf-8")
         recording = (KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-recording.md").read_text(encoding="utf-8")
-        self.assertIn("canonical structured state", recording)
-        self.assertIn("render on demand", recording)
+        for term in ("Workspace Runtime", "state DB", "scope", "directory", "Run", "Gate"):
+            self.assertIn(term.casefold(), (workspace + shared + recording).casefold(), term)
         self.assertIn("A repaired or adapted Run never revises a faithful Run", recording)
         self.assertIn("Only the Topic Workspace owner mutates managed links", recording)
 

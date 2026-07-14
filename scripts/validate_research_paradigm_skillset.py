@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Iterable
 
 from packaging.version import InvalidVersion, Version
+from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 import yaml
 
 
@@ -89,8 +90,10 @@ EXPECTED_KAOJU_SKILLS = frozenset(
         "isomer-kaoju-reproduce",
         "isomer-kaoju-shared",
         "isomer-kaoju-synthesize",
+        "isomer-kaoju-trial",
         "isomer-kaoju-workspace-mgr",
         "isomer-kaoju-write",
+        "isomer-kaoju-export",
     }
 )
 
@@ -150,15 +153,25 @@ FAMILY_CONFIGS = (
 EXPECTED_KAOJU_COMMANDS = frozenset(
     {
         "audit-survey-pass",
+        "build-paper-pdf",
+        "build-reading-list",
+        "choose-directions",
         "comparative-pass",
         "create-paper-template",
         "curated-intake-pass",
         "direction-expansion-pass",
+        "draft-paper",
+        "export-survey-wiki",
+        "ingest-reading-item",
+        "ingest-source-code",
         "landscape-pass",
         "manage-dataset",
+        "manage-paper-template",
         "manage-survey",
         "method-trial-pass",
         "paper-pass",
+        "prepare-code-run",
+        "run-code-trial",
         "theory-comparison-pass",
     }
 )
@@ -1694,8 +1707,86 @@ def validate_kaoju_command_page(
     numbers = workflow_step_numbers(lines, workflow_line)
     if len(numbers) < 2 or numbers[0] != 1:
         add(diagnostics, repo_root, path, workflow_line, "RPS018", "Kaoju command ## Workflow must contain numbered steps")
-    if not any("does not map cleanly" in line for line in lines):
-        add(diagnostics, repo_root, path, 1, "RPS018", "Kaoju command page must include fallback guidance")
+    text = "\n".join(lines)
+    if "Gates, Blockers, and Resume" not in text and not any("does not map cleanly" in line for line in lines):
+        add(diagnostics, repo_root, path, 1, "RPS018", "Kaoju command page must include Gate, blocker, and resume guidance")
+
+
+def load_kaoju_process_contract(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> dict[str, object] | None:
+    path = kaoju_root / "contracts" / "survey-process.v2.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju survey-process contract is unavailable: {exc}")
+        return None
+    if not isinstance(raw, dict):
+        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju survey-process contract must be an object")
+        return None
+    required_lists = ("skills", "survey_intents", "compatibility_procedures")
+    for field in required_lists:
+        values = raw.get(field)
+        if not isinstance(values, list) or not values or not all(isinstance(value, str) and value for value in values):
+            add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju contract field '{field}' must be a non-empty string list")
+        elif len(values) != len(set(values)):
+            add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju contract field '{field}' contains duplicates")
+    managers = raw.get("manager_actions")
+    if not isinstance(managers, dict) or not managers:
+        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju contract manager_actions must be a non-empty object")
+    if raw.get("entry_skill") != "isomer-kaoju-pipeline":
+        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju contract entry_skill must be isomer-kaoju-pipeline")
+    return raw
+
+
+def _contract_commands(contract: dict[str, object]) -> tuple[str, ...]:
+    commands: list[str] = []
+    for field in ("survey_intents", "compatibility_procedures"):
+        values = contract.get(field, [])
+        if isinstance(values, list):
+            commands.extend(str(value) for value in values)
+    managers = contract.get("manager_actions", {})
+    if isinstance(managers, dict):
+        commands.extend(str(value) for value in managers if str(value) not in commands)
+    return tuple(commands)
+
+
+def validate_kaoju_package_contract(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    contract: dict[str, object],
+) -> None:
+    contract_path = kaoju_root / "contracts" / "survey-process.v2.json"
+    skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
+    intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
+    if len(skills) != 14:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare fourteen skills, found {len(skills)}")
+    if len(intents) != 10:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare ten survey intents, found {len(intents)}")
+
+    actual_skills = tuple(path.name for path in kaoju_root.iterdir() if path.is_dir() and path.name.startswith("isomer-kaoju-"))
+    if set(actual_skills) != set(skills):
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", "Kaoju contract skill inventory differs from packaged skill directories")
+
+    manifest_path = kaoju_root.parents[1] / "manifest.toml"
+    if not manifest_path.exists():
+        return
+    try:
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+        group = manifest["groups"]["kaoju"]
+    except (OSError, tomllib.TOMLDecodeError, KeyError, TypeError) as exc:
+        add(diagnostics, repo_root, manifest_path, 1, "RPS026", f"packaged Kaoju manifest cannot be checked: {exc}")
+        return
+    expected_skill_paths = [f"research-paradigm/kaoju/{name}" for name in skills]
+    if group.get("entry_skill") != contract.get("entry_skill"):
+        add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest entry skill differs from the checked contract")
+    if group.get("skills") != expected_skill_paths:
+        add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest skill order differs from the checked contract")
+    if tuple(group.get("commands", [])) != _contract_commands(contract):
+        add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest command order differs from the checked contract")
 
 
 def validate_kaoju_command_surface(
@@ -1708,10 +1799,12 @@ def validate_kaoju_command_surface(
     if not command_root.exists():
         add(diagnostics, repo_root, command_root, 1, "RPS018", "Kaoju pipeline commands directory is missing")
         return
+    contract = load_kaoju_process_contract(kaoju_root, repo_root, diagnostics)
+    expected_commands = set(_contract_commands(contract)) if contract is not None else set(EXPECTED_KAOJU_COMMANDS)
     command_pages = {path.stem: path for path in command_root.glob("*.md") if path.is_file()}
-    for missing in sorted(EXPECTED_KAOJU_COMMANDS - set(command_pages)):
+    for missing in sorted(expected_commands - set(command_pages)):
         add(diagnostics, repo_root, command_root / f"{missing}.md", 1, "RPS018", f"expected Kaoju command '{missing}' is missing")
-    for extra in sorted(set(command_pages) - EXPECTED_KAOJU_COMMANDS):
+    for extra in sorted(set(command_pages) - expected_commands):
         add(diagnostics, repo_root, command_pages[extra], 1, "RPS018", f"unapproved Kaoju command '{extra}' is active")
     for forbidden in sorted(FORBIDDEN_KAOJU_PROCEDURES & set(command_pages)):
         add(diagnostics, repo_root, command_pages[forbidden], 1, "RPS018", f"generic procedure '{forbidden}' must not be exposed by Kaoju")
@@ -1722,10 +1815,10 @@ def validate_kaoju_command_surface(
     if skill_md.exists():
         lines = read_lines(skill_md)
         text = "\n".join(lines)
-        for heading in ("Procedural Subcommands", "Helper Subcommands", "Misc Subcommands"):
-            if not any(normalize_heading(line.removeprefix("###")) == heading for line in lines if line.startswith("###")):
-                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju pipeline must contain ### {heading}")
-        for command in sorted(EXPECTED_KAOJU_COMMANDS):
+        for heading in ("Survey Intents", "Compatibility Procedures", "Grouped Managers"):
+            if find_h2(lines, heading) is None:
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju pipeline must contain ## {heading}")
+        for command in sorted(expected_commands):
             if f"`{command}`" not in text or f"commands/{command}.md" not in text:
                 add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju pipeline must link command '{command}'")
         for forbidden in sorted(FORBIDDEN_KAOJU_PROCEDURES):
@@ -1789,14 +1882,14 @@ def _markdown_table(lines: tuple[str, ...], required_header: str) -> tuple[list[
     return [], []
 
 
-def _kaoju_catalog_profiles(repo_root: Path) -> dict[str, tuple[str, str]]:
+def _kaoju_catalog_profiles(repo_root: Path) -> dict[str, dict[str, object]]:
     relative = Path("src/isomer_labs/artifact_formats/assets/research_record_formats/profiles/kaoju.v1.json")
     candidates = (repo_root / relative, Path(__file__).resolve().parents[1] / relative)
     catalog_path = next((candidate for candidate in candidates if candidate.exists()), None)
     if catalog_path is None:
         return {}
     raw = json.loads(catalog_path.read_text(encoding="utf-8"))
-    result: dict[str, tuple[str, str]] = {}
+    result: dict[str, dict[str, object]] = {}
     for entry in raw.get("profiles", []):
         if not isinstance(entry, dict):
             continue
@@ -1806,7 +1899,9 @@ def _kaoju_catalog_profiles(repo_root: Path) -> dict[str, tuple[str, str]]:
             or "isomer:research/record-format/profile/"
             f"{entry.get('family')}/{entry.get('artifact_class')}/{entry.get('semantic_id')}/{entry.get('version')}"
         )
-        result[semantic_id] = (profile_ref, str(entry.get("compatible_record_kinds", [""])[0]))
+        normalized = dict(entry)
+        normalized["profile_ref"] = profile_ref
+        result[semantic_id] = normalized
     return result
 
 
@@ -1816,128 +1911,121 @@ def validate_kaoju_artifact_bindings(
     diagnostics: list[Diagnostic],
     config: FamilyConfig,
 ) -> None:
-    if config.semantic_registry is None or config.semantic_id_pattern is None or config.binding_filename is None:
+    if config.semantic_id_pattern is None or config.binding_filename is None:
         return
-    registry_path = kaoju_root / config.semantic_registry
-    if not registry_path.exists():
-        add(diagnostics, repo_root, registry_path, 1, "RPS021", "Kaoju artifact semantic registry is missing")
+    registry_path = kaoju_root / "contracts" / "bindings.v2.json"
+    schema_path = kaoju_root / "contracts" / "bindings.v2.schema.json"
+    summary_path = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md"
+    try:
+        raw = json.loads(registry_path.read_text(encoding="utf-8"))
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", f"Kaoju binding registry is unavailable: {exc}")
         return
-    registry_lines = read_lines(registry_path)
-    registry_header, registry_rows = _markdown_table(registry_lines, "Semantic id")
-    if not registry_header:
-        add(diagnostics, repo_root, registry_path, 1, "RPS021", "Kaoju semantic registry requires a Semantic id table")
-        return
-    registry_index = {name: index for index, name in enumerate(registry_header)}
-    registry: dict[str, tuple[int, str]] = {}
-    for line_number, cells in registry_rows:
-        semantic_id = cells[registry_index["Semantic id"]]
-        if config.semantic_id_pattern.fullmatch(semantic_id) is None:
-            add(diagnostics, repo_root, registry_path, line_number, "RPS021", f"invalid Kaoju semantic id '{semantic_id}'")
-            continue
-        if semantic_id in registry:
-            add(diagnostics, repo_root, registry_path, line_number, "RPS021", f"duplicate Kaoju semantic id '{semantic_id}'")
-            continue
-        producer = cells[registry_index.get("Producer", -1)] if "Producer" in registry_index else ""
-        registry[semantic_id] = (line_number, producer)
-
-    physical_patterns = (
-        r"topic\.records\.",
-        r"isomer:research/record-format/",
-        r"\brecord kind\b",
-        r"\bsemantic label\b",
-        r"\bisomer-cli\b",
-        r"--(?:record-kind|semantic-label|format-profile|payload-file)",
+    schema_errors = sorted(
+        Draft202012Validator(schema).iter_errors(raw),
+        key=lambda error: tuple(str(part) for part in error.path),
     )
-    for line_number, line in enumerate(registry_lines, start=1):
-        if any(re.search(pattern, line, re.I) for pattern in physical_patterns):
-            add(diagnostics, repo_root, registry_path, line_number, "RPS023", "storage-neutral semantic registry contains premature physical binding")
-
-    bindings: dict[str, tuple[Path, int, dict[str, str]]] = {}
-    for owner in sorted(config.binding_owners):
-        binding_path = kaoju_root / owner / config.binding_filename
-        if not binding_path.exists():
-            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"Kaoju binding owner '{owner}' is missing {config.binding_filename}")
+    for error in schema_errors:
+        location = "/".join(str(part) for part in error.path) or "<root>"
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", f"{location}: {error.message}")
+    if not isinstance(raw, dict) or not isinstance(raw.get("bindings"), list):
+        return
+    bindings: dict[str, dict[str, object]] = {}
+    for index, candidate in enumerate(raw["bindings"]):
+        if not isinstance(candidate, dict):
             continue
-        lines = read_lines(binding_path)
-        header, rows = _markdown_table(lines, "Semantic id")
-        missing_fields = [field for field in config.required_binding_fields if field not in header]
-        if missing_fields:
-            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"binding table is missing required fields: {', '.join(missing_fields)}")
+        semantic_id = candidate.get("semantic_id")
+        if not isinstance(semantic_id, str) or config.semantic_id_pattern.fullmatch(semantic_id) is None:
+            add(diagnostics, repo_root, registry_path, 1, "RPS021", f"bindings/{index} has an invalid semantic id")
             continue
-        indices = {name: index for index, name in enumerate(header)}
-        text = "\n".join(lines)
-        required_contract_terms = (
-            "--semantic-id",
-            "--record-kind",
-            "--format-profile",
-            "--skill",
-            "--producer",
-            "--consumer",
-            "--payload-file",
-            "actor_metadata",
-            "validate",
-            "create",
-            "list",
-            "show",
-            "update",
-            "revis",
-            "follow-up",
-            "render",
-            "export",
-            "archive",
-            "lineage",
-        )
-        for term in required_contract_terms:
-            if term.casefold() not in text.casefold():
-                add(diagnostics, repo_root, binding_path, 1, "RPS024", f"Kaoju binding lifecycle is missing '{term}' guidance")
-        if re.search(r"--body(?:-file)?\b", text) or re.search(r"records create[^\n]*--render\b", text):
-            add(diagnostics, repo_root, binding_path, 1, "RPS024", "Kaoju structured binding must use payload-first canonical JSON without durable Markdown authoring")
-        for line_number, cells in rows:
-            row = {name: cells[index] for name, index in indices.items()}
-            semantic_id = row["Semantic id"]
-            if config.semantic_id_pattern.fullmatch(semantic_id) is None:
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding has invalid or cross-family semantic id '{semantic_id}'")
-                continue
-            if semantic_id in bindings:
-                prior_path, prior_line, _prior = bindings[semantic_id]
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"duplicate binding for '{semantic_id}' also appears at {relpath(prior_path, repo_root)}:{prior_line}")
-                continue
-            if semantic_id not in registry:
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding id '{semantic_id}' is absent from the semantic registry")
-            if row["Producer"] != owner:
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding producer '{row['Producer']}' does not match owner '{owner}'")
-            if semantic_id in registry and registry[semantic_id][1] != owner:
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding owner conflicts with registry producer for '{semantic_id}'")
-            if config.profile_namespace is not None and not row["Neutral profile"].startswith(config.profile_namespace):
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding profile for '{semantic_id}' is outside the neutral Kaoju namespace")
-            if row["Semantic label"] not in {"topic.records.artifacts", "topic.records.views", "topic.records.runs", "topic.records.tasks", "topic.records.logs"}:
-                add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding for '{semantic_id}' uses an unknown semantic label")
-            bindings[semantic_id] = (binding_path, line_number, row)
-
-    for semantic_id, (line_number, _producer) in sorted(registry.items()):
-        if semantic_id not in bindings:
-            add(diagnostics, repo_root, registry_path, line_number, "RPS022", f"semantic id '{semantic_id}' has no producer binding")
+        if semantic_id in bindings:
+            add(diagnostics, repo_root, registry_path, 1, "RPS021", f"duplicate Kaoju binding for '{semantic_id}'")
+            continue
+        bindings[semantic_id] = candidate
 
     catalog = _kaoju_catalog_profiles(repo_root)
-    for semantic_id, (profile_ref, record_kind) in sorted(catalog.items()):
-        if semantic_id not in registry:
-            add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile catalog id '{semantic_id}' is absent from the semantic registry")
+    for semantic_id, binding in sorted(bindings.items()):
+        profile_ref = binding.get("profile_ref")
+        content_mode = binding.get("content_mode")
+        if content_mode == "structured_file" and not isinstance(profile_ref, str):
+            add(diagnostics, repo_root, registry_path, 1, "RPS022", f"structured binding '{semantic_id}' requires a profile")
+        if isinstance(profile_ref, str):
+            profile = catalog.get(semantic_id)
+            if profile is None:
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' has no profile catalog entry")
+                continue
+            if profile.get("profile_ref") != profile_ref:
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' profile ref differs from the catalog")
+            kinds = profile.get("compatible_record_kinds", [])
+            if not isinstance(kinds, list) or binding.get("record_kind") not in kinds:
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' record kind conflicts with its profile")
+            if profile.get("artifact_type") != binding.get("artifact_type"):
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' artifact type conflicts with its profile")
+            if not isinstance(profile.get("renderer"), str) or not profile.get("renderer"):
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile '{semantic_id}' has no renderer")
+            if not isinstance(profile.get("required_payload_paths"), list):
+                add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile '{semantic_id}' has no structured schema hints")
+    for semantic_id in sorted(set(catalog) - set(bindings)):
+        add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile catalog id '{semantic_id}' has no binding")
+
+    if summary_path.exists():
+        summary_ids = set(re.findall(r"`(kaoju:[a-z0-9][a-z0-9-]*)`", summary_path.read_text(encoding="utf-8")))
+        if summary_ids != set(bindings):
+            missing = sorted(set(bindings) - summary_ids)
+            extra = sorted(summary_ids - set(bindings))
+            add(diagnostics, repo_root, summary_path, 1, "RPS022", f"generated semantic summary differs from registry; missing={missing}, extra={extra}")
+    else:
+        add(diagnostics, repo_root, summary_path, 1, "RPS022", "generated Kaoju semantic summary is missing")
+
+    contract = load_kaoju_process_contract(kaoju_root, repo_root, diagnostics)
+    if contract is not None:
+        raw_aliases = contract.get("semantic_aliases", {})
+        if not isinstance(raw_aliases, dict):
+            add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", "semantic_aliases must be an object")
+        else:
+            for alias, disposition in sorted(raw_aliases.items()):
+                target = disposition.get("canonical_semantic_id") if isinstance(disposition, dict) else None
+                if not isinstance(alias, str) or not isinstance(target, str) or target not in bindings:
+                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' has no registered canonical target")
+                elif alias in bindings:
+                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' must not compete with a canonical binding")
+                if isinstance(disposition, dict) and disposition.get("automatic_promotion") is not False:
+                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' must prohibit automatic promotion")
+    skill_names = set(str(value) for value in contract.get("skills", [])) if contract is not None else set(EXPECTED_KAOJU_SKILLS)
+    allowed_participants = skill_names | {"isomer-srv-topic-env-setup"}
+    produced: dict[str, set[str]] = {name: set() for name in skill_names}
+    for semantic_id, binding in bindings.items():
+        producer = binding.get("producer")
+        consumers = binding.get("consumers")
+        if producer not in allowed_participants:
+            add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' has unknown producer '{producer}'")
+        if isinstance(producer, str) and producer in produced:
+            produced[producer].add(semantic_id)
+        if not isinstance(consumers, list) or any(consumer not in allowed_participants for consumer in consumers):
+            add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' has an unknown consumer")
+
+    for owner, expected_ids in sorted(produced.items()):
+        if not expected_ids:
             continue
-        binding = bindings.get(semantic_id)
-        if binding is None:
+        binding_path = kaoju_root / owner / config.binding_filename
+        if not binding_path.exists():
+            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"Kaoju producer '{owner}' is missing its binding summary")
             continue
-        binding_path, line_number, row = binding
-        if row["Neutral profile"] != profile_ref:
-            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding profile for '{semantic_id}' does not resolve to the catalog entry")
-        if row["Record kind"] != record_kind:
-            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding record kind for '{semantic_id}' conflicts with the catalog")
-    for semantic_id, (binding_path, line_number, _row) in sorted(bindings.items()):
-        if catalog and semantic_id not in catalog:
-            add(diagnostics, repo_root, binding_path, line_number, "RPS022", f"binding id '{semantic_id}' has no neutral profile catalog entry")
+        text = binding_path.read_text(encoding="utf-8")
+        match = re.search(r"(?m)^Produced semantic ids:\s*(.+)$", text)
+        actual_ids = set(re.findall(r"kaoju:[a-z0-9][a-z0-9-]*", match.group(1))) if match else set()
+        if actual_ids != expected_ids:
+            add(diagnostics, repo_root, binding_path, 1, "RPS022", f"producer summary differs from registry; expected={sorted(expected_ids)}, actual={sorted(actual_ids)}")
+        for term in ("contracts/bindings.v2.json", "project artifacts describe", "project artifacts put", "project artifacts revise"):
+            if term not in text:
+                add(diagnostics, repo_root, binding_path, 1, "RPS024", f"binding summary is missing '{term}'")
+        if re.search(r"--(?:record-kind|semantic-label|format-profile|payload-file|content-name)", text):
+            add(diagnostics, repo_root, binding_path, 1, "RPS023", "producer binding summary repeats physical command fields")
 
     active_refs: dict[str, tuple[Path, int]] = {}
     for path in sorted(kaoju_root.rglob("*.md")):
-        if path.name == config.binding_filename or path == registry_path:
+        if path.name == config.binding_filename or path == summary_path:
             continue
         if path.parts[-2:] == ("references", "artifact-recording.md"):
             continue
@@ -1951,10 +2039,8 @@ def validate_kaoju_artifact_bindings(
             ):
                 add(diagnostics, repo_root, path, line_number, "RPS023", "active stage prose contains physical binding instead of routing to artifact-bindings.md")
     for semantic_id, (path, line_number) in sorted(active_refs.items()):
-        if semantic_id not in registry:
+        if semantic_id not in bindings:
             add(diagnostics, repo_root, path, line_number, "RPS021", f"active Kaoju guidance references unregistered semantic id '{semantic_id}'")
-        elif semantic_id not in bindings:
-            add(diagnostics, repo_root, path, line_number, "RPS022", f"active Kaoju semantic id '{semantic_id}' has no binding")
 
     shared_recording = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-recording.md"
     if shared_recording.exists():
@@ -1962,6 +2048,32 @@ def validate_kaoju_artifact_bindings(
         for term in ("title", "summary", "artifact_family", "semantic_id", "artifact_type", "sections", "worker output policy", "latest", "revision", "lineage", "Markdown", "large-material"):
             if term.casefold() not in shared_text.casefold():
                 add(diagnostics, repo_root, shared_recording, 1, "RPS024", f"shared Kaoju recording contract is missing '{term}' guidance")
+
+
+def validate_kaoju_architecture_guidance(kaoju_root: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    """Check the cross-skill architecture rules that prevent workflow drift."""
+
+    requirements = {
+        "isomer-kaoju-shared/SKILL.md": ("binding registry", "state DB", "Service Request", "Execution Adapter Command Request", "Run", "Gate"),
+        "isomer-kaoju-workspace-mgr/SKILL.md": ("binding registry", "state DB", "scope", "content mode", "Run", "reset"),
+        "isomer-kaoju-write/SKILL.md": ("MyST", "canonical", "accepted `kaoju:audit-report`", "paper-display", "project artifacts"),
+        "isomer-kaoju-trial/SKILL.md": ("Service Request", "code_trial", "ambient environment", "method-trial-wrapper", "project artifacts"),
+        "isomer-kaoju-reproduce/SKILL.md": ("genuine reproduction", "isomer-kaoju-trial", "capability-probe"),
+        "isomer-kaoju-export/SKILL.md": ("state DB", "isomer-cli ext kaoju wiki", "package-owned viewer", "Do not invoke", "project artifacts"),
+    }
+    for relative, terms in requirements.items():
+        path = kaoju_root / relative
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in terms:
+            if term.casefold() not in text.casefold():
+                add(diagnostics, repo_root, path, 1, "RPS027", f"Kaoju architecture guidance is missing '{term}'")
+
+    for path in sorted(kaoju_root.rglob("*.md")):
+        for line_number, line in enumerate(read_lines(path), start=1):
+            if "imsight-llm-wiki" in line.casefold() and not (is_rejection_line(line) or "never invoke" in line.casefold()):
+                add(diagnostics, repo_root, path, line_number, "RPS027", "active Kaoju guidance must not invoke the external imsight-llm-wiki skill")
 
 
 def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
@@ -2127,9 +2239,13 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
     validate_registry_mirrors(documents, canonical_rows, repo_root, diagnostics)
     kaoju_root = target / "kaoju"
     if kaoju_root.exists():
+        kaoju_contract = load_kaoju_process_contract(kaoju_root, repo_root, diagnostics)
+        if kaoju_contract is not None:
+            validate_kaoju_package_contract(kaoju_root, repo_root, diagnostics, kaoju_contract)
         validate_kaoju_command_surface(kaoju_root, repo_root, diagnostics)
         validate_kaoju_shared_references(kaoju_root, repo_root, diagnostics)
         validate_kaoju_artifact_bindings(kaoju_root, repo_root, diagnostics, family_by_key["kaoju"])
+        validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

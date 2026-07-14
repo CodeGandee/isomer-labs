@@ -87,7 +87,7 @@ isomer-cli --print-json internals classify-system-skill-inventory --inventory-js
 
 The `ext research` namespace manages GUI-readable research records and idea lineage metadata:
 
-The top-level `ext` namespace contains native runtime and compatibility commands. It is distinct from installable agent-skill extensions, which are discovered with `isomer-cli system-skills extensions`. For example, Kaoju is invoked through the installed `$isomer-kaoju-pipeline` skill and does not define `isomer-cli ext kaoju`.
+The top-level `ext` namespace contains native runtime and compatibility commands. It is distinct from installable agent-skill extensions, which are discovered with `isomer-cli system-skills extensions`. Kaoju research decisions are orchestrated through the installed `$isomer-kaoju-pipeline` skill; deterministic MyST paper and wiki operations use `ext kaoju`.
 
 - `ext research ideas generation upsert`
 - `ext research ideas graph`
@@ -569,6 +569,66 @@ isomer-cli --print-json project repos create inner_group.some_repo_name --topic 
 isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
 ```
 
+### `project repos acquire`
+
+Acquire one remote repository through the `repository_acquisition` extension point, clone at depth one by default, resolve and validate the full immutable commit, and register the requested non-main `topic.repos.*` label only after success. Use `--history-depth` only when approved identity or inspection work needs more history.
+
+**Side effects:** creates a staged Git checkout, validates it, atomically moves it to the canonical repository target, and writes the Topic Workspace Manifest binding. Authentication, remote, clone, deepening, commit, or registration failure leaves no canonical registration.
+
+```bash
+isomer-cli --print-json project repos acquire https://example.org/method.git \
+  --topic my-topic \
+  --semantic-label topic.repos.sources.method
+```
+
+### `project artifacts describe/put/revise/latest/list/show/archive/migrate-scope`
+
+Resolve and manage typed Kaoju Artifacts through Workspace Runtime. `describe` returns the checked declarative binding without an internal path template. `put` and `revise` infer record kind, profile, semantic label, content mode, revision behavior, accepted status, and scope policy. `latest`, `list`, and `show` query the state DB; they never scan directories for semantic state.
+
+**Side effects:** `put` and `revise` validate content and relationships, allocate owner-preserved managed storage when applicable, write or register file-backed content, and create a durable record. `archive` changes lifecycle state without deleting external content. Other operations are read-only unless `migrate-scope --apply` performs an unambiguous legacy backfill.
+
+```bash
+isomer-cli --print-json project artifacts describe kaoju:reading-list --topic my-topic
+isomer-cli --print-json project artifacts put kaoju:reading-list reading-list.json \
+  --topic my-topic \
+  --producer isomer-kaoju-discover \
+  --scope-key direction:memory-offload \
+  --relationships-json '[{"role":"direction_set","target_ref":"directions-1"},{"role":"discovery_ledger","target_ref":"discovery-1"}]'
+isomer-cli --print-json project artifacts latest kaoju:reading-list --topic my-topic --scope-key direction:memory-offload
+```
+
+### `project runs begin/checkpoint/status/complete`
+
+Record one Kaoju procedure attempt and its resumable stage state. A checkpoint carries completed Artifact refs, pending Gate, blockers, Service Requests, and an exact resume hint. Completion seals the Run; later checkpoints are rejected.
+
+**Side effects:** `begin`, `checkpoint`, and `complete` write Research Task and Run lifecycle state through Workspace Runtime. `status` is read-only. Failed, stopped, and cancelled Runs remain durable and can point to a later new attempt.
+
+```bash
+isomer-cli --print-json project runs begin --topic my-topic --procedure-id build-reading-list --stage-id discover --id run-reading-1
+isomer-cli --print-json project runs checkpoint run-reading-1 --topic my-topic --stage-id approve --completed-ref reading-list-1 --pending-gate-ref gate-reading-1
+isomer-cli --print-json project runs complete run-reading-1 --topic my-topic --terminal-status complete --completed-ref reading-list-1
+```
+
+### `project service-requests create/dispatch/status`
+
+Record a bounded operational support request separately from its Research Task and Run, then dispatch it synchronously. A Service Request names scope, task, expected outputs, authorization, Service Dispatch Form, completion observations, actor refs, and an optional provider-neutral command request. The first release rejects `--no-wait`.
+
+**Side effects:** `create` writes the Service Request. `dispatch` records running and terminal observations, executes an approved command through its Research Operation Extension Point when supplied, and writes a support Artifact. `status` is read-only. Smoke and code-trial requests must use `pixi run --environment <name>` and cannot execute in the ambient environment.
+
+```bash
+isomer-cli --print-json project service-requests create \
+  --topic my-topic \
+  --task-description "Run the task-critical smoke check" \
+  --scope-kind run \
+  --scope-ref run-env-1 \
+  --expected-output-ref kaoju:smoke-run-result \
+  --authorization "execute the approved named Pixi environment" \
+  --dispatch-form tool_native_subagent \
+  --completion-observation "task-critical check passes" \
+  --command-request-json '{"extension_point":"smoke_run","argv":["pixi","run","--environment","default","--","sh","smoke.sh"]}' \
+  --actor-ref project-operator-session:current
+```
+
 ### `project topic-actors list/show/register/update/archive/materialize/repair/diagnose`
 
 Manage Topic Actor bindings and Topic Actor Workspaces for human-orchestrated workers. Topic Actor bindings live in the Topic Workspace Manifest, which remains the topology and path-resolution authority. When Workspace Runtime is available, mutating operations may also record audit or provenance rows, but runtime records do not replace manifest topology.
@@ -800,6 +860,38 @@ isomer-cli --print-json project handoffs normalize <handoff-id> \
   --rationale "Accepted after Operator review."
 ```
 
+### `ext kaoju paper validate/export-template/apply-template/derive-markdown/init-tex/build-pdf`
+
+Operate on the accepted MyST-first paper graph selected by the Kaoju write skill. `validate` checks MyST syntax, required sections, citation roles, typed display placeholders, and accepted refs. `export-template` creates a versioned actor-editable directory with base digest and tied refs. `apply-template` enforces optimistic concurrency and orphan confirmation before revising canonical MyST state. `derive-markdown` creates a non-canonical review view. `init-tex` initializes derived TeX trees and conversion diagnostics. `build-pdf` executes the `document_build` extension point and records the Run, compile log, PDF inspection state, and publication Gate.
+
+**Side effects:** all operations except `validate` can create or revise file-backed Artifacts and lineage. Actor-selected targets require an explicit create, update, or overwrite posture. A stale base, invalid placeholder, missing display ref, or unconfirmed orphan leaves canonical state unchanged. New canonical paper creation does not use `ext research templates`; that group remains only for supported historical inspection and repair.
+
+```bash
+isomer-cli --print-json ext kaoju paper export-template \
+  --topic my-topic \
+  --source-ref paper-structure-2 \
+  --paper-line paper:main \
+  --draft-ref paper-draft-3 \
+  --citation-map-ref citation-map-3 \
+  --source-digest-ref source-digest-7 \
+  --display-ref paper-display-2
+
+isomer-cli --print-json ext kaoju paper apply-template \
+  --topic my-topic topic-workspaces/my-topic/exports/kaoju-paper/paper-main/v0001
+```
+
+### `ext kaoju wiki export/deploy/start`
+
+Export accepted state-DB Artifacts to an idempotent Markdown and canonical JSON wiki, deploy the independently implemented package-owned viewer, or launch a recognized deployment. Selection can use explicit Artifact refs or accepted direction and paper scopes. Default targets resolve inside the Topic Workspace; actor paths remain authorized external targets.
+
+**Side effects:** `export` and `deploy` stage recognized managed-file updates, preserve unrecognized human files, write changelogs and checksummed directory manifests, and register wiki or viewer Artifacts. `start` uses the `viewer_launch` extension point, records a Run and log, binds to loopback by default, and requires a network-exposure Gate for non-loopback hosts. These commands use installed package resources and never invoke an external `imsight-llm-wiki` skill.
+
+```bash
+isomer-cli --print-json ext kaoju wiki export --topic my-topic --direction-scope direction:memory-offload
+isomer-cli --print-json ext kaoju wiki deploy --topic my-topic topic-workspaces/my-topic/exports/kaoju-wiki
+isomer-cli --print-json ext kaoju wiki start --topic my-topic topic-workspaces/my-topic/exports/kaoju-viewer
+```
+
 ### `ext deepsci tools`
 
 List the DeepScientist compatibility tools exposed through Isomer extension shims.
@@ -829,7 +921,7 @@ Create, inspect, query, revise, or archive topic-scoped research records for fam
 
 **Side effects:** `create` and `update` write or update a Workspace Runtime lifecycle record and, when `--body` or `--body-file` is supplied, write a durable body under the resolved semantic label, defaulting to `topic.records.artifacts` except for runs, tasks, and views. `delete` archives the lifecycle record by setting its status to `archived`; it does not remove stored body files. `show` and `list` are read-only.
 
-**Use:** follow the producing skill's binding page. Kaoju uses exact `--semantic-id kaoju:<id>`, canonical `--payload-file` JSON, and `isomer:research/record-format/profile/kaoju/.../v1`. DeepSci continues to use exact `--placeholder` values and existing `isomer:deepsci/record-format/*` refs. Structured creation rejects direct `--body` or `--body-file` authoring.
+**Use:** new Kaoju work uses `project artifacts`, which resolves the packaged registry and infers physical fields. Supported historical and family-neutral operations remain available here and delegate to the same record services. DeepSci continues to use exact `--placeholder` values and existing `isomer:deepsci/record-format/*` refs. Structured creation rejects direct `--body` or `--body-file` authoring.
 
 When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
 

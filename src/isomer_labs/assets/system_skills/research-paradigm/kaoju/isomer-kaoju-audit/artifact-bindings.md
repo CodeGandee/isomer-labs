@@ -1,17 +1,9 @@
-# Audit Artifact Bindings
+# Kaoju Audit Binding Summary
 
-Read `../isomer-kaoju-shared/references/artifact-semantics.md` for meaning. This page is the physical and API authority for the row below.
+The versioned package registry at `../contracts/bindings.v2.json` is the only physical binding authority. This generated summary identifies direct producer responsibility without defining paths, profiles, record kinds, labels, or expanded command shapes.
 
-| Semantic id | Storage item | Record kind | Semantic label | Neutral profile | Producer | Consumers | Payload role | Lineage policy | Revision policy | Query metadata |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `kaoju:audit-report` | Managed JSON snapshot | `artifact` | `topic.records.artifacts` | `isomer:research/record-format/profile/kaoju/report/audit-report/v1` | isomer-kaoju-audit | pipeline, synthesize, user | Non-mutating evidence-readiness assessment | `derived_from` exact audited versions, evidence, decisions, and Runs | Separate report per audit boundary | claims, verdicts, readiness status, defects |
+Produced semantic ids: `kaoju:audit-report`, `kaoju:claim-status-table`
 
-## Normal Create
+Resolve each contract with `isomer-cli --print-json project artifacts describe <semantic-id>`. Create accepted state with `isomer-cli --print-json project artifacts put`, revise current state with `isomer-cli --print-json project artifacts revise`, and supply only the binding-defined scope key, content, relationships, producer identity, and idempotency key.
 
-```text
-isomer-cli --print-json ext research records create --topic <topic> --record-kind artifact --semantic-label topic.records.artifacts --semantic-id kaoju:audit-report --format-profile isomer:research/record-format/profile/kaoju/report/audit-report/v1 --skill isomer-kaoju-audit --producer 'isomer-kaoju-audit' --consumer 'pipeline, synthesize, user' --payload-file <payload-file> --metadata-json '{"actor_metadata":"<resolved>","procedure":"audit"}' --parents-json '<audited-record-refs>' --lineage-kind derived_from
-```
-
-## Lifecycle
-
-Validate with the same selectors, then create. List by `--artifact-family kaoju --semantic-id kaoju:audit-report`; show with `--include-payload`; use update only for lifecycle metadata. A re-audit is a separate follow-up child, not a revision that hides the earlier verdict. Render on demand, export explicitly, and archive through generic record operations.
+Use `project artifacts latest`, `list`, and `show` for state-DB discovery and inspection. Treat an empty or ambiguous query as a blocker. The Artifact service owns managed locators, content validation, revision behavior, and recovery; producers never infer an internal subpath or scan directories for semantic state.

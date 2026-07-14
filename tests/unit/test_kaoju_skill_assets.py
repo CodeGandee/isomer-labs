@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -8,34 +9,9 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 KAOJU_ROOT = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "kaoju"
 
-EXPECTED_SKILLS = {
-    "isomer-kaoju-acquire",
-    "isomer-kaoju-audit",
-    "isomer-kaoju-compare",
-    "isomer-kaoju-discover",
-    "isomer-kaoju-examine",
-    "isomer-kaoju-frame",
-    "isomer-kaoju-pipeline",
-    "isomer-kaoju-reproduce",
-    "isomer-kaoju-shared",
-    "isomer-kaoju-synthesize",
-    "isomer-kaoju-workspace-mgr",
-    "isomer-kaoju-write",
-}
-
-PROCEDURES = {
-    "audit-survey-pass",
-    "comparative-pass",
-    "create-paper-template",
-    "curated-intake-pass",
-    "direction-expansion-pass",
-    "landscape-pass",
-    "method-trial-pass",
-    "paper-pass",
-    "theory-comparison-pass",
-}
-
-HELPERS = {"manage-dataset", "manage-survey"}
+CONTRACT = json.loads((KAOJU_ROOT / "contracts/survey-process.v2.json").read_text(encoding="utf-8"))
+EXPECTED_SKILLS = set(CONTRACT["skills"])
+COMMANDS = set(CONTRACT["survey_intents"]) | set(CONTRACT["compatibility_procedures"]) | set(CONTRACT["manager_actions"])
 
 
 class KaojuSkillAssetTests(unittest.TestCase):
@@ -54,21 +30,21 @@ class KaojuSkillAssetTests(unittest.TestCase):
             self.assertIn(f'display_name: "{name}"', agent_text)
             self.assertIn(f"${name}", agent_text)
 
-    def test_pipeline_uses_complex_procedure_command_groups(self) -> None:
+    def test_pipeline_uses_checked_intent_compatibility_and_manager_groups(self) -> None:
         pipeline = KAOJU_ROOT / "isomer-kaoju-pipeline"
         text = (pipeline / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("### Procedural Subcommands", text)
-        self.assertIn("### Helper Subcommands", text)
-        self.assertIn("### Misc Subcommands", text)
+        self.assertIn("## Survey Intents", text)
+        self.assertIn("## Compatibility Procedures", text)
+        self.assertIn("## Grouped Managers", text)
         command_names = {path.stem for path in (pipeline / "commands").glob("*.md")}
-        self.assertEqual(PROCEDURES | HELPERS, command_names)
+        self.assertEqual(COMMANDS, command_names)
         for name in sorted(command_names):
             page = (pipeline / "commands" / f"{name}.md").read_text(encoding="utf-8")
             self.assertIn("## Workflow", "\n".join(page.splitlines()[:20]), name)
-            self.assertIn("does not map cleanly", page, name)
+            self.assertTrue("does not map cleanly" in page or "Gates, Blockers, and Resume" in page, name)
             self.assertIn(f"`{name}`", text)
             self.assertIn(f"commands/{name}.md", text)
-        self.assertRegex(text, r"(?m)^\| `help` \|")
+        self.assertIn("`help`", text)
 
     def test_manager_actions_are_grouped(self) -> None:
         commands = KAOJU_ROOT / "isomer-kaoju-pipeline" / "commands"

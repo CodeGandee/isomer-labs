@@ -1,5 +1,9 @@
-## ADDED Requirements
+# kaoju-cli-services Specification
 
+## Purpose
+TBD - created by syncing change revise-kaoju-survey-process. Update Purpose after archive.
+
+## Requirements
 ### Requirement: Project Artifact Commands Resolve Semantic Bindings
 The CLI SHALL provide canonical `isomer-cli project artifacts` commands that resolve an exact semantic artifact id through the active binding registry.
 
@@ -12,6 +16,11 @@ The CLI SHALL provide canonical `isomer-cli project artifacts` commands that res
 - **WHEN** an authorized producer runs `project artifacts put` with a registered semantic id, content file, required scope, and relationship refs
 - **THEN** the CLI infers the physical binding, validates the content, stores or registers it, creates the Artifact Core Record and links, and returns stable refs
 - **AND** the caller does not need to supply record kind, profile ref, or physical records-root path
+
+#### Scenario: Managed content path is allocated
+- **WHEN** `put` or `revise` persists content under a managed `topic.records.*` surface
+- **THEN** the artifact service allocates the internal path through its generic record-owned storage policy and returns the registered locator
+- **AND** callers use stable Artifact refs and DB queries rather than treating the internal subpath shape as a public API
 
 #### Scenario: Artifact is revised
 - **WHEN** an authorized producer runs `project artifacts revise` for a current-state artifact

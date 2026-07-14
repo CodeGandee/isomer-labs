@@ -1,0 +1,18 @@
+# Prepare Code Run
+
+## Workflow
+
+1. Resolve the canonical repository commit, associated paper, accepted Source Digest, task-critical path, dependency hints, data posture, and existing Pixi environment candidates.
+2. Use `$isomer-kaoju-trial` to record `kaoju:env-prep-plan` with flexible compatible constraints, risks, authorization, expected smoke outputs, and environment scope.
+3. Open and synchronously dispatch a Service Request. Apply the Pixi preference order: reuse a satisfying environment; add flexible compatible constraints to an existing environment while preferring `default`; or create a dedicated environment.
+4. Record exact resolved package versions and lock identity in `kaoju:pixi-env-ref`, while preserving flexible intent constraints and before-and-after Gate state in `kaoju:env-gate-revision`.
+5. Create a durable file-backed `kaoju:smoke-run-script` under the Artifact owner surface. A Run-tied staged copy may execute, but neither source-tree nor Local Tmp Surface copies become canonical.
+6. Execute through `smoke_run` and record `kaoju:smoke-run-result`. Environment readiness requires a successful task-critical observation, not only environment creation.
+
+## Owner, Inputs, and Outputs
+
+Research owner: `$isomer-kaoju-trial`; operational owner: the environment Service Request handled by the Service Team. Outputs: plan, Service Request, Gate revision, Pixi environment, smoke script, smoke result, command request, blocker, and provenance refs.
+
+## Gates, Blockers, and Resume
+
+Dependency mutation follows the plan authorization and Gate. Unsatisfiable constraints, lock failure, unavailable toolchain, smoke failure, or material repair pauses at plan, dispatch, resolve, smoke, or repair.

@@ -39,6 +39,10 @@ Each dimension has a definition, relevance rationale, applicability rule, and so
 
 The Comparison Intent Document records what the user wants, candidate identity and readiness, existing reproduced evidence, required source, model and data acquisition, environment and reimplementation needs, metrics, evaluator, fairness, repetitions, uncertainty, resources, Gates, and unresolved decisions. Ask: “Do you want to clarify for more detail, or proceed?”
 
+## Artifact Operations
+
+Resolve `kaoju:theory-comparison`, `kaoju:comparison-matrix`, and `kaoju:comparison-run` through `project artifacts describe`. Persist accepted comparison outputs only through typed `project artifacts put` or binding-permitted `revise`; keep each execution attempt in a distinct immutable Run.
+
 ### Empirical Results Mode
 
 Each measurement links to the Run, immutable inputs, environment, metric definition, evaluator, quality checks, adaptations, and raw outputs. Report dispersion or repeated-run limits; use `not-comparable` when fair normalization would erase meaningful task or quality differences.

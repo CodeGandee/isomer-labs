@@ -55,6 +55,7 @@ def _build_index_parts(
         "placeholder": identity["placeholder"],
         "artifact_family": identity["artifact_family"],
         "semantic_id": identity["semantic_id"],
+        "scope_key": _optional_string(record_metadata.get("scope_key")),
         "semantic_id_source": identity["semantic_id_source"],
         "artifact_type": identity["artifact_type"],
         "procedure": _first_string(payload_json.get("procedure"), record_metadata.get("procedure")),

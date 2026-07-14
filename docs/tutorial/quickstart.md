@@ -43,6 +43,8 @@ Use `--extension kaoju` when the agent should survey literature and codebases or
 isomer-cli system-skills install --target codex --extension kaoju
 ```
 
+The pipeline routes ten user intents from direction selection and reading-list construction through source ingestion, MyST paper production, package-owned wiki export, environment preparation, and separately approved code trials. Deterministic state operations use `project artifacts`, `project runs`, `project repos acquire`, `project service-requests`, `ext kaoju paper`, and `ext kaoju wiki`; the installed skills decide what research work those services should perform.
+
 ## Create a Project
 
 Create a directory that will own the project manifest, topic workspaces, runtime files, and GUI-readable records:

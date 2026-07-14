@@ -1,30 +1,69 @@
 # Kaoju Research Skills
 
-Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers and technical reports as primary related works, links source repositories, datasets, and models as typed materials, and can continue into governed first-hand trials or controlled comparisons when the survey question requires them.
+Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers and technical reports as primary related works, links repositories and datasets as typed materials, and supports governed first-hand code trials without confusing a capability probe with reproduction evidence.
 
 ## Skill Inventory
 
 | Skill | Responsibility |
 | --- | --- |
-| `isomer-kaoju-pipeline` | Route one bounded survey procedure, paper-writing procedure, or grouped management action. |
-| `isomer-kaoju-shared` | Define evidence, identity, lineage, interaction, owner-routing, and terminal contracts. |
-| `isomer-kaoju-workspace-mgr` | Check Topic Workspace readiness and registered dataset posture. |
-| `isomer-kaoju-frame` | Freeze the Survey Contract or Comparison Intent Document. |
-| `isomer-kaoju-discover` | Find and select version-aware works and linked materials. |
-| `isomer-kaoju-acquire` | Resolve immutable material identities and governed acquisition. |
-| `isomer-kaoju-examine` | Inspect sources at exact locators and update claim evidence. |
-| `isomer-kaoju-reproduce` | Run faithful trials or generated-data capability probes. |
-| `isomer-kaoju-compare` | Build source-grounded theory or empirical comparisons. |
-| `isomer-kaoju-audit` | Diagnose coverage, identity, evidence, and fairness defects. |
-| `isomer-kaoju-synthesize` | Write accepted survey conclusions without exceeding evidence. |
-| `isomer-kaoju-write` | Turn accepted audit and synthesis records into a publication bundle. |
+| `isomer-kaoju-pipeline` | Route one user intent or retained compatibility procedure and preserve its Run checkpoint. |
+| `isomer-kaoju-shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
+| `isomer-kaoju-workspace-mgr` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
+| `isomer-kaoju-frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
+| `isomer-kaoju-discover` | Build direction-scoped, version-aware reading lists and discovery provenance. |
+| `isomer-kaoju-acquire` | Resolve and acquire immutable materials, repositories, and associated source relationships. |
+| `isomer-kaoju-examine` | Inspect papers and code at exact locators while separating source statements from interpretation. |
+| `isomer-kaoju-reproduce` | Handle only genuine reproduction claims under the stronger fidelity contract. |
+| `isomer-kaoju-compare` | Build source-grounded theory or governed empirical comparisons. |
+| `isomer-kaoju-audit` | Diagnose coverage, identity, evidence, contradiction, and fairness defects. |
+| `isomer-kaoju-synthesize` | Write accepted survey conclusions without exceeding the evidence boundary. |
+| `isomer-kaoju-write` | Maintain canonical MyST paper state and derived Markdown, TeX, PDF, and publication outputs. |
+| `isomer-kaoju-trial` | Prepare governed environments and run separately approved bounded source-code trials. |
+| `isomer-kaoju-export` | Export accepted state-DB records to the package-owned LLM Wiki representation and viewer. |
 
-## Public Pipeline Surface
+## User-Intent Surface
 
-Procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. Helpers group object operations under `manage-survey` and `manage-dataset`; `help` is the only miscellaneous subcommand.
+The entry skill exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
 
-Kaoju is distinct from DeepSci: Kaoju maps and verifies existing work, while DeepSci frames hypotheses and develops or evaluates new research routes. Generic repository maintenance, environment repair, and resume behavior remain implementation context inside the active survey procedure.
+Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` creates canonical MyST state. Grouped object operations remain under `manage-survey`, `manage-dataset`, and `manage-paper-template`.
+
+## Durable State and CLI Boundaries
+
+The versioned `contracts/bindings.v2.json` registry is the single physical binding authority. Skills resolve it with `isomer-cli project artifacts describe`, discover durable state only through `project artifacts latest|list|show`, and persist through typed `put` or `revise`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-candidate resolution, lineage, and stable refs. Producers must not infer managed subpaths or scan directories as a fallback.
+
+`isomer-cli project runs` owns resumable procedure checkpoints. `project repos acquire` performs verified depth-one repository acquisition before registration. `project service-requests` records and synchronously dispatches Service Team work. Executable repository, Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
+
+Houmao may implement Service Dispatch Forms, launch, mailboxes, or inspection behind those boundaries. Houmao terms and payloads do not appear in the Kaoju schema, skill-facing Artifact contract, or public CLI language.
+
+## Canonical Paper Graph
+
+```text
+accepted audit and synthesis
+            |
+   paper-structure-myst
+            |
+      paper-draft-myst ----------------> paper-draft-md
+            |                               derived review view
+            |
+     TeX initialization
+       /             \
+paper-template-tex  paper-draft-tex
+                          |
+                 agent inspection and repair
+                          |
+                      paper-pdf
+```
+
+MyST is the only canonical paper source. Figures and tables are separate file-backed `kaoju:paper-display` Artifacts referenced by typed placeholders and citation-map entries. TeX trees, compile logs, PDFs, and viewer directories retain checksummed file or directory manifests and lineage to their exact canonical inputs.
+
+## Reset and Resume Semantics
+
+A reset is a checkpoint decision, not a filesystem cleanup. The pipeline queries the state DB and retains accepted selected directions, direction-scoped reading lists, approved source digests, canonical paper revisions, wiki manifests, exact Pixi environment refs, and immutable trial results unless the actor explicitly archives or revises them. It resumes at the first incomplete stage after validating content links, current scope, pending Gates, blockers, Service Requests, and prior Run terminal state. Failed and rejected attempts remain visible; a later repair never overwrites their evidence or verdict.
+
+## Migration
+
+Legacy `kaoju:survey-manuscript` and `kaoju:writing-template` records remain readable but are never promoted automatically into canonical MyST state. Historical `ext research templates` inspection and repair remain supported; new paper work uses `ext kaoju paper`. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
 
 ## Installation
 
-Install the optional extension with the existing system-skill selector for extension id `kaoju`. Core skills remain included; DeepSci stays absent unless it is selected separately or all extensions are requested.
+Install the optional extension with the system-skill selector for extension id `kaoju`. Core skills remain included; DeepSci stays absent unless selected separately or all extensions are requested.

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer-kaoju-wiki-viewer-manifest.v1",
+  "type": "object",
+  "required": ["schema_version", "title", "summary", "artifact_family", "semantic_id", "artifact_type", "version", "sections"],
+  "properties": {
+    "schema_version": {"const": "isomer-kaoju-wiki-viewer-manifest.v1"},
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "artifact_family": {"const": "kaoju"},
+    "semantic_id": {"const": "kaoju:llm-wiki-viewer-manifest"},
+    "artifact_type": {"const": "llm-wiki-viewer-manifest"},
+    "version": {"type": "string", "minLength": 1},
+    "sections": {
+      "type": "object",
+      "required": ["viewer", "wiki_target", "launch"],
+      "properties": {
+        "viewer": {"type": "object", "required": ["implementation", "version", "files", "checksums"]},
+        "wiki_target": {"type": "object", "required": ["source_path", "source_fingerprint", "snapshot_path"]},
+        "launch": {"type": "object", "required": ["default_host", "default_port", "network_exposure_gate"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

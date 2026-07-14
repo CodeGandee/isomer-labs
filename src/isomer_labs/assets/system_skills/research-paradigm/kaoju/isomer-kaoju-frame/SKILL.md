@@ -9,7 +9,7 @@ description: Use when a Kaoju request needs a bounded Survey Contract, clarifica
 
 Turn the user's survey question into an explicit contract before discovery or execution changes its scope. Ambiguity that changes cost, evidence strength, or comparability must become a user-visible decision.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:survey-contract`, `kaoju:comparison-intent`, or `kaoju:proceed-decision` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:direction-set`, `kaoju:survey-contract`, or `kaoju:comparison-intent` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
 
 ## Workflow
 
@@ -17,10 +17,12 @@ Before accepting durable output, read the shared artifact semantics and recordin
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Inspect ambiguity**. Identify unclear boundaries, source classes, time horizon, seed role, inclusion rules, desired depth, deliverables, resources, and Gates.
 4. **Clarify when requested or material**. Use the A/B/C/D clarification contract, mark exactly one suggested option, then ask whether to clarify more or proceed.
-5. **Freeze the contract**. Record question, boundary, source classes, coverage date, inclusion and exclusion rules, evidence contract, resources, Gate posture, outputs, and stop conditions.
-6. **Add empirical intent when applicable**. For actual-run comparison, create the Comparison Intent Document and wait for a Proceed Decision before preparation or Runs.
-7. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-8. **Return status**. Report the Survey Contract or Comparison Intent Document ref and the next allowed stage.
+5. **Propose and confirm directions when requested**. Propose three directions by default. Give each a stable id, scoped question, boundary, source classes, coverage date, expected depth, deliverables, and empirical-feasibility annotation. Mark one suggestion, accept multiple selections and custom directions, and revise or reject proposals until the actor explicitly confirms the set. Current host capability may annotate feasibility but cannot filter or rank directions by itself.
+6. **Persist the confirmed set**. Put or revise one `kaoju:direction-set` in its topic scope with proposals, selections, custom inputs, rejected or revised entries, actor confirmation, and lineage. Never conflate it with a frozen Survey Contract.
+7. **Freeze the contract**. Optionally derive one combined or per-direction Survey Contract with question, boundary, source classes, coverage date, inclusion and exclusion rules, evidence contract, resources, Gate posture, outputs, and stop conditions.
+8. **Add empirical intent when applicable**. For actual-run comparison, create the Comparison Intent Document and wait for a Proceed Decision before preparation or Runs.
+9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+10. **Return status**. Report the Direction Set, Survey Contract, or Comparison Intent Document ref and the next allowed stage.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
@@ -33,6 +35,10 @@ Use at the start of a survey procedure, when a prior contract no longer fits, or
 Required fields are the user question, target audience, boundary, primary and linked source classes, seeds, coverage date, `searched_through` policy, inclusion and exclusion rules, desired verification depth, comparison mode, deliverables, resource envelope, Gate requirements, clarification mode, stop conditions, and accepted prior refs.
 
 For comparative Runs, the Comparison Intent Document additionally states candidate identities and readiness, reusable prior evidence, acquisition and environment needs, reproduce or reimplement routes, datasets, metrics, evaluators, fairness rules, repetitions or uncertainty plan, resources, Gates, unresolved decisions, and the Proceed Decision.
+
+## Artifact Operations
+
+Resolve `kaoju:direction-set`, `kaoju:survey-contract`, and `kaoju:comparison-intent` with `isomer-cli --print-json project artifacts describe <semantic-id>`. Use `project artifacts put` for a new scoped object and `project artifacts revise` for an actor-approved current-state update; the service infers all physical binding fields.
 
 ## Reference Routing
 

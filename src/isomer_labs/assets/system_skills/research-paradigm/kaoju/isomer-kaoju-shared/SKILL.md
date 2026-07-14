@@ -13,11 +13,13 @@ Kaoju preserves what was inspected, what was executed, and how strongly each cla
 
 1. **Resolve current context**. Identify the Research Topic, Research Inquiry, Effective Topic Context, fresh Workspace Runtime state, active procedure, accepted input refs, intended evidence use, latest candidates, and duplicate or supersession posture.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage begin`; follow returned instructions within this skill, the user request, evidence, Gate, and owner constraints, while empty callback results continue normally and conflicts must be reported.
-3. **Load the applicable contracts**. Read only the pages selected in **Reference Routing**. Before an accepted write, read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's `artifact-bindings.md`.
-4. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
-5. **Route governed work**. Apply the worker output policy, then use the applicable owner for Topic Workspace mutation, environment work, provider access, execution, Gates, and bound durable recording.
-6. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-7. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs and a resume point when applicable.
+3. **Resolve bindings from the registry**. Read only the pages selected in **Reference Routing**. Before an accepted write, resolve the exact semantic id with `isomer-cli --print-json project artifacts describe <semantic-id>`, then read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's concise `artifact-bindings.md`. The versioned JSON binding registry is the physical contract authority.
+4. **Discover durable state through the state DB**. Use `project artifacts latest|list|show` with the binding-defined scope key. Never scan the Topic Workspace filesystem to find a durable Artifact. Reject ambiguous current candidates and stale or corrupt content links.
+5. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
+6. **Route governed work and checkpoint it**. Apply the worker output policy. Use a Service Request for supported owner mutation, an Execution Adapter Command Request for execution, a human Gate for material authorization, and an immutable Run plus checkpoint for claim-bearing or resumable work.
+7. **Persist through typed operations**. Use `project artifacts put` for a new current-state object or append-only event and `project artifacts revise` only when the binding permits revision. Let the service infer record kind, profile, semantic label, content mode, scope policy, and managed locator.
+8. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+9. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs, Run checkpoint, pending Gate, blocker and Service Request refs, and the first incomplete stage as the resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from these contracts without weakening them.
 
@@ -37,6 +39,18 @@ Evidence labels are part of the evidence. Violating their letter also violates t
 - Upstream-faithful, adapted, repaired, failed, and blocked attempts remain separate Findings or Runs.
 - Accepted structured records use canonical managed JSON with `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`; readable views are derived.
 - An audit diagnoses evidence; it does not silently repair, delete, relabel, or invent it.
+
+## Durable State and File Authority
+
+The Topic Workspace state DB is the discovery authority for every accepted durable output. A structured Artifact's managed JSON file is its content authority. An ordinary-file Artifact names its media type, checksum, size, and managed or authorized external locator. A directory Artifact is authoritative only through its versioned checksummed manifest. A Canonical External Repository remains externally owned and is identified by its registered locator and immutable commit.
+
+Files in an Agent Workspace, Local Tmp Surface, export directory, source checkout, or rendered view are staging or derived material until a typed Artifact operation registers them. Producers never choose internal record-store subpaths. Consumers never reconstruct those paths or use directory scanning as a fallback.
+
+## Gates, Service Requests, and Runs
+
+A Gate records a human authorization decision; it does not execute work. A Service Request records requested operational work and remains distinct from the Research Task, Workflow Stage, command request, and Run. The Service Team returns support Artifact, blocker, Gate, command request, Run, and provenance refs without exposing provider-specific dispatch payloads in Kaoju records.
+
+Every executable stage uses the applicable Research Operation Extension Point and an Execution Adapter Command Request. Begin or resume a Run before execution, checkpoint completed refs and the first incomplete stage, and complete the Run with immutable command, inputs, outputs, logs, timing, status, and resume posture. Identical transient retries may use the approved bound; any material change requires a revised plan and Gate and creates a separate Run.
 
 ## Reference Routing
 

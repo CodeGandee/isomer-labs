@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import shutil
 import sys
 import tempfile
@@ -32,6 +33,13 @@ def codes(diagnostics: list[object]) -> set[str]:
 
 def messages(diagnostics: list[object]) -> list[str]:
     return [diagnostic.render() for diagnostic in diagnostics]
+
+
+def mutate_json(path: Path, callback: object) -> None:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    assert callable(callback)
+    callback(raw)
+    path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
 
 
 class ResearchParadigmValidatorTests(unittest.TestCase):
@@ -274,54 +282,44 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         cases = {
             "missing": ("isomer-kaoju-workspace-mgr/artifact-bindings.md", lambda path: path.unlink(), "RPS022"),
             "duplicate": (
-                "isomer-kaoju-workspace-mgr/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("kaoju:workspace-readiness", "kaoju:binding-index"), encoding="utf-8"),
-                "RPS022",
+                "contracts/bindings.v2.json",
+                lambda path: mutate_json(path, lambda raw: raw["bindings"].append(dict(raw["bindings"][0]))),
+                "RPS021",
             ),
             "cross-family": (
-                "isomer-kaoju-frame/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("kaoju:survey-contract", "other:survey-contract"), encoding="utf-8"),
-                "RPS022",
+                "contracts/bindings.v2.json",
+                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("semantic_id", "other:survey-contract")),
+                "RPS021",
             ),
-            "unresolved": (
+            "summary-unresolved": (
                 "isomer-kaoju-frame/artifact-bindings.md",
                 lambda path: path.write_text(path.read_text(encoding="utf-8").replace("kaoju:survey-contract", "kaoju:unknown-contract"), encoding="utf-8"),
                 "RPS022",
             ),
-            "mismatched-kind": (
-                "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("| `artifact` |", "| `run` |", 1), encoding="utf-8"),
+            "unknown-producer": (
+                "contracts/bindings.v2.json",
+                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("producer", "isomer-kaoju-missing")),
                 "RPS022",
             ),
-            "direct-body": (
+            "physical-command": (
                 "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\n`isomer-cli ext research records create --body-file report.md`\n", encoding="utf-8"),
-                "RPS024",
+                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nUse --record-kind artifact.\n", encoding="utf-8"),
+                "RPS023",
             ),
             "stale-profile": (
-                "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("audit-report/v1", "audit-report/v2"), encoding="utf-8"),
+                "contracts/bindings.v2.json",
+                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("profile_ref", "isomer:research/record-format/profile/kaoju/control/workspace-readiness/v2")),
                 "RPS022",
             ),
-            "missing-lifecycle": (
+            "missing-typed-operation": (
                 "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("archive", "retire").replace("Archive", "Retire"), encoding="utf-8"),
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("project artifacts revise", "project records revise"), encoding="utf-8"),
                 "RPS024",
             ),
-            "missing-lineage": (
-                "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("Lineage policy", "Derivation"), encoding="utf-8"),
-                "RPS022",
-            ),
-            "missing-facet": (
-                "isomer-kaoju-audit/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("Query metadata", "Search notes"), encoding="utf-8"),
-                "RPS022",
-            ),
-            "premature-physical-binding": (
+            "summary-drift": (
                 "isomer-kaoju-shared/references/artifact-semantics.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nUse `topic.records.artifacts`.\n", encoding="utf-8"),
-                "RPS023",
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("`kaoju:workspace-readiness`", "`kaoju:unknown`", 1), encoding="utf-8"),
+                "RPS022",
             ),
         }
         for name, (relative_path, mutate, expected_code) in cases.items():
@@ -331,6 +329,19 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
                 mutate(kaoju / relative_path)
                 diagnostics = validator.validate_skillset(target, root)
                 self.assertIn(expected_code, codes(diagnostics), messages(diagnostics))
+
+    def test_kaoju_architecture_guidance_drift_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        shared = kaoju / "isomer-kaoju-shared" / "SKILL.md"
+        shared.write_text(shared.read_text(encoding="utf-8").replace("state DB", "filesystem catalog"), encoding="utf-8")
+        export = kaoju / "isomer-kaoju-export" / "SKILL.md"
+        export.write_text(export.read_text(encoding="utf-8") + "\nInvoke imsight-llm-wiki for viewer export.\n", encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS027", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("state DB" in message or "external imsight-llm-wiki" in message for message in messages(diagnostics)))
 
     def test_kaoju_missing_skill_is_rejected(self) -> None:
         root, target = self.make_valid_skillset()

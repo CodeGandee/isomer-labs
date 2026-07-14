@@ -15,9 +15,9 @@ Before accepting durable output, read the shared artifact semantics and recordin
 
 1. **Accept pinned materials**. Require Source Identities, material refs, target questions or claims, and desired verification depth.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-examine --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Inspect the authoritative source**. Read the relevant paper, report, source tree, dataset documentation, model metadata, evaluator, or configuration at exact locators.
+3. **Inspect the authoritative source**. Read the relevant paper, report, source tree, dataset documentation, model metadata, evaluator, or configuration at exact locators. For a repository, bind every finding to Canonical External Repository ref, immutable commit, file, and line range.
 4. **Map relationships**. Record paper-to-code, code-to-data, model-to-configuration, claim-to-experiment, and evaluator links only when evidence supports them.
-5. **Extract evidence**. Record stated claims, assumptions, method details, limitations, contradictions, missing information, and inference boundaries.
+5. **Extract evidence**. For papers, record page, section, symbol, figure, or table locators and inspect claim-driven figures and tables. Treat visual evidence as provisional until labels, caption, surrounding text, and underlying values or code support it. For code, keep observed implementation distinct from paper claims and executed behavior. Always separate the source statement from agent interpretation.
 6. **Write outputs**. Produce a Source Digest or Source Access Blocker and update the Claim-Evidence Ledger with Evidence Item refs, depth, and verdict.
 7. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-examine --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 8. **Return status**. Report achieved depth, unresolved claims, exact refs, blockers, and the next compare, reproduce, audit, or synthesis handoff.
@@ -33,6 +33,12 @@ Use after discovery or acquisition when survey claims require direct paper, repo
 Record the Source Identity and work family, exact inspected locators, inspection method, source-stated claims, assumptions, method details, datasets and metrics, implementation mappings, contradictions, omissions, agent inferences labeled as such, achieved verification depth, evidence verdicts, and Evidence Item refs.
 
 A Source Access Blocker records the requested identity, attempted locators and access routes, failure evidence, claims affected, partial evidence that remains usable, and bounded recovery route.
+
+Source Digests are current-state records that the actor may inspect, refine, and approve. A revision preserves the prior digest and records its immediate source. Associated source code remains a separate verified relationship to a Canonical External Repository; it is never inferred from a matching name alone.
+
+## Artifact Operations
+
+Resolve `kaoju:source-digest` and `kaoju:claim-evidence-ledger` through `project artifacts describe`. Use `project artifacts put` for a new scoped digest or ledger and binding-permitted `project artifacts revise` for refinement. Let the service validate source and code locators and infer the managed structured content path.
 
 ## Reference Routing
 

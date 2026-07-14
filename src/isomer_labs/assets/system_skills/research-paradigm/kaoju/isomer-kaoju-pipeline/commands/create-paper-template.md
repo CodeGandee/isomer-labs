@@ -2,35 +2,17 @@
 
 ## Workflow
 
-1. **Resolve context**. Identify the Research Topic, Research Inquiry, Topic Workspace, user request, and requested template name (default `main`).
-2. **Determine template posture**. Use the venue, paper type, and target from the user request or paper contract to select a document class and engine posture.
-3. **Generate files**. Write a `.tex` entry point, bibliography stub, style and included files, and `README.md` under `intent/derived/writing-template/<template-name>/`.
-4. **Compile preview**. Run a Tectonic-first LaTeX build on the generated source. Record the command, engine, version, logs, warnings, outputs, and terminal result.
-5. **Record template artifact**. Create or update a research record of kind `artifact` with semantic-id `kaoju:writing-template` and profile `kaoju:writing-template`. Store `template_name`, `venue`, `paper_type`, `tex_entry`, `preview_pdf_ref`, `source` (`generated`), `engine_posture`, and `status`.
-6. **Return**. Report the template name, record id, file refs, and preview build status. If the preview cannot compile, return `blocked` with diagnostics.
+1. Resolve the paper-line scope, accepted audit and synthesis basis, target reader or venue, and current canonical MyST state.
+2. Use `$isomer-kaoju-write` to select and explain an adaptive typed structure profile.
+3. Create or revise `kaoju:paper-structure-myst` and `kaoju:paper-template-myst` through typed Artifact operations. Include required section jobs, citation roles, typed display and source-ref placeholders, limitations, and venue constraints.
+4. Validate MyST syntax, headings, roles, directives, placeholders, and evidence boundaries with `isomer-cli ext kaoju paper validate` before acceptance.
+5. When the actor wants a manual-edit copy, compose `manage-paper-template` and run `ext kaoju paper export-template`. The export is versioned and derived; it is not canonical state.
+6. Return the canonical structure and template refs, diagnostics, optional export refs, and resume point.
 
-If the request does not map cleanly to this recipe, use the native planning tool to build and execute a bounded template-generation plan while keeping files under `intent/derived/writing-template/`.
+## Compatibility Mapping
 
-## Trigger
+`create-paper-template` is retained for callers that use the historical procedure name. It now creates a canonical MyST template. It never creates canonical LaTeX, writes a producer-selected internal path, or uses `kaoju:writing-template` for new state. Derived TeX is initialized later by `build-paper-pdf`.
 
-Use when the user asks to generate, create, or prepare a LaTeX paper-writing template for a Kaoju paper.
+## Gates, Blockers, and Resume
 
-## Inputs
-
-Require a Research Topic and Topic Workspace. Accept optional `--name`, `--venue`, `--paper-type`, and `--from-record`.
-
-## Outputs
-
-- Generated LaTeX template files under `intent/derived/writing-template/<template-name>/`.
-- Proof-of-compilation PDF preview.
-- `kaoju:writing-template` research record.
-
-## Stop Conditions
-
-Stop at `complete` when the template compiles and the record is stored, or at `blocked` when generation or preview compilation fails. Do not treat the preview PDF as the final paper PDF.
-
-## Common Mistakes
-
-- Treating the generated template files as canonical survey state.
-- Treating the preview PDF as the paper's publication PDF.
-- Skipping the preview compile and storing a broken template as `ready`.
+Missing accepted evidence, an unresolved paper line, invalid MyST, missing sources, or unsupported binding state blocks acceptance. Resume at structure selection, template validation, or optional export.

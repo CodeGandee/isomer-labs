@@ -1,10 +1,11 @@
 # Validation
 
-A successful build does not make a paper ready. A bound `kaoju:paper-validation-report` applies required checks and records unavailable checks explicitly.
+A successful build does not make a paper ready. A bound `kaoju:paper-validation-report` applies required checks from canonical MyST through derived TeX and PDF and records unavailable checks explicitly.
 
 ## Structural and Textual Checks
 
-- `.tex` source identity and included-file digests
+- canonical MyST revision, structure, citations, placeholders, display refs, and evidence boundaries
+- derived TeX identity, conversion diagnostics, compatibility fingerprint, and included-file digests
 - absence of authored section numbers
 - citation resolution and bibliography consistency
 - engine exit status, missing references, missing glyphs, overfull content, material warnings

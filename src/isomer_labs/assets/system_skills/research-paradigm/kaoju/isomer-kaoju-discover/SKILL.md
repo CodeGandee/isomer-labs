@@ -19,9 +19,11 @@ Before accepting durable output, read the shared artifact semantics and recordin
 4. **Search five source classes**. Search papers, technical reports, source repositories, datasets, and models while treating papers and reports as primary related works.
 5. **Normalize identities**. Group supported version families, record immutable material identities when available, and retain ambiguous relationships.
 6. **Decide inclusion**. Record query or parent seed, route, relevance rationale, decision, reason, `latest_after`, `searched_through`, and achieved depth for every candidate.
-7. **Write discovery outputs**. Produce a Discovery Ledger and candidate Related-Work Catalog or delta with unresolved identities and frontier limits.
-8. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-discover --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-9. **Return status**. Report accepted output refs, blockers, and the acquire or examine handoff.
+7. **Compose a direction reading list when requested**. Keep exactly one direction scope per list. Target three reachable priority and three reachable secondary items across five source classes, anchored by papers or technical reports. Include stable links, source type, one-line relevance, summary, planned depth, query provenance, version family, disposition, priority, and blocker recovery. A shortage is a preserved warning, not a blocker.
+8. **Write discovery outputs**. Produce a Discovery Ledger and candidate Related-Work Catalog, delta, curated intake delta, or Reading List with unresolved identities and frontier limits. Human nominations use the normal identity and disposition path.
+9. **Support inspection and refinement**. Render the current scoped Reading List from the state DB, accept additions, removals, thread expansion, or shorter-list approval, and revise the same scoped object with actor approval and lineage.
+10. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-discover --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+11. **Return status**. Report accepted output refs, shortage warnings, blockers, approval posture, and the acquire or examine handoff.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
@@ -38,6 +40,12 @@ Use for broad landscape discovery, priority handling of user-nominated sources, 
 | Direction expansion | Trace backward, neighboring, forward, and post-seed work; record parent seed and route for each candidate. |
 
 Each curated item ends as included, excluded, duplicate, or blocked. Each blocked item carries its attempted Source Identity and next resolution route.
+
+Every Discovery Ledger entry records the query text or seed, provider or access method, route, search time and `searched_through` date, resolved identity, version family, disposition and reason, achieved depth, and coverage limits. Search convergence is a bounded observation, not proof of completeness.
+
+## Artifact Operations
+
+Resolve each produced semantic id with `isomer-cli --print-json project artifacts describe <semantic-id>`. Use `project artifacts put` for append-only deltas and new scoped objects and `project artifacts revise` for a current Reading List or catalog update; never repeat or override inferred record kind, profile, label, scope, or locator fields.
 
 ## Reference Routing
 

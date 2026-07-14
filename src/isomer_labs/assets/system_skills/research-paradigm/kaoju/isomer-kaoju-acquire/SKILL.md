@@ -18,10 +18,11 @@ Before accepting durable output, read the shared artifact semantics and recordin
 3. **Check registered materials first**. Query repository registrations and the Topic Dataset Manifest; validate availability, fingerprint, access, task, schema, split, evaluator, and license compatibility.
 4. **Resolve immutable identity**. Pin paper version, Canonical External Repository revision, dataset version or fingerprint, model revision or digest, and relevant subpaths.
 5. **Plan governed acquisition**. State size, storage, network, credentials, private-data, license, build, and accelerator implications; obtain required Gates.
-6. **Route acquisition**. Use the applicable provider, Topic Workspace owner, environment owner, or execution adapter and retain returned refs and logs.
-7. **Verify material**. Confirm observed identity, access posture, license metadata, integrity or fingerprint, and deviation from the request.
-8. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-acquire --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-9. **Return status**. Produce a Material Acquisition Artifact or governed blocker with exact refs and the next inspect or execute stage.
+6. **Resolve source-code requests**. Accept a URL, repository name, paper ref, or Reading List item ref. Search the Artifact Library first. When a paper association is unknown, perform bounded metadata discovery, present normal candidates for selection and approval, and preserve ambiguity or access blockers. Candidate metadata receives no evidentiary authority before verification and normal intake approval.
+7. **Route acquisition**. Use `isomer-cli project repos acquire` for repositories and the applicable provider or owner service for other materials. Repository acquisition is depth one by default and deepens only when identity or approved historical inspection requires it. Retain the Service Request, Execution Adapter Command Request, logs, Gate, and provenance refs.
+8. **Verify and register material**. Confirm observed identity, immutable commit or digest, depth posture, access, license, integrity, and deviation from the request. Update the scoped `kaoju:artifact-library`; record verified paper-to-repository relationships in `kaoju:associated-source-code` without merging paper and code identity.
+9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-acquire --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+10. **Return status**. Produce Artifact Library, Associated Source Code, Material Acquisition Manifest, or Source Access Blocker refs and the next inspect or execute stage.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
@@ -34,6 +35,10 @@ Use after discovery or framing identifies material that must be read, checked ou
 The Material Acquisition Artifact records requested and observed Source Identity, source class, evidence purpose, Canonical External Repository locator when applicable, immutable revision or fingerprint, selected subpaths, access and license posture, size, owner and Gate refs, destination registration, integrity checks, provenance, and limitations.
 
 For datasets, query the Topic Dataset Manifest first. Registration creates a managed link through the Topic Workspace owner; it never copies, moves, rewrites, or deletes the external target.
+
+## Artifact Operations
+
+Resolve `kaoju:artifact-library`, `kaoju:associated-source-code`, `kaoju:material-acquisition-manifest`, and `kaoju:source-access-blocker` through `project artifacts describe`. Persist only through typed `project artifacts put` or binding-permitted `revise`; repository bytes and external materials remain outside structured payloads.
 
 ## Reference Routing
 

@@ -200,6 +200,8 @@ def query_index_list(
     profile: str | None = None,
     artifact_family: str | None = None,
     semantic_id: str | None = None,
+    scope_key: str | None = None,
+    unscoped_only: bool = False,
     procedure: str | None = None,
     latest_only: bool = False,
     facet: str | None = None,
@@ -223,6 +225,8 @@ def query_index_list(
                 profile=profile,
                 artifact_family=artifact_family,
                 semantic_id=semantic_id,
+                scope_key=scope_key,
+                unscoped_only=unscoped_only,
                 procedure=procedure,
                 facet=facet,
                 limit=limit,
@@ -607,6 +611,8 @@ def _query_records(
     profile: str | None = None,
     artifact_family: str | None = None,
     semantic_id: str | None = None,
+    scope_key: str | None = None,
+    unscoped_only: bool = False,
     procedure: str | None = None,
     facet: str | None = None,
     limit: int | None = None,
@@ -622,6 +628,10 @@ def _query_records(
         conditions.append(record_index.c.artifact_family == artifact_family)
     if semantic_id is not None:
         conditions.append(record_index.c.semantic_id == semantic_id)
+    if scope_key is not None:
+        conditions.append(record_index.c.scope_key == scope_key)
+    elif unscoped_only:
+        conditions.append(record_index.c.scope_key.is_(None))
     if procedure is not None:
         conditions.append(record_index.c.procedure == procedure)
     statement = select(record_index).where(and_(*conditions)).order_by(record_index.c.updated_at.desc(), record_index.c.record_id.asc())

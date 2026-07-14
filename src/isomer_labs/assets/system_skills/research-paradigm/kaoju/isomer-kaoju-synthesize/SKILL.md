@@ -34,6 +34,10 @@ Every output states its Survey Contract boundary, evidence cutoff, `searched_thr
 
 The Claim Status Table gives each conclusion a status, depth, verdict, supporting and challenging evidence refs, Run or source locators, and limitations. The Kaoju Dossier assembles the catalog, field model, comparisons, first-hand Findings, failures, limitations, unresolved questions, and reading path without hiding their lineage.
 
+## Artifact Operations
+
+Resolve `kaoju:field-summary` and `kaoju:kaoju-dossier` through `project artifacts describe`. Persist accepted synthesis only through typed `project artifacts put` or binding-permitted `revise`; let the service infer profile, semantic label, scope, and managed content locator.
+
 ## Reference Routing
 
 Use `$isomer-kaoju-shared` for evidence, survey Artifact, lineage, and terminal contracts. Return a not-ready audit to the owning repair stage; use `$isomer-kaoju-audit` again after new evidence exists.

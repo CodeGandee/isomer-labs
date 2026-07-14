@@ -72,17 +72,18 @@ def latest_record_candidates(
 ) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
     """Select explicit latest candidates and retain ambiguous competitors."""
 
-    grouped: dict[str, list[dict[str, object]]] = {}
+    grouped: dict[tuple[str, str | None], list[dict[str, object]]] = {}
     ungrouped: list[dict[str, object]] = []
     for row in rows:
         semantic_id = row.get("semantic_id") or row.get("latest_for_semantic_id")
         if not isinstance(semantic_id, str) or not semantic_id:
             ungrouped.append(row)
             continue
-        grouped.setdefault(semantic_id, []).append(row)
+        scope_key = row.get("scope_key")
+        grouped.setdefault((semantic_id, scope_key if isinstance(scope_key, str) and scope_key else None), []).append(row)
     selected = list(ungrouped)
     diagnostics: list[dict[str, object]] = []
-    for semantic_id, candidates in sorted(grouped.items()):
+    for (semantic_id, scope_key), candidates in sorted(grouped.items(), key=lambda item: (item[0][0], item[0][1] or "")):
         superseded = {
             str(candidate["supersedes_record_id"])
             for candidate in candidates
@@ -101,8 +102,9 @@ def latest_record_candidates(
                 {
                     "severity": "warning",
                     "code": "query_index_latest_ambiguous",
-                    "message": f"Semantic id {semantic_id} has competing latest candidates: {', '.join(record_ids)}.",
+                    "message": f"Semantic id {semantic_id} in scope {scope_key or '<legacy-unscoped>'} has competing latest candidates: {', '.join(record_ids)}.",
                     "semantic_id": semantic_id,
+                    "scope_key": scope_key,
                     "record_ids": record_ids,
                 }
             )

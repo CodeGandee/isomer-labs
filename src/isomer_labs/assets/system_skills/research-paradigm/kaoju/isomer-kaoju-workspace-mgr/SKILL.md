@@ -15,11 +15,11 @@ Before accepting durable output, read the shared artifact semantics and recordin
 
 1. **Resolve scope**. Resolve Effective Topic Context, fresh Workspace Runtime state, the Research Topic, Research Inquiry, Topic Workspace, selected procedure and skills, accepted prior refs, selected actors, and worker output policy.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-workspace-mgr --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Validate record surfaces**. Resolve `topic.records.artifacts`, `topic.records.views`, and `topic.records.runs`; resolve the neutral provider, every selected profile, the shared semantic registry, each selected `artifact-bindings.md`, and exact family, semantic-id, procedure, latest, payload, lineage, render, and export query support.
-4. **Inspect current posture**. Query relevant candidates with exact `--artifact-family kaoju`, `--semantic-id`, procedure, and `--latest-only` filters; inspect duplicates, supersession, Topic Dataset Manifest state, repositories, access, licenses, storage, compute, time, actor posture, worker output policy, required Gates, and selected reset checkpoint.
+3. **Validate record surfaces**. Resolve `topic.records.artifacts`, `topic.records.views`, and `topic.records.runs`; validate access to the Workspace Runtime state DB, the binding registry version, every selected profile and semantic label, each content mode, each selected `artifact-bindings.md`, scoped latest selection, lineage, render, and export support.
+4. **Inspect current posture**. Query relevant candidates through `project artifacts latest|list|show` with exact semantic ids and binding-defined scope keys. Inspect legacy unscoped ambiguity, duplicates, supersession, stale or corrupt content links, Topic Dataset Manifest state, repositories, access, licenses, storage, compute, time, actor posture, worker output policy, required Gates, and selected reset checkpoint. Never scan directories as a discovery fallback.
 5. **Classify and route gaps**. Separate missing read-only context from governed mutations, environment work, credentials, private data, large acquisition, builds, accelerator Runs, owner actions, and reset decisions. Retain returned refs.
 6. **Record binding index**. Validate and write `kaoju:binding-index` with selected skills, every semantic id, exact profile and label availability, binding status, owner, blockers, and next allowed stage.
-7. **Record readiness or blocker**. Validate and write `kaoju:workspace-readiness` with reusable inputs, dataset posture, verified identities, resource boundaries, query and actor posture, blockers, and next allowed stage. Prevent affected accepted writes when support is missing.
+7. **Record readiness or blocker**. Validate and write `kaoju:workspace-readiness` through typed Artifact operations with reusable inputs, dataset posture, verified identities, content-mode and scope readiness, resource boundaries, query and actor posture, blockers, expected Run outputs, and next allowed stage. Prevent affected accepted writes when support is missing.
 8. **Apply reset posture**. When bootstrap records or explicitly user-selected survey state should survive reset, call `isomer-cli project topic-reset update-checkpoint --topic <topic> <checkpoint-id>` with exact record ids, structured payload ids and files, export paths, semantic labels, actor refs, and provenance refs. Report all ordinary unpreserved state as subject to the accepted reset plan.
 9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-workspace-mgr --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 10. **Return status**. Report `complete`, `paused`, or `blocked` with binding-index and readiness refs, reset posture, next stage, and a resume point.
@@ -37,6 +37,12 @@ The Workspace Readiness Artifact records the resolved Topic Workspace, current s
 Dataset compatibility requires availability, fingerprint, access, task, schema, split, evaluator, and license compatibility. A managed link proves neither identity nor suitability.
 
 The Binding Index records selected skill coverage by exact semantic id, profile ref, record kind, semantic label, producer binding page, lifecycle availability, status, and blocker. A ready index and readiness result are canonical bound records, not direct Markdown setup notes. If two active latest candidates compete without explicit supersession, report ambiguity and block the dependent write.
+
+Readiness also proves that each selected content mode has an authoritative link, the scoped-query surface selects one current candidate, the Run service can checkpoint and resume, and the worker output policy names staging, promotion, and cleanup posture. A filesystem path alone proves none of these conditions.
+
+## Artifact Operations
+
+Resolve `kaoju:binding-index` and `kaoju:workspace-readiness` with `isomer-cli --print-json project artifacts describe <semantic-id>`. Persist them only through `project artifacts put` or binding-permitted `revise`; let the service infer physical fields and the managed locator.
 
 ## Reset Contract
 

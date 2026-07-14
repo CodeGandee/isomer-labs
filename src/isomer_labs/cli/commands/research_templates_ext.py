@@ -48,11 +48,11 @@ TemplateCallback = Callable[
 
 
 def register_research_templates_commands(research_group: click.Group) -> None:
-    @research_group.group(name="templates", help="Manage paper-writing LaTeX templates.")
+    @research_group.group(name="templates", help="Inspect and repair legacy non-canonical LaTeX templates; use ext kaoju paper for new paper state.")
     def templates_group() -> None:
         pass
 
-    @templates_group.command(name="create", help="Generate a LaTeX writing template and compile a preview PDF.")
+    @templates_group.command(name="create", help="Deprecated: create an explicitly legacy non-canonical LaTeX template.")
     @_common_options
     @_topic_selection_options
     @click.option("--name", "template_name", default=DEFAULT_TEMPLATE_NAME, show_default=True, help="Template name.")
@@ -227,7 +227,6 @@ def register_research_templates_commands(research_group: click.Group) -> None:
             build_result = _compile_preview(template_dir)
             request = ResearchRecordRequest(
                 record_kind="artifact",
-                record_id=record["id"],
                 status="ready" if build_result["ok"] else "blocked",
                 semantic_id=TEMPLATE_SEMANTIC_ID,
                 format_profile_ref=TEMPLATE_PROFILE_REF,
@@ -340,6 +339,13 @@ def _with_template_context(
             },
         )
         return _emit_template_failure(command, options, payload, all_diagnostics)
+    payload["canonical"] = False
+    payload["compatibility_surface"] = "legacy-latex-template"
+    payload["deprecation"] = {
+        "code": "research_templates_noncanonical",
+        "message": "ext research templates preserves historical LaTeX inspection and repair only; it does not create canonical Kaoju paper state.",
+        "migration": "Use $isomer-kaoju-pipeline create-paper-template for canonical MyST and ext kaoju paper for exchange, derivation, TeX initialization, and PDF builds.",
+    }
     click.echo(dumps_raw_json(payload))
     return 0
 

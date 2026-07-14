@@ -1,37 +1,82 @@
 # Kaoju Artifact Semantics
 
-This registry defines durable survey meanings. Producer-local `artifact-bindings.md` pages decide how each meaning is persisted and operated.
+This storage-neutral page is generated from `../../contracts/bindings.v2.json`. The JSON registry is the only authority for record kind, profile, semantic label, content mode, producer, consumers, relationships, revision, scope, latest selection, validation, acceptance, and migration. Skills use the meanings below and ask the typed Artifact service to resolve their physical contracts.
 
-| Semantic id | Meaning | Required semantic content | Producer | Consumers | Update intent |
-| --- | --- | --- | --- | --- | --- |
-| `kaoju:workspace-readiness` | Readiness of the active survey workspace and support surfaces. | Resolved context, reusable inputs, resource limits, blockers, and next allowed stage. | isomer-kaoju-workspace-mgr | all Kaoju stages | Revise when readiness changes. |
-| `kaoju:binding-index` | Coverage of selected survey meanings by usable persistence contracts. | Selected skills, covered ids, availability, blockers, and next allowed stage. | isomer-kaoju-workspace-mgr | all Kaoju stages | Revise when selected skills or support changes. |
-| `kaoju:survey-contract` | Accepted boundary for one survey. | Question, scope, source classes, cutoff, inclusion rules, depth, resources, Gates, and stop conditions. | isomer-kaoju-frame | discover, acquire, examine, compare, audit, synthesize | Revise only when the accepted boundary changes. |
-| `kaoju:comparison-intent` | User-reviewable plan for an empirical comparison. | Candidates, desired conclusions, reuse, inputs, environment, reproduction route, metrics, fairness, resources, Gates, and open decisions. | isomer-kaoju-frame | reproduce, compare, audit | Revise during clarification before approval; preserve approved versions. |
-| `kaoju:proceed-decision` | Explicit decision to clarify, proceed, pause, or stop. | Chosen route, reasons, accepted intent version, conditions, and actor. | isomer-kaoju-frame | pipeline and empirical stages | Append each decision as a separate event. |
-| `kaoju:discovery-ledger` | Account of bounded discovery activity and candidate dispositions. | Queries, routes, cutoff, candidates, duplicates, exclusions, blockers, and frontier. | isomer-kaoju-discover | examine, audit, synthesize | Revise current ledger; retain discovery deltas. |
-| `kaoju:related-work-catalog` | Current catalog of works relevant to the survey. | Stable work ids, families, material identities, types, relevance, dispositions, routes, depth, refs, and limits. | isomer-kaoju-synthesize | all survey stages and user | Revise current catalog after accepted deltas. |
-| `kaoju:related-work-delta` | Auditable additions or changes to a related-work catalog. | Base version, additions, changes, exclusions, affected claims, and evidence. | isomer-kaoju-discover | audit, synthesize | Create one descendant per bounded expansion. |
-| `kaoju:curated-intake-delta` | Account of user-nominated works and their survey effects. | Every nomination, resolved identity, disposition, digest or blocker, and proposed changes. | isomer-kaoju-discover | audit, synthesize | Create one descendant per intake pass. |
-| `kaoju:source-digest` | Exact inspected understanding of one source identity. | Identity, inspected locators, claims, method details, implementation mapping, contradictions, achieved depth, and evidence. | isomer-kaoju-examine | compare, audit, synthesize | Create a new descendant when identity or inspection depth changes. |
-| `kaoju:source-access-blocker` | Evidence that a requested source could not be inspected as required. | Requested identity, attempted locators, failure evidence, claim effect, and recovery route. | isomer-kaoju-examine | pipeline, audit, user | Create separately for each bounded access attempt. |
-| `kaoju:claim-evidence-ledger` | Current mapping between survey claims and accepted evidence. | Claim ids, support, challenges, depth, verdicts, contradictions, and gaps. | isomer-kaoju-examine | compare, audit, synthesize | Revise current ledger; preserve evidence descendants. |
-| `kaoju:material-acquisition-manifest` | Identities and availability of acquired papers, repositories, models, checkpoints, and outputs. | Immutable locator, revision or digest, class, size, access, license, observed time, staleness, managed link, and provenance. | isomer-kaoju-acquire | workspace manager and empirical stages | Revise current manifest; retain acquisition observations. |
-| `kaoju:topic-dataset-manifest` | Current inventory of datasets made available to the topic. | Stable id, identity, description, external and managed locators, access, license, fingerprint, observed metadata, staleness, and provenance. | isomer-kaoju-acquire | workspace manager, reproduce, compare | Revise after owner-confirmed registration, refresh, or removal. |
-| `kaoju:generated-dataset` | Definition and checks for generated empirical inputs. | Generator, input assumptions, schema, size, seeds, checks, outputs, and limitations. | isomer-kaoju-reproduce | reproduce, compare, audit | Create separately per generated input identity. |
-| `kaoju:method-trial` | Interpreted result of one bounded paper-method trial. | Trial contract, material identities, attempts, numbers, quality checks, verdicts, failures, and limits. | isomer-kaoju-reproduce | audit, synthesize | Create per trial; add follow-up descendants rather than overwriting attempts. |
-| `kaoju:method-trial-run` | First-hand execution evidence for one trial attempt. | Purpose, fidelity, inputs, code, environment, command, seeds, outputs, metrics, checks, status, and limitations. | isomer-kaoju-reproduce | method trial, audit, compare | Create separately for faithful, adapted, repaired, failed, blocked, and probe attempts. |
-| `kaoju:theory-comparison` | Source-grounded comparison of named works without empirical execution. | Domain dimensions, candidate analysis, exact evidence per cell, assumptions, disagreements, and non-comparability. | isomer-kaoju-compare | audit, synthesize | Create per comparison boundary; follow up with descendants. |
-| `kaoju:comparison-matrix` | Audited cross-method comparison view. | Candidates, dimensions or metrics, evidence per cell, variability, adaptations, failures, and non-comparability. | isomer-kaoju-compare | audit, synthesize, user | Create per accepted comparison contract; revise only presentation-neutral corrections. |
-| `kaoju:comparison-run` | First-hand execution evidence for one candidate under a comparison contract. | Candidate, contract, purpose, fidelity, inputs, environment, command, metrics, outputs, checks, status, and limits. | isomer-kaoju-compare | comparison matrix, audit | Create separately for every candidate and attempt. |
-| `kaoju:audit-report` | Non-mutating assessment of survey evidence readiness. | Checked scope, defects, severity, affected claims, accepted evidence, repair routes, and readiness decision. | isomer-kaoju-audit | pipeline, synthesize, user | Create separately for each audit boundary. |
-| `kaoju:claim-status-table` | Current conclusion-by-conclusion evidence status. | Claim, status, depth, verdict, supporting and challenging evidence, contradictions, and limits. | isomer-kaoju-synthesize | user and downstream research | Revise after an accepted audit changes conclusion posture. |
-| `kaoju:field-summary` | Bounded synthesis of the surveyed field. | Themes, chronology, taxonomy, representative works, implementations, disagreements, gaps, and coverage limits. | isomer-kaoju-synthesize | user and downstream research | Revise from accepted audited deltas. |
-| `kaoju:kaoju-dossier` | Navigable assembly of accepted survey outputs. | Boundary, catalog, comparisons, findings, failures, limitations, unresolved questions, reading path, and exact refs. | isomer-kaoju-synthesize | user and downstream research | Revise after accepted synthesis changes the assembly. |
-| `kaoju:paper-contract` | Accepted publication boundary for a survey paper. | Target reader or venue, survey questions, scope, contribution posture, evidence boundary, template ref, quality metrics, thresholds, build policy, and validation requirements. | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Revise when the accepted boundary changes. |
-| `kaoju:survey-manuscript` | Current reader-facing and evidence views of the paper. | Organizing spine, section jobs, displays, scoped conclusions, source identities, locators, verification depths, contradictions, audit limits, `.tex` entry point, and included-file refs. | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Revise current manuscript; create build descendants. |
-| `kaoju:paper-build-run` | One immutable document-build attempt. | Command, engine, template digests, logs, warnings, outputs, and terminal result. | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Create one descendant per attempt. |
-| `kaoju:paper-validation-report` | Non-mutating assessment of manuscript and build. | Survey-quality profile, structural, citation, compile, extracted-text, and visual findings, verdict, defects, warnings. | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Create one descendant per assessment. |
-| `kaoju:publication-bundle` | Navigable assembly of accepted writing records and file refs. | Contract, manuscript, build run, validation report, sources, bibliography, PDF, limitations, and provenance refs. | isomer-kaoju-write | user and downstream research | Revise when manuscript or contract changes. |
-| `kaoju:writing-template` | Editable LaTeX template and proof-of-compilation preview. | Template name, venue, paper type, `.tex` entry point, included files, README, engine posture, and preview PDF ref. | isomer-kaoju-pipeline | isomer-kaoju-pipeline, isomer-kaoju-write | Revise current template; create descendants on refresh. |
-| `kaoju:survey-terminal-report` | Terminal state of one bounded Kaoju procedure. | Status, accepted outputs, stage outcomes, resources, Gates, blockers, limitations, and resume point. | isomer-kaoju-pipeline | user and resumed procedures | Create one report per bounded procedure invocation. |
+## Workspace and Control
+
+- `kaoju:workspace-readiness`: resolved Topic Workspace readiness, limits, blockers, and next allowed stage.
+- `kaoju:binding-index`: validation result for the selected semantic contracts and supporting profiles.
+- `kaoju:survey-contract`: accepted question, boundary, source classes, cutoff, depth, resources, Gates, and stop conditions.
+- `kaoju:direction-set`: actor-reviewed direction proposals, choices, custom entries, feasibility notes, and history.
+- `kaoju:comparison-intent`: actor-reviewed plan for a source-grounded or empirical comparison.
+- `kaoju:proceed-decision`: explicit clarify, proceed, pause, reject, or stop decision.
+- `kaoju:survey-terminal-report`: complete, paused, or blocked outcome with accepted refs, limitations, and resume point.
+
+## Discovery and Acquisition
+
+- `kaoju:discovery-ledger`: bounded searches, routes, dates, identities, version families, dispositions, gaps, and frontier.
+- `kaoju:reading-list`: one direction-scoped priority and secondary target set with coverage and shortage notes.
+- `kaoju:related-work-catalog`: current identity-resolved catalog of relevant primary works and supporting materials.
+- `kaoju:related-work-delta`: auditable additions, changes, exclusions, and evidence against a catalog revision.
+- `kaoju:curated-intake-delta`: dispositions and survey effects of actor-nominated materials.
+- `kaoju:artifact-library`: current state of acquired papers, reports, repositories, datasets, models, and related materials.
+- `kaoju:associated-source-code`: verified relationship between a work identity and an immutable repository identity.
+- `kaoju:material-acquisition-manifest`: observed identities, availability, checksums or commits, access posture, and provenance.
+- `kaoju:topic-dataset-manifest`: actor-authorized inventory of external and managed datasets available to the topic.
+- `kaoju:source-access-blocker`: evidence, claim impact, and recovery route for one failed bounded acquisition.
+
+## Examination, Comparison, Audit, and Synthesis
+
+- `kaoju:source-digest`: inspected source identity, exact locators, statements, interpretations, contradictions, and depth.
+- `kaoju:claim-evidence-ledger`: current mapping from claim ids to supporting, challenging, provisional, and missing evidence.
+- `kaoju:theory-comparison`: exact-evidence comparison of named works without empirical execution.
+- `kaoju:comparison-matrix`: audited cross-method view with evidence, variability, adaptations, failures, and non-comparability.
+- `kaoju:comparison-run`: immutable first-hand execution evidence for one comparison candidate and attempt.
+- `kaoju:audit-report`: non-mutating readiness assessment, defects, affected claims, repair routes, and decision.
+- `kaoju:claim-status-table`: current conclusion status, depth, evidence, contradictions, and limits.
+- `kaoju:field-summary`: bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits.
+- `kaoju:kaoju-dossier`: navigable assembly of accepted survey outputs and exact refs.
+
+## Environment and Trials
+
+- `kaoju:generated-dataset`: reproducible generated input definition, outputs, checks, purpose, and limitations.
+- `kaoju:env-prep-plan`: dependencies, critical path, candidate environments, risks, authorization, and expected smoke outputs.
+- `kaoju:env-gate-revision`: before-and-after environment Gate state and authorized change.
+- `kaoju:pixi-env-ref`: exact resolved packages, lock identity, declared flexible intent, and readiness.
+- `kaoju:smoke-run-script`: durable task-critical smoke program.
+- `kaoju:smoke-run-result`: immutable smoke observation, environment, command request, outputs, and verdict.
+- `kaoju:method-trial-plan`: bounded source, environment, data, wrapper, evaluator, metrics, resources, fidelity, and retry policy.
+- `kaoju:method-trial-wrapper`: durable minimal wrapper for a compatible upstream command or the smallest recorded adaptation.
+- `kaoju:method-trial`: readable compatibility result for a historical reproduction-owned trial.
+- `kaoju:method-trial-run`: immutable execution attempt with exact source, environment, data, command, timing, logs, and status.
+- `kaoju:method-trial-result`: immutable interpreted verdict, checks, depth, fidelity, adaptations, and limitations.
+
+## MyST-First Paper
+
+- `kaoju:paper-contract`: accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy.
+- `kaoju:paper-structure-myst`: canonical typed section jobs and display plan in MyST.
+- `kaoju:paper-template-myst`: canonical actor-editable MyST structure template.
+- `kaoju:paper-draft-myst`: canonical grounded paper draft in MyST.
+- `kaoju:paper-draft-md`: deterministic non-canonical Markdown derivation.
+- `kaoju:paper-display`: file-backed figure or table content referenced from MyST by a typed stable ref.
+- `kaoju:citation-map`: citation roles, source refs, locators, claim links, display links, and evidence status.
+- `kaoju:paper-template-export`: versioned actor-editable template exchange directory.
+- `kaoju:paper-template-manifest`: source revision, base digest, tied draft, paper line, and export policy.
+- `kaoju:paper-revision-log`: append-only canonical paper changes, evidence effects, and actor decisions.
+- `kaoju:paper-template-tex`: derived TeX template tree and compatibility fingerprint.
+- `kaoju:paper-draft-tex`: derived TeX draft tree, citations, included files, and conversion diagnostics.
+- `kaoju:paper-pdf`: immutable built PDF output.
+- `kaoju:paper-compile-log`: immutable compiler command, diagnostics, output, and fallback rationale.
+- `kaoju:paper-pdf-revision-log`: append-only authorized build repairs and material-change Gates.
+- `kaoju:paper-build-run`: immutable document build attempt and terminal state.
+- `kaoju:paper-validation-report`: syntax, structure, citation, textual, visual, evidence, and publication assessment.
+- `kaoju:publication-bundle`: accepted canonical and derived paper refs with audit and provenance.
+- `kaoju:survey-manuscript`: readable compatibility record for historical LaTeX-first manuscripts.
+- `kaoju:writing-template`: readable compatibility record for historical LaTeX-first templates.
+
+## Wiki Export and Viewer
+
+- `kaoju:llm-wiki-export`: checksummed managed Markdown and JSON survey export.
+- `kaoju:llm-wiki-metadata`: canonical topic, artifact, revision, checksum, page, relationship, and provenance mapping.
+- `kaoju:llm-wiki-viewer`: independently implemented packaged static viewer deployment.
+- `kaoju:llm-wiki-viewer-manifest`: viewer version, file checksums, wiki target, launch metadata, and exposure posture.

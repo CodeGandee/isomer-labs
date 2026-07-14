@@ -390,6 +390,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             placeholder TEXT,
             artifact_family TEXT,
             semantic_id TEXT,
+            scope_key TEXT,
             semantic_id_source TEXT,
             artifact_type TEXT,
             procedure TEXT,
@@ -428,6 +429,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_record_index (record_kind, status);
         CREATE INDEX IF NOT EXISTS idx_research_record_index_profile
             ON research_record_index (format_profile_ref, profile_family, profile_name);
+        CREATE INDEX IF NOT EXISTS idx_research_record_index_semantic_scope
+            ON research_record_index (topic_workspace_id, semantic_id, scope_key, status);
 
         CREATE TABLE IF NOT EXISTS research_record_edges (
             id TEXT PRIMARY KEY,
@@ -1302,6 +1305,7 @@ def _ensure_record_index_payload_file_columns(connection: sqlite3.Connection) ->
         "latest_for_semantic_id": "TEXT",
         "artifact_family": "TEXT",
         "semantic_id": "TEXT",
+        "scope_key": "TEXT",
         "semantic_id_source": "TEXT",
         "artifact_type": "TEXT",
         "procedure": "TEXT",
@@ -1312,6 +1316,10 @@ def _ensure_record_index_payload_file_columns(connection: sqlite3.Connection) ->
     for column, declaration in additions.items():
         if column not in columns:
             connection.execute(f"ALTER TABLE research_record_index ADD COLUMN {column} {declaration}")
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_research_record_index_semantic_scope "
+        "ON research_record_index (topic_workspace_id, semantic_id, scope_key, status)"
+    )
 
 
 def _write_metadata(connection: sqlite3.Connection, metadata: WorkspaceRuntimeMetadata) -> None:

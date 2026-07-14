@@ -23,11 +23,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Discover version-aware papers, reports, repositories, datasets, and models. | `isomer-kaoju-discover` |
 | Pin and route governed acquisition of selected materials. | `isomer-kaoju-acquire` |
 | Inspect paper, report, code, dataset, or model evidence at exact locators. | `isomer-kaoju-examine` |
-| Run one intended-data trial or explicit generated-data capability probe. | `isomer-kaoju-reproduce` |
+| Test a genuine source-grounded reproduction claim under the stronger fidelity contract. | `isomer-kaoju-reproduce` |
+| Prepare a code environment, run one approved source-code trial, or perform an explicit generated-data capability probe. | `isomer-kaoju-trial` |
 | Build a source-grounded theory comparison or controlled empirical comparison. | `isomer-kaoju-compare` |
 | Diagnose survey coverage, identity, evidence, lineage, and fairness without repair. | `isomer-kaoju-audit` |
 | Write accepted survey conclusions from an accepted Audit Report. | `isomer-kaoju-synthesize` |
 | Turn accepted audit and synthesis records into a publication-ready manuscript and bundle. | `isomer-kaoju-write` |
+| Export accepted state-DB records to a self-contained LLM wiki and operate the package-owned viewer. | `isomer-kaoju-export` |
 
 ## DeepSci Bootstrap and Pipeline
 

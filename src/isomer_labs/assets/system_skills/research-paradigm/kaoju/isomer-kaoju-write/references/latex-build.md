@@ -1,35 +1,22 @@
-# LaTeX Build
+# Derived TeX and PDF Build
 
-Every publication build is a reproducible Run that compiles the bound `.tex` source through a Tectonic-first LaTeX workflow.
+Every PDF build is a distinct reproducible Run derived from one accepted MyST revision. TeX is an inspected conversion product, not canonical paper state.
+
+## Initialization and Inspection
+
+- Parse MyST structurally and record source checksums, citations, included files, unsupported constructs, and conversion diagnostics.
+- Fingerprint venue or document class, toolchain policy, required directives, tables, citations, floats, raw blocks, and venue structure.
+- Reuse a compatible TeX template. Revise an incompatible template and preserve both versions.
+- Require direct agent inspection of derived TeX before claiming build readiness.
 
 ## Build Policy
 
-- Attempt Tectonic first when the source and template are compatible.
-- Record the exact command, engine version, logs, warnings, outputs, and terminal result.
-- If Tectonic is unavailable, incompatible, prohibited by the venue, or fails for a concrete reason, record that reason before falling back to `latexmk`, `pdflatex`, `xelatex`, `lualatex`, BibTeX, Biber, or a venue-required workflow.
-- Do not invoke Pandoc, browser print-to-PDF, or any Markdown-to-PDF conversion as a compilation substitute.
+- Route the exact command through the `document_build` Research Operation Extension Point and Execution Adapter Command Request.
+- Attempt the selected compatible engine and record its version, logs, warnings, outputs, and terminal status.
+- Record a concrete unavailable-tool, template, venue, or compile-failure reason before any fallback.
+- Automatic post-authorization repair is limited to presentation-only or TeX syntax changes. Canonical content, dependencies, toolchain policy, or interpretation changes require a revised plan and human Gate.
+- Never use browser print-to-PDF or a Markdown-to-PDF conversion as a substitute for the MyST-to-TeX build graph.
 
-## Build Run Record
+## Run and Output Records
 
-- `.tex` entry point and included-file digests
-- bibliography and style file refs
-- template digest
-- engine and version
-- exact command and environment
-- output PDF and log refs
-- warnings, resource use, terminal status
-- Provenance Records
-
-## Pre-Build Validation
-
-Reject the build when the source contains:
-- authored numeric section prefixes such as `\section{1. Introduction}`
-- malformed section hierarchy
-- unresolved title metadata
-- invalid citation or display refs
-- direct Markdown-to-PDF commands
-- template-incompatible structural commands
-
-## Fallback Disclosure
-
-Every fallback records the unavailable tool, template constraint, venue requirement, or concrete Tectonic failure before execution.
+Record the canonical MyST revision, TeX template and draft manifests, included-file digests, bibliography refs, engine and exact command, environment identity, compile log, output PDF checksum and media type, inspection result, repair classification, fallback rationale, resource use, terminal status, publication Gate, and Provenance Records.

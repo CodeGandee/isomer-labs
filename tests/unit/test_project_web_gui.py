@@ -274,7 +274,7 @@ class ProjectWebGuiTests(unittest.TestCase):
                     "artifact_type": "source-digest",
                     "procedure": "landscape-pass",
                     "sections": {
-                        "source": {"source_class": "paper"},
+                        "source_identity": {"source_class": "paper"},
                         "findings": [{"claim": "Method uses retrieval.", "verdict": "source-supported"}],
                     },
                     "files": [{"path": "paper.pdf", "file_role": "source"}],

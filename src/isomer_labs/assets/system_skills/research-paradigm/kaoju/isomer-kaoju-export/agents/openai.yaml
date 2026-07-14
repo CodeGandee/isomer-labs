@@ -1,0 +1,7 @@
+metadata:
+  version: "0.2.3"
+
+interface:
+  display_name: "isomer-kaoju-export"
+  short_description: "Export and view accepted survey records."
+  default_prompt: "Use $isomer-kaoju-export to export accepted Kaoju records as a self-contained LLM Wiki and manage its packaged local viewer."

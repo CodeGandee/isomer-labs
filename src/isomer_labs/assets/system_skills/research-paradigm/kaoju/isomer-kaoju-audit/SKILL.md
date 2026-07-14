@@ -35,6 +35,10 @@ Record the frozen target refs, checks performed, defects and severity, affected 
 
 The readiness decision is `ready`, `ready-with-narrowed-claims`, or `not-ready`. Only the first two can become an accepted input to synthesis, and narrowed claims must be explicit.
 
+## Artifact Operations
+
+Resolve `kaoju:audit-report` and `kaoju:claim-status-table` through `project artifacts describe`. Use typed `project artifacts put` for every non-mutating audit event. Do not revise the audited target or repeat physical binding fields in the command.
+
 ## Reference Routing
 
 Use `$isomer-kaoju-shared` for evidence, lineage, Artifact, and terminal contracts. Route a chosen repair to the owning stage skill; do not perform it inside the audit.

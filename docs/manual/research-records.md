@@ -10,25 +10,24 @@ Records may contain more fields than the GUI currently displays. GUI data-contra
 
 Built-in extension-neutral profiles use `isomer:research/record-format/profile/<family>/<class>/<semantic-id>/v1`. They share `isomer:research/record-format/schema/research-structured-record/v1` and `isomer:research/record-format/template/markdown/research-structured-record/v1`. The packaged Kaoju catalog is declarative: each entry defines compatible record kinds, required payload paths, relationship and file paths, query facets, renderer, version, and status.
 
-Every neutral payload contains non-empty `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`. Create it with the exact producer binding:
+Every neutral payload contains non-empty `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`. Kaoju producers resolve the checked registry and let the typed Artifact service infer record kind, profile, semantic label, content mode, scope policy, and managed locator:
 
 ```bash
-isomer-cli --print-json ext research records create \
+isomer-cli --print-json project artifacts describe kaoju:survey-contract \
+  --topic my-topic
+
+isomer-cli --print-json project artifacts put \
+  kaoju:survey-contract survey-contract.json \
   --topic my-topic \
-  --record-kind artifact \
-  --semantic-label topic.records.artifacts \
-  --semantic-id kaoju:survey-contract \
-  --format-profile isomer:research/record-format/profile/kaoju/contract/survey-contract/v1 \
-  --skill isomer-kaoju-frame \
   --producer isomer-kaoju-frame \
-  --consumer isomer-kaoju-discover \
-  --payload-file survey-contract.json
+  --scope-key survey:main \
+  --relationships-json '[]'
 ```
 
-Use `revise` for content changes to current-state objects. Use metadata-only `update` for lifecycle or routing changes. Deltas, audits, failures, repaired attempts, and Runs remain separate descendants. The original DeepSci `--placeholder` contract and all `isomer:deepsci/record-format/*` refs remain supported without aliasing.
+Use `project artifacts revise` for binding-permitted content changes to current-state objects. Use metadata-only record updates for lifecycle or routing changes. Deltas, audits, failures, repaired attempts, and Runs remain separate descendants. Supported `ext research records` operations delegate to the same underlying record services for compatibility. The original DeepSci `--placeholder` contract and all `isomer:deepsci/record-format/*` refs remain supported without aliasing.
 
 ## Query and Material Boundaries
 
-Query neutral records with exact `--artifact-family`, `--semantic-id`, `--procedure`, and optional `--latest-only` filters. Explicit revision and supersession metadata determine latest candidates; competing active records produce ambiguity diagnostics. Profile-declared paths drive relationship, file, claim, metric, catalog, source, evidence, procedure, and terminal-status facets without family-specific backend code.
+Query Kaoju state through `project artifacts latest|list|show` with exact semantic id and binding-defined scope. Query other neutral records with exact `--artifact-family`, `--semantic-id`, `--procedure`, and optional `--latest-only` filters. Explicit revision and supersession metadata determine latest candidates; competing active records produce ambiguity diagnostics. Directory scanning is not a fallback for semantic discovery. Profile-declared paths drive relationship, file, claim, metric, catalog, source, evidence, procedure, and terminal-status facets without family-specific backend code.
 
 Repository trees, papers, datasets, model weights, checkpoints, raw outputs, and logs remain external or Topic Workspace-managed material. Structured records store immutable locators, revisions or digests, access and license posture, managed links, file refs, observed time, staleness policy, and provenance. A Topic Dataset Manifest indexes datasets; it does not contain them.

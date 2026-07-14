@@ -822,8 +822,9 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("Unknown packaged system extension: missing", missing.output)
 
         kaoju_runtime = runner.invoke(cli.app, ["ext", "kaoju", "--help"])
-        self.assertNotEqual(0, kaoju_runtime.exit_code)
-        self.assertIn("No such command 'kaoju'", kaoju_runtime.output)
+        self.assertEqual(0, kaoju_runtime.exit_code, kaoju_runtime.output)
+        self.assertIn("paper", kaoju_runtime.output)
+        self.assertIn("wiki", kaoju_runtime.output)
 
     def test_system_skills_cli_force_and_upgrade_refresh_manifest_tracked_skills(self) -> None:
         root = self.make_root()
@@ -2859,7 +2860,10 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(68, len(data["insertion_points"]))
+        self.assertEqual(72, len(data["insertion_points"]))
+        catalog_skills = {item["target_skill"] for item in data["insertion_points"]}
+        self.assertIn("isomer-kaoju-trial", catalog_skills)
+        self.assertIn("isomer-kaoju-export", catalog_skills)
 
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--core-only", "--json"], cwd=root)
         data = json.loads(output)

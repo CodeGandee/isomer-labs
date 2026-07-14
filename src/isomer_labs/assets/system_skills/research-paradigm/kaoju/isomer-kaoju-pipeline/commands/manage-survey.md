@@ -3,7 +3,7 @@
 ## Workflow
 
 1. **Select an action**. Accept exactly one of `list`, `show`, `status`, or `export` plus the Research Topic or survey ref required by that action.
-2. **Resolve current state**. Use Workspace Path Resolution and canonical bound records; do not infer state from stale prompt memory or rendered files.
+2. **Resolve current state**. Query canonical bound records through the state DB and typed Artifact service; do not infer state from stale prompt memory, rendered files, or directory scans.
 3. **Execute the action**. Apply the action contract below without changing evidence meaning, audit state, or lineage.
 4. **Return results**. Report selected refs, current status, diagnostics, or export destination and provenance.
 
@@ -13,10 +13,10 @@ If the request does not map cleanly to these actions, use the native planning to
 
 | Action | Behavior |
 | --- | --- |
-| `list` | Run `isomer-cli --print-json ext research records query list --topic <topic> --artifact-family kaoju` with optional exact `--semantic-id`, `--procedure`, status, profile, and `--latest-only`; return stable id, title, summary, semantic id, revision posture, procedure, terminal status, validation state, and detail locator. |
-| `show` | Run `isomer-cli --print-json ext research records show --topic <topic> <record-id> --include-payload`, then use `records query lineage` for accepted inputs, history, blockers, audit posture, and related outputs. |
-| `status` | Query `kaoju:survey-terminal-report` and the requested procedure with `--latest-only`, then inspect lineage. Report every competing latest candidate as ambiguity; never select by timestamp alone. |
-| `export` | Run `records render <record-id>` or `records render <record-id> --output-file <authorized-export-path>` through the recorded profile. Preserve source id and payload digest as export provenance without changing latest state. |
+| `list` | Run `isomer-cli --print-json project artifacts list --topic <topic>` with optional exact semantic-id and scope filters; return stable ref, title, summary, semantic id, scope, revision posture, terminal status, validation state, and content diagnostics. |
+| `show` | Run `isomer-cli --print-json project artifacts show --topic <topic> <artifact-ref>` and inspect returned payload, relationships, lineage, content authority, and validation state. |
+| `status` | Use `project artifacts latest` for the scoped terminal report and `project runs status` for the active procedure. Report every competing current candidate as ambiguity; never select by timestamp alone. |
+| `export` | Use the typed renderer for a single record, `ext kaoju paper` for paper exchange or derivation, and `ext kaoju wiki` for a survey wiki. Preserve source revisions and checksums without changing canonical state. |
 
 ## Inputs and Outputs
 

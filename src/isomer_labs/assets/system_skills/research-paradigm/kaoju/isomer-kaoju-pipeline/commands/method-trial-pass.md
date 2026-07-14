@@ -6,7 +6,7 @@
 2. **Check readiness**. Use `$isomer-kaoju-workspace-mgr` and query the Topic Dataset Manifest before asking for data or proposing a download.
 3. **Resolve and inspect materials**. Use `$isomer-kaoju-discover`, `$isomer-kaoju-acquire`, and `$isomer-kaoju-examine` to pin paper, code, dataset or generation plan, model, evaluator, and method-to-code mapping.
 4. **Freeze execution**. Use `$isomer-kaoju-frame` to accept the execution contract and user decisions for material substitutions or expensive work.
-5. **Run the trial**. Use `$isomer-kaoju-reproduce` to preserve upstream-faithful, adapted, repaired, failed, blocked, and probe Runs separately.
+5. **Run the trial**. Use `$isomer-kaoju-trial` to preserve upstream-faithful, adapted, repaired, failed, blocked, and probe Runs separately. Invoke `$isomer-kaoju-reproduce` only when the accepted conclusion is genuine reproduction and its stronger fidelity contract can be met.
 6. **Audit**. Use `$isomer-kaoju-audit` to check identity, execution fidelity, input basis, evaluator, raw outputs, patches, and claim calibration.
 7. **Synthesize**. If audit accepts the evidence, use `$isomer-kaoju-synthesize` to add the Method Trial Artifact and Findings to the survey.
 8. **Stop**. Return first-hand numbers, limitations, and the pipeline terminal report.

@@ -18,6 +18,11 @@ The package SHALL provide one versioned machine-readable Kaoju binding registry 
 - **THEN** it resolves the binding through `isomer-cli project artifacts describe` or the equivalent package service
 - **AND** per-skill binding pages are generated summaries or concise references rather than independent physical binding authorities
 
+#### Scenario: Binding selects a storage surface without defining an internal path
+- **WHEN** a Kaoju binding selects a managed content mode and default Semantic Workspace Surface Label
+- **THEN** the artifact service allocates a generic internal path from record kind and opaque record or revision identity
+- **AND** the binding and producer do not declare, construct, or rely on a Kaoju-specific subdirectory convention
+
 ### Requirement: Kaoju Structured Payload Is Canonical
 Accepted structured Kaoju records SHALL use validated file-backed JSON payloads as canonical machine-readable content, while non-structured artifacts SHALL use their registered ordinary file, directory manifest, external locator, or canonical repository reference as authoritative content.
 
@@ -28,7 +33,7 @@ Accepted structured Kaoju records SHALL use validated file-backed JSON payloads 
 
 #### Scenario: Human-facing structured view is derived
 - **WHEN** an agent or user needs Markdown, CSV, a matrix, a dossier, or another readable representation of a structured Kaoju record
-- **THEN** it uses an on-demand render or explicit export from the canonical JSON record
+- **THEN** it uses an on-demand render, registered view, explicit export, or worker-visible projection from the canonical JSON record
 - **AND** later agents do not parse or edit that representation as canonical structured state
 
 #### Scenario: Paper and material files remain authoritative

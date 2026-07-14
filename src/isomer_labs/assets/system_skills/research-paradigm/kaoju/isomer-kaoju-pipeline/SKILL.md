@@ -1,103 +1,91 @@
 ---
 name: isomer-kaoju-pipeline
-description: Use when a user requests a bounded Kaoju survey, curated intake, direction expansion, theory comparison, paper-method trial, empirical comparison, survey audit, paper writing, template generation, or survey and dataset management.
+description: Use when a user asks to choose survey directions, build or ingest a reading list, draft or build a paper, export a survey wiki, ingest source code, prepare an environment, run a code trial, or invoke a retained Kaoju compatibility procedure.
 ---
 
 # Kaoju Pipeline
 
 ## Overview
 
-Select and run one bounded survey procedure, paper-writing procedure, or grouped management action. Preserve stage handoffs, require audit before synthesis, and stop with explicit status instead of choosing the next macro procedure autonomously.
-
-Read the shared artifact semantics and recording rules before dispatch, each producer skill's `artifact-bindings.md` before an accepted write, and this skill's binding page before creating `kaoju:survey-terminal-report`. An unavailable binding or record surface is a storage blocker; do not fall back to invented paths, profiles, canonical Markdown, or untracked JSON.
+Route one accepted survey intent to its bounded owner, preserve Gates and durable checkpoints, and stop at the selected terminal boundary. This skill never performs a focused owner's research or operational work.
 
 ## Workflow
 
-1. **Resolve context**. Identify the Research Topic, Research Inquiry, Topic Workspace, user request, clarification mode, accepted prior refs, and requested start stage.
+1. **Resolve context**. Identify the Research Topic, Topic Workspace, user intent, clarification posture, accepted refs, and requested resume stage.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Select one command**. Choose the procedure or helper whose trigger matches the request; use `help` only to explain the public interface.
-4. **Honor clarification-first**. When requested, inspect read-only context, ask one A/B/C/D choice for each material ambiguity, and obtain the user's proceed choice before acquisition, mutation, or Runs.
-5. **Validate predecessors**. Require the command page's accepted input refs; resume from an explicit starting stage only after identity, lineage, and audit-state checks.
-6. **Execute one bounded recipe**. Invoke the focused Kaoju skills in the listed order, preserve handoff refs, and route governed operations to their platform owners.
-7. **Audit before synthesis**. Every normal survey procedure invokes `$isomer-kaoju-audit`; invoke `$isomer-kaoju-synthesize` only from an accepted Audit Report.
-8. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-9. **Return terminal report**. Report `complete`, `paused`, or `blocked`, accepted output refs, stage outcomes, resources, Gates, blockers, and a resume point when applicable.
+3. **Load the checked contract**. Treat `../contracts/survey-process.v2.json` as the exact skill, intent, compatibility, and manager inventory. Do not invent a public command.
+4. **Route one intent**. Select the exact command page below. This skill coordinates stages but does not search, interpret evidence, mutate environments, execute trials, author canonical paper content, or write wiki files itself.
+5. **Begin a Run**. Use `isomer-cli project runs begin` with the procedure id, control mode, input refs, expected outputs, and first stage.
+6. **Honor clarification and Gates**. Ask one material choice at a time, preserve custom and multiple selections, and stop at every required human, publication, or network-exposure Gate.
+7. **Dispatch focused owners**. Invoke only the skills and typed CLI services named by the command page. Operational support mutation uses a recorded Service Request; executable work uses an Execution Adapter Command Request.
+8. **Checkpoint each stage**. Record completed refs, pending Gate, blockers, Service Requests, terminal status, and the first incomplete stage as the resume hint.
+9. **Audit before synthesis or paper writing**. Accepted claim-bearing output never bypasses the audit boundary.
+10. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+11. **Return one terminal report**. Report `complete`, `paused`, or `blocked`; accepted refs; Run, Gate, Service Request, and blocker refs; limitations; and resume point. Do not choose another macro intent autonomously.
 
-If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from the available commands and constraints without inventing a new public procedure.
+If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
 ## When to Use
 
-Use for the nine named survey and paper-writing procedures and two grouped managers below. Do not use this skill for generic repository refresh, environment repair, standalone reproduction, source audit, list-passes, a full-Kaoju macro, or a generic resume procedure; keep those steps inside the active procedure or route them to their owner.
+Use as the single public router for the ten current survey intents, retained compatibility procedures, and grouped managers. Call a focused Kaoju skill directly only when the caller already selected its bounded stage and supplies verified predecessors.
 
-## Subcommands
+## Survey Intents
 
-### Procedural Subcommands
-
-| Subcommand | Use For | Detail |
+| Intent | Owner | Detail |
 | --- | --- | --- |
-| `landscape-pass` | Survey a field and produce related works plus a bounded summary. | `commands/landscape-pass.md` |
-| `curated-intake-pass` | Digest user-nominated sources and apply an audited survey delta. | `commands/curated-intake-pass.md` |
-| `direction-expansion-pass` | Trace seed works backward, nearby, forward, and after the seeds. | `commands/direction-expansion-pass.md` |
-| `theory-comparison-pass` | Compare named works through source-grounded domain dimensions. | `commands/theory-comparison-pass.md` |
-| `method-trial-pass` | Obtain and run one paper method on intended or generated data. | `commands/method-trial-pass.md` |
-| `comparative-pass` | Plan and run a controlled empirical comparison after user approval. | `commands/comparative-pass.md` |
-| `audit-survey-pass` | Audit accepted survey evidence and synthesize only when ready. | `commands/audit-survey-pass.md` |
-| `paper-pass` | Turn accepted audit and synthesis records into a publication bundle. | `commands/paper-pass.md` |
-| `create-paper-template` | Generate an editable LaTeX template and compile a preview PDF. | `commands/create-paper-template.md` |
+| `choose-directions` | `isomer-kaoju-frame` | `commands/choose-directions.md` |
+| `build-reading-list` | `isomer-kaoju-discover` | `commands/build-reading-list.md` |
+| `ingest-reading-item` | `isomer-kaoju-acquire`, then `isomer-kaoju-examine` | `commands/ingest-reading-item.md` |
+| `draft-paper` | `isomer-kaoju-write` | `commands/draft-paper.md` |
+| `manage-paper-template` | `isomer-kaoju-write` | `commands/manage-paper-template.md` |
+| `build-paper-pdf` | `isomer-kaoju-write` | `commands/build-paper-pdf.md` |
+| `export-survey-wiki` | `isomer-kaoju-export` | `commands/export-survey-wiki.md` |
+| `ingest-source-code` | `isomer-kaoju-acquire`, then `isomer-kaoju-examine` | `commands/ingest-source-code.md` |
+| `prepare-code-run` | `isomer-kaoju-trial` plus Service Team | `commands/prepare-code-run.md` |
+| `run-code-trial` | `isomer-kaoju-trial` | `commands/run-code-trial.md` |
 
-### Helper Subcommands
+## Compatibility Procedures
 
-| Subcommand | Actions | Detail |
+| Procedure | Current Route | Detail |
+| --- | --- | --- |
+| `landscape-pass` | Frame, discover, acquire, examine, audit, synthesize | `commands/landscape-pass.md` |
+| `curated-intake-pass` | Discover, acquire, examine, audit | `commands/curated-intake-pass.md` |
+| `direction-expansion-pass` | Discover, acquire, examine, audit | `commands/direction-expansion-pass.md` |
+| `theory-comparison-pass` | Examine, compare, audit, synthesize | `commands/theory-comparison-pass.md` |
+| `method-trial-pass` | Trial for bounded execution; reproduce only for genuine reproduction | `commands/method-trial-pass.md` |
+| `comparative-pass` | Frame, trial, compare, audit | `commands/comparative-pass.md` |
+| `audit-survey-pass` | Audit, then synthesize if accepted | `commands/audit-survey-pass.md` |
+| `paper-pass` | `draft-paper`, then optional `build-paper-pdf` | `commands/paper-pass.md` |
+| `create-paper-template` | Write a canonical MyST structure and template, then optionally export | `commands/create-paper-template.md` |
+
+## Grouped Managers
+
+| Manager | Actions | Detail |
 | --- | --- | --- |
 | `manage-survey` | `list`, `show`, `status`, `export` | `commands/manage-survey.md` |
 | `manage-dataset` | `register`, `list`, `show`, `refresh`, `remove` | `commands/manage-dataset.md` |
-
-Helpers group object operations and remain lower-level implementation commands. Ordinary users should enter through a survey procedure unless they explicitly request one management action.
-
-### Misc Subcommands
-
-| Subcommand | Use For | Detail |
-| --- | --- | --- |
-| `help` | List the nine procedures, their triggers, and public support interface. | This entrypoint. |
-
-## Clarification and Resume
-
-Clarification-first is an interaction mode shared by all procedures. Use `$isomer-kaoju-shared` to present three concrete A/B/C options plus D for free form, mark one suggestion, then ask whether the user wants to clarify more or proceed.
-
-Resume is accepted context: name durable input refs, verify them, state the starting stage, and preserve earlier failures and Decisions. If accepted refs cannot establish safe continuation, return `paused` or `blocked` rather than starting over silently.
+| `manage-paper-template` | `export`, `apply`, `inspect`, `status` | `commands/manage-paper-template.md` |
 
 ## Reference Routing
 
-Read the selected local command page, then use `$isomer-kaoju-shared` for cross-stage contracts. Invoke `$isomer-kaoju-workspace-mgr`, `$isomer-kaoju-frame`, `$isomer-kaoju-discover`, `$isomer-kaoju-acquire`, `$isomer-kaoju-examine`, `$isomer-kaoju-reproduce`, `$isomer-kaoju-compare`, `$isomer-kaoju-audit`, `$isomer-kaoju-synthesize`, and `$isomer-kaoju-write` only as required by that page.
+Use `$isomer-kaoju-shared` for Artifact, evidence, interaction, Gate, owner-routing, and terminal contracts. Use `$isomer-kaoju-workspace-mgr` when readiness is missing or stale, and load only the selected command page plus its named focused owners.
 
-## Foundational Principle
+## Artifact Operations
 
-One command means one bounded user intent. Do not expand a completed pass into another macro procedure merely because the evidence suggests useful follow-up work.
+Resolve `kaoju:proceed-decision` and `kaoju:survey-terminal-report` through `project artifacts describe`. Persist them only through typed `project artifacts put` or binding-permitted `revise`; use `project runs` for procedure checkpoints and terminal Run state.
 
-## Rationalization Table
+## Miscellaneous
 
-| Rationalization | Required response |
-| --- | --- |
-| “A full run is more helpful.” | Execute only the selected procedure and return possible next routes. |
-| “Audit can wait until the final project.” | Audit every claim-bearing procedure before synthesis. |
-| “Resume should be a command.” | Treat it as verified refs plus an explicit starting stage. |
-| “Separate CRUD verbs are clearer.” | Keep survey and dataset actions grouped under their object managers. |
-
-## Red Flags
-
-- The command surface contains a generic maintenance task.
-- A procedure synthesizes from an unaccepted Audit Report.
-- A paper-pass starts without accepted audit and synthesis records.
-- `create-paper-template` treats its preview PDF as the final paper PDF.
-- Empirical preparation starts before a Proceed Decision.
-- The terminal report starts another procedure.
+`help` lists this checked surface. It performs no durable mutation.
 
 ## Common Mistakes
 
-- Choosing `method-trial-pass` for several methods. Use `comparative-pass` when controlled cross-method numbers are the intent.
-- Treating curated intake as automatic endorsement. Every item still needs identity, inspection, disposition, and audit.
-- Exporting a survey as new evidence. Export changes representation, not evidence status or lineage.
+- Treating resume as a fresh procedure. Verify durable refs and restart at the first incomplete stage.
+- Asking an operational service skill to make a research decision.
+- Using a directory scan when the state DB query is empty or ambiguous.
+- Routing wiki work to an external skill checkout.
+- Treating TeX or PDF as canonical paper state.
 
 ## Chat Response
 
-Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
+Lead with the selected intent and current outcome. Use natural-language Markdown and name durable refs, blockers, limitations, and the exact resume stage. Keep machine schemas in Artifacts and JSON CLI output.

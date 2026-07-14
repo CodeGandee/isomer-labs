@@ -46,6 +46,7 @@ QUERY_FACETS = {"ideas", "routes", "metrics", "claims", "facts"}
 QUERY_INDEX_RECORD_KINDS = {
     "research_inquiry",
     "research_task",
+    "service_request",
     "run",
     "artifact",
     "gate",
@@ -69,6 +70,7 @@ record_index = Table(
     Column("placeholder", Text),
     Column("artifact_family", Text),
     Column("semantic_id", Text),
+    Column("scope_key", Text),
     Column("semantic_id_source", Text),
     Column("artifact_type", Text),
     Column("procedure", Text),

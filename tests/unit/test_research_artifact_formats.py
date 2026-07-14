@@ -47,7 +47,7 @@ class ResearchArtifactFormatProviderTests(TestCase):
 
     def test_catalog_profiles_resolve_with_declarative_metadata(self) -> None:
         provider = ResearchRecordFormatProvider()
-        self.assertEqual(31, len(provider.profile_refs()))
+        self.assertEqual(47, len(provider.profile_refs()))
         registry = ArtifactFormatRegistry()
         registry.register_provider(provider)
         profile, resolution, diagnostics = ArtifactFormatResolver(registry).resolve_profile(SURVEY_CONTRACT_REF)

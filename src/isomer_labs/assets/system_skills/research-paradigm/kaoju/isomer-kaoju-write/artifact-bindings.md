@@ -1,21 +1,9 @@
-# Write Artifact Bindings
+# Kaoju Write Binding Summary
 
-Read `../isomer-kaoju-shared/references/artifact-semantics.md` for meaning. This page is the physical and API authority for the rows below.
+The versioned package registry at `../contracts/bindings.v2.json` is the only physical binding authority. This generated summary identifies direct producer responsibility without defining paths, profiles, record kinds, labels, or expanded command shapes.
 
-| Semantic id | Storage item | Record kind | Semantic label | Neutral profile | Producer | Consumers | Payload role | Lineage policy | Revision policy | Query metadata |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `kaoju:paper-contract` | Managed JSON snapshot | `artifact` | `topic.records.artifacts` | `isomer:research/record-format/profile/kaoju/contract/paper-contract/v1` | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Current target, scope, contribution posture, quality metrics, template ref, and validation policy | `derived_from` accepted audit and synthesis records | Revise current contract | target, venue, paper_type, template_name, status |
-| `kaoju:survey-manuscript` | Managed JSON snapshot | `artifact` | `topic.records.artifacts` | `isomer:research/record-format/profile/kaoju/manuscript/survey-manuscript/v1` | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Current reader-facing paper view, evidence view, section jobs, citation ledger, `.tex` entry point, and included-file refs | `derived_from` paper contract and accepted survey records | Revise current manuscript | sections, claims, citations, template_name, status |
-| `kaoju:paper-build-run` | Managed JSON snapshot | `run` | `topic.records.runs` | `isomer:research/record-format/profile/kaoju/run/paper-build-run/v1` | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | One immutable document-build attempt | `descendant_of` manuscript revision and prior build attempt when applicable | Immutable descendant | engine, template_digest, exit_status, output_refs |
-| `kaoju:paper-validation-report` | Managed JSON snapshot | `view_manifest` | `topic.records.views` | `isomer:research/record-format/profile/kaoju/report/paper-validation-report/v1` | isomer-kaoju-write | isomer-kaoju-pipeline, isomer-kaoju-write | Non-mutating assessment of manuscript and build | `assesses` manuscript and build run | Immutable descendant | verdict, quality_profile, defects, warnings |
-| `kaoju:publication-bundle` | Managed JSON snapshot | `artifact` | `topic.records.artifacts` | `isomer:research/record-format/profile/kaoju/bundle/publication-bundle/v1` | isomer-kaoju-write | user and downstream research | Navigable assembly of accepted writing records and file refs | `assembled_from` accepted contract, manuscript, build, validation, and provenance records | Revise when manuscript or contract changes | bundle_refs, validation_verdict, status |
+Produced semantic ids: `kaoju:paper-contract`, `kaoju:paper-structure-myst`, `kaoju:paper-template-myst`, `kaoju:paper-draft-myst`, `kaoju:paper-draft-md`, `kaoju:paper-display`, `kaoju:citation-map`, `kaoju:paper-template-export`, `kaoju:paper-template-manifest`, `kaoju:paper-revision-log`, `kaoju:paper-template-tex`, `kaoju:paper-draft-tex`, `kaoju:paper-pdf`, `kaoju:paper-compile-log`, `kaoju:paper-pdf-revision-log`, `kaoju:paper-build-run`, `kaoju:paper-validation-report`, `kaoju:publication-bundle`, `kaoju:survey-manuscript`, `kaoju:writing-template`
 
-## Normal Create
+Resolve each contract with `isomer-cli --print-json project artifacts describe <semantic-id>`. Create accepted state with `isomer-cli --print-json project artifacts put`, revise current state with `isomer-cli --print-json project artifacts revise`, and supply only the binding-defined scope key, content, relationships, producer identity, and idempotency key.
 
-```text
-isomer-cli --print-json ext research records create --topic <topic> --record-kind <row-record-kind> --semantic-label <row-semantic-label> --semantic-id <row-semantic-id> --format-profile <row-neutral-profile> --skill isomer-kaoju-write --producer 'isomer-kaoju-write' --consumer '<row-consumers>' --payload-file <payload-file> --metadata-json '{"actor_metadata":"<resolved>","procedure":"paper-writing"}' --parents-json '<accepted-input-refs>' --lineage-kind <row-lineage-kind>
-```
-
-## Lifecycle
-
-Validate and create from accepted audited inputs. List exact family and semantic id, using `--latest-only` for current contract, manuscript, or bundle; show canonical payload; update only lifecycle metadata. Revise current-state content with `records revise`, preserve prior versions, and create separate build-run and validation-report descendants. Follow-up descendants replace prior build runs and validation reports. Render on demand and export explicitly; neither output becomes canonical evidence. Archive through generic record operations.
+Use `project artifacts latest`, `list`, and `show` for state-DB discovery and inspection. Treat an empty or ambiguous query as a blocker. The Artifact service owns managed locators, content validation, revision behavior, and recovery; producers never infer an internal subpath or scan directories for semantic state.

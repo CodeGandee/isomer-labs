@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import tempfile
 from typing import Any, Mapping, TypedDict
 import uuid
 
@@ -90,6 +92,7 @@ class ResearchRecordRequest:
     status: str = "ready"
     placeholder: str | None = None
     semantic_id: str | None = None
+    scope_key: str | None = None
     profile: str | None = None
     skill: str | None = None
     producer: str | None = None
@@ -102,6 +105,7 @@ class ResearchRecordRequest:
     semantic_label: str | None = None
     body: str | None = None
     body_file: Path | None = None
+    registered_content_path: Path | None = None
     content_name: str | None = None
     payload_file: Path | None = None
     format_profile_ref: str | None = None
@@ -183,6 +187,12 @@ def create_record(
         now = utc_timestamp()
         record_id = request.record_id or _new_record_id(request)
         request = replace(request, record_id=record_id)
+        if runtime_store.get_lifecycle_record(record_id) is not None:
+            raise ResearchRecordError(
+                f"Research record already exists: {record_id}",
+                code="record_already_exists",
+                payload={"recovery_actions": ["Choose a new record id.", "Use update or revise for existing state."]},
+            )
         structured_payload = None
         if _structured_request(request):
             structured_payload, content_path, structured_diagnostics = _prepare_structured_payload(
@@ -219,34 +229,48 @@ def create_record(
             content_path=str(content_path) if content_path is not None else None,
             provenance_refs=[_provenance_ref(request.record_kind, record_id)],
         )
-        with runtime_store.connection:
-            runtime_store.upsert_lifecycle_record(record)
-            if structured_payload is not None:
-                runtime_store.upsert_structured_payload(
-                    _structured_payload_record(
-                        context,
-                        record_id=record_id,
-                        preparation=structured_payload,
-                        created_at=now,
-                        updated_at=now,
-                        provenance_refs=[_provenance_ref("structured-payload", record_id)],
+        try:
+            with runtime_store.connection:
+                runtime_store.upsert_lifecycle_record(record)
+                if structured_payload is not None:
+                    runtime_store.upsert_structured_payload(
+                        _structured_payload_record(
+                            context,
+                            record_id=record_id,
+                            preparation=structured_payload,
+                            created_at=now,
+                            updated_at=now,
+                            provenance_refs=[_provenance_ref("structured-payload", record_id)],
+                        )
                     )
+                lineage_payload = _store_request_lineage(
+                    context,
+                    runtime_store,
+                    request,
+                    created_at=now,
+                    updated_at=now,
                 )
-            lineage_payload = _store_request_lineage(
-                context,
-                runtime_store,
-                request,
-                created_at=now,
-                updated_at=now,
-            )
-            idea_payload = _store_request_ideas(
-                context,
-                runtime_store,
-                request,
-                record_id=record_id,
-                created_at=now,
-                updated_at=now,
-            )
+                idea_payload = _store_request_ideas(
+                    context,
+                    runtime_store,
+                    request,
+                    record_id=record_id,
+                    created_at=now,
+                    updated_at=now,
+                )
+        except Exception as exc:
+            removed = _cleanup_failed_record_content(request, content_path)
+            raise ResearchRecordError(
+                f"Research record commit failed: {exc}",
+                code="record_commit_failed",
+                payload={
+                    "recovery_actions": [
+                        "Retry with the same idempotency key when using the typed Artifact service.",
+                        "Inspect the reported cleanup paths before retrying if cleanup was incomplete.",
+                    ],
+                    "cleanup": removed,
+                },
+            ) from exc
         index_payload = refresh_query_index_for_record(context, runtime_store, record_id)
         for parent_id in _affected_parent_record_ids(lineage_payload):
             refresh_query_index_for_record(context, runtime_store, parent_id)
@@ -325,6 +349,7 @@ def list_records(
     status: str | None = None,
     placeholder: str | None = None,
     semantic_id: str | None = None,
+    scope_key: str | None = None,
     profile: str | None = None,
     skill: str | None = None,
     producer: str | None = None,
@@ -376,6 +401,7 @@ def list_records(
             and _matches_filter(record, "status", status)
             and _matches_metadata(record, "placeholder", placeholder)
             and _matches_metadata(record, "semantic_id", semantic_id)
+            and _matches_metadata(record, "scope_key", scope_key)
             and _matches_metadata(record, "profile", profile)
             and _matches_metadata(record, "skill", skill)
             and _matches_metadata(record, "producer", producer)
@@ -1509,15 +1535,21 @@ def _write_body(
     env: Mapping[str, str],
     cwd: Path,
 ) -> tuple[Path | None, list[Diagnostic]]:
-    if request.body is None and request.body_file is None:
+    sources = sum(value is not None for value in (request.body, request.body_file, request.registered_content_path))
+    if sources == 0:
         return None, []
-    if request.body is not None and request.body_file is not None:
-        raise ResearchRecordError("Use either --body or --body-file, not both.", code="body_source_conflict")
+    if sources > 1:
+        raise ResearchRecordError("Use one of body, body-file, or a registered content path.", code="body_source_conflict")
+    if request.registered_content_path is not None:
+        registered = request.registered_content_path.resolve(strict=False)
+        if not registered.exists():
+            raise ResearchRecordError(f"Registered content path does not exist: {registered}", code="registered_content_missing")
+        return registered, []
     label = _semantic_label_for_request(request)
     result, diagnostics = resolve_semantic_path(context, label, env=env, cwd=cwd)
     if result is None:
         return None, diagnostics
-    target_dir = result.path / "research-records" / request.record_kind
+    target_dir = result.path / "research-records" / request.record_kind / _slug(request.record_id or "record")
     target_dir.mkdir(parents=True, exist_ok=True)
     source_suffix = ""
     if request.body_file is not None:
@@ -1527,9 +1559,9 @@ def _write_body(
     filename = _content_filename(request, suffix=source_suffix or ".md")
     target = target_dir / filename
     if request.body_file is not None:
-        shutil.copyfile(request.body_file, target)
+        _atomic_copy(request.body_file, target)
     else:
-        target.write_text(request.body or "", encoding="utf-8")
+        _atomic_write_text(target, request.body or "")
     return target.resolve(strict=False), diagnostics
 
 
@@ -1858,10 +1890,7 @@ def _write_payload_snapshot(
     target_dir.mkdir(parents=True, exist_ok=True)
     payload_path = target_dir / "payload.json"
     manifest_path = target_dir / "manifest.json"
-    payload_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
-        encoding="utf-8",
-    )
+    _atomic_write_text(payload_path, json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
     manifest = {
         "schema_version": "isomer-structured-payload-file.v1",
         "record_id": request.record_id,
@@ -1878,9 +1907,9 @@ def _write_payload_snapshot(
         "validation_status": validation_payload.get("status"),
         "source_payload_file": str(request.payload_file.resolve(strict=False)) if request.payload_file is not None else None,
     }
-    manifest_path.write_text(
+    _atomic_write_text(
+        manifest_path,
         json.dumps({key: value for key, value in manifest.items() if value is not None}, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
-        encoding="utf-8",
     )
     return payload_path.resolve(strict=False), manifest_path.resolve(strict=False), diagnostics
 
@@ -1948,6 +1977,46 @@ def _content_filename(request: ResearchRecordRequest, *, suffix: str) -> str:
     stem_source = request.placeholder or request.profile or request.record_id or request.record_kind
     record_id = request.record_id or uuid.uuid4().hex[:12]
     return f"{_slug(stem_source)}-{_slug(record_id)}{suffix}"
+
+
+def _atomic_copy(source: Path, target: Path) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, staged_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".staged", dir=target.parent)
+    os.close(descriptor)
+    staged = Path(staged_name)
+    try:
+        shutil.copyfile(source, staged)
+        os.replace(staged, target)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def _atomic_write_text(target: Path, content: str) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, staged_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".staged", dir=target.parent)
+    staged = Path(staged_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            handle.write(content)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(staged, target)
+    finally:
+        staged.unlink(missing_ok=True)
+
+
+def _cleanup_failed_record_content(request: ResearchRecordRequest, content_path: Path | None) -> dict[str, object]:
+    if content_path is None or request.registered_content_path is not None:
+        return {"attempted": False, "removed": []}
+    removed: list[str] = []
+    target = content_path.parent if content_path.name == "payload.json" else content_path.parent
+    try:
+        if target.exists():
+            shutil.rmtree(target)
+            removed.append(str(target))
+        return {"attempted": True, "removed": removed, "complete": True}
+    except OSError as exc:
+        return {"attempted": True, "removed": removed, "complete": False, "error": str(exc), "remaining_path": str(target)}
 
 
 def _new_record_id(request: ResearchRecordRequest) -> str:
@@ -2712,6 +2781,7 @@ def _record_metadata(request: ResearchRecordRequest) -> dict[str, object]:
     for key, value in (
         ("placeholder", request.placeholder),
         ("semantic_id", request.semantic_id),
+        ("scope_key", request.scope_key),
         ("profile", request.profile),
         ("format_profile_ref", request.format_profile_ref),
         ("schema_ref", request.schema_ref),

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer-kaoju-wiki-export-manifest.v1",
+  "type": "object",
+  "required": ["schema_version", "title", "summary", "artifact_family", "semantic_id", "artifact_type", "version", "source_fingerprint", "sections"],
+  "properties": {
+    "schema_version": {"const": "isomer-kaoju-wiki-export-manifest.v1"},
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "artifact_family": {"const": "kaoju"},
+    "semantic_id": {"const": "kaoju:llm-wiki-metadata"},
+    "artifact_type": {"const": "llm-wiki-metadata"},
+    "version": {"type": "string", "minLength": 1},
+    "source_fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "sections": {
+      "type": "object",
+      "required": ["topic", "artifacts", "pages", "relationships", "provenance", "target", "changelog"],
+      "properties": {
+        "topic": {"type": "object", "required": ["research_topic_id", "topic_workspace_id"]},
+        "artifacts": {"type": "array", "items": {"type": "object", "required": ["record_id", "semantic_id", "revision", "checksum", "page", "status"]}},
+        "pages": {"type": "array", "items": {"type": "object", "required": ["path", "checksum", "artifact_refs"]}},
+        "relationships": {"type": "array"},
+        "provenance": {"type": "object", "required": ["selection", "exporter"]},
+        "target": {"type": "object", "required": ["path", "policy"]},
+        "changelog": {"type": "object", "required": ["created", "changed", "unchanged", "stale", "removed"]}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

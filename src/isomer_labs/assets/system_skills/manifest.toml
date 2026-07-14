@@ -75,6 +75,16 @@ kind = "extension"
 extension_id = "kaoju"
 entry_skill = "isomer-kaoju-pipeline"
 commands = [
+  "choose-directions",
+  "build-reading-list",
+  "ingest-reading-item",
+  "draft-paper",
+  "manage-paper-template",
+  "build-paper-pdf",
+  "export-survey-wiki",
+  "ingest-source-code",
+  "prepare-code-run",
+  "run-code-trial",
   "landscape-pass",
   "curated-intake-pass",
   "direction-expansion-pass",
@@ -98,10 +108,12 @@ skills = [
   "research-paradigm/kaoju/isomer-kaoju-acquire",
   "research-paradigm/kaoju/isomer-kaoju-examine",
   "research-paradigm/kaoju/isomer-kaoju-reproduce",
+  "research-paradigm/kaoju/isomer-kaoju-trial",
   "research-paradigm/kaoju/isomer-kaoju-compare",
   "research-paradigm/kaoju/isomer-kaoju-audit",
   "research-paradigm/kaoju/isomer-kaoju-synthesize",
   "research-paradigm/kaoju/isomer-kaoju-write",
+  "research-paradigm/kaoju/isomer-kaoju-export",
 ]
 
 [callback_insertion_point_stages.begin]
@@ -202,6 +214,9 @@ callback_insertion_points = ["begin", "end"]
 [skill_metadata."research-paradigm/kaoju/isomer-kaoju-reproduce"]
 callback_insertion_points = ["begin", "end"]
 
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-trial"]
+callback_insertion_points = ["begin", "end"]
+
 [skill_metadata."research-paradigm/kaoju/isomer-kaoju-compare"]
 callback_insertion_points = ["begin", "end"]
 
@@ -212,4 +227,7 @@ callback_insertion_points = ["begin", "end"]
 callback_insertion_points = ["begin", "end"]
 
 [skill_metadata."research-paradigm/kaoju/isomer-kaoju-write"]
+callback_insertion_points = ["begin", "end"]
+
+[skill_metadata."research-paradigm/kaoju/isomer-kaoju-export"]
 callback_insertion_points = ["begin", "end"]

@@ -1,0 +1,106 @@
+{
+  "schema_version": "isomer-kaoju-survey-process.v2",
+  "entry_skill": "isomer-kaoju-pipeline",
+  "skills": [
+    "isomer-kaoju-pipeline",
+    "isomer-kaoju-shared",
+    "isomer-kaoju-workspace-mgr",
+    "isomer-kaoju-frame",
+    "isomer-kaoju-discover",
+    "isomer-kaoju-acquire",
+    "isomer-kaoju-examine",
+    "isomer-kaoju-reproduce",
+    "isomer-kaoju-trial",
+    "isomer-kaoju-compare",
+    "isomer-kaoju-audit",
+    "isomer-kaoju-synthesize",
+    "isomer-kaoju-write",
+    "isomer-kaoju-export"
+  ],
+  "survey_intents": [
+    "choose-directions",
+    "build-reading-list",
+    "ingest-reading-item",
+    "draft-paper",
+    "manage-paper-template",
+    "build-paper-pdf",
+    "export-survey-wiki",
+    "ingest-source-code",
+    "prepare-code-run",
+    "run-code-trial"
+  ],
+  "compatibility_procedures": [
+    "landscape-pass",
+    "curated-intake-pass",
+    "direction-expansion-pass",
+    "theory-comparison-pass",
+    "method-trial-pass",
+    "comparative-pass",
+    "audit-survey-pass",
+    "paper-pass",
+    "create-paper-template"
+  ],
+  "manager_actions": {
+    "manage-survey": ["list", "show", "status", "export"],
+    "manage-dataset": ["register", "list", "show", "refresh", "remove"],
+    "manage-paper-template": ["export", "apply", "inspect", "status"]
+  },
+  "binding_registry_resource": "contracts/bindings.v2.json",
+  "semantic_aliases": {
+    "kaoju:paper-structure": {
+      "canonical_semantic_id": "kaoju:paper-structure-myst",
+      "disposition": "adr-0006-diagram-alias",
+      "automatic_promotion": false
+    },
+    "kaoju:paper-template": {
+      "canonical_semantic_id": "kaoju:paper-template-myst",
+      "disposition": "adr-0006-diagram-alias",
+      "automatic_promotion": false
+    },
+    "kaoju:paper-draft": {
+      "canonical_semantic_id": "kaoju:paper-draft-myst",
+      "disposition": "adr-0006-diagram-alias",
+      "automatic_promotion": false
+    }
+  },
+  "supersession": {
+    "source_change": "add-kaoju-paper-writing",
+    "governing_decision": "context/features/2026-07-14-kaoju-survey-process-usecases/adrs/0006-myst-as-canonical-paper-format.md",
+    "replaced_requirements": [
+      "LaTeX source is canonical paper state",
+      "kaoju:writing-template is the canonical template",
+      "ext research templates creates new canonical templates",
+      "Markdown publication input is rejected instead of represented as a derived view",
+      "create-paper-template writes a canonical LaTeX tree under intent/derived/writing-template"
+    ],
+    "superseded_incomplete_tests": [
+      "add-kaoju-paper-writing tasks 5.1 through 5.8 when they assert a LaTeX-first canonical source or reject the MyST-derived publication path"
+    ],
+    "retained_behavior": [
+      "accepted audit and synthesis prerequisites",
+      "citation and exact evidence traceability",
+      "multidimensional survey-quality validation",
+      "immutable build attempts and exact build provenance",
+      "compiler-owned TeX numbering",
+      "textual and visual PDF inspection",
+      "publication Gate and no implicit external publication"
+    ],
+    "legacy_posture": "Historical LaTeX-first records remain readable. They are never promoted to canonical MyST without an actor-authorized intake with explicit provenance."
+  },
+  "implementation_decisions": {
+    "myst_parser": {
+      "distribution": "myst-parser",
+      "constraint": ">=5.1.0,<6",
+      "locked_selection": "5.1.0",
+      "python_requirement": ">=3.11",
+      "purpose": "Structural MyST parsing, validation diagnostics, and TeX initialization."
+    },
+    "wiki_viewer": {
+      "decision": "independent-compatible-implementation",
+      "candidate": "imsight-llm-wiki viewer",
+      "review_result": "The available migration copy names its source path but contains no LICENSE, COPYING, NOTICE, license field, repository remote, or commit identity sufficient for redistribution.",
+      "prohibition": "Do not copy, import, load, or invoke candidate viewer or external imsight-llm-wiki skill code.",
+      "implementation": "Package an independently written static viewer that reads the documented Kaoju wiki JSON manifest."
+    }
+  }
+}

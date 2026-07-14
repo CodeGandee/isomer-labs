@@ -176,6 +176,7 @@ LIFECYCLE_RECORD_KINDS = (
     "research_topic",
     "research_inquiry",
     "research_task",
+    "service_request",
     "run",
     "workflow_stage_cursor",
     "topic_workspace",

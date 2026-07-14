@@ -8,7 +8,7 @@ description: Use when an Isomer Labs agent needs gate-driven enclosed Pixi devel
 ## Overview
 
 - **Purpose**: set up and validate the Topic Workspace Pixi development environment for a user-specified runnable target.
-- **Inputs**: use `topic.intent.topic_env_requirements` to create or update `topic.env.topic_setup_target_spec`; direct service calls may supply an explicit manual target spec.
+- **Inputs**: use `topic.intent.topic_env_requirements` to create or update `topic.env.topic_setup_target_spec`; direct service calls may supply an explicit manual target spec. A dispatched canonical Service Request may instead supply the supported scope, task, authorization, expected outputs, research plan, and Run refs.
 - **Readiness**: one agent or operator can run the required commands from the Topic Workspace root, Topic Main Development Repository, or a repo-specific working directory named by the target spec.
 - **Resource classification**: ask `isomer-misc-bounded-run-tips` to classify resource-relevant setup and verification operations; record classification source, classification result, reason, resource dimensions, and whether bounded guidance is required.
 - **Bounded proof**: operations classified as `heavy` or `unknown-risk` need bounded real-path verification; generic best-effort judgment is allowed only when no recipe applies. A generic smoke test is allowed only as supporting evidence.
@@ -28,13 +28,17 @@ When this skill is invoked, execute the following steps in order.
 2. **Route package-add intent**:
    - If the prompt asks only to install, add, repair, update, remove, or verify packages for a selected Topic Workspace, route to the matching `$isomer-op-topic-mgr env-install-packages`, `$isomer-op-topic-mgr env-update-packages`, `$isomer-op-topic-mgr env-remove-packages`, or verification command.
    - Continue in this service only when the user asks for full gate-driven Topic Workspace environment setup, source-gate derivation, dependency installation from an existing target spec, or environment verification.
-3. **Select one subcommand** from the **Subcommands** tables:
+3. **Resolve a Service Request when present**:
+   - Load the request with `isomer-cli --print-json project service-requests status`, verify that its scope is supported, authorization is sufficient, expected outputs are explicit, and linked research plan and Run refs resolve.
+   - Keep the Service Request distinct from the Research Task, Workflow Stage, Gate, Execution Adapter Command Request, and Run. Do not copy provider-specific or dispatch-form implementation payloads into environment Artifacts.
+   - Select `fulfill-service-request` for a dispatched environment-preparation request.
+4. **Select one subcommand** from the **Subcommands** tables:
    - Prefer procedural or misc subcommands.
    - Use a helper subcommand only if one is added later and the user explicitly asks for it.
    - If the prompt describes a concrete Topic Workspace setup task but does not name a subcommand, use `setup-topic-env`.
-4. **Load the selected reference file**.
-5. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
-6. **Report results** using **Essential Output** by default and **Complete Output** when requested.
+5. **Load the selected reference file**.
+6. **Resolve that page's required inputs** from its `## Required Inputs` section, then execute its `## Workflow`.
+7. **Report results** using **Essential Output** by default and **Complete Output** when requested. Return environment, Gate revision, smoke script, smoke result, blocker, command request, Run, support Artifact, and Provenance Record refs when a Service Request asked for them.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the subcommands, selected reference page, output contract, and guardrails in this skill, then execute the plan.
 
@@ -69,6 +73,7 @@ Misc subcommands are public support commands and shortcuts.
 | --- | --- | --- |
 | `help` | Explain this skill and list public subcommands. | This entrypoint |
 | `setup-topic-env` | Run the full gate-driven Topic Workspace setup workflow. This is the default for concrete setup tasks that do not name a subcommand. | [references/setup-topic-env.md](references/setup-topic-env.md) |
+| `fulfill-service-request` | Consume one recorded environment-preparation Service Request, perform only its authorized synchronous work, and return typed support refs. | [references/fulfill-service-request.md](references/fulfill-service-request.md) |
 
 Load exactly one reference page for the selected subcommand. The `setup-topic-env` reference may then load the procedural subcommand references it orchestrates.
 
@@ -96,6 +101,7 @@ Misc subcommands:
 | Subcommand | Purpose | Produces |
 | --- | --- | --- |
 | `setup-topic-env` | Run the full setup flow in `fast-forward`/`auto` or `step-by-step`/`manual` mode. | Combined setup report, selected mode, topic-main Git state, repo state, projection metadata, derived gate, Pixi environment files, enclosure strategy, and Topic Workspace readiness status. |
+| `fulfill-service-request` | Fulfill one supported synchronous environment request. | Service Request status plus environment, Gate revision, smoke script, smoke result, blocker, command request, Run, support Artifact, and provenance refs. |
 | `help` | Print what this skill does and how to use it. | Usage table and examples. |
 
 Example prompts:
@@ -113,13 +119,13 @@ Default to **Essential Output** in chat. Use **Complete Output** when the user a
 
 ### Essential Output
 
-Lead with Topic environment readiness and the selected setup mode. Name the Research Topic, Topic Workspace, Pixi manifest and environment, then summarize Topic Main Development Repository readiness, external repository projections, the critical environment gate, and important changed files. State blockers or failed commands, clarify when per-Agent cwd readiness was not checked, and end with the next safe action.
+Lead with Topic environment readiness and the selected setup mode. Name the Research Topic, Topic Workspace, Pixi manifest and environment, then summarize Topic Main Development Repository readiness, external repository projections, the critical environment gate, and important changed files. When dispatched, name the Service Request, support Artifact, command request, Run, Gate revision, smoke script and result, blockers, and next safe action. Clarify when per-Agent cwd readiness was not checked.
 
 ### Complete Output
 
 When requested, include grouped handoff and audit fields:
 
-- **Identity**: `subcommand`, `mode`, `project_root`, `research_topic_id`, and `topic_workspace_dir`.
+- **Identity**: `subcommand`, `mode`, `project_root`, `research_topic_id`, `topic_workspace_dir`, `service_request_refs`, `research_plan_refs`, and `research_run_refs`.
 - **Semantic paths**: `semantic_paths`, `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `manifest_path_or_dir`, `manifest_path`, `pixi_environment`, and `path_diagnostics`.
 - **Source and target specs**: `topic_env_source_label`, `topic_env_source_path`, `topic_env_source_storage_profile`, `topic_env_source`, `topic_env_source_detail`, `topic_env_target_spec_label`, `topic_env_target_spec_path`, `topic_env_target_spec_storage_profile`, `topic_env_target_spec_source`, and `topic_env_target_spec_source_detail`.
 - **Repos and projections**: `repos`, `topic_main_repository`, `external_repo_projections`, `external_repo_projection_manifest`, and `inferred_source_warnings`.
@@ -132,6 +138,7 @@ When requested, include grouped handoff and audit fields:
 
 - Do not install or mutate a Topic Workspace environment until the selected Topic Workspace and effective Topic Workspace Pixi binding are confirmed. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` file or directory target, or the implicit registered Topic Workspace directory default when Pixi resolves it as a confined Topic Workspace Pixi workspace.
 - Direct setup mutation is allowed for the selected Topic Workspace Pixi environment, Topic Main Development Repository Isomer-managed namespace, missing canonical external repos at resolved non-main `topic.repos.*` paths, and external projections under `isomer-managed/topic-owned/{readonly,writable}/extern/` after confirmation; do not require a separate Service Request for dependency, lockfile, install, repo, projection, or gate-command mutation in this workflow.
+- When a canonical Service Request is supplied, consume only its authorized scope and complete it synchronously or return a stable timeout or interruption posture. Reject no-wait dispatch. Return typed support refs and keep dispatch-provider and Houmao details out of canonical schema, CLI labels, and Artifact payloads.
 - Do not treat the Project-root Pixi environment as the Topic Workspace execution environment.
 - Resolve topic repository paths through semantic labels before acquiring code. Additional durable repos should be registered as `topic.repos.*` with explicit `storage_profile` through `project repos create` or `project paths register`; do not rely on default-looking directories alone.
 - Before acquiring a Git repository, decide whether the work needs full Git history or only a source snapshot. Default to a shallow clone with `--depth=1` unless the prompt, Research Topic, topic env source intent, target spec, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies full history. Record the clone mode, clone depth, and evidence for the decision.
