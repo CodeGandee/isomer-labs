@@ -20,6 +20,37 @@ def write(path: Path, content: str) -> None:
     path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
 
 
+def repository_evidence(repository: dict[str, str]) -> dict[str, object]:
+    return {
+        "semantic_label": repository["label"],
+        "requested_locator": repository["remote"],
+        "resolved_locator": repository["remote"],
+        "immutable_identity": {"kind": "git_commit", "value": repository["commit"]},
+        "acquisition_method": {
+            "tool_class": "git",
+            "operation": "clone-and-checkout",
+            "description": "The integration test acquired the source with external Git commands.",
+            "options": ["local fixture source", "selected immutable revision"],
+        },
+        "command_evidence": [
+            {
+                "tool_class": "git",
+                "operation": "identity-verification",
+                "description": "The integration test verified source and revision outside Isomer.",
+                "status": "succeeded",
+                "observed_identity": repository["commit"],
+            }
+        ],
+        "verification": {"status": "verified", "method": "external rev-parse and source comparison"},
+        "observed_at": "2026-07-15T12:00:00Z",
+        "access": {"status": "available", "basis": "authorized local fixture"},
+        "license": {"status": "unknown", "basis": "not established by acquisition"},
+        "relationship_basis": "The fixture repository is the selected method source.",
+        "limitations": ["Local fixture does not exercise network authentication."],
+        "blockers": [],
+    }
+
+
 class KaojuCodeTrialIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -175,35 +206,48 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         write(upstream / "src/method.py", "def score(value: int) -> int:\n    return value * 2\n")
         subprocess.run(["git", "-C", str(upstream), "add", "src/method.py"], check=True)
         subprocess.run(["git", "-C", str(upstream), "commit", "-q", "-m", "method"], check=True)
-        status, acquired = self.run_cli(
+        expected_commit = subprocess.run(
+            ["git", "-C", str(upstream), "rev-parse", "HEAD"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        target = self.workspace / "repos/extern/sources/method"
+        target.parent.mkdir(parents=True)
+        subprocess.run(["git", "clone", "-q", f"file://{upstream}", str(target)], check=True)
+        observed_commit = subprocess.run(
+            ["git", "-C", str(target), "rev-parse", "HEAD"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        self.assertEqual(expected_commit, observed_commit)
+        status, registered = self.run_cli(
             "project",
             "--root",
             str(self.root),
             "repos",
-            "acquire",
-            f"file://{upstream}",
+            "register",
+            "sources.method",
+            "--path",
+            str(target),
             "--topic",
             "alpha",
-            "--semantic-label",
-            "topic.repos.sources.method",
         )
-        self.assertEqual(0, status, acquired)
-        repository = acquired["repository"]
-        assert isinstance(repository, dict)
-        self.assertEqual(1, repository["depth"])
-        self.assertTrue(repository["shallow"])
-        self.assertTrue(all(item["request"]["extension_point"] == "repository_acquisition" for item in acquired["command_requests"]))  # type: ignore[index]
-        return {"label": "topic.repos.sources.method", "commit": str(repository["commit"]), "path": str(repository["path"]), "remote": f"file://{upstream}"}
+        self.assertEqual(0, status, registered)
+        self.assertEqual("topic.repos.sources.method", registered["repository"]["semantic_label"])  # type: ignore[index]
+        return {"label": "topic.repos.sources.method", "commit": observed_commit, "path": str(target), "remote": f"file://{upstream}"}
 
     def register_source_evidence(self, repository: dict[str, str]) -> None:
+        evidence = repository_evidence(repository)
         self.put_structured(
             "KAOJU:ASSOCIATED-SOURCE-CODE",
             "associated-code-1",
             "isomer-kaoju-acquire",
             {
                 "source": {"paper_ref": "paper-1", "version_family": "paper-v1"},
-                "repository": {"semantic_label": repository["label"], "remote_url": repository["remote"], "commit": repository["commit"], "depth": 1},
-                "relationship": {"status": "verified", "basis": "author-linked repository", "verified_at": "2026-07-14T12:00:00Z"},
+                "repository": evidence,
+                "relationship": {"status": "verified", "basis": "author-linked repository", "verified_at": "2026-07-15T12:00:00Z"},
             },
             {"source": "paper-1", "repository": repository["label"]},
             scope="source:paper-1",
@@ -220,7 +264,8 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
                         "source_class": "repository",
                         "content_ref": repository["label"],
                         "status": "ready",
-                        "provenance_refs": ["command-request:repository-acquisition"],
+                        "provenance_refs": ["associated-code-1"],
+                        "repository": evidence,
                     }
                 ]
             },
@@ -381,29 +426,23 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             "--root",
             str(self.root),
             "repos",
-            "acquire",
-            repository["remote"],
-            "--topic",
-            "alpha",
-            "--semantic-label",
+            "register",
             repository["label"],
-        )
-        self.assertEqual(1, status)
-        self.assertEqual("repository_target_exists", duplicate["error"]["code"])  # type: ignore[index]
-        status, inaccessible = self.run_cli(
-            "project",
-            "--root",
-            str(self.root),
-            "repos",
-            "acquire",
-            "file:///missing/kaoju-source",
+            "--path",
+            repository["path"],
             "--topic",
             "alpha",
-            "--semantic-label",
-            "topic.repos.sources.missing",
         )
-        self.assertEqual(1, status)
-        self.assertEqual("repository_remote_unreachable", inaccessible["error"]["code"])  # type: ignore[index]
+        self.assertEqual(0, status)
+        self.assertFalse(duplicate["mutated"])
+        missing_target = self.workspace / "repos/extern/sources/missing"
+        inaccessible = subprocess.run(
+            ["git", "clone", "-q", "file:///missing/kaoju-source", str(missing_target)],
+            check=False,
+            text=True,
+            capture_output=True,
+        )
+        self.assertNotEqual(0, inaccessible.returncode)
         topic_manifest = self.workspace / "topic-workspace.toml"
         self.assertNotIn("topic.repos.sources.missing", topic_manifest.read_text(encoding="utf-8"))
 

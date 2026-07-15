@@ -14,7 +14,10 @@ import tomlkit
 from isomer_labs.core.builtins import list_built_in_schemas
 from isomer_labs.cli.options import CliOptions, value as _value
 from isomer_labs.cli.output import emit_output, output_format
-from isomer_labs.workspace.surfaces import topic_workspace_path as default_topic_workspace_path
+from isomer_labs.workspace.surfaces import (
+    is_grouped_topic_repo_label,
+    topic_workspace_path as default_topic_workspace_path,
+)
 from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.project.doctor import build_doctor_report, render_doctor_text
@@ -50,8 +53,10 @@ from isomer_labs.workspace.path_resolution import (
 )
 from isomer_labs.workspace.manifest import (
     WORKER_OUTPUT_TRACKING_AUTHORITY,
+    load_topic_workspace_manifest,
     register_manifest_binding,
     reset_manifest_binding,
+    resolve_binding_path,
     resolve_worker_output_policy,
     unregister_manifest_binding,
     update_manifest_binding,

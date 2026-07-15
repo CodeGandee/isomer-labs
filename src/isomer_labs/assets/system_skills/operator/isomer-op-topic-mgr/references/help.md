@@ -46,7 +46,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `isomer-op-topic-creator` owns topic initialization. If no initialized Research Topic and Topic Workspace can be resolved, route to the creator rather than deriving topic ids, registering topics, or writing topic intent from this skill.
 
-`isomer-srv-topic-env-setup` owns full gate-driven topic environment setup, Topic Main Development Repository setup, canonical external repository acquisition, and external repo projection materialization. Ad hoc package install, update, remove, and package verification requests enter through `isomer-op-topic-mgr env-*` commands.
+`isomer-srv-topic-env-setup` owns full gate-driven topic environment setup, Topic Main Development Repository setup, external repository requirement planning, post-verification registration, and external repo projection materialization. The acting user or agent runs prompt-sensitive repository commands outside Isomer. Ad hoc package install, update, remove, and package verification requests enter through `isomer-op-topic-mgr env-*` commands.
 
 `isomer-srv-agent-env-setup` owns formal Agent Workspace cwd proof. Use `env-verify-agents` when a caller asks the topic manager for that proof, and report returned service evidence without claiming runtime launch readiness.
 

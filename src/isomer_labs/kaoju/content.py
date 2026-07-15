@@ -12,6 +12,7 @@ import shutil
 import tempfile
 from typing import Any, Mapping
 
+from isomer_labs.kaoju.repository_evidence import redact_repository_evidence, repository_evidence_diagnostics
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
@@ -42,6 +43,8 @@ class ArtifactContent:
         }
         if self.manifest is not None:
             value["manifest_schema_version"] = self.manifest["schema_version"]
+            if self.locator_kind == "canonical_repository":
+                value["locator"] = self.manifest
         return value
 
 
@@ -105,20 +108,20 @@ def register_external_path(path: Path) -> ArtifactContent:
     )
 
 
-def register_canonical_repository(path: Path, *, remote_url: str, commit: str, depth: int | None) -> ArtifactContent:
-    """Register a canonical repository by path and immutable commit identity."""
+def register_canonical_repository(path: Path, *, evidence: Mapping[str, Any]) -> ArtifactContent:
+    """Register caller-observed repository identity without executing source-control commands."""
 
     selected = path.resolve(strict=False)
-    if not selected.is_dir() or not (selected / ".git").exists():
-        raise ValueError(f"Canonical repository path is not a Git checkout: {selected}")
-    if len(commit) < 7 or any(character not in "0123456789abcdefABCDEF" for character in commit):
-        raise ValueError("Canonical repository commit must be a hexadecimal immutable commit id.")
-    identity = {
-        "schema_version": "isomer-canonical-repository-locator.v1",
-        "remote_url": remote_url,
-        "commit": commit.lower(),
-        "depth": depth,
-    }
+    if not selected.is_dir():
+        raise ValueError(f"Canonical repository path is not an existing directory: {selected}")
+    sanitized = redact_repository_evidence(evidence)
+    if not isinstance(sanitized, dict):
+        raise ValueError("Canonical repository evidence must be an object.")
+    diagnostics = repository_evidence_diagnostics(sanitized, location="repository_evidence")
+    if diagnostics:
+        detail = "; ".join(f"{location}: {message}" for _code, message, location in diagnostics)
+        raise ValueError(f"Canonical repository evidence is invalid: {detail}")
+    identity = {"schema_version": "isomer-canonical-repository-locator.v2", **sanitized}
     encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return ArtifactContent(
         content_path=selected,

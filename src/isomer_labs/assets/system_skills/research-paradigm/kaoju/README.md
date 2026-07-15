@@ -11,7 +11,7 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 | `isomer-kaoju-workspace-mgr` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
 | `isomer-kaoju-frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
 | `isomer-kaoju-discover` | Build direction-scoped, version-aware reading lists and discovery provenance. |
-| `isomer-kaoju-acquire` | Resolve and acquire immutable materials, repositories, and associated source relationships. |
+| `isomer-kaoju-acquire` | Resolve materials and source relationships, orchestrate external repository acquisition, verify immutable identity, then register and record accepted evidence. |
 | `isomer-kaoju-examine` | Inspect papers and code at exact locators while separating source statements from interpretation. |
 | `isomer-kaoju-reproduce` | Handle only genuine reproduction claims under the stronger fidelity contract. |
 | `isomer-kaoju-compare` | Build source-grounded theory or governed empirical comparisons. |
@@ -31,7 +31,7 @@ Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `
 
 The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover durable state only through `project artifacts latest|list|show` and persist through typed `put` or `revise`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-candidate resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, or scan directories as a fallback.
 
-`isomer-cli project runs` owns resumable procedure checkpoints. `project repos acquire` performs verified depth-one repository acquisition before registration. `project service-requests` records and synchronously dispatches Service Team work. Executable repository, Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
+`isomer-cli project runs` owns resumable procedure checkpoints. The acting user or agent runs prompt-sensitive repository commands outside Isomer, verifies the resulting source and immutable identity, then uses `project repos register` for topology and typed Artifacts for research provenance. `project service-requests` records and synchronously dispatches Service Team work. Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
 
 Houmao may implement Service Dispatch Forms, launch, mailboxes, or inspection behind those boundaries. Houmao terms and payloads do not appear in the Kaoju schema, skill-facing Artifact contract, or public CLI language.
 

@@ -65,6 +65,29 @@ class SkillsetValidatorTests(unittest.TestCase):
         write(root / "skillset" / "service" / "README.md", "# Service Skills\n")
         return root
 
+    def test_repository_boundary_scans_source_mirrored_symlink_projection(self) -> None:
+        root = self.make_root()
+        projected_source = root / "src" / "packaged-skills" / "operator"
+        write(
+            projected_source / "isomer-op-fixture" / "SKILL.md",
+            "# Fixture\n\nRun `project repos "
+            "acquire SOURCE --semantic-label topic.repos.sources.fixture`.\n",
+        )
+        operator_projection = root / "skillset" / "operator"
+        operator_projection.parent.mkdir(parents=True, exist_ok=True)
+        operator_projection.symlink_to(projected_source, target_is_directory=True)
+
+        diagnostics = validator.validate_system_skill_repository_boundary(root, (operator_projection,))
+
+        self.assertEqual({"SKL008"}, codes(diagnostics))
+        self.assertTrue(any("removed repository command" in message for message in messages(diagnostics)))
+
+        write(
+            projected_source / "isomer-op-fixture" / "SKILL.md",
+            "# Fixture\n\nRun the user-selected repository command externally, verify immutable identity, then use `project repos register`.\n",
+        )
+        self.assertEqual([], validator.validate_system_skill_repository_boundary(root, (operator_projection,)))
+
     def write_current_template_fixture(self, root: Path) -> None:
         write(
             root / "skillset" / "manifest.toml",
@@ -1389,7 +1412,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         reference_terms = {
             "resolve-topic-workspace.md": "Do not block solely because `<topic-workspace>/team-profile/`; diagnostics are non-blocking for this subcommand unless they break env setup. Report `semantic_paths`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, `topic.env.topic_setup_target_spec`, and each path source.",
             "ensure-topic-main-repository.md": "Prepare the Topic Main Development Repository at `topic.repos.main` as a normal non-bare repo, with `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, and `topic.repos.main.projections.manifest`. Route root `AGENTS.md` and `CLAUDE.md` guidance mutation through `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes`, use `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>` for checks, and use `isomer-cli project topic-main-guidance render` for rendering. Treat `isomer-labs-topic-main-guidance.v1.md.j2` as the `.j2` canonical large-text template asset, must not duplicate the full rendered prose, and report guidance block version.",
-            "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
+            "ensure-topic-repos.md": "Use resolved non-main `topic.repos.*` paths from `semantic_paths`; report semantic label, path, and path source. Query `project paths default`, run user-supplied or agent-selected commands outside Isomer, verify source and immutable identity before registration, then call `project repos register`. The external caller owns partial content. Keep existing canonical external repos read-only by default. Do not place task repos outside the resolved semantic path, and default helper-created repos under `repos/extern/...`.",
             "project-extern-repos.md": "Create external repo projection entries under `topic.repos.main.projections.readonly` or `topic.repos.main.projections.writable`, track metadata in `topic.repos.main.projections.manifest`, and distinguish read-only projections from writable projections.",
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
             "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade. Consult `isomer-misc-pkg-specifics` before generic package routing and record `no package-specific rule` when no page exists.",

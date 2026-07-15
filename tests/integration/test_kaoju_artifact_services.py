@@ -21,6 +21,37 @@ def write(path: Path, content: str) -> None:
     path.write_text(textwrap.dedent(content).lstrip(), encoding="utf-8")
 
 
+def repository_evidence(label: str, locator: str, commit: str, *, observed_at: str = "2026-07-15T12:00:00Z") -> dict[str, object]:
+    return {
+        "semantic_label": label,
+        "requested_locator": locator,
+        "resolved_locator": locator,
+        "immutable_identity": {"kind": "git_commit", "value": commit},
+        "acquisition_method": {
+            "tool_class": "git",
+            "operation": "clone-and-checkout",
+            "description": "The integration test ran external Git commands before invoking Isomer.",
+            "options": ["local fixture source", "selected immutable revision"],
+        },
+        "command_evidence": [
+            {
+                "tool_class": "git",
+                "operation": "identity-verification",
+                "description": "The integration test observed the checked-out revision outside Isomer.",
+                "status": "succeeded",
+                "observed_identity": commit,
+            }
+        ],
+        "verification": {"status": "verified", "method": "external rev-parse and source comparison"},
+        "observed_at": observed_at,
+        "access": {"status": "available", "basis": "local authorized fixture"},
+        "license": {"status": "unknown", "basis": "not established by acquisition"},
+        "relationship_basis": "The fixture source is the selected project repository.",
+        "limitations": ["Local fixture does not exercise network authentication."],
+        "blockers": [],
+    }
+
+
 class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -343,7 +374,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertEqual("run_terminal", rejected["error"]["code"])
 
-    def test_verified_repository_acquisition_registers_only_after_success(self) -> None:
+    def test_external_repository_acquire_verify_register_and_record_boundaries(self) -> None:
         upstream = self.root / "upstream"
         upstream.mkdir()
         subprocess.run(["git", "init", "-q", str(upstream)], check=True)
@@ -359,41 +390,170 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             capture_output=True,
         ).stdout.strip()
 
-        status, acquired = self.run_cli(
+        workspace = self.root / "topic-workspaces/alpha"
+        target = workspace / "repos/extern/sources/example"
+        target.parent.mkdir(parents=True)
+        subprocess.run(["git", "clone", "-q", f"file://{upstream}", str(target)], check=True)
+        observed_commit = subprocess.run(
+            ["git", "-C", str(target), "rev-parse", "HEAD"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        self.assertEqual(expected_commit, observed_commit)
+
+        topic_manifest = workspace / "topic-workspace.toml"
+        self.assertFalse(topic_manifest.exists())
+        status, registered = self.run_cli(
             "project",
             "--root",
             str(self.root),
             "repos",
-            "acquire",
-            f"file://{upstream}",
+            "register",
+            "sources.example",
+            "--path",
+            str(target),
             "--topic",
             "alpha",
-            "--semantic-label",
-            "topic.repos.sources.example",
         )
-        self.assertEqual(0, status, acquired)
-        self.assertEqual(expected_commit, acquired["repository"]["commit"])
-        self.assertEqual(1, acquired["repository"]["depth"])
-        target = Path(str(acquired["repository"]["path"]))
+        self.assertEqual(0, status, registered)
+        self.assertTrue(registered["mutated"])
+        self.assertEqual(str(target), registered["repository"]["path"])
         self.assertTrue((target / ".git").is_dir())
-        topic_manifest = self.root / "topic-workspaces/alpha/topic-workspace.toml"
         self.assertIn("topic.repos.sources.example", topic_manifest.read_text(encoding="utf-8"))
 
-        status, failed = self.run_cli(
+        evidence_v1 = repository_evidence("topic.repos.sources.example", f"file://{upstream}", observed_commit)
+        associated_v1 = self.root / "associated-v1.json"
+        write(
+            associated_v1,
+            json.dumps(
+                {
+                    "title": "Associated source v1",
+                    "summary": "Externally verified repository evidence.",
+                    "artifact_family": "kaoju",
+                    "semantic_id": "KAOJU:ASSOCIATED-SOURCE-CODE",
+                    "artifact_type": "associated-source-code",
+                    "sections": {
+                        "source": {"paper_ref": "paper-1", "version_family": "paper-v1"},
+                        "repository": evidence_v1,
+                        "relationship": {"status": "verified", "basis": "Fixture-selected source."},
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        relationships = '[{"role":"source","target_ref":"paper-1"},{"role":"repository","target_ref":"topic.repos.sources.example"}]'
+        status, recorded = self.artifact(
+            "put",
+            "KAOJU:ASSOCIATED-SOURCE-CODE",
+            str(associated_v1),
+            "--producer",
+            "isomer-kaoju-acquire",
+            "--scope-key",
+            "source:paper-1",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "associated-source-v1",
+        )
+        self.assertEqual(0, status, recorded)
+
+        mismatched = json.loads(associated_v1.read_text(encoding="utf-8"))
+        mismatched["sections"]["repository"]["immutable_identity"]["value"] = "b" * 40
+        mismatch_path = self.root / "associated-mismatch.json"
+        write(mismatch_path, json.dumps(mismatched, indent=2) + "\n")
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:ASSOCIATED-SOURCE-CODE",
+            str(mismatch_path),
+            "--producer",
+            "isomer-kaoju-acquire",
+            "--scope-key",
+            "source:mismatch",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "associated-source-mismatch",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+        self.assertIn("does not match immutable_identity", rejected["error"]["message"])
+        self.assertIn("topic.repos.sources.example", topic_manifest.read_text(encoding="utf-8"))
+
+        partial = workspace / "repos/extern/sources/partial"
+        partial.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q", str(partial)], check=True)
+        write(partial / "INCOMPLETE", "external command stopped before verification\n")
+        self.assertNotIn("topic.repos.sources.partial", topic_manifest.read_text(encoding="utf-8"))
+
+        conflict_target = workspace / "repos/extern/sources/example-conflict"
+        subprocess.run(["git", "clone", "-q", f"file://{upstream}", str(conflict_target)], check=True)
+        status, conflict = self.run_cli(
             "project",
             "--root",
             str(self.root),
             "repos",
-            "acquire",
-            "file:///definitely/missing/repository",
+            "register",
+            "sources.example",
+            "--path",
+            str(conflict_target),
             "--topic",
             "alpha",
-            "--semantic-label",
-            "topic.repos.sources.missing",
         )
         self.assertEqual(1, status)
-        self.assertEqual("repository_remote_unreachable", failed["error"]["code"])
-        self.assertNotIn("topic.repos.sources.missing", topic_manifest.read_text(encoding="utf-8"))
+        self.assertFalse(conflict["mutated"])
+        self.assertTrue(conflict_target.is_dir())
+
+        write(upstream / "CHANGELOG.md", "second revision\n")
+        subprocess.run(["git", "-C", str(upstream), "add", "CHANGELOG.md"], check=True)
+        subprocess.run(["git", "-C", str(upstream), "commit", "-q", "-m", "second"], check=True)
+        subprocess.run(["git", "-C", str(target), "pull", "-q", "--ff-only"], check=True)
+        second_commit = subprocess.run(
+            ["git", "-C", str(target), "rev-parse", "HEAD"],
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        self.assertNotEqual(expected_commit, second_commit)
+        evidence_v2 = repository_evidence(
+            "topic.repos.sources.example",
+            f"file://{upstream}",
+            second_commit,
+            observed_at="2026-07-15T13:00:00Z",
+        )
+        associated_v2 = self.root / "associated-v2.json"
+        revised_payload = json.loads(associated_v1.read_text(encoding="utf-8"))
+        revised_payload["title"] = "Associated source v2"
+        revised_payload["sections"]["repository"] = evidence_v2
+        write(associated_v2, json.dumps(revised_payload, indent=2) + "\n")
+        status, revised = self.artifact(
+            "revise",
+            "associated-source-v1",
+            str(associated_v2),
+            "--producer",
+            "isomer-kaoju-acquire",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "associated-source-v2",
+        )
+        self.assertEqual(0, status, revised)
+        status, resolved = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "paths",
+            "get",
+            "topic.repos.sources.example",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, resolved)
+        self.assertEqual(str(target), resolved["path"]["path"])
+        status, latest = self.artifact("latest", "KAOJU:ASSOCIATED-SOURCE-CODE", "--scope-key", "source:paper-1")
+        self.assertEqual(0, status, latest)
+        self.assertEqual(["associated-source-v2"], [item["record_id"] for item in latest["records"]])
 
     def test_service_request_is_distinct_and_dispatches_synchronously(self) -> None:
         command_request = json.dumps(

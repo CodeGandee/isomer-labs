@@ -12,6 +12,7 @@ from isomer_labs.workspace.surfaces import (
     SemanticSurface,
     content_root_path as default_content_root_path,
     ensure_tmp_surface_ignore_policy,
+    is_grouped_topic_repo_label,
     storage_profile_by_id,
     topic_workspace_base_path as default_topic_workspace_base_path,
     topic_workspace_path as default_topic_workspace_path,
@@ -780,6 +781,23 @@ def default_semantic_path(
     label = _normalize_label(label_or_surface)
     surface = catalog().get(label)
     diagnostics: list[Diagnostic] = []
+    if surface is None and is_grouped_topic_repo_label(label):
+        suffix = label.removeprefix("topic.repos.")
+        path = context.topic_workspace_path / "repos" / "extern" / Path(*suffix.split("."))
+        profile = storage_profile_by_id("topic_repo")
+        return (
+            {
+                "semantic_label": label,
+                "path": str(path.resolve(strict=False)),
+                "source": DEFAULT_PROFILE_SOURCE,
+                "source_detail": DEFAULT_PROFILE_SOURCE,
+                "storage_profile": "topic_repo",
+                "storage_profile_traits": profile.to_json() if profile is not None else None,
+                "path_kind": "directory",
+                "exists": path.exists(),
+            },
+            diagnostics,
+        )
     if surface is None:
         diagnostics.append(
             Diagnostic(
@@ -787,7 +805,7 @@ def default_semantic_path(
                 severity="error",
                 concept="Workspace Path Resolution",
                 field=label_or_surface,
-                message="Only built-in reserved semantic labels have default-layout paths.",
+                message="Only built-in reserved semantic labels and valid non-main `topic.repos.*` labels have default-layout paths.",
             )
         )
         return None, diagnostics

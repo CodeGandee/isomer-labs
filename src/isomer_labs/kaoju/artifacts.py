@@ -6,7 +6,7 @@ import builtins
 from dataclasses import dataclass
 from pathlib import Path
 import shutil
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 import uuid
 
 from isomer_labs.core.artifact_identity import ArtifactIdentityError, parse_artifact_identity
@@ -37,6 +37,7 @@ from isomer_labs.records.store import (
 from isomer_labs.runtime.records import RuntimeLifecycleRecord, utc_timestamp
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.kaoju.survey import ContractDiagnostic, diagnostic_errors, validate_structured_artifact
+from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
 
 @dataclass(frozen=True)
@@ -88,9 +89,7 @@ class KaojuArtifactService:
         relationships: list[dict[str, object]] | None = None,
         idempotency_key: str | None = None,
         external: bool = False,
-        repository_remote: str | None = None,
-        repository_commit: str | None = None,
-        repository_depth: int | None = None,
+        repository_evidence: Mapping[str, Any] | None = None,
     ) -> dict[str, object]:
         binding = self._binding(semantic_id)
         self._authorize(binding, producer)
@@ -108,9 +107,7 @@ class KaojuArtifactService:
             content,
             record_id=selected_id,
             external=external,
-            repository_remote=repository_remote,
-            repository_commit=repository_commit,
-            repository_depth=repository_depth,
+            repository_evidence=repository_evidence,
         )
         request = self._request(
             binding,
@@ -171,7 +168,7 @@ class KaojuArtifactService:
         selected_scope = scope_key or (inherited_scope if isinstance(inherited_scope, str) else None)
         self._validate_scope(binding, selected_scope)
         selected_id = new_record_id or f"artifact-{binding.artifact_type}-{uuid.uuid4().hex[:12]}"
-        prepared = self._prepare_content(binding, content, record_id=selected_id, external=False, repository_remote=None, repository_commit=None, repository_depth=None)
+        prepared = self._prepare_content(binding, content, record_id=selected_id, external=False, repository_evidence=None)
         request = self._request(
             binding,
             prepared,
@@ -342,9 +339,7 @@ class KaojuArtifactService:
         *,
         record_id: str,
         external: bool,
-        repository_remote: str | None,
-        repository_commit: str | None,
-        repository_depth: int | None,
+        repository_evidence: Mapping[str, Any] | None,
     ) -> ArtifactContent:
         try:
             if binding.content_mode == "structured_file":
@@ -355,9 +350,21 @@ class KaojuArtifactService:
                 return register_external_path(content) if external else create_managed_directory_artifact(self.context, content, semantic_label=binding.semantic_label, record_kind=binding.record_kind, record_id=record_id, env=self.env, cwd=self.cwd)
             if binding.content_mode == "external_path":
                 return register_external_path(content)
-            if repository_remote is None or repository_commit is None:
-                raise ValueError("Canonical repository content requires remote URL and immutable commit.")
-            return register_canonical_repository(content, remote_url=repository_remote, commit=repository_commit, depth=repository_depth)
+            if repository_evidence is None:
+                raise ValueError("Canonical repository content requires caller-observed repository evidence.")
+            semantic_label = repository_evidence.get("semantic_label")
+            if not isinstance(semantic_label, str):
+                raise ValueError("Canonical repository evidence requires semantic_label.")
+            resolution, diagnostics = resolve_semantic_path(self.context, semantic_label, env=self.env, cwd=self.cwd)
+            if resolution is None:
+                detail = "; ".join(diagnostic.message for diagnostic in diagnostics)
+                raise ValueError(f"Canonical repository semantic label is not registered: {detail}")
+            if resolution.path.resolve(strict=False) != content.resolve(strict=False):
+                raise ValueError(
+                    f"Canonical repository content path {content.resolve(strict=False)} does not match registered "
+                    f"{semantic_label} path {resolution.path.resolve(strict=False)}."
+                )
+            return register_canonical_repository(content, evidence=repository_evidence)
         except ValueError as exc:
             raise KaojuServiceError("artifact_content_invalid", str(exc)) from exc
 

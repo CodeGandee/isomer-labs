@@ -17,9 +17,9 @@ Use after discovery or acquisition when survey claims require direct paper, repo
 
 ## Workflow
 
-1. **Accept pinned materials**. Require Source Identities, material refs, target questions or claims, and desired verification depth.
+1. **Accept pinned materials**. Require Source Identities, material refs, target questions or claims, and desired verification depth. Repository input requires a registered non-main semantic label plus the externally observed immutable commit or digest recorded by the acquisition Artifact; a checkout path alone is insufficient.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-examine --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Inspect the authoritative source**. Read the relevant paper, report, source tree, dataset documentation, model metadata, evaluator, or configuration at exact locators. For a repository, bind every finding to Canonical External Repository ref, immutable commit, file, and line range.
+3. **Inspect the authoritative source**. Read the relevant paper, report, source tree, dataset documentation, model metadata, evaluator, or configuration at exact locators. For a repository, resolve its registered semantic path, confirm the supplied immutable identity still matches externally before inspection when freshness matters, and bind every finding to Canonical External Repository ref, immutable commit or digest, file, and line range. Source-control verification remains an external user or agent command, not an Isomer command request.
 4. **Map relationships**. Record paper-to-code, code-to-data, model-to-configuration, claim-to-experiment, and evaluator links only when evidence supports them.
 5. **Extract evidence**. For papers, record page, section, symbol, figure, or table locators and inspect claim-driven figures and tables. Treat visual evidence as provisional until labels, caption, surrounding text, and underlying values or code support it. For code, keep observed implementation distinct from paper claims and executed behavior. Always separate the source statement from agent interpretation.
 6. **Write outputs**. Produce a Source Digest or Source Access Blocker and update the Claim-Evidence Ledger with Evidence Item refs, depth, and verdict.

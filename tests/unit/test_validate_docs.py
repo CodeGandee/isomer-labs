@@ -13,6 +13,7 @@ from scripts.validate_docs import (
     check_forbidden_terms,
     check_legacy_workspace_paths,
     check_readme_links,
+    check_external_repository_boundary,
     check_required_pages,
     check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
@@ -216,7 +217,7 @@ class ValidateDocsTests(unittest.TestCase):
                 encoding="utf-8",
             )
             (docs / "cli-reference.md").write_text(
-                "project paths default\nproject paths explain\nproject paths get\nproject paths list\nproject paths materialize\nproject paths materialize-default\nproject paths register\nproject paths reset\nproject paths unregister\nproject paths update\nproject repos create\n--storage-profile\nISOMER_PATH__TOPIC__REPOS__MAIN\nISOMER_PATH__CUSTOM__DATASETS__RAW\n--configured\n",
+                "project paths default\nproject paths explain\nproject paths get\nproject paths list\nproject paths materialize\nproject paths materialize-default\nproject paths register\nproject paths reset\nproject paths unregister\nproject paths update\nproject repos create\nproject repos register\n--storage-profile\nISOMER_PATH__TOPIC__REPOS__MAIN\nISOMER_PATH__CUSTOM__DATASETS__RAW\n--configured\n",
                 encoding="utf-8",
             )
             (docs / "topic-workspaces.md").write_text(
@@ -224,6 +225,51 @@ class ValidateDocsTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual([], check_semantic_path_documentation(root))
+
+    def test_repository_boundary_rejects_removed_and_isomer_owned_guidance(self) -> None:
+        invalid_lines = (
+            "Use project repos " "acquire for every source.",
+            "Dispatch through repository_" "acquisition.",
+            "Construct KaojuRepository" "Service for the checkout.",
+            "The repository acquisition " "service owns this operation.",
+            "Isomer runs git clone for every repository.",
+            "Always use a shallow clone with --depth " "1.",
+            (
+                "First register the path, "
+                "then clone and verify it."
+            ),
+            "The repository service removes every partial checkout.",
+        )
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            for index, line in enumerate(invalid_lines):
+                (docs / "repository.md").write_text(line + "\n", encoding="utf-8")
+                with self.subTest(line=line):
+                    issues = check_external_repository_boundary(root)
+                    self.assertTrue(issues, (index, line))
+
+    def test_repository_boundary_accepts_external_command_variants(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = root / "docs"
+            docs.mkdir()
+            (docs / "repository.md").write_text(
+                "\n".join(
+                    (
+                        "The user or agent runs external commands before asking Isomer to register topology.",
+                        "git clone --branch selected-ref https://example.org/source.git candidate",
+                        "gh repo clone owner/source candidate",
+                        "cp -a local-source candidate",
+                        "Verify the source and immutable identity before registration.",
+                        "Isomer does not remove partial content created by an external command.",
+                    )
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], check_external_repository_boundary(root))
 
 
 if __name__ == "__main__":

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Literal, Mapping, Sequence
 
+from isomer_labs.kaoju.repository_evidence import repository_blocker_diagnostics, repository_evidence_diagnostics
+
 
 @dataclass(frozen=True)
 class ContractDiagnostic:
@@ -313,12 +315,12 @@ def _validate_associated_source_code(payload: Mapping[str, Any], diagnostics: li
         if sections.get(field) in (None, "", [], {}):
             diagnostics.append(ContractDiagnostic("associated_source_field_missing", f"Associated Source Code requires {field}.", f"sections.{field}"))
     repository = _mapping(sections.get("repository"))
-    commit = repository.get("commit")
-    if not isinstance(commit, str) or len(commit) != 40 or any(character not in "0123456789abcdefABCDEF" for character in commit):
-        diagnostics.append(ContractDiagnostic("associated_source_commit_invalid", "Associated Source Code requires a full immutable repository commit.", "sections.repository.commit"))
+    _append_repository_diagnostics(repository, diagnostics, location="sections.repository")
     relationship = _mapping(sections.get("relationship"))
     if relationship.get("status") not in {"verified", "candidate", "rejected", "blocked"}:
         diagnostics.append(ContractDiagnostic("associated_source_status_invalid", "Relationship status must be verified, candidate, rejected, or blocked.", "sections.relationship.status"))
+    if relationship.get("basis") in (None, ""):
+        diagnostics.append(ContractDiagnostic("associated_source_basis_missing", "Associated Source Code requires a relationship basis.", "sections.relationship.basis"))
 
 
 def _validate_artifact_library(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
@@ -332,6 +334,39 @@ def _validate_artifact_library(payload: Mapping[str, Any], diagnostics: list[Con
         for field in ("material_id", "source_identity", "source_class", "content_ref", "status", "provenance_refs"):
             if material.get(field) in (None, "", [], {}):
                 diagnostics.append(ContractDiagnostic("artifact_library_field_missing", f"Artifact Library entry requires {field}.", f"sections.materials/{index}/{field}"))
+        if material.get("source_class") == "repository":
+            repository = _mapping(material.get("repository"))
+            if not repository:
+                diagnostics.append(ContractDiagnostic("artifact_library_repository_missing", "Repository materials require repository evidence.", f"sections.materials/{index}/repository"))
+            else:
+                _append_repository_diagnostics(repository, diagnostics, location=f"sections.materials/{index}/repository")
+                if material.get("content_ref") != repository.get("semantic_label"):
+                    diagnostics.append(ContractDiagnostic("artifact_library_repository_ref_mismatch", "Repository material content_ref must match its semantic repository label.", f"sections.materials/{index}/content_ref"))
+
+
+def _validate_material_acquisition_manifest(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
+    materials = _sequence(_mapping(payload.get("sections")).get("materials"))
+    for index, material in enumerate(materials):
+        if not isinstance(material, dict) or material.get("source_class") != "repository":
+            continue
+        repository = _mapping(material.get("repository"))
+        if not repository:
+            diagnostics.append(ContractDiagnostic("material_repository_evidence_missing", "Repository acquisition entries require repository evidence.", f"sections.materials/{index}/repository"))
+        else:
+            _append_repository_diagnostics(repository, diagnostics, location=f"sections.materials/{index}/repository")
+
+
+def _validate_source_access_blocker(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
+    blocker = _mapping(_mapping(payload.get("sections")).get("blocker"))
+    if blocker.get("source_class") != "repository":
+        return
+    for code, message, location in repository_blocker_diagnostics(blocker, location="sections.blocker"):
+        diagnostics.append(ContractDiagnostic(code, message, location))
+
+
+def _append_repository_diagnostics(repository: Mapping[str, Any], diagnostics: list[ContractDiagnostic], *, location: str) -> None:
+    for code, message, item_location in repository_evidence_diagnostics(repository, location=location):
+        diagnostics.append(ContractDiagnostic(code, message, item_location))
 
 
 def _validate_env_gate_revision(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
@@ -411,6 +446,8 @@ _SEMANTIC_VALIDATORS = {
     "KAOJU:GENERATED-DATASET": _validate_generated_dataset,
     "KAOJU:ASSOCIATED-SOURCE-CODE": _validate_associated_source_code,
     "KAOJU:ARTIFACT-LIBRARY": _validate_artifact_library,
+    "KAOJU:MATERIAL-ACQUISITION-MANIFEST": _validate_material_acquisition_manifest,
+    "KAOJU:SOURCE-ACCESS-BLOCKER": _validate_source_access_blocker,
 }
 
 

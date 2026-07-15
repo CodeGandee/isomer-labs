@@ -27,6 +27,8 @@ DeepSci and Kaoju are domain extension families, not a generic extension bucket.
 
 The Kaoju family contains one pipeline, shared and workspace contracts, and focused frame, discover, acquire, examine, reproduce, compare, audit, and synthesize skills. Its pipeline exposes seven bounded survey procedures, grouped `manage-survey` and `manage-dataset` helpers, and `help`. Generic repository maintenance, environment repair, and resume behavior remain context inside a selected survey procedure.
 
+Kaoju repository acquisition is prompt-sensitive external user or agent work. Skills honor exact user procedures or select source-appropriate commands, verify the resulting source and immutable identity outside Isomer, register the existing path under a non-main `topic.repos.*` label, and then record typed research provenance. Isomer APIs do not choose or execute repository commands or clean partial external content.
+
 Active Kaoju guidance lives in `SKILL.md`, `agents/openai.yaml`, and directly linked local `commands/` or `references/`. It uses existing Topic Workspace, provider, environment, execution, Gate, and research-recording owners rather than defining a Kaoju runtime database or provider.
 
 ## Core Research Skills

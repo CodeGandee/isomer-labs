@@ -15,10 +15,10 @@ Use for `prepare-code-run`, `run-code-trial`, bounded capability probes, and app
 
 ## Workflow
 
-1. **Resolve prerequisites**. Query Workspace Runtime by semantic id and scope for the canonical repository commit, associated paper, accepted source digest, data posture, and current environment evidence. Never scan directories to guess durable state.
+1. **Resolve prerequisites**. Query Workspace Runtime by semantic id and scope for the registered repository semantic label, caller-observed immutable commit or digest, associated paper, accepted source digest, data posture, and current environment evidence. Never scan directories to guess durable state or infer repository identity from a checkout.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-trial --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Plan environment support**. Record `KAOJU:ENV-PREP-PLAN` with flexible dependency intent, task-critical path, candidate Pixi environments, risks, authorization, and expected smoke outputs.
-4. **Open a Service Request**. Use `isomer-cli project service-requests create` and synchronous `dispatch` for repository, Pixi, lock, smoke, or repair mutation. Preserve the Service Request, command request, support Artifact, Gate, and Run refs.
+4. **Open a Service Request**. Use `isomer-cli project service-requests create` and synchronous `dispatch` for Pixi, lock, smoke, or managed environment repair. Preserve the Service Request, command request, support Artifact, Gate, and Run refs. If repository source work is still required, return to `$isomer-kaoju-acquire`; its user-supplied or agent-selected repository commands run externally before verification, semantic registration, and Artifact recording.
 5. **Require readiness evidence**. Accept `KAOJU:PIXI-ENV-REF` only with exact resolved packages and lock identity. Require a durable `KAOJU:SMOKE-RUN-SCRIPT`, `KAOJU:SMOKE-RUN-RESULT`, and successful task-critical observation before marking the environment ready.
 6. **Plan the trial**. Record `KAOJU:METHOD-TRIAL-PLAN` with source, environment, data, wrapper, upstream entry point or smallest adaptation, evaluator, metrics, resources, fidelity target, limitations, and expected outputs. After approval, register the minimal wrapper itself as file-backed `KAOJU:METHOD-TRIAL-WRAPPER` state before execution.
 7. **Pause at the human Gate**. Present the exact plan and wait. Rejection ends the Run without execution.

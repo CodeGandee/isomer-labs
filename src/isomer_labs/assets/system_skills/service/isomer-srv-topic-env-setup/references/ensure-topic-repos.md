@@ -1,6 +1,6 @@
 # Ensure Topic Repos
 
-Use this subcommand to ensure independent repos required by the source gate exist at resolved non-main `topic.repos.*` paths. When a repo becomes a durable topic repository, register it through Workspace Path Resolution as a `topic.repos.<group...>.<repo-name>` label with `storage_profile = "topic_repo"`; prefer `project repos create` or `project paths register` over manual `topic-workspace.toml` edits. Under `isomer-default.v1`, helper-created non-main repositories default under `<topic-workspace-dir>/repos/extern/...`.
+Use this subcommand to reuse verified registered repositories or orchestrate missing repository acquisition through the acting user or agent's external command surface. A new durable repository becomes a Canonical External Repository only after source and immutable-identity verification succeeds and `project repos register <repo-label> --path <existing-path>` records its non-main `topic.repos.<group...>.<repo-name>` binding with `storage_profile = "topic_repo"`. Under `isomer-default.v1`, the read-only candidate path is `<topic-workspace-dir>/repos/extern/...`.
 
 ## Required Inputs
 
@@ -9,9 +9,9 @@ Recover these before asking the user:
 | Input | Resolution |
 | --- | --- |
 | Workspace context | Require `project_root`, `research_topic_id`, `topic_workspace_dir`, `semantic_paths`, `manifest_path_or_dir`, `manifest_path`, and `pixi_environment` from `resolve-topic-workspace`. Refuse to run if any value is missing, and tell the user to run `resolve-topic-workspace` first. |
-| Source gate or target spec summary | Require the extracted source gate summary from `read-env-gate` and the repository requirements from `derive-env-gate`, including runnable target, desired commands, success criteria, repo hints, clone-depth decisions, projection access intent, dependency hints, and blockers. Refuse to run if both are missing, and tell the user to run `read-env-gate` and `derive-env-gate` first. |
-| Repo semantic path | For each required repository, resolve or register a non-main `topic.repos.*` label. Under `isomer-default.v1`, `project repos create <repo-label>` creates the default target under `<topic-workspace-dir>/repos/extern/<repo-label-path>`. Create the resolved path only when this step needs to materialize or inspect that repo, and record the semantic label, path, and path source. |
-| Explicit repo source | Optional. Use a URL, local path, package source, or repo name from the prompt or source gate only when the expected repo path is missing. |
+| Source gate or target spec summary | Require the extracted source gate summary from `read-env-gate` and the repository requirements from `derive-env-gate`, including runnable target, desired commands, success criteria, repo hints, branch or commit and feature needs, projection access intent, dependency hints, and blockers. Refuse to run if both are missing, and tell the user to run `read-env-gate` and `derive-env-gate` first. |
+| Repo semantic label and target | For each required repository, select a valid non-main `topic.repos.*` label. Query `project paths get` for an existing binding; otherwise query `project paths default` for a read-only candidate unless the user or target spec gives another safe Project-local target. Do not create a binding or directory during target planning. |
+| Repository source and command procedure | Accept a URL, local path, provider ref, package source, repo name, or exact user-supplied clone, fetch, checkout, sparse, partial, submodule, LFS, local-copy, provider-CLI, credential-wrapper, or multi-command procedure. Exact user commands take priority. |
 
 ## Workflow
 
@@ -21,41 +21,48 @@ When this subcommand is selected, execute the following steps in order.
    - Require workspace context from `resolve-topic-workspace` and source gate summary from `read-env-gate`.
 2. **Identify required repos**:
    - Use the source gate, target spec, desired commands, repo URLs, package names, import paths, build instructions, README references, projection access intent, and common project files already present at resolved `topic.repos.*` paths.
-3. **Decide Git acquisition mode**:
-   - For each missing Git repo, decide whether the work needs full Git history or only a source snapshot.
-   - Default to `clone_mode: shallow` with `clone_depth: 1`.
-   - Use `clone_mode: full-history` only when the prompt, Research Topic, source gate, target spec, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it.
-   - Record clone mode, clone depth, and the evidence for the decision before acquiring the repo.
-4. **Use semantic repo paths**. Place every independent repo at a resolved non-main `topic.repos.*` path. The default helper location is `repos/extern/<repo-label-path>`, but explicit safe manifest bindings remain valid.
-5. **Find existing repos first**:
-   - If the expected repo already exists at the resolved semantic path, treat it as read-only by default for this subcommand.
-   - Inspect it and record evidence.
-   - Do not run `git pull`, `git checkout`, copy files into it, delete files from it, install packages into it, regenerate files in it, or otherwise mutate it.
-6. **Acquire explicit sources only when missing**:
-   - When a required repo is absent and the gate or prompt provides a URL, local path, or package source, first register the target through `project repos create <repo-label>` or `project paths register topic.repos.<group...>.<repo-name> --storage-profile topic_repo`.
-   - Then clone, copy, or materialize it at the resolved path.
-7. **Infer or search for missing repos when needed**:
+3. **Find registered repositories first**:
+   - Query the semantic label through `project paths get` and require existing identity or provenance evidence from the caller or applicable typed Artifact.
+   - Treat the repository as read-only by default for this subcommand. Do not infer source identity from the path or run source mutation merely to make it match the gate.
+4. **Plan an unregistered target without mutation**:
+   - Query `project paths default <label>` for the `isomer-default.v1` candidate, or preserve the user's safe explicit Project-local target.
+   - Confirm the target is not already bound to another semantic label and record that no successful registration exists yet.
+5. **Select the external procedure**:
+   - Use the user's exact repository commands when supplied, subject to authorization and safety limits.
+   - Otherwise select source-appropriate external commands from the requested locator, revision, authentication posture, repository features, target spec, resource limits, and inspection needs. Do not impose a mandatory history depth, remote name, provider, staging layout, retry sequence, or cleanup policy.
+   - Record the method rationale and relevant non-secret options before execution.
+6. **Run commands outside Isomer**:
+   - Execute the selected clone, fetch, checkout, sparse, partial, submodule, LFS, copy, provider, or wrapper procedure through the ordinary user or agent command surface.
+   - Do not translate it into an `isomer-cli` command, Service Request, Execution Adapter Command Request, or generic Isomer `argv` passthrough.
+7. **Infer or search for missing sources when needed**:
    - When a required repo is absent and the gate implies runnable repo code but gives no explicit source, infer or search for a likely source.
-   - Acquire it only when it can be plausibly matched to the desired target.
+   - Present ambiguity for selection or record a blocker before command execution. Acquire only a source whose relationship can be verified.
 8. **Warning-label inferred sources**:
-   - For every repo acquired from an inferred or discovered source, record the repo name, expected path, inferred source, reason for choosing it, and uncertainty or review needed.
-9. **Inspect repo contents** for dependency and command signals:
+   - For every repository acquired from an inferred or discovered source, record the repo name, candidate target, inferred source, reason for choosing it, and uncertainty or review needed.
+9. **Verify before registration**:
+   - Through external source-specific checks, verify the requested and resolved locators, intended source relationship, target path, immutable commit or digest, branch or selected revision, required repository features, and access posture.
+   - If acquisition or verification fails, leaves partial content, or produces an unexpected identity, do not register it. Preserve the external content, record sanitized attempt and filesystem posture, impact, blockers, and safe resume condition, and stop.
+10. **Register verified topology**:
+   - Run `isomer-cli --print-json project repos register <repo-label> --path <existing-target>` only after verification succeeds.
+   - On a label or path conflict, leave both targets untouched and report registration as incomplete.
+11. **Record provenance and inspect repo contents**:
+   - Record or link the semantic label, requested and resolved locators, immutable identity, selected external method, sanitized command evidence, observation time, access and license posture, relationship basis, limitations, blockers, and provenance refs in the applicable typed Artifact owner.
    - Check files such as `README*`, `pyproject.toml`, `setup.py`, `requirements*.txt`, `environment.yml`, `package.json`, `pnpm-lock.yaml`, `CMakeLists.txt`, `Cargo.toml`, `Makefile`, CUDA files, shell scripts, notebooks, and test commands.
-10. **Report repo context**:
-   - Stop with blockers when a missing required repo source remains too ambiguous, an acquired repo cannot be verified against the desired command, or an existing repo is unsuitable.
+12. **Report repo context**:
+   - Stop with blockers when a missing required repo source remains ambiguous, an externally acquired repository cannot be verified against the desired command, registration fails, Artifact recording fails, or an existing repo is unsuitable. A successful path binding without required provenance remains incomplete readiness.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the source gate, repo evidence, parent guardrails, and user request, then execute the plan.
 
-## Acquisition Rules
+## External Repository Rules
 
-- Use `git clone --depth=1 <source> <resolved-topic-repo-path>` for Git sources by default when `<resolved-topic-repo-path>` does not already exist.
-- Use `git clone <source> <resolved-topic-repo-path>` without `--depth=1` only when the recorded clone mode is `full-history` and the target spec or source context explains why history is required.
-- If a shallow clone later proves insufficient, report a blocker or ask for explicit authorization before recloning or fetching additional history.
-- Copy or link local sources only when `<resolved-topic-repo-path>` does not already exist and the user or gate clearly authorizes that source.
+- Exact user-supplied repository commands take priority. Examples in this skill are illustrative and replaceable.
+- When selecting commands, account for branch or commit selection, sparse or partial checkout, submodules, LFS, provider-specific behavior, authentication, local sources, history needs, and resource limits.
+- Later fetch, pull, checkout, repair, feature, or history operations against an already registered repository remain external user or agent commands. Record a new immutable Artifact revision when the observed identity changes; keep the semantic path stable.
 - Keep the manifest binding compact: `label`, `path`, and `storage_profile`. Do not infer `storage_profile` from a directory name, and do not treat default-looking paths as registered storage without a semantic label.
 - Do not place task repos in the Project root, Agent Workspace, `.pixi/`, `tmp/`, or other disposable directories as the durable repo location.
 - Do not claim readiness just because a repo exists; repo checks must still be represented in `topic.env.topic_setup_target_spec` and verified later.
-- Do not mutate an existing repo to make it match the gate. If an existing repo is the wrong source, wrong branch, dirty, missing files, or otherwise unsuitable, report a blocker and explain what user action or explicit authorization is needed.
+- Do not ask Isomer to clean, repair, move, or remove partial external content. The user or acting agent decides whether to inspect, resume, move, or remove it under the applicable authorization.
+- Do not persist credentials, signed query strings, authorization headers, environment secrets, credential-helper output, or raw stdout or stderr. Preserve only redacted descriptions, tool class, relevant non-secret options, status, and observed immutable identity.
 
 ## Output Notes
 
@@ -65,9 +72,12 @@ Carry forward:
 - semantic label;
 - expected path;
 - path source for the repository;
-- binding command evidence when a new `topic.repos.*` label was registered;
-- explicit or inferred source;
-- clone mode, clone depth, and clone-mode evidence for Git sources;
+- registration command evidence when a new `topic.repos.*` label was registered;
+- requested and resolved source;
+- user-supplied or agent-selected external method, non-secret options, and selection rationale;
+- external verification evidence and observed immutable commit or digest;
+- partial-result posture, impact, and safe resume condition when incomplete;
+- access, license, relationship, limitation, blocker, and provenance refs;
 - source warning, if any;
 - projection access intent, if the target spec says the repo must be visible from topic-main;
 - relevant files inspected;

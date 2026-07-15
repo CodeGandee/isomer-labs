@@ -13,7 +13,6 @@ from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import common_options, merge_options, topic_selection_options
 from isomer_labs.cli.output import emit_output
 from isomer_labs.kaoju.artifacts import KaojuArtifactService, KaojuServiceError
-from isomer_labs.kaoju.repositories import KaojuRepositoryService
 from isomer_labs.kaoju.runs import KaojuRunService
 from isomer_labs.kaoju.service_requests import KaojuServiceRequestService
 
@@ -43,9 +42,11 @@ def register_kaoju_project_commands(project: click.Group) -> None:
     @click.option("--relationships-json", default=None, help="Relationship objects with binding role fields.")
     @click.option("--idempotency-key", default=None, help="Retry-safe mutation key.")
     @click.option("--external", is_flag=True, help="Register an authorized external path without copying it.")
-    @click.option("--repository-remote", default=None, help="Canonical repository remote URL.")
-    @click.option("--repository-commit", default=None, help="Canonical repository immutable commit.")
-    @click.option("--repository-depth", type=int, default=None, help="Recorded clone depth posture.")
+    @click.option(
+        "--repository-evidence-json",
+        default=None,
+        help="Sanitized caller-observed identity and provenance for registered canonical repository content.",
+    )
     @click.argument("semantic_id")
     @click.argument("content", type=click.Path(path_type=Path))
     @click.pass_context
@@ -63,9 +64,7 @@ def register_kaoju_project_commands(project: click.Group) -> None:
                 relationships=_object_list(values.get("relationships_json")),
                 idempotency_key=values.get("idempotency_key"),
                 external=bool(values.get("external")),
-                repository_remote=values.get("repository_remote"),
-                repository_commit=values.get("repository_commit"),
-                repository_depth=values.get("repository_depth"),
+                repository_evidence=_named_object(values.get("repository_evidence_json"), "repository-evidence-json"),
             ),
         )
 
@@ -139,21 +138,6 @@ def register_kaoju_project_commands(project: click.Group) -> None:
     @click.pass_context
     def artifacts_migrate_scope(ctx: click.Context, **values: Any) -> int:
         return _with_artifact_service(ctx, values, lambda service: service.backfill_scope_keys(apply=bool(values.get("apply"))))
-
-    repos_group = project.commands.get("repos")
-    if not isinstance(repos_group, click.Group):
-        raise RuntimeError("Project repository command group must be registered before Kaoju services.")
-
-    @repos_group.command(name="acquire", help="Acquire, validate, and then register a canonical external repository.")
-    @common_options
-    @topic_selection_options
-    @click.option("--semantic-label", required=True, help="Exact non-main topic.repos.* target label.")
-    @click.option("--history-depth", type=int, default=1, show_default=True, help="Required history depth after the depth-one clone.")
-    @click.option("--timeout", "timeout_seconds", type=float, default=120.0, show_default=True, help="Synchronous command timeout in seconds.")
-    @click.argument("remote_url")
-    @click.pass_context
-    def repos_acquire(ctx: click.Context, remote_url: str, **values: Any) -> int:
-        return _with_repository_service(ctx, values, lambda service: service.acquire(remote_url, semantic_label=str(values["semantic_label"]), history_depth=int(values["history_depth"]), timeout_seconds=float(values["timeout_seconds"])))
 
     @project.group(name="service-requests", help="Create, synchronously dispatch, and inspect Service Requests.")
     def service_requests_group() -> None:
@@ -274,10 +258,6 @@ def _with_run_service(ctx: click.Context, values: dict[str, Any], callback: Call
     return _with_service(ctx, values, lambda context: callback(KaojuRunService(context, env=os.environ, cwd=Path.cwd())))
 
 
-def _with_repository_service(ctx: click.Context, values: dict[str, Any], callback: Callable[[KaojuRepositoryService], dict[str, object]]) -> int:
-    return _with_service(ctx, values, lambda context: callback(KaojuRepositoryService(context, env=os.environ, cwd=Path.cwd())))
-
-
 def _with_service_request_service(ctx: click.Context, values: dict[str, Any], callback: Callable[[KaojuServiceRequestService], dict[str, object]]) -> int:
     return _with_service(ctx, values, lambda context: callback(KaojuServiceRequestService(context, env=os.environ, cwd=Path.cwd())))
 
@@ -314,6 +294,15 @@ def _object(value: object) -> dict[str, object] | None:
     loaded = json.loads(str(value))
     if not isinstance(loaded, dict):
         raise ValueError("command-request-json must be an object.")
+    return {str(key): item for key, item in loaded.items()}
+
+
+def _named_object(value: object, option_name: str) -> dict[str, object] | None:
+    if value is None:
+        return None
+    loaded = json.loads(str(value))
+    if not isinstance(loaded, dict):
+        raise ValueError(f"{option_name} must be an object.")
     return {str(key): item for key, item in loaded.items()}
 
 

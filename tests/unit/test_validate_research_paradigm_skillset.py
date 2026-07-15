@@ -42,6 +42,69 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(root / "pyproject.toml", "[project]\nname = \"fixture\"\n")
         return root
 
+    def test_repository_boundary_accepts_custom_external_acquisition_variants(self) -> None:
+        root = self.make_root()
+        target = root / "skillset" / "research-paradigm"
+        write(
+            target / "kaoju" / "isomer-kaoju-acquire" / "SKILL.md",
+            """
+            # External Repository Variants
+
+            Honor the user's exact `git clone --filter=blob:none --branch feature SOURCE TARGET` command through the external user command surface.
+            When no command is supplied, the acting agent selects source-appropriate external Git commands and explains non-secret options.
+            Provider-specific acquisition such as `gh repo clone OWNER/REPO TARGET` remains an external user or agent command.
+            A local source may use an authorized external `cp -a SOURCE TARGET` procedure.
+            Branch, commit, sparse checkout, partial clone, submodules, and Git LFS requirements shape the selected external procedure.
+            Verify the resolved locator, target, relationship, and immutable commit with external checks before registration.
+            After verification, run `project repos register topic.repos.sources.method --path TARGET`.
+            Record typed Artifacts with sanitized command evidence, access, license, limitations, blockers, and provenance refs.
+            """,
+        )
+        diagnostics: list[object] = []
+
+        validator.validate_repository_command_boundary(target, root, diagnostics)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_repository_boundary_rejects_removed_routes_ordering_cleanup_and_secrets(self) -> None:
+        root = self.make_root()
+        target = root / "skillset" / "research-paradigm"
+        invalid_lines = (
+            (
+                "Run `project repos "
+                "acquire SOURCE --semantic-label topic.repos.sources.method`."
+            ),
+            (
+                "Dispatch through the `repository_"
+                "acquisition` extension point."
+            ),
+            (
+                "Call `KaojuRepository"
+                "Service` for the checkout."
+            ),
+            "Use the Isomer API to run `git clone SOURCE TARGET`.",
+            "Let the repository API accept raw command argv for repository cloning.",
+            "Create a repository Execution Adapter Command Request for `git clone`.",
+            (
+                "Default to a "
+                "shallow clone with `--depth=1`."
+            ),
+            "Isomer removes a partial checkout after clone failure.",
+            (
+                "First register the repository, "
+                "then acquire it at the bound path."
+            ),
+            "Persist authorization headers and raw stdout as repository provenance.",
+        )
+        for index, line in enumerate(invalid_lines, start=1):
+            write(target / f"fixture-{index}.md", f"# Invalid\n\n{line}\n")
+        diagnostics: list[object] = []
+
+        validator.validate_repository_command_boundary(target, root, diagnostics)
+
+        self.assertEqual(set(range(1, len(invalid_lines) + 1)), {int(Path(item.path).stem.removeprefix("fixture-")) for item in diagnostics})
+        self.assertTrue(all(item.code == "RPS030" for item in diagnostics))
+
     def test_workspace_manager_requires_qualified_team_specialization_gate(self) -> None:
         root = self.make_root()
         target = root / "skillset" / "research-paradigm"

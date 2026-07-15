@@ -285,6 +285,19 @@ class SourceArchitectureTests(unittest.TestCase):
                         violations.append(f"{relative}: {module_path}")
         self.assertEqual([], violations)
 
+    def test_external_repository_registration_has_no_execution_adapter_dependency(self) -> None:
+        registration_source = (SRC_ROOT / "cli" / "handlers" / "workspace_paths.py").read_text(encoding="utf-8")
+        command_source = (SRC_ROOT / "cli" / "commands" / "project.py").read_text(encoding="utf-8")
+        execution_source = (SRC_ROOT / "kaoju" / "execution.py").read_text(encoding="utf-8")
+        removed_extension = "repository_" + "acquisition"
+
+        self.assertFalse((SRC_ROOT / "kaoju" / "repositories.py").exists())
+        self.assertNotIn("ExecutionAdapterCommandRequest", registration_source)
+        self.assertNotIn(removed_extension, registration_source)
+        self.assertNotIn(removed_extension, command_source)
+        self.assertNotIn(removed_extension, execution_source)
+        self.assertNotIn("repos acquire", registration_source)
+
     def test_consolidated_domain_packages_use_canonical_internal_modules(self) -> None:
         for package_name, expected_files in CANONICAL_DOMAIN_PACKAGE_FILES.items():
             package_root = SRC_ROOT / package_name

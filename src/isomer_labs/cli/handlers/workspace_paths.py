@@ -51,9 +51,11 @@ from isomer_labs.cli.handlers.shared import (
     initialize_workspace_runtime,
     inspect_topic_main_guidance,
     inspect_workspace_runtime,
+    is_grouped_topic_repo_label,
     json,
     list_built_in_schemas,
     list_semantic_paths,
+    load_topic_workspace_manifest,
     list_topic_actors,
     load_json_manifest,
     load_toml,
@@ -93,6 +95,7 @@ from isomer_labs.cli.handlers.shared import (
     render_topic_update_text,
     replace,
     reset_manifest_binding,
+    resolve_binding_path,
     resolve_effective_agent_context,
     resolve_effective_topic_actor_context,
     resolve_effective_topic_context,
@@ -541,6 +544,159 @@ def _cmd_repos_create(
     )
 
 
+def _cmd_repos_register(
+    options: CliOptions,
+    repo_label: str,
+    *,
+    path: str,
+) -> int:
+    semantic_label = repo_label if repo_label.startswith("topic.repos.") else f"topic.repos.{repo_label}"
+    diagnostics: list[Diagnostic] = []
+    if semantic_label == "topic.repos.main":
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Canonical External Repository",
+                field=semantic_label,
+                message="`topic.repos.main` is the Topic Main Development Repository and cannot be registered as a Canonical External Repository.",
+            )
+        )
+    elif not is_grouped_topic_repo_label(semantic_label):
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Canonical External Repository",
+                field=semantic_label,
+                message="Repository label must be a valid non-main `topic.repos.<group...>.<repo-name>` semantic label.",
+            )
+        )
+    if diagnostics:
+        return _emit(
+            "repos register",
+            options,
+            {"ok": False, "mutated": False, "manifest": None, "repository": None, "created_paths": []},
+            diagnostics,
+            [],
+        )
+
+    context, context_diagnostics = _context_for_path_options(options, semantic_label)
+    diagnostics.extend(context_diagnostics)
+    if context is None:
+        return _emit(
+            "repos register",
+            options,
+            {"ok": False, "mutated": False, "manifest": None, "repository": None, "created_paths": []},
+            diagnostics,
+            [],
+        )
+
+    path_value = Path(path).expanduser()
+    target_path = (
+        path_value.resolve(strict=False)
+        if path_value.is_absolute()
+        else (context.topic_workspace_path / path_value).resolve(strict=False)
+    )
+    if not target_path.exists():
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Canonical External Repository",
+                field=semantic_label,
+                path=target_path,
+                message="Repository registration requires an existing directory acquired and verified outside Isomer.",
+            )
+        )
+    elif not target_path.is_dir():
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Canonical External Repository",
+                field=semantic_label,
+                path=target_path,
+                message="Repository registration target exists but is not a directory.",
+            )
+        )
+    if diagnostics:
+        return _emit(
+            "repos register",
+            options,
+            {"ok": False, "mutated": False, "manifest": None, "repository": None, "created_paths": []},
+            diagnostics,
+            [],
+        )
+
+    manifest, manifest_diagnostics = load_topic_workspace_manifest(context)
+    diagnostics.extend(manifest_diagnostics)
+    existing = manifest.binding_for(semantic_label)
+    if existing is not None:
+        existing_path = resolve_binding_path(context, existing, agent_name=None)
+        if existing.storage_profile == "topic_repo" and existing_path == target_path:
+            payload = {
+                "ok": not has_errors(diagnostics),
+                "mutated": False,
+                "manifest": manifest.to_json(),
+                "repository": {
+                    "semantic_label": semantic_label,
+                    "path": str(target_path),
+                    "storage_profile": "topic_repo",
+                },
+                "created_paths": [],
+            }
+            lines = [f"Repository binding already registered: {semantic_label} -> {target_path}"]
+            return _emit("repos register", options, payload, diagnostics, lines)
+        diagnostics.append(
+            Diagnostic(
+                code="ISO061",
+                severity="error",
+                concept="Canonical External Repository",
+                field=semantic_label,
+                path=manifest.path,
+                message=(
+                    f"Repository label is already bound to `{existing_path}` and cannot be registered at `{target_path}`. "
+                    "Use `project paths update` for an explicit topology change."
+                ),
+            )
+        )
+        return _emit(
+            "repos register",
+            options,
+            {"ok": False, "mutated": False, "manifest": None, "repository": None, "created_paths": []},
+            diagnostics,
+            [],
+        )
+
+    next_manifest, _created, binding_diagnostics = register_manifest_binding(
+        context,
+        label=semantic_label,
+        path_template=path,
+        storage_profile="topic_repo",
+        create=False,
+        replace_existing=False,
+    )
+    diagnostics.extend(binding_diagnostics)
+    payload = {
+        "ok": next_manifest is not None and not has_errors(diagnostics),
+        "mutated": next_manifest is not None and not has_errors(diagnostics),
+        "manifest": next_manifest.to_json() if next_manifest is not None else None,
+        "repository": (
+            {
+                "semantic_label": semantic_label,
+                "path": str(target_path),
+                "storage_profile": "topic_repo",
+            }
+            if next_manifest is not None
+            else None
+        ),
+        "created_paths": [],
+    }
+    lines = [f"Registered existing repository: {semantic_label} -> {target_path}"] if next_manifest is not None else []
+    return _emit("repos register", options, payload, diagnostics, lines)
+
+
 def _cmd_paths_preview(options: CliOptions) -> int:
     context, diagnostics = _context_for_path_options(options)
     entries: list[dict[str, object]] = []
@@ -571,5 +727,6 @@ __all__ = [
     "_cmd_paths_unregister",
     "_cmd_paths_reset",
     "_cmd_repos_create",
+    "_cmd_repos_register",
     "_cmd_paths_preview",
 ]

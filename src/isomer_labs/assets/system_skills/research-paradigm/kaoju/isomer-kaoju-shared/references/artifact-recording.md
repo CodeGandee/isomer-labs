@@ -20,7 +20,7 @@ On validation failure, report the semantic id, binding page, profile ref, failin
 
 ## Large-Material Boundary
 
-Keep papers, repository trees, datasets, models, checkpoints, generated-data directories, raw outputs, and logs outside structured payload snapshots. The applicable material or dataset manifest stores immutable locator, revision or digest, source class, size when known, access and license posture, observed time, staleness policy, managed-link ref, file Artifact refs, and Provenance Record refs. The Topic Dataset Manifest indexes datasets; it is not a dataset store. Only the Topic Workspace owner mutates managed links, and removal never deletes or rewrites the external target.
+Keep papers, repository trees, datasets, models, checkpoints, generated-data directories, raw outputs, and logs outside structured payload snapshots. The applicable material or dataset manifest stores immutable locator, revision or digest, source class, size when known, access and license posture, observed time, staleness policy, managed-link ref, file Artifact refs, and Provenance Record refs. Repository records additionally store the registered semantic label, requested and resolved locators, external acquisition method, sanitized command descriptions, relationship basis, limitations, and blockers. Omit credentials, signed query strings, headers, environment values, credential-helper output, and raw stdout or stderr. The Topic Dataset Manifest indexes datasets; it is not a dataset store. Only the Topic Workspace owner mutates managed links, and removal never deletes or rewrites the external target.
 
 ## Content Authority
 
@@ -28,4 +28,4 @@ The managed JSON file is authoritative for structured content. An ordinary-file 
 
 ## Resumable Operations
 
-Use a Service Request for supported owner mutation and an Execution Adapter Command Request for executable work. Record Gates separately from dispatch. Begin a Run before claim-bearing execution, checkpoint completed Artifact refs, pending Gate, blocker and Service Request refs, and the first incomplete stage, then complete it with immutable logs and outputs. A paused or blocked terminal report must carry a stable resume hint.
+Use a Service Request for supported Isomer-owned mutation and an Execution Adapter Command Request for managed research execution. Repository acquisition and identity verification use direct external user or agent commands; only post-verification `project repos register`, typed Artifacts, provenance, and sanitized blockers are Isomer operations. Record Gates separately from dispatch. Begin a Run before claim-bearing execution, checkpoint completed Artifact refs, pending Gate, blocker and Service Request refs, and the first incomplete stage, then complete it with immutable logs and outputs. A paused or blocked terminal report must carry a stable resume hint.

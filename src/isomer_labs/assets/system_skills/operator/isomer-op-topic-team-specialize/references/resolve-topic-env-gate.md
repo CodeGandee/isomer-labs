@@ -13,7 +13,7 @@ When this subcommand is selected, execute the following steps in order.
 3. Read the topic overview, user prompt, explicitly mentioned repositories, required datasets, tools, libraries, runtimes, and runnable goals.
 4. Write or update the resolved `topic.intent.topic_env_requirements` path with concise high-level Topic Workspace requirements:
    - State what must be available or runnable for the topic.
-   - State whether any Git repository needs full history instead of a shallow source snapshot, and why.
+   - Preserve exact user-supplied repository commands when present. Otherwise, state requested source, revision, authentication, sparse or partial needs, submodules, LFS, provider constraints, history needs, and resource limits so the service can select suitable external commands.
    - Keep this source intent user-editable.
    - Avoid concrete install commands, package-source choices, cwd matrices, execution logs, or verification command detail unless the user explicitly supplied them as intent.
 5. If the topic environment needs are too vague to derive a service target spec later:
@@ -69,7 +69,7 @@ Group the complete explanation by source-intent status, semantic label and path,
 ## Operational Notes
 
 - The topic env service owns operational target-spec generation, dependency plans, Pixi commands, repo acquisition decisions, expected outputs, and execution logs.
-- Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise the topic env service should default to a shallow clone with `--depth=1`.
+- Do not impose a clone depth, provider, remote name, or command sequence. The acting user or service agent selects repository commands outside Isomer from the user request and repository requirements, verifies source and immutable identity, then registers the existing path.
 - If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
 
 ## Guardrails

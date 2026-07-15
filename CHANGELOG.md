@@ -6,6 +6,18 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+### Added
+
+- Added read-only dynamic target planning for unregistered grouped `topic.repos.*` labels and `project repos register <repo-label> --path <existing-path>` for non-executing Topic Workspace topology registration.
+
+### Changed
+
+- Moved Canonical External Repository acquisition and verification to user-controlled or agent-controlled commands outside Isomer. Kaoju now records the registered semantic label, externally observed immutable identity, selected method, sanitized command evidence, source relationship, access and license posture, limitations, and blockers.
+
+### Breaking
+
+- Removed `project repos acquire`, the `repository_acquisition` Research Operation Extension Point, and the fixed Kaoju repository acquisition service without aliases or compatibility fallback. Migrate repository workflows to: query a candidate with `project paths default`, acquire with user-supplied or agent-selected external commands, verify the source and immutable identity externally, register the existing directory with `project repos register`, then write typed provenance records.
+
 ## [0.3.0] - 2026-07-15
 
 This release adds the production Kaoju survey workflow, version-aware system-skill management, and canonical extension artifact contracts.

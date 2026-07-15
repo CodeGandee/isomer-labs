@@ -7,9 +7,9 @@ When this subcommand is selected, execute the following steps in order.
 1. Require registered topic refs, Workspace Runtime status, `topic.intent.overview`, verified or fast-forward accepted `topic.intent.topic_env_requirements`, and effective Topic Workspace path evidence.
 2. Resolve and read `topic.intent.topic_env_requirements`; do not create it in this subcommand.
 3. Validate or derive `topic.env.topic_setup_target_spec` from the topic env source gate when topic environment setup is needed.
-4. Delegate topic environment setup to `isomer-srv-topic-env-setup`, including dependency, Pixi, Topic Main Development Repository, repository acquisition, projection, and topic-root verification work.
-5. Validate `topic.repos.main` readiness, repository acquisition decisions, projection predecessor evidence, topic environment status, and semantic labels needed by manual research.
-6. Report topic environment status, topic env source gate path, derived target spec path, `topic.repos.main` path, repository acquisition decisions, projection evidence, blockers, and readiness state.
+4. Delegate topic environment setup to `isomer-srv-topic-env-setup`, including dependency, Pixi, Topic Main Development Repository, external repository method selection and command orchestration, post-verification semantic registration, projection, and topic-root verification work.
+5. Validate `topic.repos.main` readiness, external repository method, immutable-identity verification and registration evidence, projection predecessor evidence, topic environment status, and semantic labels needed by manual research.
+6. Report topic environment status, topic env source gate path, derived target spec path, `topic.repos.main` path, `external_repository_methods`, projection evidence, blockers, and readiness state.
 
 If the user's task does not map cleanly to these steps, report whether the missing evidence is topic overview, verified topic env requirements, target spec, service setup output, or topic-main readiness.
 

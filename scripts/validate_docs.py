@@ -81,11 +81,55 @@ SEMANTIC_PATH_COMMANDS = (
     "project paths unregister",
     "project paths update",
     "project repos create",
+    "project repos register",
 )
 FIXED_PATH_ONLY_PATTERNS = [
     ("fixed agent workspace path", re.compile(r"\b(always|must|only)\b[^\n]*(?:agents/<agent-name>|<topic-workspace>/agents)", re.IGNORECASE)),
     ("fixed topic main path", re.compile(r"\b(always|must|only)\b[^\n]*repos/topic-main", re.IGNORECASE)),
 ]
+REPOSITORY_BOUNDARY_EXACT_PATTERNS = (
+    ("removed repository command", re.compile(r"\bproject\s+repos\s+acquire\b", re.IGNORECASE)),
+    ("removed repository extension point", re.compile(r"\brepository_" r"acquisition\b")),
+    ("removed Kaoju repository service", re.compile(r"\bKaojuRepository" r"Service\b")),
+    ("removed repository acquisition service", re.compile(r"\brepository acquisition service\b", re.IGNORECASE)),
+)
+REPOSITORY_BOUNDARY_CONTEXT_PATTERNS = (
+    (
+        "fixed Isomer repository clone promise",
+        re.compile(
+            r"(?:\bIsomer\b|isomer-cli|repository service).{0,120}(?:runs?|executes?|performs?|owns?|will|must).{0,80}"
+            r"(?:git\s+(?:clone|fetch|pull|checkout|submodule|lfs)|(?:clone|fetch|pull|checkout)s?\s+(?:the\s+)?repo)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "mandatory fixed shallow-clone policy",
+        re.compile(
+            r"(?:default(?:s|ing)?\s+to|must\s+use|always\s+use).{0,100}"
+            r"(?:shallow|--depth[ =]?1|depth\s+one)|(?:--depth[ =]?1|depth\s+one).{0,100}"
+            r"(?:default|canonical|mandatory)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "repository registration before verification",
+        re.compile(
+            r"(?:register|create (?:the )?binding).{0,100}"
+            r"before.{0,100}(?:verify|clone|acquir|copy|extract)|first.{0,60}"
+            r"register.{0,100}"
+            r"(?:then|before).{0,100}(?:clone|acquir|verify|copy|extract)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "Isomer-owned partial repository cleanup",
+        re.compile(
+            r"(?:\bIsomer\b|isomer-cli|repository service).{0,100}(?:clean|remove|delete|repair|roll back).{0,100}"
+            r"(?:partial|checkout|clone|repository)",
+            re.IGNORECASE,
+        ),
+    ),
+)
 DEFAULT_CLI_HELP_WORKERS = min(8, os.cpu_count() or 1)
 
 
@@ -341,6 +385,45 @@ def check_semantic_path_documentation(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_external_repository_boundary(repo_root: Path) -> list[str]:
+    """Reject docs that assign external repository execution or cleanup to Isomer."""
+
+    issues: list[str] = []
+    paths = [repo_root / "README.md", *iter_docs_markdown(repo_root)]
+    for path in paths:
+        if not path.is_file():
+            continue
+        for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            for label, pattern in REPOSITORY_BOUNDARY_EXACT_PATTERNS:
+                if pattern.search(line):
+                    issues.append(f"{path.relative_to(repo_root)}:{line_number}: repository boundary violation: {label}")
+            if _repository_boundary_rejection_line(line):
+                continue
+            for label, pattern in REPOSITORY_BOUNDARY_CONTEXT_PATTERNS:
+                if pattern.search(line):
+                    issues.append(f"{path.relative_to(repo_root)}:{line_number}: repository boundary violation: {label}")
+    return issues
+
+
+def _repository_boundary_rejection_line(line: str) -> bool:
+    lowered = line.casefold()
+    return any(
+        marker in lowered
+        for marker in (
+            "does not ",
+            "do not ",
+            "never ",
+            "not an isomer",
+            "outside isomer",
+            "outside `isomer-cli`",
+            "external command",
+            "externally acquired",
+            "user or agent",
+            "user-controlled or agent-controlled",
+        )
+    )
+
+
 def validate_docs(repo_root: Path, cli_help_workers: int = DEFAULT_CLI_HELP_WORKERS) -> list[str]:
     issues: list[str] = []
     issues.extend(check_required_pages(repo_root))
@@ -354,6 +437,7 @@ def validate_docs(repo_root: Path, cli_help_workers: int = DEFAULT_CLI_HELP_WORK
     issues.extend(check_cli_error_example_registry(repo_root))
     issues.extend(check_legacy_workspace_paths(repo_root))
     issues.extend(check_semantic_path_documentation(repo_root))
+    issues.extend(check_external_repository_boundary(repo_root))
     issues.extend(check_forbidden_terms(repo_root))
     return issues
 

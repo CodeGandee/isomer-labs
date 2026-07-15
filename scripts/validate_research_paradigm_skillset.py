@@ -408,6 +408,57 @@ KAOJU_FORBIDDEN_ACTIVE_PATTERNS = (
     ("retired research skill namespace", re.compile(r"\bisomer-(?:ext|rsch)-[a-z0-9-]+\b")),
 )
 
+REPOSITORY_BOUNDARY_EXACT_PATTERNS = (
+    ("removed repository command", re.compile(r"\bproject\s+repos\s+acquire\b", re.I)),
+    ("removed repository extension point", re.compile(r"\brepository_" r"acquisition\b")),
+    ("removed Kaoju repository service", re.compile(r"\bKaojuRepository" r"Service\b")),
+)
+REPOSITORY_BOUNDARY_CONTEXT_PATTERNS = (
+    (
+        "Isomer-owned repository command execution",
+        re.compile(
+            r"(?:isomer-cli|Isomer API|Service Request|Execution Adapter Command Request).{0,120}"
+            r"(?:git\s+(?:clone|fetch|pull|checkout|submodule|lfs|worktree)|(?:clone|fetch|pull|checkout)\s+(?:the\s+)?repo)",
+            re.I,
+        ),
+    ),
+    (
+        "generic Isomer repository command passthrough",
+        re.compile(r"(?:Isomer|isomer-cli|repository API).{0,100}(?:argv|shell text|raw command|provider name).{0,100}(?:clone|repository|source control)", re.I),
+    ),
+    (
+        "fabricated Isomer repository command request",
+        re.compile(r"(?:repository (?:acquisition|command|operation)|git (?:clone|fetch|checkout)).{0,100}(?:Service Request|Execution Adapter Command Request)|(?:Service Request|Execution Adapter Command Request).{0,100}(?:repository acquisition|git clone)", re.I),
+    ),
+    (
+        "mandatory fixed shallow-clone policy",
+        re.compile(
+            r"(?:default(?:s|ing)?\s+to|must\s+use|always\s+use).{0,100}"
+            r"(?:shallow|--depth[ =]?1|depth\s+one)|(?:--depth[ =]?1|depth\s+one).{0,100}"
+            r"(?:default|canonical|mandatory)",
+            re.I,
+        ),
+    ),
+    (
+        "Isomer-owned partial repository cleanup",
+        re.compile(r"(?:\bIsomer(?!-)\b|isomer-cli|repository service).{0,100}(?:clean|remove|delete|repair|roll back).{0,100}(?:partial|checkout|clone|repository)", re.I),
+    ),
+    (
+        "repository registration before verification",
+        re.compile(
+            r"(?:register|create (?:the )?binding).{0,100}"
+            r"before.{0,100}(?:verify|clone|acquir)|first.{0,60}"
+            r"register.{0,100}"
+            r"(?:then|before).{0,100}(?:clone|acquir|verify)",
+            re.I,
+        ),
+    ),
+    (
+        "secret-bearing durable repository evidence",
+        re.compile(r"(?:record|store|persist|retain).{0,100}(?:signed query|authorization header|environment (?:secret|value)s?|credential-helper output|credential helper output|raw stdout|raw stderr)", re.I),
+    ),
+)
+
 DEEPSCI_STORAGE_BINDING_PATTERNS = (
     (
         "storage-bound research record",
@@ -2010,6 +2061,51 @@ def validate_kaoju_active_guidance(
                 add(diagnostics, repo_root, document.path, line_number, "RPS020", f"active Kaoju guidance contains {label}")
 
 
+def validate_repository_command_boundary(
+    target: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    *,
+    code: str = "RPS030",
+) -> None:
+    """Reject active skill guidance that assigns repository commands or cleanup to Isomer."""
+
+    if not target.exists():
+        return
+    for path in sorted(candidate for candidate in target.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
+        relative = path.relative_to(target)
+        if any(part in {"org", "migrate", "templates", "licenses", "__pycache__"} for part in relative.parts):
+            continue
+        for line_number, line in enumerate(read_lines(path), start=1):
+            for label, pattern in REPOSITORY_BOUNDARY_EXACT_PATTERNS:
+                if pattern.search(line):
+                    add(diagnostics, repo_root, path, line_number, code, f"active system-skill guidance contains {label}")
+            if _repository_boundary_rejection_line(line):
+                continue
+            for label, pattern in REPOSITORY_BOUNDARY_CONTEXT_PATTERNS:
+                if pattern.search(line):
+                    add(diagnostics, repo_root, path, line_number, code, f"active system-skill guidance contains {label}")
+
+
+def _repository_boundary_rejection_line(line: str) -> bool:
+    lowered = line.casefold()
+    return is_rejection_line(line) or any(
+        marker in lowered
+        for marker in (
+            "outside isomer",
+            "outside `isomer-cli`",
+            "external user or agent",
+            "external command surface",
+            "commands run externally",
+            "commands remain external",
+            "commands externally",
+            "never removes",
+            "never deletes",
+            "never cleans",
+        )
+    )
+
+
 def validate_kaoju_resource_and_shared_routing(
     kaoju_root: Path,
     repo_root: Path,
@@ -2411,6 +2507,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
         validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
+    validate_repository_command_boundary(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 
 

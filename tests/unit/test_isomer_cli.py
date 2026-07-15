@@ -145,6 +145,7 @@ class IsomerCliTests(unittest.TestCase):
             (["project", "team-instances", "adapter-link"], "Usage: isomer-cli project team-instances adapter-link", ("export",)),
             (["ext", "research"], "Usage: isomer-cli ext research", ("records", "ideas")),
             (["system-skills"], "Usage: isomer-cli system-skills", ("extensions", "list", "install", "status", "upgrade")),
+            (["project", "repos"], "Usage: isomer-cli project repos", ("create", "register")),
         ]
 
         for args, usage, expected_commands in cases:
@@ -159,6 +160,15 @@ class IsomerCliTests(unittest.TestCase):
                     self.assertIn(expected_command, stdout)
                 self.assertNotIn("ISOCLI001", stdout)
                 self.assertNotIn("Mutated: false", stdout)
+
+    def test_removed_repository_command_has_no_alias_or_fallback(self) -> None:
+        status, stdout, stderr = self.run_main(["project", "repos", "acquire"])
+
+        self.assertEqual(2, status)
+        self.assertEqual("", stderr)
+        self.assertIn("No such command 'acquire'", stdout)
+        self.assertIn("project repos register", stdout)
+        self.assertNotIn("repository_" "acquisition", stdout)
 
     def test_malformed_command_still_reports_normalized_invocation_error(self) -> None:
         status, stdout, stderr = self.run_main(["project", "topics", "show"])
@@ -4299,6 +4309,189 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         self.assertEqual("topic_repo", data["path"]["storage_profile"])
         self.assertEqual(str(topic_workspace / "repos" / "extern" / "inner_group" / "some_repo_name"), data["path"]["path"])
+
+    def test_non_main_repository_default_query_is_read_only(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        manifest_path = topic_workspace / "topic-workspace.toml"
+        before = manifest_path.read_bytes() if manifest_path.exists() else None
+        target = topic_workspace / "repos" / "extern" / "sources" / "method"
+
+        status, output = self.run_cli(
+            ["project", "paths", "default", "topic.repos.sources.method", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("topic.repos.sources.method", data["path"]["semantic_label"])
+        self.assertEqual(str(target), data["path"]["path"])
+        self.assertEqual("topic_repo", data["path"]["storage_profile"])
+        self.assertEqual("default_profile", data["path"]["source"])
+        self.assertFalse(data["path"]["exists"])
+        self.assertFalse(target.exists())
+        self.assertEqual(before, manifest_path.read_bytes() if manifest_path.exists() else None)
+
+        for label in ("topic.repos.main.extra", "topic.repos.sources.bad/name", "topic.repos.sources..method"):
+            with self.subTest(label=label):
+                status, output = self.run_cli(["project", "paths", "default", label, "--json"], cwd=topic_workspace)
+                data = json.loads(output)
+                self.assertEqual(1, status, output)
+                self.assertFalse(data["mutated"])
+                self.assertIsNone(data["path"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "topics",
+                "create",
+                "custom-repo-layout",
+                "--statement",
+                "Investigate custom repository layout behavior.",
+                "--workspace-dir",
+                "topic-workspaces/custom-repo-layout",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        status, output = self.run_cli(
+            ["project", "paths", "default", "topic.repos.sources.method", "--topic", "custom-repo-layout", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(
+            str(root / "topic-workspaces" / "custom-repo-layout" / "repos" / "extern" / "sources" / "method"),
+            data["path"]["path"],
+        )
+
+    def test_repository_registration_is_existing_path_only_and_non_executing(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        default_target = topic_workspace / "repos" / "extern" / "sources" / "method"
+        default_target.mkdir(parents=True)
+
+        with patch("subprocess.run", side_effect=AssertionError("repository registration must not execute a subprocess")):
+            status, output = self.run_cli(
+                [
+                    "project",
+                    "repos",
+                    "register",
+                    "sources.method",
+                    "--path",
+                    "repos/extern/sources/method",
+                    "--json",
+                ],
+                cwd=topic_workspace,
+            )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertEqual([], data["created_paths"])
+        self.assertEqual("topic.repos.sources.method", data["repository"]["semantic_label"])
+        self.assertEqual(str(default_target), data["repository"]["path"])
+        self.assertEqual("topic_repo", data["repository"]["storage_profile"])
+        self.assertIn('label = "topic.repos.sources.method"', (topic_workspace / "topic-workspace.toml").read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "repos",
+                "register",
+                "topic.repos.sources.method",
+                "--path",
+                "repos/extern/sources/method",
+                "--json",
+            ],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual(str(default_target), data["repository"]["path"])
+
+        explicit_target = topic_workspace / "external-checkouts" / "method"
+        explicit_target.mkdir(parents=True)
+        status, output = self.run_cli(
+            ["project", "repos", "register", "sources.method", "--path", "external-checkouts/method", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertIn(str(default_target), data["diagnostics"][0]["message"])
+        self.assertIn(str(explicit_target), data["diagnostics"][0]["message"])
+
+        status, output = self.run_cli(
+            ["project", "paths", "default", "topic.repos.sources.method", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(default_target), data["path"]["path"])
+
+        status, output = self.run_cli(
+            ["project", "repos", "register", "sources.explicit", "--path", "external-checkouts/method", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(explicit_target), data["repository"]["path"])
+        status, output = self.run_cli(
+            ["project", "paths", "default", "topic.repos.sources.explicit", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(topic_workspace / "repos" / "extern" / "sources" / "explicit"), data["path"]["path"])
+        status, output = self.run_cli(
+            ["project", "paths", "get", "topic.repos.sources.explicit", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(explicit_target), data["path"]["path"])
+        status, output = self.run_cli(
+            ["project", "paths", "get", "topic.repos.sources.method", "--json"],
+            cwd=topic_workspace,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual(str(default_target), data["path"]["path"])
+
+    def test_repository_registration_rejects_invalid_or_unsafe_targets_without_binding(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        manifest_path = topic_workspace / "topic-workspace.toml"
+        file_target = topic_workspace / "repos" / "extern" / "sources" / "file-target"
+        write(file_target, "not a directory\n")
+        outside = self.make_root() / "outside-repository"
+        outside.mkdir()
+
+        cases = (
+            ("sources.missing", "repos/extern/sources/missing"),
+            ("sources.file", "repos/extern/sources/file-target"),
+            ("main", str(topic_workspace)),
+            ("sources.bad/name", str(topic_workspace)),
+            ("sources.outside", str(outside)),
+        )
+        for label, path in cases:
+            with self.subTest(label=label):
+                before = manifest_path.read_bytes() if manifest_path.exists() else None
+                status, output = self.run_cli(
+                    ["project", "repos", "register", label, "--path", path, "--json"],
+                    cwd=topic_workspace,
+                )
+                data = json.loads(output)
+                self.assertEqual(1, status, output)
+                self.assertFalse(data["mutated"])
+                self.assertIsNone(data["repository"])
+                self.assertEqual(before, manifest_path.read_bytes() if manifest_path.exists() else None)
 
     def test_topic_actor_crud_materialization_and_path_resolution(self) -> None:
         root = self.make_root()

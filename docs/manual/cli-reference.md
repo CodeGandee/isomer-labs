@@ -468,15 +468,18 @@ isomer-cli --print-json project outputs policy --topic my-topic --agent alice
 
 ### `project paths default`
 
-Show the built-in default-layout path for one reserved semantic label without Path Plan, environment, or manifest override precedence.
+Show the built-in default-layout path for one reserved semantic label without Path Plan, environment, or manifest override precedence. The command also plans the default candidate for a valid unregistered non-main grouped repository label such as `topic.repos.sources.method`.
 
-**Side effects:** none. This command is only for Isomer-defined labels with default paths, such as `topic.repos.main`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, supported `topic.actors.*` labels, and supported `agent.*` labels.
+**Side effects:** none. It does not write the Topic Workspace Manifest, create the candidate directory, bind the label, initialize Git, acquire content, or write a Path Plan. JSON output reports `mutated: false`; `path` contains the semantic label, absolute candidate path, `storage_profile`, and `source`. Text output prints the label and candidate path followed by the source.
 
 ```bash
 isomer-cli --print-json project paths default topic.repos.main --topic my-topic
+isomer-cli --print-json project paths default topic.repos.sources.method --topic my-topic
 isomer-cli --print-json project paths default topic.actors.workspace --topic my-topic --topic-actor operator
 isomer-cli --print-json project paths default agent.workspace --topic my-topic --agent alice
 ```
+
+Invalid or main-repository sublabels fail with diagnostics. A valid grouped repository candidate remains available even when the Topic Workspace Manifest does not yet bind it.
 
 ### `project paths explain`
 
@@ -569,26 +572,38 @@ isomer-cli --print-json project paths materialize topic.repos.main --topic my-to
 
 ### `project repos create`
 
-Register and create a non-main topic repository binding without writing the manifest by hand. A bare name such as `inner_group.some_repo_name` becomes `topic.repos.inner_group.some_repo_name`; the command uses `storage_profile = "topic_repo"` and defaults the path to `repos/extern/inner_group/some_repo_name`. Use semantic path commands to materialize or override `topic.repos.main`.
+Register and create an empty non-main topic repository directory without writing the manifest by hand. A bare name such as `inner_group.some_repo_name` becomes `topic.repos.inner_group.some_repo_name`; the command uses `storage_profile = "topic_repo"` and defaults the path to `repos/extern/inner_group/some_repo_name`. Use this command only when an empty support directory is the intended result. Use semantic path commands to materialize or override `topic.repos.main`.
 
-**Side effects:** writes `<topic-workspace>/topic-workspace.toml` and, unless `--no-create` is set, creates the repository target directory. It does not initialize Git by itself.
+**Side effects:** writes `<topic-workspace>/topic-workspace.toml` and, unless `--no-create` is set, creates the repository target directory. It does not initialize Git, select a source, acquire content, verify identity, or record source provenance.
 
 ```bash
 isomer-cli --print-json project repos create inner_group.some_repo_name --topic my-topic
+isomer-cli --print-json project repos create tools.benchmarks --topic my-topic
 isomer-cli --print-json project repos create topic.repos.tools.benchmarks --topic my-topic --path repos/extern/tools/benchmarks --replace
 ```
 
-### `project repos acquire`
+### `project repos register`
 
-Acquire one remote repository through the `repository_acquisition` extension point, clone at depth one by default, resolve and validate the full immutable commit, and register the requested non-main `topic.repos.*` label only after success. Use `--history-depth` only when approved identity or inspection work needs more history.
+Register an existing externally acquired and verified directory as a non-main Canonical External Repository. A bare label such as `sources.method` becomes `topic.repos.sources.method`; the binding always uses `storage_profile = "topic_repo"`. The path must already be a safe project-local directory. Isomer does not inspect Git state, invoke a subprocess, create content, or infer source identity.
 
-**Side effects:** creates a staged Git checkout, validates it, atomically moves it to the canonical repository target, and writes the Topic Workspace Manifest binding. Authentication, remote, clone, deepening, commit, or registration failure leaves no canonical registration.
+**Prerequisites:** acquire or copy the source with commands chosen by the user or agent, verify that it is the intended source, observe an immutable commit or digest, and remove or quarantine failed partial content outside Isomer. Keep credentials, signed URLs, headers, environment values, stdout, and stderr out of durable evidence.
+
+**Side effects:** on a new valid binding, writes `<topic-workspace>/topic-workspace.toml` only. It does not create or alter the target directory, run Git, write a Workspace Runtime record, or clean external content. Repeating the same label and path is successful and reports `mutated: false`; registering a different path for an existing label fails and directs the caller to the explicit `project paths update` topology-change route.
+
+Text output reports the normalized semantic label and absolute path. JSON output reports `ok`, `mutated`, `manifest`, `repository`, `created_paths: []`, and diagnostics. Failures include an invalid grouped label, `topic.repos.main` misuse, a missing path, a non-directory path, an unsafe or non-project-local path, and a binding conflict.
+
+The following Git commands are one replaceable external example. Use the user's exact command when supplied; otherwise choose Git, a provider CLI, a local copy, archive extraction, sparse checkout, submodules, LFS, or another suitable method outside Isomer.
 
 ```bash
-isomer-cli --print-json project repos acquire https://example.org/method.git \
-  --topic my-topic \
-  --semantic-label topic.repos.sources.method
+target="$(isomer-cli --print-json project paths default topic.repos.sources.method --topic my-topic | jq -r '.path.path')"
+git clone --branch "$SOURCE_REF" "$SOURCE_URL" "$target"
+git -C "$target" remote get-url origin
+git -C "$target" rev-parse --verify 'HEAD^{commit}'
+isomer-cli --print-json project repos register sources.method --topic my-topic --path "$target"
+isomer-cli --print-json project repos register sources.method --topic my-topic --path repos/extern/sources/method
 ```
+
+After registration, a research workflow records the sanitized requested and resolved locators, semantic label, observed immutable identity, selected external method, verification basis, observation time, access and license posture, limitations, and blockers through its typed Artifact contract.
 
 ### `project artifacts describe/put/revise/latest/list/show/archive/migrate-scope`
 
@@ -1146,6 +1161,7 @@ isomer-cli project --root /path/to/project team-profiles validate topic-workspac
 | `project paths unregister` | yes (`topic-workspace.toml` only) | no | no | no |
 | `project paths reset` | yes (`topic-workspace.toml` only) | no | no | no |
 | `project repos create` | yes (`topic-workspace.toml`, optional repository target dir) | no | no | no |
+| `project repos register` | yes for a new binding (`topic-workspace.toml` only) | no | no | no |
 | `project topic-actors list/show/diagnose` | no | no | no | no |
 | `project topic-actors register/update/archive` | yes (`topic-workspace.toml`) | yes when runtime audit is available | no | no |
 | `project topic-actors materialize/repair` | yes (Topic Actor Workspace dirs or worktree) | yes when runtime audit is available | no | no |

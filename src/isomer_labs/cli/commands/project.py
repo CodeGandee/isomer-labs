@@ -95,6 +95,7 @@ from isomer_labs.cli.handlers.workspace_paths import (
     _cmd_paths_unregister,
     _cmd_paths_update,
     _cmd_repos_create,
+    _cmd_repos_register,
 )
 from isomer_labs.cli.options import (
     common_options as _common_options,
@@ -2422,7 +2423,7 @@ def register_project_commands(app: click.Group) -> None:
             semantic_label,
         )
 
-    @paths_group.command(name="default", help="Show the default-layout path for a built-in semantic label.")
+    @paths_group.command(name="default", help="Show a read-only default-layout path for a built-in label or non-main topic repository.")
     @_common_options
     @_topic_selection_options
     @click.option("--agent", "agent_name", default=None, help="Topic-local Agent Name for agent-scoped labels.")
@@ -2838,7 +2839,7 @@ def register_project_commands(app: click.Group) -> None:
         pass
 
 
-    @repos_group.command(name="create", help="Register and create a topic repository path.")
+    @repos_group.command(name="create", help="Register and create a topic repository directory without initializing or acquiring Git content.")
     @_common_options
     @_topic_selection_options
     @click.argument("repo_label")
@@ -2885,6 +2886,50 @@ def register_project_commands(app: click.Group) -> None:
             path=path_value,
             create=not no_create,
             replace_existing=replace_existing,
+        )
+
+
+    @repos_group.command(name="register", help="Register an existing externally acquired repository without changing its content.")
+    @_common_options
+    @_topic_selection_options
+    @click.argument("repo_label")
+    @click.option("--path", "path_value", required=True, help="Existing Project-local repository directory.")
+    @click.pass_context
+    def repos_register_command(
+        ctx: click.Context,
+        repo_label: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+        path_value: str = "",
+    ) -> int:
+        return _cmd_repos_register(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            repo_label,
+            path=path_value,
         )
 def register_schema_commands(app: click.Group) -> None:
     @app.group(name="schemas", help="Inspect built-in schemas and contracts.")

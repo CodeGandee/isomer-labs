@@ -16,7 +16,7 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "project paths": (
         "isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
         "isomer-cli --print-json project paths list --topic my-topic --agent alice",
-        "isomer-cli --print-json project paths register custom.datasets.raw --topic my-topic --path data/raw --storage-profile topic_records_dir --create",
+        "isomer-cli --print-json project paths default topic.repos.sources.method --topic my-topic",
     ),
     "project paths get": (
         "isomer-cli --print-json project paths get topic.records.artifacts --topic my-topic",
@@ -34,6 +34,13 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
     "project paths materialize-default": (
         "isomer-cli --print-json project paths materialize-default --topic my-topic --label topic.records.artifacts",
         "isomer-cli --print-json project paths materialize-default --topic my-topic --agent alice --label agent.private_artifacts",
+    ),
+    "project repos": (
+        "isomer-cli --print-json project repos register sources.method --topic my-topic --path repos/extern/sources/method",
+        "isomer-cli --print-json project repos create tools.benchmarks --topic my-topic",
+    ),
+    "project repos register": (
+        "isomer-cli --print-json project repos register sources.method --topic my-topic --path repos/extern/sources/method",
     ),
     "project topics": (
         "isomer-cli --print-json project topics list",

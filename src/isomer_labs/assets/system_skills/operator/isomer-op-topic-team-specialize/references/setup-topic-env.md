@@ -24,18 +24,18 @@ When this subcommand is selected, execute the following steps in order.
    - Use `manual` when the caller is `step-by-step`, asks for confirmation, or wants to inspect choices before each service step.
 7. Prepare the derived target spec boundary:
    - Ensure `topic.env.topic_setup_target_spec` exists, is supplied explicitly, or can be created from `topic.intent.topic_env_requirements` before service materialization.
-   - Keep the source intent concise and user-editable; put operational commands, repo acquisition details, projection access intent, and verification details in the derived target spec.
+   - Keep the source intent concise and user-editable; put exact user-supplied repository procedures or agent-selection constraints, candidate target posture, external verification requirements, post-success registration, projection access intent, and verification details in the derived target spec.
 8. Delegate Topic Workspace environment setup:
    - Call `$isomer-srv-topic-env-setup setup-topic-env <research_topic_id> <auto|manual>`.
    - Pass the registered Research Topic, resolved Topic Workspace, active environment binding evidence, `topic.intent.topic_env_requirements` metadata or explicit target spec source, and relevant topic/setup notes as context.
-   - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, canonical external repo materialization, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
+   - Let `isomer-srv-topic-env-setup` handle source-gate reading, target-spec validation, Topic Main Development Repository setup, external repository target planning and command orchestration, source and immutable-identity verification, post-success semantic registration, external repo projection materialization, dependency inference, Pixi mutation, and topic-root or repo-specific verification only.
    - Require delegated output to include `topic.env.topic_setup_target_spec`, its `## Gate Checklist`, and whether every required checklist item is checked with supporting setup, path, dependency, resource, command, or expected-result evidence before accepting `readiness_status: ready`.
-   - Require delegated output to include repository acquisition decisions, including shallow-clone defaults and any full-history evidence.
+   - Require delegated output to include `external_repository_methods`: requested and resolved sources, semantic labels, candidate targets, user-supplied or agent-selected external methods, non-secret options and rationale, verification evidence, observed immutable identities, registration results, partial-result posture, and blockers.
    - Require delegated output to record `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected scope.
    - Require delegated output to record resource checks and bounded real-path verification decisions for commands classified as `heavy` or `unknown-risk`. Source-intent paths must still run in bounded form unless blocked; a generic smoke test that misses the essential code path is not enough.
    - Example only: for a CUDA kernel source gate, the service might identify the local GPU, compile only the local architecture, cap build parallelism such as with `MAX_JOBS=1`, build a selected baseline kernel or extension rather than all release artifacts, then run a tiny benchmark case. `isomer-misc-bounded-run-tips` owns the classification decision. If even that bounded real path cannot run safely, the service reports a blocker instead of `ready`.
 9. Map the service output using **Service Output Mapping**:
-   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, repository acquisition decisions, projection metadata, gate checklist completion evidence, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
+   - Record source and target semantic labels, resolved paths, storage profiles, sources, source details, diagnostics, Topic Workspace predecessor readiness status, Topic Main Development Repository Git state, external repository methods and verified registration evidence, projection metadata, gate checklist completion evidence, resource check status, commands run, changed files, repo warnings, blockers, and validation refs.
    - Record `per_agent_readiness_status: not checked` when the service reports it as durable setup evidence.
 10. State naturally whether the Topic environment is ready, changed, deferred, blocked, or not checked, and give the next safe subcommand. Do not report per-Agent Workspace cwd readiness from this subcommand.
 
@@ -87,7 +87,7 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 | `gate_checklist`, `required_checklist_items`, `unchecked_checklist_items`, `checklist_evidence` | readiness checklist evidence; incomplete required items become operator blockers |
 | `path_diagnostics` or label diagnostics | operator blockers or warnings with the relevant semantic label |
 | `topic_main_repository` | topic-main predecessor evidence for later agent setup |
-| `repository_acquisition_decisions` | clone mode, clone depth, and full-history or shallow-snapshot evidence for acquired Git repositories |
+| `external_repository_methods` | requested and resolved source, semantic label, candidate target, user-supplied or agent-selected method, non-secret options and rationale, external verification, observed immutable identity, registration result, partial-result posture, and blockers |
 | `external_repo_projections`, `external_repo_projection_manifest` | projection predecessor evidence for later agent setup |
 | `operation_classification`, `resource_check_status`, `resource_check_evidence`, `resource_conservative_decisions` | operator-visible evidence that bounded-run tips classified resource-relevant setup or verification work, commands classified as `heavy` or `unknown-risk` checked host capacity first, and the service chose bounded real-path commands such as reduced parallelism, selected build targets, tiny input shapes, sample data, reduced iterations, or a blocker when no bounded real-path check can run safely |
 | `commands_run` | setup command evidence |
@@ -113,5 +113,6 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 - DO NOT read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, or claim Agent Workspace cwd readiness from this operator subcommand.
 - DO NOT start live team execution, launch execution adapters, or create runtime service state from this subcommand.
 - DO NOT store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
+- DO NOT ask the service to run repository commands through an Isomer API or clean partial external content. Registration requires completed external verification.
 - DO NOT claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness and every required `## Gate Checklist` item is checked with supporting evidence, or unless incomplete checklist items are explicitly reported as blocked, failed, or not checked with named evidence.
 - DO NOT treat a weaker smoke-test substitution as normal readiness.

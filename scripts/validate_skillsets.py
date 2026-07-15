@@ -593,7 +593,8 @@ TOPIC_MANAGER_REQUIRED_SKILL_TERMS = (
     "semantic workspace labels",
     "Topic Workspace Manifest",
     "topic-workspace.toml",
-    "project paths register",
+    "project paths default",
+    "project repos register",
     "project repos create",
     "project topic-actors",
     "storage_profile",
@@ -1262,7 +1263,8 @@ TOPIC_MANAGER_SEMANTIC_REFERENCE_REQUIRED_TERMS = {
         "topic.repos.*",
         "storage_profile",
         "project repos create",
-        "project paths register",
+        "project paths default",
+        "project repos register",
     ),
     "actors-manage.md": (
         "project topic-actors",
@@ -1478,7 +1480,11 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "non-main `topic.repos.*`",
         "repos/extern",
         "read-only by default",
-        "semantic label, path, and path source",
+        "project paths default",
+        "project repos register",
+        "outside Isomer",
+        "before registration",
+        "partial content",
         "Do not place task repos",
     ),
     "project-extern-repos.md": (
@@ -2551,6 +2557,22 @@ def validate_global_isomer_cli_invocation(repo_root: Path, roots: tuple[Path, ..
                         "non-dev skills must call global isomer-cli directly instead of 'pixi run isomer-cli'",
                     )
     return diagnostics
+
+
+def validate_system_skill_repository_boundary(
+    repo_root: Path,
+    roots: tuple[Path, ...],
+    *,
+    code: str = "SKL008",
+) -> list[Diagnostic]:
+    """Apply the external repository command boundary to packaged skill groups."""
+
+    diagnostics: list[Diagnostic] = []
+    for root in roots:
+        research_diagnostics: list[research_validator.Diagnostic] = []
+        research_validator.validate_repository_command_boundary(root, repo_root, research_diagnostics, code=code)
+        diagnostics.extend(Diagnostic(item.path, item.line, item.code, item.message) for item in research_diagnostics)
+    return sorted(set(diagnostics))
 
 
 def clean_reference(raw: str) -> str | None:
@@ -3906,6 +3928,7 @@ def validate_operator_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_split_output_contract_docs(repo_root, (repo_root / "skillset" / "operator",), code="OPS007"))
     diagnostics.extend(validate_chat_output_presentation(repo_root, (repo_root / "skillset" / "operator",), code="SKL006"))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "operator",), code="OPS010"))
+    diagnostics.extend(validate_system_skill_repository_boundary(repo_root, (repo_root / "skillset" / "operator",)))
     return sorted(set(diagnostics))
 
 
@@ -4129,6 +4152,7 @@ def validate_service_skillset(repo_root: Path) -> list[Diagnostic]:
         )
     )
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, (repo_root / "skillset" / "service",), code="SVS005"))
+    diagnostics.extend(validate_system_skill_repository_boundary(repo_root, (repo_root / "skillset" / "service",)))
     return sorted(set(diagnostics))
 
 
@@ -4181,6 +4205,15 @@ def validate_all(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_operator_skillset(repo_root))
     diagnostics.extend(validate_service_skillset(repo_root))
     diagnostics.extend(validate_package_specifics_skill(repo_root))
+    diagnostics.extend(
+        validate_system_skill_repository_boundary(
+            repo_root,
+            (
+                repo_root / "skillset" / "misc",
+                repo_root / "skillset" / "toolboxes",
+            ),
+        )
+    )
     diagnostics.extend(
         validate_chat_output_presentation(
             repo_root,

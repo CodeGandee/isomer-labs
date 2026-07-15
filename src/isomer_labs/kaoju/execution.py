@@ -12,7 +12,6 @@ import uuid
 
 
 KAOJU_EXTENSION_POINTS = {
-    "repository_acquisition",
     "pixi_mutation",
     "smoke_run",
     "code_trial",
