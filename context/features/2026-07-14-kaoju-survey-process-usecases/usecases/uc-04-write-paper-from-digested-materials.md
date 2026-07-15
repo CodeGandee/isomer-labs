@@ -6,7 +6,7 @@ As a researcher or Topic Actor, I want the agent to write a survey paper from th
 
 ## Use Case
 
-The system reads the accepted synthesis records (`kaoju:field-summary`, `kaoju:related-work-catalog`, `kaoju:claim-status-table`) and the approved `kaoju:source-digest` artifacts produced by UC-03. The agent first builds a paper structure: a MyST document with section headings and placeholders for each part of the survey paper. It stores this as a durable `kaoju:paper-structure-myst` artifact and asks the human to approve or refine the structure. Once approved, the agent fills the placeholders section by section, grounding every claim in the source digests and synthesis records. The result is a content-focused MyST paper draft stored as `kaoju:paper-draft-myst`. The system can also derive a Markdown view (`kaoju:paper-draft-md`) for human review. The human can review, ask for revisions, or approve the draft. LaTeX formatting, PDF rendering, and citation styling are handled in UC-06.
+The system reads the accepted synthesis records (`KAOJU:FIELD-SUMMARY`, `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`) and the approved `KAOJU:SOURCE-DIGEST` artifacts produced by UC-03. The agent first builds a paper structure: a MyST document with section headings and placeholders for each part of the survey paper. It stores this as a durable `KAOJU:PAPER-STRUCTURE-MYST` artifact and asks the human to approve or refine the structure. Once approved, the agent fills the placeholders section by section, grounding every claim in the source digests and synthesis records. The result is a content-focused MyST paper draft stored as `KAOJU:PAPER-DRAFT-MYST`. The system can also derive a Markdown view (`KAOJU:PAPER-DRAFT-MD`) for human review. The human can review, ask for revisions, or approve the draft. LaTeX formatting, PDF rendering, and citation styling are handled in UC-06.
 
 ## Supported Actions
 
@@ -16,21 +16,21 @@ Generate a MyST paper structure with placeholders from the digested materials.
 
 - context
   - Actor **has** accepted synthesis records and source digests from prior use cases.
-  - System **has** the `kaoju:field-summary`, `kaoju:related-work-catalog`, `kaoju:claim-status-table`, and approved `kaoju:source-digest` artifacts.
+  - System **has** the `KAOJU:FIELD-SUMMARY`, `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`, and approved `KAOJU:SOURCE-DIGEST` artifacts.
 - intent
   - Actor **wants** an outline-level plan for the paper before the agent writes full prose.
   - Actor **wonders** "How will the paper be organized, and what will each section cover?"
 - action
   - Actor then **asks** the system to produce a paper structure from the digested materials.
 - result
-  - Actor **gets** a durable `kaoju:paper-structure-myst` artifact — a MyST file with section headings and placeholders — plus a rendered Markdown preview.
+  - Actor **gets** a durable `KAOJU:PAPER-STRUCTURE-MYST` artifact — a MyST file with section headings and placeholders — plus a rendered Markdown preview.
 
 ### Fill Paper Structure
 
 Fill the approved paper structure with content grounded in the digested materials.
 
 - context
-  - Actor **has** an approved `kaoju:paper-structure-myst` artifact.
+  - Actor **has** an approved `KAOJU:PAPER-STRUCTURE-MYST` artifact.
   - System **has** the structure artifact and all source digests and synthesis records.
 - intent
   - Actor **wants** the agent to write the actual paper content.
@@ -38,14 +38,14 @@ Fill the approved paper structure with content grounded in the digested material
 - action
   - Actor then **approves** the structure and asks the system to fill it.
 - result
-  - Actor **gets** a durable `kaoju:paper-draft-myst` artifact in MyST, and optionally a derived `kaoju:paper-draft-md` artifact for review.
+  - Actor **gets** a durable `KAOJU:PAPER-DRAFT-MYST` artifact in MyST, and optionally a derived `KAOJU:PAPER-DRAFT-MD` artifact for review.
 
 ### Review And Refine Paper
 
 Review the draft and ask for section-level revisions.
 
 - context
-  - Actor **has** the rendered `kaoju:paper-draft-myst` or derived `kaoju:paper-draft-md`.
+  - Actor **has** the rendered `KAOJU:PAPER-DRAFT-MYST` or derived `KAOJU:PAPER-DRAFT-MD`.
   - System **has** the draft artifact and the underlying source digests.
 - intent
   - Actor **wants** to correct claims, improve flow, or add emphasis before finalizing.
@@ -53,17 +53,17 @@ Review the draft and ask for section-level revisions.
 - action
   - Actor then **requests** revisions, **approves** the draft, or **asks** for a specific section to be rewritten.
 - result
-  - Actor **gets** an updated `kaoju:paper-draft-myst` (and derived Markdown if enabled) and, once approved, a handoff ref to the next stage (PDF generation or submission).
+  - Actor **gets** an updated `KAOJU:PAPER-DRAFT-MYST` (and derived Markdown if enabled) and, once approved, a handoff ref to the next stage (PDF generation or submission).
 
 ## Main Flow
 
 1. Actor asks the system to write a paper from the currently digested materials.
 2. System reads the accepted synthesis records and approved source digests from the state database.
 3. System proposes a paper structure: title, abstract, introduction, background, related work, method comparison, discussion, conclusion, references, and any appendices.
-4. System writes the `kaoju:paper-structure-myst` artifact as a MyST file with placeholders for each section.
+4. System writes the `KAOJU:PAPER-STRUCTURE-MYST` artifact as a MyST file with placeholders for each section.
 5. Human reviews the structure (optionally via a derived Markdown preview) and approves it or asks for changes.
 6. System fills the placeholders section by section, citing source digests and synthesis records.
-7. System writes the `kaoju:paper-draft-myst` artifact as a MyST file, and optionally derives `kaoju:paper-draft-md`.
+7. System writes the `KAOJU:PAPER-DRAFT-MYST` artifact as a MyST file, and optionally derives `KAOJU:PAPER-DRAFT-MD`.
 8. Human reviews the draft and requests revisions or approves it.
 9. System updates the draft and reports the next allowed stage (PDF generation or submission).
 
@@ -84,10 +84,10 @@ flowchart LR
   subgraph System[Kaoju Survey Workflow]
     ReadSynthesis[Read synthesis records & digests]
     Propose[Produce paper structure]
-    WriteStructure[Write kaoju:paper-structure]
+    WriteStructure[Write KAOJU:PAPER-STRUCTURE-MYST]
     ReviewStructure[Review structure]
     Fill[Fill paper structure]
-    WriteDraft[Write kaoju:paper-draft]
+    WriteDraft[Write KAOJU:PAPER-DRAFT-MYST]
     ReviewDraft[Review draft]
   end
 
@@ -114,12 +114,12 @@ sequenceDiagram
   Researcher->>System: Write a paper from the digested materials
   System-->>Researcher: Reading synthesis records and source digests...
   System->>System: Build paper structure from field summary and claim table
-  System-->>Researcher: kaoju:paper-structure ref + section outline
+  System-->>Researcher: KAOJU:PAPER-STRUCTURE-MYST ref + section outline
   Researcher->>System: Approve structure
   System->>System: Fill placeholders section by section
-  System-->>Researcher: kaoju:paper-draft ref + Markdown draft
+  System-->>Researcher: KAOJU:PAPER-DRAFT-MYST ref + MyST draft
   Researcher->>System: Tighten the method comparison section
-  System-->>Researcher: Updated kaoju:paper-draft
+  System-->>Researcher: Updated KAOJU:PAPER-DRAFT-MYST
   Researcher->>System: Approve
   System-->>Researcher: Handoff to export / formatting / submit
 ```
@@ -128,15 +128,15 @@ sequenceDiagram
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:paper-structure-myst` — MyST file with section headings and placeholders, approved before full drafting.
-- `kaoju:paper-draft-myst` — content-filled MyST survey paper grounded in source digests and synthesis records. This is the canonical paper artifact.
-- `kaoju:paper-draft-md` — optional derived Markdown view of the paper draft for human review.
-- `kaoju:citation-map` — mapping from draft claims and statements to source-digest locators.
-- `kaoju:paper-revision-log` — record of structure and draft revisions requested by the human.
+- `KAOJU:PAPER-STRUCTURE-MYST` — MyST file with section headings and placeholders, approved before full drafting.
+- `KAOJU:PAPER-DRAFT-MYST` — content-filled MyST survey paper grounded in source digests and synthesis records. This is the canonical paper artifact.
+- `KAOJU:PAPER-DRAFT-MD` — optional derived Markdown view of the paper draft for human review.
+- `KAOJU:CITATION-MAP` — mapping from draft claims and statements to source-digest locators.
+- `KAOJU:PAPER-REVISION-LOG` — record of structure and draft revisions requested by the human.
 
 ## Paper Structure Placeholders
 
-A `kaoju:paper-structure-myst` artifact contains at minimum these sections as MyST/Markdown headings with placeholders:
+A `KAOJU:PAPER-STRUCTURE-MYST` artifact contains at minimum these sections as MyST/Markdown headings with placeholders:
 
 | Section | Placeholder Content |
 | --- | --- |
@@ -162,7 +162,7 @@ User Prompt:
 
 AI:
 
-> I read the Field Summary, Related-Work Catalog, Claim Status Table, and 6 approved Source Digests. I produced `kaoju:paper-structure-myst` (`structure-...`) with the following sections:
+> I read the Field Summary, Related-Work Catalog, Claim Status Table, and 6 approved Source Digests. I produced `KAOJU:PAPER-STRUCTURE-MYST` (`structure-...`) with the following sections:
 >
 > 1. Title
 > 2. Abstract — `{{abstract}}`
@@ -187,13 +187,13 @@ User Prompt:
 
 AI:
 
-> Structure approved. I filled every section and wrote `kaoju:paper-draft-myst` (`draft-...`). A derived Markdown view `kaoju:paper-draft-md` is also available.
+> Structure approved. I filled every section and wrote `KAOJU:PAPER-DRAFT-MYST` (`draft-...`). A derived Markdown view `KAOJU:PAPER-DRAFT-MD` is also available.
 >
 > The draft is 2,800 words in MyST. Every claim is tied to a Source Digest or Claim Status Table entry. You can ask for section-level revisions or approve the draft.
 
 ## Assumptions And Decisions
 
-- Assumption: Synthesis records (`kaoju:field-summary`, `kaoju:related-work-catalog`, `kaoju:claim-status-table`) have been produced and audited before paper writing begins.
+- Assumption: Synthesis records (`KAOJU:FIELD-SUMMARY`, `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`) have been produced and audited before paper writing begins.
 - Assumption: Source digests are approved before their claims are used in the paper draft.
 - Assumption: The paper is written in MyST, which is the canonical format; a Markdown view can be derived automatically for review; LaTeX/PDF rendering is handled in UC-06.
 - Decision: The agent selects and explains an adaptive typed MyST structure profile based on the accepted survey direction, such as taxonomy, comparison, empirical survey, or general survey; the actor can revise it through the template workflow.

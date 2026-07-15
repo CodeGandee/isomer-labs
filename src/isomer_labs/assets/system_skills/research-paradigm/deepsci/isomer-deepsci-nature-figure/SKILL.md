@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,15 +41,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Check backend selection**. Produce `<NATURE_FIGURE_BACKEND_CHOICE>` as Python or R. If missing and not obvious, ask "Python or R?" and stop. Read `references/backend-selection.md` when a recommendation is requested.
+1. **Check backend selection**. Produce `DEEPSCI:NATURE-FIGURE-BACKEND-CHOICE` as Python or R. If missing and not obvious, ask "Python or R?" and stop. Read `references/backend-selection.md` when a recommendation is requested.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-figure --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Define the figure contract**. Produce `<NATURE_FIGURE_CONTRACT>` with one-sentence conclusion, evidence chain, panel roles, dimensions, source data, statistics, integrity notes, and export formats. Read `references/figure-contract.md`.
-4. **Check selected runtime**. Produce `<NATURE_FIGURE_RUNTIME_CHECK>` for packages, fonts, device, renderer, and export capability in the selected backend only. If selected-backend packages are missing, stop before rendering and route a natural-language package request to `$isomer-op-topic-mgr env-install-packages`; do not silently switch backends.
-5. **Map the evidence chain**. Produce `<NATURE_PANEL_EVIDENCE_MAP>` linking each panel to unique evidence, source data, statistics, and claim. Drop panels that do not carry unique evidence.
-6. **Choose archetype and design system**. Produce `<NATURE_FIGURE_ARCHETYPE>` and read `references/nature-2026-observations.md`, `references/common-patterns.md`, `references/chart-types.md`, or `references/design-theory.md` as needed.
-7. **Set journal export contract**. Produce `<NATURE_EXPORT_CONTRACT>` covering SVG/PDF/TIFF/PNG, editable text, dimensions, color, line weights, image-integrity notes, and source-data expectations.
-8. **Generate with selected backend**. Use Python guidance from `references/api.md` and `references/tutorials.md`, or R guidance from `references/r-workflow.md` and `references/r-template-index.md`, to create `<NATURE_FIGURE_EXPORT_BUNDLE>`.
-9. **Preview and QA**. Inspect rendered previews and produce `<NATURE_FIGURE_QA_REPORT>` using `references/qa-contract.md`. Revise with the same backend until scientific, visual, export, and integrity checks pass, or produce `<NATURE_FIGURE_BLOCKER>`.
+3. **Define the figure contract**. Produce `DEEPSCI:NATURE-FIGURE-CONTRACT` with one-sentence conclusion, evidence chain, panel roles, dimensions, source data, statistics, integrity notes, and export formats. Read `references/figure-contract.md`.
+4. **Check selected runtime**. Produce `DEEPSCI:NATURE-FIGURE-RUNTIME-CHECK` for packages, fonts, device, renderer, and export capability in the selected backend only. If selected-backend packages are missing, stop before rendering and route a natural-language package request to `$isomer-op-topic-mgr env-install-packages`; do not silently switch backends.
+5. **Map the evidence chain**. Produce `DEEPSCI:NATURE-PANEL-EVIDENCE-MAP` linking each panel to unique evidence, source data, statistics, and claim. Drop panels that do not carry unique evidence.
+6. **Choose archetype and design system**. Produce `DEEPSCI:NATURE-FIGURE-ARCHETYPE` and read `references/nature-2026-observations.md`, `references/common-patterns.md`, `references/chart-types.md`, or `references/design-theory.md` as needed.
+7. **Set journal export contract**. Produce `DEEPSCI:NATURE-EXPORT-CONTRACT` covering SVG/PDF/TIFF/PNG, editable text, dimensions, color, line weights, image-integrity notes, and source-data expectations.
+8. **Generate with selected backend**. Use Python guidance from `references/api.md` and `references/tutorials.md`, or R guidance from `references/r-workflow.md` and `references/r-template-index.md`, to create `DEEPSCI:NATURE-FIGURE-EXPORT-BUNDLE`.
+9. **Preview and QA**. Inspect rendered previews and produce `DEEPSCI:NATURE-FIGURE-QA-REPORT` using `references/qa-contract.md`. Revise with the same backend until scientific, visual, export, and integrity checks pass, or produce `DEEPSCI:NATURE-FIGURE-BLOCKER`.
 10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-figure --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -112,8 +112,8 @@ Read these pages as needed:
 This skill can end when all applicable checks are true:
 
 - Backend selection is explicit and all drawing/QA used that backend.
-- `<NATURE_FIGURE_CONTRACT>` and `<NATURE_PANEL_EVIDENCE_MAP>` support every panel.
-- `<NATURE_FIGURE_EXPORT_BUNDLE>` and `<NATURE_FIGURE_QA_REPORT>` exist, or `<NATURE_FIGURE_BLOCKER>` states the missing runtime/evidence.
+- `DEEPSCI:NATURE-FIGURE-CONTRACT` and `DEEPSCI:NATURE-PANEL-EVIDENCE-MAP` support every panel.
+- `DEEPSCI:NATURE-FIGURE-EXPORT-BUNDLE` and `DEEPSCI:NATURE-FIGURE-QA-REPORT` exist, or `DEEPSCI:NATURE-FIGURE-BLOCKER` states the missing runtime/evidence.
 
 ## Guardrails
 

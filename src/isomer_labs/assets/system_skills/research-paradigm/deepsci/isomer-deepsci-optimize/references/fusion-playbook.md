@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Profile source lines**. For each line, record strongest mechanism, strongest evidence, main weakness, and what must survive the fusion.
 3. **Define the fusion claim**. State what is being fused, why it addresses a real bottleneck, and why strengths are complementary rather than redundant.
 4. **Preserve comparability**. State what remains unchanged and what comparison surface must survive.
-5. **Plan bounded validation**. Create <FUSION_PLAN> with first validation step and evidence that would prove the fusion worthwhile.
+5. **Plan bounded validation**. Create DEEPSCI:FUSION-PLAN with first validation step and evidence that would prove the fusion worthwhile.
 
 ## Preferences
 
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <FUSION_PLAN> must identify source lines, strengths, weaknesses, keep-unchanged conditions, and validation signal.
+- DEEPSCI:FUSION-PLAN must identify source lines, strengths, weaknesses, keep-unchanged conditions, and validation signal.
 - Fusion must not combine two same-mechanism lines under different names.
 - Fusion must not combine two weak lines without clear strengths.
 - Fusion must not be justified merely because multiple branches exist.

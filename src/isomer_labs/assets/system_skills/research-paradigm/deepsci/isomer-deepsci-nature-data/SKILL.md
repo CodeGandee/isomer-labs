@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,15 +41,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Identify journal and article type**. Produce `<DATA_AVAILABILITY_CONTEXT>` with target journal, article type, policy source, and author constraints. Read `references/policy-principles.md` and `references/source-basis.md` when exact rules matter.
+1. **Identify journal and article type**. Produce `DEEPSCI:DATA-AVAILABILITY-CONTEXT` with target journal, article type, policy source, and author constraints. Read `references/policy-principles.md` and `references/source-basis.md` when exact rules matter.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-data --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Inventory datasets**. Produce `<DATASET_INVENTORY>` covering every dataset or source file supporting results, including raw, processed, figure source, secondary, restricted, model, table, image, and statistical-analysis data.
-4. **Classify access routes**. Produce `<DATA_ACCESS_CLASSIFICATION>` for each dataset: public repository, controlled access, paper/supplement, reused public source, third-party restricted, request-based, or not applicable.
-5. **Choose repository strategy**. Produce `<REPOSITORY_STRATEGY>` before drafting text, including repository candidates, identifiers, versioning, embargo, license, accession, and dataset citation needs. Read `references/repository-and-identifiers.md`.
-6. **Draft data availability text**. Produce `<DATA_AVAILABILITY_STATEMENT>` using `references/statement-patterns.md`, mapping every dataset class to a concrete location, restriction, or action.
-7. **Add dataset citation actions**. Produce `<DATASET_CITATION_ACTIONS>` for public and reused datasets, including formal dataset citations and missing identifier work.
-8. **Run FAIR metadata audit**. Produce `<FAIR_METADATA_AUDIT>` using `references/fair-metadata-checklist.md`, covering metadata, README, file organization, license, provenance, and reuse clarity.
-9. **Return ready text or blocker**. If fields are confirmed, return ready-to-paste text and actions. Otherwise produce `<DATA_AVAILABILITY_BLOCKER>` with author confirmations, missing identifiers, risk flags, and Chinese author-facing questions when useful via `references/chinese-author-alignment.md`.
+3. **Inventory datasets**. Produce `DEEPSCI:DATASET-INVENTORY` covering every dataset or source file supporting results, including raw, processed, figure source, secondary, restricted, model, table, image, and statistical-analysis data.
+4. **Classify access routes**. Produce `DEEPSCI:DATA-ACCESS-CLASSIFICATION` for each dataset: public repository, controlled access, paper/supplement, reused public source, third-party restricted, request-based, or not applicable.
+5. **Choose repository strategy**. Produce `DEEPSCI:REPOSITORY-STRATEGY` before drafting text, including repository candidates, identifiers, versioning, embargo, license, accession, and dataset citation needs. Read `references/repository-and-identifiers.md`.
+6. **Draft data availability text**. Produce `DEEPSCI:DATA-AVAILABILITY-STATEMENT` using `references/statement-patterns.md`, mapping every dataset class to a concrete location, restriction, or action.
+7. **Add dataset citation actions**. Produce `DEEPSCI:DATASET-CITATION-ACTIONS` for public and reused datasets, including formal dataset citations and missing identifier work.
+8. **Run FAIR metadata audit**. Produce `DEEPSCI:FAIR-METADATA-AUDIT` using `references/fair-metadata-checklist.md`, covering metadata, README, file organization, license, provenance, and reuse clarity.
+9. **Return ready text or blocker**. If fields are confirmed, return ready-to-paste text and actions. Otherwise produce `DEEPSCI:DATA-AVAILABILITY-BLOCKER` with author confirmations, missing identifiers, risk flags, and Chinese author-facing questions when useful via `references/chinese-author-alignment.md`.
 10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-data --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -106,8 +106,8 @@ Read these pages as needed:
 This skill can end when all applicable checks are true:
 
 - Every result-supporting dataset has an availability route or explicit blocker.
-- `<DATA_AVAILABILITY_STATEMENT>` does not invent repositories, identifiers, licenses, or approvals.
-- `<FAIR_METADATA_AUDIT>` and `<DATASET_CITATION_ACTIONS>` record remaining actions.
+- `DEEPSCI:DATA-AVAILABILITY-STATEMENT` does not invent repositories, identifiers, licenses, or approvals.
+- `DEEPSCI:FAIR-METADATA-AUDIT` and `DEEPSCI:DATASET-CITATION-ACTIONS` record remaining actions.
 
 ## Guardrails
 

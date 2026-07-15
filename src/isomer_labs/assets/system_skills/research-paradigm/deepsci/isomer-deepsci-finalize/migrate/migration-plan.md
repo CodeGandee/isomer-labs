@@ -34,14 +34,14 @@
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<FINALIZE_CONTEXT_BRIEF>`
-- `<CLAIM_LEDGER>`
-- `<FINAL_LIMITATIONS_REPORT>`
-- `<FINAL_SUMMARY>`
-- `<RESUME_PACKET>`
-- `<CLOSURE_DECISION>`
-- `<FINALIZE_BLOCKER_RECORD>`
-- `<FINALIZE_CONTINUITY_UPDATE>`
+- `DEEPSCI:FINALIZE-CONTEXT-BRIEF`
+- `DEEPSCI:CLAIM-LEDGER`
+- `DEEPSCI:FINAL-LIMITATIONS-REPORT`
+- `DEEPSCI:FINAL-SUMMARY`
+- `DEEPSCI:RESUME-PACKET`
+- `DEEPSCI:CLOSURE-DECISION`
+- `DEEPSCI:FINALIZE-BLOCKER-RECORD`
+- `DEEPSCI:FINALIZE-CONTINUITY-UPDATE`
 
 ## Unmatched Skill-Route Substitutions
 

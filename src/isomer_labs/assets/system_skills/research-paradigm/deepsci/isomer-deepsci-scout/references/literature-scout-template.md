@@ -6,12 +6,12 @@ Use this template when external discovery materially changes the research frame,
 
 When performing this step, execute these substeps in order.
 
-1. **Confirm report necessity**. Write `<LITERATURE_SCOUTING_REPORT>` only when discovery changed or justified routing.
-2. **Fill from route evidence**. Use `<SCOUT_CONTEXT_BRIEF>`, `<SCOUT_MINIMUM_UNKNOWNS>`, `<SCOUT_DISCOVERY_LEDGER>`, `<EVALUATION_CONTRACT>`, and `<BASELINE_SHORTLIST>`.
+1. **Confirm report necessity**. Write `DEEPSCI:LITERATURE-SCOUTING-REPORT` only when discovery changed or justified routing.
+2. **Fill from route evidence**. Use `DEEPSCI:SCOUT-CONTEXT-BRIEF`, `DEEPSCI:SCOUT-MINIMUM-UNKNOWNS`, `DEEPSCI:SCOUT-DISCOVERY-LEDGER`, `DEEPSCI:EVALUATION-CONTRACT`, and `DEEPSCI:BASELINE-SHORTLIST`.
 3. **Maintain a search ledger**. Record query or inspection, source surface, reason, new references, reconfirmed references, and unresolved ambiguity.
 4. **Bucket retained references**. Separate task-defining papers, benchmark docs, candidate comparator papers, candidate comparator repositories, and watchlist or rejected references.
-5. **State route implications**. Summarize evaluation-contract implications, baseline-shortlist implications, and `<NEXT_ROUTE_DECISION>`.
-6. **Link continuity**. Mention `<SCOUT_CONTINUITY_UPDATE>` so future baseline or idea work can reuse the report.
+5. **State route implications**. Summarize evaluation-contract implications, baseline-shortlist implications, and `DEEPSCI:NEXT-ROUTE-DECISION`.
+6. **Link continuity**. Mention `DEEPSCI:SCOUT-CONTINUITY-UPDATE` so future baseline or idea work can reuse the report.
 
 ## Preferences
 
@@ -25,9 +25,9 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- `<LITERATURE_SCOUTING_REPORT>` must include a search ledger when external discovery affects routing.
+- `DEEPSCI:LITERATURE-SCOUTING-REPORT` must include a search ledger when external discovery affects routing.
 - The report must separate retained, watchlist, and rejected references when that distinction prevents downstream rework.
-- The report must state how discovery changed `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, `<NEXT_ROUTE_DECISION>`, or `<SCOUT_BLOCKER_RECORD>`.
+- The report must state how discovery changed `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, `DEEPSCI:NEXT-ROUTE-DECISION`, or `DEEPSCI:SCOUT-BLOCKER-RECORD`.
 - Scout must not write a literature report just to collect references after the next route is already clear.
 
 ## Quality Gates

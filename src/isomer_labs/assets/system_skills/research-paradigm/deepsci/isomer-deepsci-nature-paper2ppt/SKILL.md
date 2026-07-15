@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,15 +41,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Extract source material**. Produce `<PAPER_PRESENTATION_SOURCE_PACKET>` with metadata, abstract, headings, figure legends, table captions, claims, methods, results, and limitations from available source material.
+1. **Extract source material**. Produce `DEEPSCI:PAPER-PRESENTATION-SOURCE-PACKET` with metadata, abstract, headings, figure legends, table captions, claims, methods, results, and limitations from available source material.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Classify the paper type**. Produce `<PAPER_TYPE_CLASSIFICATION>` before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
+3. **Classify the paper type**. Produce `DEEPSCI:PAPER-TYPE-CLASSIFICATION` before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
 4. **Choose presentation logic**. Select claim-first, question-to-evidence, problem-to-solution, workflow-to-validation, evidence-map, or another suited logic.
-5. **Build the Chinese plan**. Produce `<CHINESE_PRESENTATION_PLAN>` with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
-6. **Select evidence figures**. Produce `<PRESENTATION_FIGURE_SELECTION>` with only figures and panels that carry the argument. Prefer fewer readable key panels over many cramped graphics.
-7. **Extract and prepare assets**. Produce `<PRESENTATION_ASSET_MANIFEST>` for figure crops, rendered pages, provenance, captions, and local asset quality.
-8. **Write slide content**. Produce `<CHINESE_SLIDE_CONTENT>` with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
-9. **Build and verify the PPTX**. Create `<PPTX_DECK>`, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce `<PPTX_QA_REPORT>` plus `<PPTX_REVISION_LOG>` when revisions occur.
+5. **Build the Chinese plan**. Produce `DEEPSCI:CHINESE-PRESENTATION-PLAN` with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
+6. **Select evidence figures**. Produce `DEEPSCI:PRESENTATION-FIGURE-SELECTION` with only figures and panels that carry the argument. Prefer fewer readable key panels over many cramped graphics.
+7. **Extract and prepare assets**. Produce `DEEPSCI:PRESENTATION-ASSET-MANIFEST` for figure crops, rendered pages, provenance, captions, and local asset quality.
+8. **Write slide content**. Produce `DEEPSCI:CHINESE-SLIDE-CONTENT` with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
+9. **Build and verify the PPTX**. Create `DEEPSCI:PPTX-DECK`, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce `DEEPSCI:PPTX-QA-REPORT` plus `DEEPSCI:PPTX-REVISION-LOG` when revisions occur.
 10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-nature-paper2ppt --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -101,9 +101,9 @@ Read these pages as needed:
 
 This skill can end when all applicable checks are true:
 
-- `<PPTX_DECK>` exists as an editable deck, not only an outline or script.
-- `<PRESENTATION_ASSET_MANIFEST>` records figure provenance.
-- `<PPTX_QA_REPORT>` records package checks and any render limitations.
+- `DEEPSCI:PPTX-DECK` exists as an editable deck, not only an outline or script.
+- `DEEPSCI:PRESENTATION-ASSET-MANIFEST` records figure provenance.
+- `DEEPSCI:PPTX-QA-REPORT` records package checks and any render limitations.
 
 ## Guardrails
 

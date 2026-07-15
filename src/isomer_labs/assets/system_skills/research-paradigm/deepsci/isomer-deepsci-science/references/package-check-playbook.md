@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Check import or executable existence**. Verify Python import, CLI executable, module, container, solver, service, or library path as appropriate.
 3. **Capture version and backend details**. Record package version, executable version, accelerator backend, MPI/OpenMP state, module state, license state, and environment facts that affect validity.
 4. **Run a minimal smoke test when available**. Use a tiny package-specific example, dry run, input parse, or versioned self-check that does not pretend to be final science.
-5. **Save a durable diagnostic**. Store <SCIENCE_PACKAGE_CHECK> evidence with status passed, failed, or blocked and diagnostic paths.
+5. **Save a durable diagnostic**. Store DEEPSCI:SCIENCE-PACKAGE-CHECK evidence with status passed, failed, or blocked and diagnostic paths.
 6. **Interpret status conservatively**. Passed means the current environment can run at least the smoke path; failed means attempted and did not work; blocked means required credentials, data, module, license, network, allocation, or confirmation are missing.
 
 ## Preferences
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <SCIENCE_PACKAGE_CHECK> must precede computed work when availability matters.
+- DEEPSCI:SCIENCE-PACKAGE-CHECK must precede computed work when availability matters.
 - Package cards must not be treated as install, import, executable, license, or backend proof.
 - A passed import alone should not imply solver correctness when a smoke test is available and relevant.
 - Failed or blocked checks must include diagnostic evidence when they affect the route.

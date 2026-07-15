@@ -18,13 +18,13 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 - Prefer retrieval-friendly lessons over generic summaries (if nothing reusable was learned, otherwise record why the pass was still necessary).
 - Prefer local same-line lessons before broad search during seed, loop, and debug (if same-line evidence exists, otherwise inspect broader prior lessons).
-- Prefer one useful <OPTIMIZATION_MEMORY_CARD> over several vague notes.
+- Prefer one useful DEEPSCI:OPTIMIZATION-MEMORY-CARD over several vague notes.
 
 ## Constraints
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <OPTIMIZATION_MEMORY_CARD> must not say only that optimization was attempted.
+- DEEPSCI:OPTIMIZATION-MEMORY-CARD must not say only that optimization was attempted.
 - Reuse hint must include when the lesson should not be reused.
 - Non-retry rules should name the repeated low-information move to avoid.
 - Memory should not replace frontier records or candidate board updates.

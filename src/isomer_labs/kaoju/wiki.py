@@ -19,6 +19,7 @@ import uuid
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from isomer_labs.kaoju.artifacts import KaojuArtifactService, KaojuServiceError
+from isomer_labs.kaoju.contracts import load_binding_registry
 from isomer_labs.kaoju.execution import ExecutionAdapterCommandRequest, command_environment, execute_command_request
 from isomer_labs.kaoju.runs import KaojuRunService
 from isomer_labs.models import EffectiveTopicContext
@@ -32,10 +33,10 @@ WIKI_MARKER = ".kaoju-wiki-managed.json"
 VIEWER_MARKER = ".kaoju-viewer-managed.json"
 VIEWER_ASSETS = ("index.html", "styles.css", "app.js")
 WIKI_SEMANTICS = {
-    "kaoju:llm-wiki-export",
-    "kaoju:llm-wiki-metadata",
-    "kaoju:llm-wiki-viewer",
-    "kaoju:llm-wiki-viewer-manifest",
+    "KAOJU:LLM-WIKI-EXPORT",
+    "KAOJU:LLM-WIKI-METADATA",
+    "KAOJU:LLM-WIKI-VIEWER",
+    "KAOJU:LLM-WIKI-VIEWER-MANIFEST",
 }
 WIKI_ACCEPTED_STATUSES = {"active", "complete", "ready", "supported"}
 
@@ -102,8 +103,8 @@ class KaojuWikiService:
             prior_files = prior.get("files") if prior is not None else None
             paths = tuple(sorted(str(path) for path in prior_files)) if isinstance(prior_files, dict) else ()
             update = ManagedUpdate((), (), paths, (), ())
-            export_ref = self._latest_ref("kaoju:llm-wiki-export", _target_scope(selected_target))
-            metadata_ref = self._latest_ref("kaoju:llm-wiki-metadata", _target_scope(selected_target))
+            export_ref = self._latest_ref("KAOJU:LLM-WIKI-EXPORT", _target_scope(selected_target))
+            metadata_ref = self._latest_ref("KAOJU:LLM-WIKI-METADATA", _target_scope(selected_target))
             return {"ok": True, "mutated": False, "operation": "wiki.export", "target": str(selected_target), "source_fingerprint": source_fingerprint, "export_ref": export_ref, "metadata_ref": metadata_ref, "changelog": update.to_json(), "affected_refs": []}
 
         page_files: dict[str, bytes] = {}
@@ -114,7 +115,7 @@ class KaojuWikiService:
             record_id = str(record["id"])
             semantic_id = _semantic_id(record)
             scope_key = _metadata(record).get("scope_key")
-            page_path = f"pages/{_slug(semantic_id.removeprefix('kaoju:'))}/{_slug(str(scope_key or record_id))}.md"
+            page_path = f"pages/{_slug(load_binding_registry()[semantic_id].artifact_type)}/{_slug(str(scope_key or record_id))}.md"
             page_text, page_title = self._render_record(record)
             encoded = page_text.encode("utf-8")
             page_files[page_path] = encoded
@@ -132,7 +133,7 @@ class KaojuWikiService:
             "title": "Kaoju survey wiki metadata",
             "summary": "Canonical mapping from accepted Topic Workspace records to self-contained wiki pages.",
             "artifact_family": "kaoju",
-            "semantic_id": "kaoju:llm-wiki-metadata",
+            "semantic_id": "KAOJU:LLM-WIKI-METADATA",
             "artifact_type": "llm-wiki-metadata",
             "version": "v1",
             "source_fingerprint": source_fingerprint,
@@ -152,8 +153,8 @@ class KaojuWikiService:
 
         target_scope = _target_scope(selected_target)
         accepted_ref = str(records[0]["id"])
-        export_result = self._upsert("kaoju:llm-wiki-export", selected_target, target_scope, relationships=_relationships(accepted_artifact=accepted_ref))
-        metadata_result = self._upsert("kaoju:llm-wiki-metadata", selected_target / "wiki.json", target_scope, relationships=_relationships(wiki_export=_record_id(export_result), accepted_artifact=accepted_ref))
+        export_result = self._upsert("KAOJU:LLM-WIKI-EXPORT", selected_target, target_scope, relationships=_relationships(accepted_artifact=accepted_ref))
+        metadata_result = self._upsert("KAOJU:LLM-WIKI-METADATA", selected_target / "wiki.json", target_scope, relationships=_relationships(wiki_export=_record_id(export_result), accepted_artifact=accepted_ref))
         return {"ok": True, "mutated": update.mutated, "operation": "wiki.export", "target": str(selected_target), "source_fingerprint": source_fingerprint, "export_ref": _record_id(export_result), "metadata_ref": _record_id(metadata_result), "changelog": update.to_json(), "affected_refs": [_record_id(export_result), _record_id(metadata_result)]}
 
     def deploy(self, *, wiki_target: Path, target: Path | None, target_policy: str) -> dict[str, object]:
@@ -183,7 +184,7 @@ class KaojuWikiService:
             "title": "Kaoju wiki viewer manifest",
             "summary": "Independent package-owned static viewer deployment for one checked Kaoju wiki export.",
             "artifact_family": "kaoju",
-            "semantic_id": "kaoju:llm-wiki-viewer-manifest",
+            "semantic_id": "KAOJU:LLM-WIKI-VIEWER-MANIFEST",
             "artifact_type": "llm-wiki-viewer-manifest",
             "version": "v1",
             "sections": {
@@ -196,9 +197,9 @@ class KaojuWikiService:
         files["viewer-manifest.json"] = _json_bytes(manifest)
         update = _apply_managed_update(selected_target, files, marker=VIEWER_MARKER, marker_schema="isomer-kaoju-viewer-managed.v1", prior=prior)
         target_scope = _target_scope(selected_target)
-        wiki_export_ref = self._latest_ref("kaoju:llm-wiki-export", _target_scope(source)) or f"wiki-target:{source_fingerprint}"
-        viewer_result = self._upsert("kaoju:llm-wiki-viewer", selected_target, target_scope, relationships=_relationships(wiki_export=wiki_export_ref))
-        manifest_result = self._upsert("kaoju:llm-wiki-viewer-manifest", selected_target / "viewer-manifest.json", target_scope, relationships=_relationships(wiki_viewer=_record_id(viewer_result), wiki_export=wiki_export_ref))
+        wiki_export_ref = self._latest_ref("KAOJU:LLM-WIKI-EXPORT", _target_scope(source)) or f"wiki-target:{source_fingerprint}"
+        viewer_result = self._upsert("KAOJU:LLM-WIKI-VIEWER", selected_target, target_scope, relationships=_relationships(wiki_export=wiki_export_ref))
+        manifest_result = self._upsert("KAOJU:LLM-WIKI-VIEWER-MANIFEST", selected_target / "viewer-manifest.json", target_scope, relationships=_relationships(wiki_viewer=_record_id(viewer_result), wiki_export=wiki_export_ref))
         return {"ok": True, "mutated": update.mutated, "operation": "wiki.deploy", "target": str(selected_target), "viewer_ref": _record_id(viewer_result), "viewer_manifest_ref": _record_id(manifest_result), "source_fingerprint": source_fingerprint, "changelog": update.to_json(), "affected_refs": [_record_id(viewer_result), _record_id(manifest_result)]}
 
     def start(
@@ -271,7 +272,7 @@ class KaojuWikiService:
             raise KaojuServiceError("wiki_artifact_missing", f"Selected Artifact is missing: {record_id}")
         if record.get("status") not in WIKI_ACCEPTED_STATUSES:
             raise KaojuServiceError("wiki_artifact_not_accepted", f"Selected Artifact is not accepted: {record_id}")
-        if not _semantic_id(record).startswith("kaoju:"):
+        if _semantic_id(record) not in load_binding_registry():
             raise KaojuServiceError("wiki_artifact_family_invalid", f"Selected record is not a Kaoju Artifact: {record_id}")
         diagnostics = self.artifacts.content_diagnostics({"record": record})
         if diagnostics:

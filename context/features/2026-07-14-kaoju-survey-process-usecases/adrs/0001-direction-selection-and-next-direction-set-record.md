@@ -9,14 +9,14 @@ The initial UC-01 draft assumed a single selected survey direction. In practice,
 ## Current Decision
 
 - UC-01 allows the human to **select multiple directions**, **provide a new custom direction**, or **reject all and ask for a revised proposal**.
-- The system records the accepted directions as a durable artifact with semantic id `kaoju:direction-set`.
+- The system records the accepted directions as a durable artifact with semantic id `KAOJU:DIRECTION-SET`.
 - Each direction in the set carries its own scoped question, boundary, source classes, coverage date, expected depth, and deliverables.
-- The `kaoju:direction-set` is the input to the next use case (online collection / discovery). It is not the same as the frozen `kaoju:survey-contract`; a contract may be created per direction or per combined direction set, depending on how tightly the directions are coupled.
-- The system can report "next direction set to be explored" at any time by reading `kaoju:direction-set`.
+- The `KAOJU:DIRECTION-SET` is the input to the next use case (online collection / discovery). It is not the same as the frozen `KAOJU:SURVEY-CONTRACT`; a contract may be created per direction or per combined direction set, depending on how tightly the directions are coupled.
+- The system can report "next direction set to be explored" at any time by reading `KAOJU:DIRECTION-SET`.
 
 ## Affected Artifacts
 
-- `usecases/uc-01-survey-direction-from-topic.md`: updated supported actions, main flow, durable outputs, and example prompt to cover multi-selection, custom directions, and the `kaoju:direction-set` record.
+- `usecases/uc-01-survey-direction-from-topic.md`: updated supported actions, main flow, durable outputs, and example prompt to cover multi-selection, custom directions, and the `KAOJU:DIRECTION-SET` record.
 - `README.md`: added ADR link to artifact map.
 
 ## Refinement History
@@ -26,6 +26,6 @@ The initial UC-01 draft assumed a single selected survey direction. In practice,
 - Instruction: "human can select multiple directions, or provide new one, system shall have durable records about 'the next direction set to be explored'"
 - Applied changes:
   - Renamed and expanded the "Accept Or Refine Direction" supported action into "Select, Add, or Refine Directions".
-  - Added `kaoju:direction-set` as a durable output.
+  - Added `KAOJU:DIRECTION-SET` as a durable output.
   - Updated main flow to allow multi-select and custom direction input.
   - Updated example prompt/response to illustrate multi-selection and a custom direction.

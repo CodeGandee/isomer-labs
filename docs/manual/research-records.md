@@ -10,21 +10,21 @@ Records may contain more fields than the GUI currently displays. GUI data-contra
 
 Built-in extension-neutral profiles use `isomer:research/record-format/profile/<family>/<class>/<semantic-id>/v1`. They share `isomer:research/record-format/schema/research-structured-record/v1` and `isomer:research/record-format/template/markdown/research-structured-record/v1`. The packaged Kaoju catalog is declarative: each entry defines compatible record kinds, required payload paths, relationship and file paths, query facets, renderer, version, and status.
 
-Every neutral payload contains non-empty `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`. Kaoju producers resolve the checked registry and let the typed Artifact service infer record kind, profile, semantic label, content mode, scope policy, and managed locator:
+Every neutral payload contains non-empty `title`, `summary`, `artifact_family`, `semantic_id`, `artifact_type`, and `sections`. Extension-owned durable artifact identities use exact uppercase `EXTENSION-NAME:WHAT` syntax. Kaoju producers inspect the installed contract with `ext kaoju bindings describe KAOJU:WHAT` and let the typed Artifact service infer record kind, profile, semantic label, content mode, scope policy, and managed locator:
 
 ```bash
-isomer-cli --print-json project artifacts describe kaoju:survey-contract \
+isomer-cli --print-json project artifacts describe KAOJU:SURVEY-CONTRACT \
   --topic my-topic
 
 isomer-cli --print-json project artifacts put \
-  kaoju:survey-contract survey-contract.json \
+  KAOJU:SURVEY-CONTRACT survey-contract.json \
   --topic my-topic \
   --producer isomer-kaoju-frame \
   --scope-key survey:main \
   --relationships-json '[]'
 ```
 
-Use `project artifacts revise` for binding-permitted content changes to current-state objects. Use metadata-only record updates for lifecycle or routing changes. Deltas, audits, failures, repaired attempts, and Runs remain separate descendants. Supported `ext research records` operations delegate to the same underlying record services for compatibility. The original DeepSci `--placeholder` contract and all `isomer:deepsci/record-format/*` refs remain supported without aliasing.
+Use `project artifacts revise` for binding-permitted content changes to current-state objects. Use metadata-only record updates for lifecycle or routing changes. Deltas, audits, failures, repaired attempts, and Runs remain separate descendants. DeepSci create, update, revise, list, and query operations use exact uppercase `DEEPSCI:WHAT` values through `--semantic-id`; lowercase, wrapped, bare, mixed-case, and aliased forms are invalid.
 
 ## Query and Material Boundaries
 

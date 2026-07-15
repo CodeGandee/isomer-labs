@@ -33,14 +33,14 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<DATA_AVAILABILITY_CONTEXT>`
-- `<DATASET_INVENTORY>`
-- `<DATA_ACCESS_CLASSIFICATION>`
-- `<REPOSITORY_STRATEGY>`
-- `<DATA_AVAILABILITY_STATEMENT>`
-- `<DATASET_CITATION_ACTIONS>`
-- `<FAIR_METADATA_AUDIT>`
-- `<DATA_AVAILABILITY_BLOCKER>`
+- `DEEPSCI:DATA-AVAILABILITY-CONTEXT`
+- `DEEPSCI:DATASET-INVENTORY`
+- `DEEPSCI:DATA-ACCESS-CLASSIFICATION`
+- `DEEPSCI:REPOSITORY-STRATEGY`
+- `DEEPSCI:DATA-AVAILABILITY-STATEMENT`
+- `DEEPSCI:DATASET-CITATION-ACTIONS`
+- `DEEPSCI:FAIR-METADATA-AUDIT`
+- `DEEPSCI:DATA-AVAILABILITY-BLOCKER`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -86,13 +86,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <DATA_AVAILABILITY_CONTEXT> with target journal, article type, policy source, and author constraints.
-- Produce <DATASET_INVENTORY> covering every dataset or source file supporting results, including raw, processed, figure source, secondary, restricted, model, table, image, and statistical-analysis data.
-- Produce <DATA_ACCESS_CLASSIFICATION> for each dataset: public repository, controlled access, paper/supplement, reused public source, third-party restricted, request-based, or not applicable.
-- Produce <REPOSITORY_STRATEGY> before drafting text, including repository candidates, identifiers, versioning, embargo, license, accession, and dataset citation needs.
-- Produce <DATA_AVAILABILITY_STATEMENT> using references/statement-patterns.
-- Produce <DATASET_CITATION_ACTIONS> for public and reused datasets, including formal dataset citations and missing identifier work.
-- Produce <FAIR_METADATA_AUDIT> using references/fair-metadata-checklist.
+- Produce DEEPSCI:DATA-AVAILABILITY-CONTEXT with target journal, article type, policy source, and author constraints.
+- Produce DEEPSCI:DATASET-INVENTORY covering every dataset or source file supporting results, including raw, processed, figure source, secondary, restricted, model, table, image, and statistical-analysis data.
+- Produce DEEPSCI:DATA-ACCESS-CLASSIFICATION for each dataset: public repository, controlled access, paper/supplement, reused public source, third-party restricted, request-based, or not applicable.
+- Produce DEEPSCI:REPOSITORY-STRATEGY before drafting text, including repository candidates, identifiers, versioning, embargo, license, accession, and dataset citation needs.
+- Produce DEEPSCI:DATA-AVAILABILITY-STATEMENT using references/statement-patterns.
+- Produce DEEPSCI:DATASET-CITATION-ACTIONS for public and reused datasets, including formal dataset citations and missing identifier work.
+- Produce DEEPSCI:FAIR-METADATA-AUDIT using references/fair-metadata-checklist.
 - If fields are confirmed, return ready-to-paste text and actions.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.

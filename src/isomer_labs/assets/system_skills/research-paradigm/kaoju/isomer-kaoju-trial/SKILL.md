@@ -17,13 +17,13 @@ Use for `prepare-code-run`, `run-code-trial`, bounded capability probes, and app
 
 1. **Resolve prerequisites**. Query Workspace Runtime by semantic id and scope for the canonical repository commit, associated paper, accepted source digest, data posture, and current environment evidence. Never scan directories to guess durable state.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-trial --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Plan environment support**. Record `kaoju:env-prep-plan` with flexible dependency intent, task-critical path, candidate Pixi environments, risks, authorization, and expected smoke outputs.
+3. **Plan environment support**. Record `KAOJU:ENV-PREP-PLAN` with flexible dependency intent, task-critical path, candidate Pixi environments, risks, authorization, and expected smoke outputs.
 4. **Open a Service Request**. Use `isomer-cli project service-requests create` and synchronous `dispatch` for repository, Pixi, lock, smoke, or repair mutation. Preserve the Service Request, command request, support Artifact, Gate, and Run refs.
-5. **Require readiness evidence**. Accept `kaoju:pixi-env-ref` only with exact resolved packages and lock identity. Require a durable `kaoju:smoke-run-script`, `kaoju:smoke-run-result`, and successful task-critical observation before marking the environment ready.
-6. **Plan the trial**. Record `kaoju:method-trial-plan` with source, environment, data, wrapper, upstream entry point or smallest adaptation, evaluator, metrics, resources, fidelity target, limitations, and expected outputs. After approval, register the minimal wrapper itself as file-backed `kaoju:method-trial-wrapper` state before execution.
+5. **Require readiness evidence**. Accept `KAOJU:PIXI-ENV-REF` only with exact resolved packages and lock identity. Require a durable `KAOJU:SMOKE-RUN-SCRIPT`, `KAOJU:SMOKE-RUN-RESULT`, and successful task-critical observation before marking the environment ready.
+6. **Plan the trial**. Record `KAOJU:METHOD-TRIAL-PLAN` with source, environment, data, wrapper, upstream entry point or smallest adaptation, evaluator, metrics, resources, fidelity target, limitations, and expected outputs. After approval, register the minimal wrapper itself as file-backed `KAOJU:METHOD-TRIAL-WRAPPER` state before execution.
 7. **Pause at the human Gate**. Present the exact plan and wait. Rejection ends the Run without execution.
 8. **Execute through the adapter**. Begin a new Run and send the approved command through the `code_trial` Research Operation Extension Point. Never use an ambient environment or make a source-tree, staged execution copy, or Local Tmp Surface the canonical wrapper or result.
-9. **Record immutable outcomes**. Create distinct `kaoju:method-trial-run` and `kaoju:method-trial-result` Artifacts with source commit, environment, data, logs, outputs, timing, resources, adaptations, checks, verdict, verification depth, and limitations.
+9. **Record immutable outcomes**. Create distinct `KAOJU:METHOD-TRIAL-RUN` and `KAOJU:METHOD-TRIAL-RESULT` Artifacts with source commit, environment, data, logs, outputs, timing, resources, adaptations, checks, verdict, verification depth, and limitations.
 10. **Classify retries**. An identical transient retry may proceed within the recorded attempt bound. Any dependency, lock, commit, patch, data, wrapper semantics, evaluator, metric, resource, canonical interpretation, or fidelity change requires a revised plan and another human Gate. Preserve every attempt.
 11. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-trial --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 12. **Return terminal state**. Report completed refs, failures, blocker and Service Request refs, pending Gate, and the first incomplete stage as the resume point.
@@ -32,7 +32,7 @@ If the task does not map cleanly to these steps, use the native planning tool to
 
 ## Artifact Operations
 
-Resolve each contract with `isomer-cli --print-json project artifacts describe <semantic-id>`. Persist accepted output only through `project artifacts put` or `revise`; the service infers record kind, profile, semantic label, content mode, scope policy, and managed locator. Read `artifact-bindings.md`, `references/trial-contract.md`, `references/retry-and-repair.md`, and `$isomer-kaoju-shared` before mutation.
+Resolve each contract with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Persist accepted output only through `project artifacts put` or `revise`; the service infers record kind, profile, semantic label, content mode, scope policy, and managed locator. Read `artifact-bindings.md`, `references/trial-contract.md`, `references/retry-and-repair.md`, and `$isomer-kaoju-shared` before mutation.
 
 ## Reference Routing
 

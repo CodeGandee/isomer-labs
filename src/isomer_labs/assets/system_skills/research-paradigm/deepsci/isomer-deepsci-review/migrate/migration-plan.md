@@ -33,13 +33,13 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<REVIEW_AUDIT_PLAN>`
-- `<LITERATURE_BENCHMARK_NOTE>`
-- `<REVIEW_REPORT>`
-- `<REVISION_LOG>`
-- `<REVIEW_EXPERIMENT_TODO>`
-- `<PAPER_EXPERIMENT_MATRIX_UPDATE>`
-- `<REVIEW_ROUTE_DECISION>`
+- `DEEPSCI:REVIEW-AUDIT-PLAN`
+- `DEEPSCI:LITERATURE-BENCHMARK-NOTE`
+- `DEEPSCI:REVIEW-REPORT`
+- `DEEPSCI:REVISION-LOG`
+- `DEEPSCI:REVIEW-EXPERIMENT-TODO`
+- `DEEPSCI:PAPER-EXPERIMENT-MATRIX-UPDATE`
+- `DEEPSCI:REVIEW-ROUTE-DECISION`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -84,13 +84,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <REVIEW_AUDIT_PLAN> with claim set, strongest and weakest evidence, likely rejection reasons, experiment/analysis inventory, comparator papers, language hygiene risks, and likely routes.
-- Produce <LITERATURE_BENCHMARK_NOTE> from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
-- Produce <REVIEW_REPORT> using references/review-report-template.
-- Produce <REVISION_LOG> using references/revision-log-template.
-- If real evidence is missing, produce <REVIEW_EXPERIMENT_TODO> with concrete follow-up work using references/experiment-todo-template.
-- When experiment planning changes, produce <PAPER_EXPERIMENT_MATRIX_UPDATE> so writing and rebuttal-facing work remain aligned.
-- Produce <REVIEW_ROUTE_DECISION> to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence and priority ordering.
+- Produce DEEPSCI:REVIEW-AUDIT-PLAN with claim set, strongest and weakest evidence, likely rejection reasons, experiment/analysis inventory, comparator papers, language hygiene risks, and likely routes.
+- Produce DEEPSCI:LITERATURE-BENCHMARK-NOTE from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
+- Produce DEEPSCI:REVIEW-REPORT using references/review-report-template.
+- Produce DEEPSCI:REVISION-LOG using references/revision-log-template.
+- If real evidence is missing, produce DEEPSCI:REVIEW-EXPERIMENT-TODO with concrete follow-up work using references/experiment-todo-template.
+- When experiment planning changes, produce DEEPSCI:PAPER-EXPERIMENT-MATRIX-UPDATE so writing and rebuttal-facing work remain aligned.
+- Produce DEEPSCI:REVIEW-ROUTE-DECISION to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence and priority ordering.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

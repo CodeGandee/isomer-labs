@@ -33,13 +33,13 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<PAPER_TYPE_DIAGNOSIS>`
-- `<PROSE_FAILURE_DIAGNOSIS>`
-- `<CLAIM_BOUNDARY_CHECK>`
-- `<SECTION_LOGIC_REBUILD>`
-- `<POLISHED_MANUSCRIPT_TEXT>`
-- `<POLISHING_STYLE_QA>`
-- `<POLISHING_EVIDENCE_BLOCKER>`
+- `DEEPSCI:PAPER-TYPE-DIAGNOSIS`
+- `DEEPSCI:PROSE-FAILURE-DIAGNOSIS`
+- `DEEPSCI:CLAIM-BOUNDARY-CHECK`
+- `DEEPSCI:SECTION-LOGIC-REBUILD`
+- `DEEPSCI:POLISHED-MANUSCRIPT-TEXT`
+- `DEEPSCI:POLISHING-STYLE-QA`
+- `DEEPSCI:POLISHING-EVIDENCE-BLOCKER`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -84,14 +84,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <PAPER_TYPE_DIAGNOSIS> for the manuscript logic: research, method, hypothesis-driven, algorithmic, device, resource, review, or another justified type.
-- Produce <PROSE_FAILURE_DIAGNOSIS>: wrong paper-type logic, missing gap, unsupported claim, evidence without interpretation, missing boundary, Results/Discussion mixing, weak title or abstract, or sentence clutter.
-- Produce <CLAIM_BOUNDARY_CHECK> from available evidence, citations, and user-provided context before polishing.
-- Produce <SECTION_LOGIC_REBUILD> using references/writing-strategy.
+- Produce DEEPSCI:PAPER-TYPE-DIAGNOSIS for the manuscript logic: research, method, hypothesis-driven, algorithmic, device, resource, review, or another justified type.
+- Produce DEEPSCI:PROSE-FAILURE-DIAGNOSIS: wrong paper-type logic, missing gap, unsupported claim, evidence without interpretation, missing boundary, Results/Discussion mixing, weak title or abstract, or sentence clutter.
+- Produce DEEPSCI:CLAIM-BOUNDARY-CHECK from available evidence, citations, and user-provided context before polishing.
+- Produce DEEPSCI:SECTION-LOGIC-REBUILD using references/writing-strategy.
 - Use references/phrasebank-playbook.
-- Produce <POLISHED_MANUSCRIPT_TEXT> with concise, calibrated, citation-aware prose while preserving the author meaning and evidence boundary.
-- Produce <POLISHING_STYLE_QA> using references/style-guardrails.
-- Return the polished text with a compact diagnosis and any <POLISHING_EVIDENCE_BLOCKER> or claim-scope warning that must accompany the revision.
+- Produce DEEPSCI:POLISHED-MANUSCRIPT-TEXT with concise, calibrated, citation-aware prose while preserving the author meaning and evidence boundary.
+- Produce DEEPSCI:POLISHING-STYLE-QA using references/style-guardrails.
+- Return the polished text with a compact diagnosis and any DEEPSCI:POLISHING-EVIDENCE-BLOCKER or claim-scope warning that must accompany the revision.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

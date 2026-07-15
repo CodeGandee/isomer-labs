@@ -3,7 +3,6 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
-import json
 import shutil
 import sys
 import tempfile
@@ -33,13 +32,6 @@ def codes(diagnostics: list[object]) -> set[str]:
 
 def messages(diagnostics: list[object]) -> list[str]:
     return [diagnostic.render() for diagnostic in diagnostics]
-
-
-def mutate_json(path: Path, callback: object) -> None:
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    assert callable(callback)
-    callback(raw)
-    path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
 
 
 class ResearchParadigmValidatorTests(unittest.TestCase):
@@ -127,7 +119,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | ID | Meaning | Required semantic content | Typical producers | Typical consumers | Storage-binding status |
             | --- | --- | --- | --- | --- | --- |
-            | `research-frame` | Research frame. | Objective, metric, constraints, and next route. | `isomer-deepsci-scout` | Any production DeepSci skill | Not storage-bound yet. |
+            | `DEEPSCI:RESEARCH-FRAME` | Research frame. | Objective, metric, constraints, and next route. | `isomer-deepsci-scout` | Any production DeepSci skill | Not storage-bound yet. |
             """,
         )
         write(
@@ -182,7 +174,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
         )
         output_step = (
-            "3. **Produce semantics**. Produce [[rsch-object:research-frame]] with enough content for the next method step."
+            "3. **Produce semantics**. Produce DEEPSCI:RESEARCH-FRAME with enough content for the next method step."
             if v2
             else "3. **Record output**. Use Research Topic, Artifacts, and Decision Records."
         )
@@ -253,8 +245,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         present = codes(diagnostics) & unexpected
         self.assertFalse(present, messages(diagnostics))
 
-    def write_placeholder_bindings(self, skill_dir: Path, placeholders: list[str]) -> None:
-        rows = "".join(f"| <{placeholder}> | artifact |\n" for placeholder in placeholders)
+    def write_placeholder_bindings(self, skill_dir: Path, semantic_ids: list[str]) -> None:
+        rows = "".join(f"| {semantic_id} | artifact |\n" for semantic_id in semantic_ids)
         write(
             skill_dir / "placeholder-bindings.md",
             (
@@ -281,24 +273,9 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_kaoju_binding_invalid_fixtures_are_rejected(self) -> None:
         cases = {
             "missing": ("isomer-kaoju-workspace-mgr/artifact-bindings.md", lambda path: path.unlink(), "RPS022"),
-            "duplicate": (
-                "contracts/bindings.v2.json",
-                lambda path: mutate_json(path, lambda raw: raw["bindings"].append(dict(raw["bindings"][0]))),
-                "RPS021",
-            ),
-            "cross-family": (
-                "contracts/bindings.v2.json",
-                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("semantic_id", "other:survey-contract")),
-                "RPS021",
-            ),
             "summary-unresolved": (
                 "isomer-kaoju-frame/artifact-bindings.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("kaoju:survey-contract", "kaoju:unknown-contract"), encoding="utf-8"),
-                "RPS022",
-            ),
-            "unknown-producer": (
-                "contracts/bindings.v2.json",
-                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("producer", "isomer-kaoju-missing")),
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("KAOJU:SURVEY-CONTRACT", "KAOJU:UNKNOWN-CONTRACT"), encoding="utf-8"),
                 "RPS022",
             ),
             "physical-command": (
@@ -306,20 +283,50 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
                 lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nUse --record-kind artifact.\n", encoding="utf-8"),
                 "RPS023",
             ),
-            "stale-profile": (
-                "contracts/bindings.v2.json",
-                lambda path: mutate_json(path, lambda raw: raw["bindings"][0].__setitem__("profile_ref", "isomer:research/record-format/profile/kaoju/control/workspace-readiness/v2")),
-                "RPS022",
-            ),
             "missing-typed-operation": (
                 "isomer-kaoju-audit/artifact-bindings.md",
                 lambda path: path.write_text(path.read_text(encoding="utf-8").replace("project artifacts revise", "project records revise"), encoding="utf-8"),
                 "RPS024",
             ),
+            "missing-extension-query": (
+                "isomer-kaoju-audit/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("ext kaoju bindings describe KAOJU:WHAT", "project artifacts describe KAOJU:WHAT"), encoding="utf-8"),
+                "RPS024",
+            ),
             "summary-drift": (
                 "isomer-kaoju-shared/references/artifact-semantics.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("`kaoju:workspace-readiness`", "`kaoju:unknown`", 1), encoding="utf-8"),
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("`KAOJU:WORKSPACE-READINESS`", "`KAOJU:UNKNOWN`", 1), encoding="utf-8"),
                 "RPS022",
+            ),
+            "direct-resource-file": (
+                "isomer-kaoju-audit/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nRead bindings.v2.json directly.\n", encoding="utf-8"),
+                "RPS029",
+            ),
+            "parent-traversal": (
+                "isomer-kaoju-audit/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nRead [registry](../contracts/bindings.v2.json).\n", encoding="utf-8"),
+                "RPS005",
+            ),
+            "sibling-link": (
+                "isomer-kaoju-audit/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8") + "\nRead [shared](isomer-kaoju-shared/references/artifact-recording.md).\n", encoding="utf-8"),
+                "RPS005",
+            ),
+            "aliased-id": (
+                "isomer-kaoju-frame/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("KAOJU:SURVEY-CONTRACT", "KAOJU:PAPER-DRAFT", 1), encoding="utf-8"),
+                "RPS028",
+            ),
+            "oversized-projection": (
+                "isomer-kaoju-audit/artifact-bindings.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8") + ("\nDuplicated binding detail." * 30), encoding="utf-8"),
+                "RPS024",
+            ),
+            "shared-procedure-bypass": (
+                "isomer-kaoju-audit/SKILL.md",
+                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("isomer-kaoju-shared", "local-contract"), encoding="utf-8"),
+                "RPS029",
             ),
         }
         for name, (relative_path, mutate, expected_code) in cases.items():
@@ -512,7 +519,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_payload_first_placeholder_binding_is_allowed(self) -> None:
         root, target = self.make_valid_skillset()
         skill_dir = target / "deepsci" / "isomer-deepsci-scout"
-        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(skill_dir / "migrate" / "placeholders.md", "| Semantic id | Meaning |\n| --- | --- |\n| DEEPSCI:SCOUT-CONTEXT-BRIEF | Context. |\n")
         write(
             skill_dir / "placeholder-bindings.md",
             """
@@ -526,7 +533,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file>` |
+            | DEEPSCI:SCOUT-CONTEXT-BRIEF | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --semantic-id 'DEEPSCI:SCOUT-CONTEXT-BRIEF' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file>` |
             """,
         )
 
@@ -537,7 +544,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_payload_first_placeholder_binding_rejects_body_file_and_bare_profile(self) -> None:
         root, target = self.make_valid_skillset()
         skill_dir = target / "deepsci" / "isomer-deepsci-scout"
-        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(skill_dir / "migrate" / "placeholders.md", "| Semantic id | Meaning |\n| --- | --- |\n| DEEPSCI:SCOUT-CONTEXT-BRIEF | Context. |\n")
         write(
             skill_dir / "placeholder-bindings.md",
             """
@@ -551,7 +558,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --profile evidence.scout-context-brief --body-file <body-file>` |
+            | DEEPSCI:SCOUT-CONTEXT-BRIEF | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --semantic-id 'DEEPSCI:SCOUT-CONTEXT-BRIEF' --profile evidence.scout-context-brief --body-file <body-file>` |
             """,
         )
 
@@ -563,7 +570,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_payload_first_placeholder_binding_rejects_default_markdown_render(self) -> None:
         root, target = self.make_valid_skillset()
         skill_dir = target / "deepsci" / "isomer-deepsci-scout"
-        write(skill_dir / "migrate" / "placeholders.md", "| Placeholder | Meaning |\n| --- | --- |\n| <SCOUT_CONTEXT_BRIEF> | Context. |\n")
+        write(skill_dir / "migrate" / "placeholders.md", "| Semantic id | Meaning |\n| --- | --- |\n| DEEPSCI:SCOUT-CONTEXT-BRIEF | Context. |\n")
         write(
             skill_dir / "placeholder-bindings.md",
             """
@@ -577,7 +584,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Kind | Storage Item | Record Kind | Default Label | Profile | Create Command |
             | --- | --- | --- | --- | --- | --- | --- |
-            | <SCOUT_CONTEXT_BRIEF> | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --placeholder '<SCOUT_CONTEXT_BRIEF>' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
+            | DEEPSCI:SCOUT-CONTEXT-BRIEF | evidence | Evidence Item | `evidence_item` | `topic.records.artifacts` | `isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2` | `isomer-cli --print-json ext research records create --topic <topic> --record-kind evidence_item --semantic-id 'DEEPSCI:SCOUT-CONTEXT-BRIEF' --format-profile isomer:deepsci/record-format/profile/evidence/scout-context-brief/v2 --payload-file <payload-file> --render markdown --content-name scout-context-brief.md` |
             """,
         )
 
@@ -596,6 +603,47 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("isomer-deepsci-rebuttal", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-nature-data", validator.EXPECTED_DEEPSCI_SKILLS)
         self.assertIn("isomer-deepsci-nature-figure", validator.EXPECTED_DEEPSCI_SKILLS)
+
+    def test_packaged_deepsci_identity_inventory_is_complete_and_clean(self) -> None:
+        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm"
+        deepsci_root = packaged_root / "deepsci"
+        skill_dirs = [(path, "deepsci") for path in sorted(deepsci_root.glob("isomer-deepsci-*")) if path.is_dir()]
+        diagnostics: list[object] = []
+        identities = validator.validate_deepsci_identity_inventory(skill_dirs, REPO_ROOT, diagnostics)
+        self.assertEqual([], messages(diagnostics))
+
+        binding_ids: list[str] = []
+        migration_ids: list[str] = []
+        for skill_dir, _family in skill_dirs:
+            binding = skill_dir / "placeholder-bindings.md"
+            migration = skill_dir / "migrate" / "placeholders.md"
+            if binding.exists():
+                binding_ids.extend(semantic_id for _line, semantic_id in validator._identity_table_cells(binding))
+            if migration.exists():
+                migration_ids.extend(semantic_id for _line, semantic_id in validator._identity_table_cells(migration))
+        self.assertEqual(198, len(binding_ids))
+        self.assertEqual(198, len(set(binding_ids)))
+        self.assertEqual(194, len(migration_ids))
+        self.assertEqual(194, len(set(migration_ids)))
+        self.assertTrue(set(migration_ids) < set(binding_ids))
+        self.assertTrue(set(binding_ids) <= identities)
+
+        pipeline_controls = {
+            "DEEPSCI:PIPELINE-RECIPE-CONTEXT",
+            "DEEPSCI:PIPELINE-TERMINAL-REPORT",
+            "DEEPSCI:PIPELINE-RUN-RECORD",
+            "DEEPSCI:PIPELINE-RESUME-PACKET",
+        }
+        self.assertEqual(pipeline_controls, set(binding_ids) - set(migration_ids))
+
+        file_roles = validator.load_file_roles(packaged_root)
+        documents = validator.collect_documents(packaged_root, REPO_ROOT, file_roles)
+        active_diagnostics: list[object] = []
+        registered = {"deepsci": identities, "kaoju": set()}
+        for document in documents:
+            if "deepsci" in document.roles:
+                validator.validate_artifact_identity_guidance(document, REPO_ROOT, active_diagnostics, registered)
+        self.assertEqual([], messages(active_diagnostics))
 
     def test_deepsci_skills_teach_canonical_lineage_recording(self) -> None:
         packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci"
@@ -753,18 +801,72 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.write_skill(
             target / "deepsci",
             "isomer-deepsci-valid",
-            workflow_extra="3. **Break placeholder**. Produce [[rsch-object:missing-object]].",
+            workflow_extra="3. **Break identity**. Produce DEEPSCI:MISSING-OBJECT.",
             v2=True,
         )
         diagnostics = validator.validate_skillset(target, root)
-        self.assertIn("RPS009", codes(diagnostics), messages(diagnostics))
+        self.assertIn("RPS028", codes(diagnostics), messages(diagnostics))
+
+    def test_rejects_all_superseded_artifact_identity_forms_without_fixture_exemptions(self) -> None:
+        root, target = self.make_valid_skillset()
+        path = target / "deepsci" / "isomer-deepsci-scout" / "references" / "invalid-identities.md"
+        write(
+            path,
+            """
+            # Invalid Identities
+
+            `<DEEPSCI:RESEARCH-FRAME>`
+            `[[rsch-object:research-frame]]`
+            `RESEARCH-FRAME`
+            `<RESEARCH_FRAME>`
+            `deepsci:research-frame`
+            `DeepSci:RESEARCH-FRAME`
+            `KAOJU:SURVEY-CONTRACT`
+            `DEEPSCI:UNKNOWN`
+            `--placeholder`
+            """,
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        rendered = "\n".join(messages(diagnostics))
+        self.assertIn("RPS028", codes(diagnostics))
+        for offender in (
+            "<DEEPSCI:RESEARCH-FRAME>",
+            "[[rsch-object:research-frame]]",
+            "RESEARCH-FRAME",
+            "<RESEARCH_FRAME>",
+            "deepsci:research-frame",
+            "DeepSci:RESEARCH-FRAME",
+            "KAOJU:SURVEY-CONTRACT",
+            "DEEPSCI:UNKNOWN",
+            "--placeholder",
+        ):
+            self.assertIn(offender, rendered)
+
+    def test_rejects_duplicate_canonical_deepsci_binding_identity(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_dir = target / "deepsci" / "isomer-deepsci-scout"
+        write(
+            skill_dir / "migrate" / "placeholders.md",
+            "| Semantic id | Meaning |\n| --- | --- |\n| DEEPSCI:SCOUT-CONTEXT | Context. |\n",
+        )
+        write(
+            skill_dir / "placeholder-bindings.md",
+            "| Semantic id | Kind |\n| --- | --- |\n| DEEPSCI:SCOUT-CONTEXT | artifact |\n| DEEPSCI:SCOUT-CONTEXT | artifact |\n",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("duplicate DeepSci artifact identity" in message for message in messages(diagnostics)))
 
     def test_accepts_registered_migration_placeholder(self) -> None:
         root, target = self.make_valid_skillset()
         self.write_skill(
             target / "deepsci",
             "isomer-deepsci-valid",
-            workflow_extra="3. **Use local placeholder**. Produce `<VALID_HANDOFF>` for the next route.",
+            workflow_extra="3. **Use local identity**. Produce DEEPSCI:VALID-HANDOFF for the next route.",
             v2=True,
         )
         write(
@@ -774,10 +876,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Meaning |
             | --- | --- |
-            | <VALID_HANDOFF> | Fixture handoff. |
+            | DEEPSCI:VALID-HANDOFF | Fixture handoff. |
             """,
         )
-        self.write_placeholder_bindings(target / "deepsci" / "isomer-deepsci-valid", ["VALID_HANDOFF"])
+        self.write_placeholder_bindings(target / "deepsci" / "isomer-deepsci-valid", ["DEEPSCI:VALID-HANDOFF"])
         diagnostics = validator.validate_skillset(target, root)
         self.assert_no_codes(diagnostics, {"RPS009", "RPS012"})
 
@@ -786,7 +888,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.write_skill(
             target / "deepsci",
             "isomer-deepsci-valid",
-            workflow_extra="3. **Break local placeholder**. Produce `<MISSING_HANDOFF>` for the next route.",
+            workflow_extra="3. **Break local identity**. Produce DEEPSCI:MISSING-HANDOFF for the next route.",
             v2=True,
         )
         diagnostics = validator.validate_skillset(target, root)
@@ -801,7 +903,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Meaning |
             | --- | --- |
-            | <VALID_HANDOFF> | Fixture handoff. |
+            | DEEPSCI:VALID-HANDOFF | Fixture handoff. |
             """,
         )
         diagnostics = validator.validate_skillset(target, root)
@@ -816,14 +918,14 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Meaning |
             | --- | --- |
-            | <VALID_HANDOFF> | Fixture handoff. |
-            | <SECOND_HANDOFF> | Fixture handoff. |
+            | DEEPSCI:VALID-HANDOFF | Fixture handoff. |
+            | DEEPSCI:SECOND-HANDOFF | Fixture handoff. |
             """,
         )
-        self.write_placeholder_bindings(target / "deepsci" / "isomer-deepsci-valid", ["VALID_HANDOFF"])
+        self.write_placeholder_bindings(target / "deepsci" / "isomer-deepsci-valid", ["DEEPSCI:VALID-HANDOFF"])
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
-        self.assertTrue(any("<SECOND_HANDOFF>" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("DEEPSCI:SECOND-HANDOFF" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_rejects_extra_v2_placeholder_binding_row(self) -> None:
         root, target = self.make_valid_skillset()
@@ -834,16 +936,16 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             | Placeholder | Meaning |
             | --- | --- |
-            | <VALID_HANDOFF> | Fixture handoff. |
+            | DEEPSCI:VALID-HANDOFF | Fixture handoff. |
             """,
         )
         self.write_placeholder_bindings(
             target / "deepsci" / "isomer-deepsci-valid",
-            ["VALID_HANDOFF", "EXTRA_HANDOFF"],
+            ["DEEPSCI:VALID-HANDOFF", "DEEPSCI:EXTRA-HANDOFF"],
         )
         diagnostics = validator.validate_skillset(target, root)
         self.assertIn("RPS012", codes(diagnostics), messages(diagnostics))
-        self.assertTrue(any("<EXTRA_HANDOFF>" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(any("DEEPSCI:EXTRA-HANDOFF" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_rejects_v2_storage_binding(self) -> None:
         root, target = self.make_valid_skillset()

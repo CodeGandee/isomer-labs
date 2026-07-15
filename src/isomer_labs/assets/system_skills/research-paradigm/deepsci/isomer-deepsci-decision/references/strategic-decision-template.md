@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <ROUTE_DECISION_RECORD> must include verdict, action, reason, evidence basis, rejected alternatives or blocker, and next route.
+- DEEPSCI:ROUTE-DECISION-RECORD must include verdict, action, reason, evidence basis, rejected alternatives or blocker, and next route.
 - The decision record must not repeat the same decision without new evidence.
 - A consequential decision must not omit the decisive reason or main rejected alternative.
 - The record must make the next stage or next action explicit.

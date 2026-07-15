@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.kaoju.contracts import load_binding_registry
 
 
 def write(path: Path, content: str) -> None:
@@ -91,10 +92,10 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         path = self.root / "inputs" / f"{record_id}.json"
         selected_sections = dict(sections or {"state": {"status": "accepted"}})
         required_sections: dict[str, dict[str, object]] = {
-            "kaoju:audit-report": {"findings": [{"check": "evidence-lineage", "status": "pass"}], "verdict": {"status": "ready"}},
-            "kaoju:source-digest": {"source": {"ref": "source"}, "source_identity": {"work": "Source", "version": "v1"}, "findings": [{"locator": "section 1", "source_statement": "Observed statement.", "interpretation": "Bounded interpretation."}], "approval": {"status": "approved", "actor_ref": "topic-actor:test"}},
-            "kaoju:citation-map": {"citations": {"fixture": {"source_ref": "source"}}, "displays": {"planned": []}},
-            "kaoju:field-summary": {"synthesis": {"conclusions": [{"text": "Bounded conclusion"}]}},
+            "KAOJU:AUDIT-REPORT": {"findings": [{"check": "evidence-lineage", "status": "pass"}], "verdict": {"status": "ready"}},
+            "KAOJU:SOURCE-DIGEST": {"source": {"ref": "source"}, "source_identity": {"work": "Source", "version": "v1"}, "findings": [{"locator": "section 1", "source_statement": "Observed statement.", "interpretation": "Bounded interpretation."}], "approval": {"status": "approved", "actor_ref": "topic-actor:test"}},
+            "KAOJU:CITATION-MAP": {"citations": {"fixture": {"source_ref": "source"}}, "displays": {"planned": []}},
+            "KAOJU:FIELD-SUMMARY": {"synthesis": {"conclusions": [{"text": "Bounded conclusion"}]}},
         }
         selected_sections = {**required_sections.get(semantic_id, {}), **selected_sections}
         payload = {
@@ -102,7 +103,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             "summary": f"Accepted {semantic_id} fixture.",
             "artifact_family": "kaoju",
             "semantic_id": semantic_id,
-            "artifact_type": semantic_id.removeprefix("kaoju:"),
+            "artifact_type": load_binding_registry()[semantic_id].artifact_type,
             "sections": selected_sections,
         }
         write(path, json.dumps(payload, indent=2) + "\n")
@@ -153,14 +154,14 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
 
     def paper_inputs(self) -> dict[str, str]:
         self.put_structured(
-            "kaoju:audit-report",
+            "KAOJU:AUDIT-REPORT",
             "audit-ready",
             "isomer-kaoju-audit",
             relationships={"claim_ledger": "claims-ready", "catalog": "catalog-ready"},
             scope="survey-main",
         )
         self.put_structured(
-            "kaoju:source-digest",
+            "KAOJU:SOURCE-DIGEST",
             "source-digest-1",
             "isomer-kaoju-examine",
             relationships={"source": "paper-1", "repository": "repo-1"},
@@ -170,7 +171,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         display = self.root / "inputs/throughput-figure.svg"
         write(display, '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="10"><rect width="20" height="10"/></svg>\n')
         self.put_file(
-            "kaoju:paper-display",
+            "KAOJU:PAPER-DISPLAY",
             "paper-display-1",
             "isomer-kaoju-write",
             display,
@@ -178,7 +179,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             scope="paper-main",
         )
         self.put_structured(
-            "kaoju:citation-map",
+            "KAOJU:CITATION-MAP",
             "citation-map-1",
             "isomer-kaoju-write",
             relationships={"paper_draft": "paper-draft-1", "evidence": "source-digest-1"},
@@ -223,7 +224,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             """,
         )
         self.put_file(
-            "kaoju:paper-structure-myst",
+            "KAOJU:PAPER-STRUCTURE-MYST",
             "paper-structure-1",
             "isomer-kaoju-write",
             structure,
@@ -266,7 +267,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             """,
         )
         self.put_file(
-            "kaoju:paper-draft-myst",
+            "KAOJU:PAPER-DRAFT-MYST",
             "paper-draft-1",
             "isomer-kaoju-write",
             draft,
@@ -325,7 +326,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         status, stale = self.paper("apply-template", str(export_one))
         self.assertEqual(1, status)
         self.assertEqual("paper_template_stale_base", stale["error"]["code"])
-        status, no_template = self.artifact("latest", "kaoju:paper-template-myst", "--scope-key", "paper-main")
+        status, no_template = self.artifact("latest", "KAOJU:PAPER-TEMPLATE-MYST", "--scope-key", "paper-main")
         self.assertEqual(0, status, no_template)
         self.assertEqual([], no_template["records"])
 
@@ -403,7 +404,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         self.assertTrue(initialized_again["template_reused"])
 
         self.put_structured(
-            "kaoju:audit-report",
+            "KAOJU:AUDIT-REPORT",
             "audit-blocked",
             "isomer-kaoju-audit",
             relationships={"claim_ledger": "claims-blocked", "catalog": "catalog-blocked"},
@@ -468,7 +469,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
 
     def test_wiki_export_is_idempotent_preserves_human_files_and_deploys_packaged_viewer(self) -> None:
         self.put_structured(
-            "kaoju:audit-report",
+            "KAOJU:AUDIT-REPORT",
             "wiki-audit-1",
             "isomer-kaoju-audit",
             relationships={"claim_ledger": "claims-1", "catalog": "catalog-1"},
@@ -476,7 +477,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             scope="survey-main",
         )
         self.put_structured(
-            "kaoju:field-summary",
+            "KAOJU:FIELD-SUMMARY",
             "wiki-summary-1",
             "isomer-kaoju-synthesize",
             relationships={"audit_report": "wiki-audit-1"},
@@ -590,7 +591,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
 
     def test_wiki_default_path_and_unrecognized_target_are_deterministic(self) -> None:
         self.put_structured(
-            "kaoju:audit-report",
+            "KAOJU:AUDIT-REPORT",
             "default-audit",
             "isomer-kaoju-audit",
             relationships={"claim_ledger": "claims-default", "catalog": "catalog-default"},

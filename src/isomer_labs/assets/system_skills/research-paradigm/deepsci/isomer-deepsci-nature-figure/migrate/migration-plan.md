@@ -33,15 +33,15 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<NATURE_FIGURE_BACKEND_CHOICE>`
-- `<NATURE_FIGURE_CONTRACT>`
-- `<NATURE_FIGURE_RUNTIME_CHECK>`
-- `<NATURE_PANEL_EVIDENCE_MAP>`
-- `<NATURE_FIGURE_ARCHETYPE>`
-- `<NATURE_EXPORT_CONTRACT>`
-- `<NATURE_FIGURE_EXPORT_BUNDLE>`
-- `<NATURE_FIGURE_QA_REPORT>`
-- `<NATURE_FIGURE_BLOCKER>`
+- `DEEPSCI:NATURE-FIGURE-BACKEND-CHOICE`
+- `DEEPSCI:NATURE-FIGURE-CONTRACT`
+- `DEEPSCI:NATURE-FIGURE-RUNTIME-CHECK`
+- `DEEPSCI:NATURE-PANEL-EVIDENCE-MAP`
+- `DEEPSCI:NATURE-FIGURE-ARCHETYPE`
+- `DEEPSCI:NATURE-EXPORT-CONTRACT`
+- `DEEPSCI:NATURE-FIGURE-EXPORT-BUNDLE`
+- `DEEPSCI:NATURE-FIGURE-QA-REPORT`
+- `DEEPSCI:NATURE-FIGURE-BLOCKER`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -94,14 +94,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <NATURE_FIGURE_BACKEND_CHOICE> as Python or R.
-- Produce <NATURE_FIGURE_CONTRACT> with one-sentence conclusion, evidence chain, panel roles, dimensions, source data, statistics, integrity notes, and export formats.
-- Produce <NATURE_FIGURE_RUNTIME_CHECK> for packages, fonts, device, renderer, and export capability in the selected backend only.
-- Produce <NATURE_PANEL_EVIDENCE_MAP> linking each panel to unique evidence, source data, statistics, and claim.
-- Produce <NATURE_FIGURE_ARCHETYPE> and read references/nature-2026-observations.
-- Produce <NATURE_EXPORT_CONTRACT> covering SVG/PDF/TIFF/PNG, editable text, dimensions, color, line weights, image-integrity notes, and source-data expectations.
+- Produce DEEPSCI:NATURE-FIGURE-BACKEND-CHOICE as Python or R.
+- Produce DEEPSCI:NATURE-FIGURE-CONTRACT with one-sentence conclusion, evidence chain, panel roles, dimensions, source data, statistics, integrity notes, and export formats.
+- Produce DEEPSCI:NATURE-FIGURE-RUNTIME-CHECK for packages, fonts, device, renderer, and export capability in the selected backend only.
+- Produce DEEPSCI:NATURE-PANEL-EVIDENCE-MAP linking each panel to unique evidence, source data, statistics, and claim.
+- Produce DEEPSCI:NATURE-FIGURE-ARCHETYPE and read references/nature-2026-observations.
+- Produce DEEPSCI:NATURE-EXPORT-CONTRACT covering SVG/PDF/TIFF/PNG, editable text, dimensions, color, line weights, image-integrity notes, and source-data expectations.
 - Use Python guidance from references/api.
-- Inspect rendered previews and produce <NATURE_FIGURE_QA_REPORT> using references/qa-contract.
+- Inspect rendered previews and produce DEEPSCI:NATURE-FIGURE-QA-REPORT using references/qa-contract.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

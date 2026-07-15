@@ -10,7 +10,7 @@ UC-04 produces a Markdown paper structure and draft inside the agent chat workfl
 
 - UC-05 supports exporting the current paper template to a topic-workspace directory, with a manifest and a state-DB registration.
 - The human edits the exported Markdown template with their own tools.
-- When the human asks to apply the template, the agent reads it back, validates it, updates the durable `kaoju:paper-template` artifact, and regenerates `kaoju:paper-draft`.
+- When the human asks to apply the template, the agent reads it back, validates it, updates the durable `KAOJU:PAPER-TEMPLATE-MYST` artifact, and regenerates `KAOJU:PAPER-DRAFT-MYST`.
 - The export directory is either user-supplied or resolved through `isomer-cli`.
 
 ## Affected Artifacts
@@ -26,5 +26,5 @@ UC-04 produces a Markdown paper structure and draft inside the agent chat workfl
 - Instruction: "get me the md template for inspection and revision", agent extracts template into a workspace directory with manifest and state-DB reference, user edits manually, then says "apply the template" or "update the paper with new template", agent reads back the template, updates durable template artifact, and regenerates the paper.
 - Applied changes:
   - Created UC-05 with export, apply, and validation flows.
-  - Defined `kaoju:paper-template-export`, `kaoju:paper-template-manifest`, and `kaoju:paper-template` durable outputs.
+  - Defined `KAOJU:PAPER-TEMPLATE-EXPORT`, `KAOJU:PAPER-TEMPLATE-MANIFEST`, and `KAOJU:PAPER-TEMPLATE-MYST` durable outputs.
   - Added ADR-0005.

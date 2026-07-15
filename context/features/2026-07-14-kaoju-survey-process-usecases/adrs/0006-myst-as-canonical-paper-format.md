@@ -9,11 +9,11 @@ UC-04 originally specified Markdown as the paper format, and ADR-0004 removed th
 ## Current Decision
 
 - MyST is the **canonical paper format** for this feature.
-- UC-04 produces `kaoju:paper-structure-myst` and `kaoju:paper-draft-myst`.
-- A Markdown view `kaoju:paper-draft-md` can be derived automatically from MyST for human review.
+- UC-04 produces `KAOJU:PAPER-STRUCTURE-MYST` and `KAOJU:PAPER-DRAFT-MYST`.
+- A Markdown view `KAOJU:PAPER-DRAFT-MD` can be derived automatically from MyST for human review.
 - UC-06 converts the canonical MyST draft to LaTeX and compiles it to PDF.
 - MyST-to-LaTeX conversion is hard; a script may initialize the `.tex` file, but the agent is expected to inspect and edit the `.tex` file directly to resolve directives, tables, citations, floats, and other conversion artifacts.
-- UC-05's manual template export now exports the MyST template (as a `.md` file) and applies revisions back to `kaoju:paper-template-myst`.
+- UC-05's manual template export now exports the MyST template (as a `.md` file) and applies revisions back to `KAOJU:PAPER-TEMPLATE-MYST`.
 - ADR-0004 is superseded by this decision.
 
 ## Affected Artifacts

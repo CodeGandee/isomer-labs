@@ -11,7 +11,7 @@ When performing this step, execute these substeps in order.
 3. **Use plateau pattern when stagnating**. State plateau, forbid trivial same-family tweaks when deeper change is needed, and require a larger representational, architectural, objective, or route shift.
 4. **Use fusion pattern when combining lines**. Identify source strengths, explain complementarity, avoid combining everything, and preserve comparison surface.
 5. **Use debug pattern when repairing**. Restate error, likely root cause, minimal targeted fix, and original solution intent unless the bug invalidates the design.
-6. **Write <PROMPT_CONTRACT> only when it prevents drift**.
+6. **Write DEEPSCI:PROMPT-CONTRACT only when it prevents drift**.
 
 ## Preferences
 
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <PROMPT_CONTRACT> must not omit what changes, why it changes, how it helps, keep-unchanged conditions, and next action.
+- DEEPSCI:PROMPT-CONTRACT must not omit what changes, why it changes, how it helps, keep-unchanged conditions, and next action.
 - Plateau prompts must not permit another trivial tweak when route change is required.
 - Fusion prompts must not combine unrelated or redundant mechanisms.
 - Debug prompts must not turn into new-method prompts.

@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,14 +41,14 @@ Do not use this skill when:
 When this skill is invoked, execute these steps in order.
 
 
-1. **Choose the acceptance target**. Use <BASELINE_CONTEXT_BRIEF> to decide whether the current target is comparison-ready, paper-repro-ready, registry-publishable, waived, or blocked. Read `references/route-selection.md` and `references/boundary-cases.md`.
+1. **Choose the acceptance target**. Use DEEPSCI:BASELINE-CONTEXT-BRIEF to decide whether the current target is comparison-ready, paper-repro-ready, registry-publishable, waived, or blocked. Read `references/route-selection.md` and `references/boundary-cases.md`.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-baseline --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Select the lightest trustworthy route**. Record <COMPARATOR_ROUTE_RECORD> and, when ambiguity or cost warrants it, <BASELINE_ROUTE_PLAN> for attach, import, verify-local-existing, reproduce, repair, publish, waive, or block. Read `references/route-selection.md`, `references/artifact-flow-examples.md`, `references/baseline-plan-template.md`, and `references/baseline-checklist-template.md`.
-4. **Make comparability explicit**. Produce <COMPARABILITY_CONTRACT> for task, dataset, split, evaluation path, required metric ids, metric directions, source identity, expected outputs, known deviations, variants, and caveats. Read `references/comparability-contract.md` and `references/artifact-payload-examples.md`.
-5. **Audit only what the route needs**. Create <CODEBASE_AUDIT_RECORD> only when attach, import, or verify-local-existing cannot establish trust and reproduce or repair needs source understanding. Read `references/codebase-audit-checklist.md` and `references/operational-guidance.md`.
-6. **Collect and verify necessary evidence**. Gather <BASELINE_VERIFICATION_EVIDENCE> sufficient for the selected acceptance target, then verify real outputs, metrics, service responses, package records, source identity, environment facts, and deviations before acceptance. Read `references/verification-record-template.md`, `references/comparability-contract.md`, and `references/operational-guidance.md`.
-7. **Close the baseline gate**. Record <ACCEPTED_BASELINE_RECORD>, <BASELINE_WAIVER_RECORD>, or <BASELINE_BLOCKER_RECORD>, including <BASELINE_PAYLOAD_RECORD> fields when acceptance, waiver, or blocking status matters. Read `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, and `references/baseline-checklist-template.md`.
-8. **Route and stop**. Return <BASELINE_ROUTE_DECISION> once the baseline is accepted, waived, blocked, or route-changed. Do not keep doing comparator work after the current acceptance target is satisfied unless one explicit unresolved comparison risk remains. Read `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, and `references/operational-guidance.md`.
+3. **Select the lightest trustworthy route**. Record DEEPSCI:COMPARATOR-ROUTE-RECORD and, when ambiguity or cost warrants it, DEEPSCI:BASELINE-ROUTE-PLAN for attach, import, verify-local-existing, reproduce, repair, publish, waive, or block. Read `references/route-selection.md`, `references/artifact-flow-examples.md`, `references/baseline-plan-template.md`, and `references/baseline-checklist-template.md`.
+4. **Make comparability explicit**. Produce DEEPSCI:COMPARABILITY-CONTRACT for task, dataset, split, evaluation path, required metric ids, metric directions, source identity, expected outputs, known deviations, variants, and caveats. Read `references/comparability-contract.md` and `references/artifact-payload-examples.md`.
+5. **Audit only what the route needs**. Create DEEPSCI:CODEBASE-AUDIT-RECORD only when attach, import, or verify-local-existing cannot establish trust and reproduce or repair needs source understanding. Read `references/codebase-audit-checklist.md` and `references/operational-guidance.md`.
+6. **Collect and verify necessary evidence**. Gather DEEPSCI:BASELINE-VERIFICATION-EVIDENCE sufficient for the selected acceptance target, then verify real outputs, metrics, service responses, package records, source identity, environment facts, and deviations before acceptance. Read `references/verification-record-template.md`, `references/comparability-contract.md`, and `references/operational-guidance.md`.
+7. **Close the baseline gate**. Record DEEPSCI:ACCEPTED-BASELINE-RECORD, DEEPSCI:BASELINE-WAIVER-RECORD, or DEEPSCI:BASELINE-BLOCKER-RECORD, including DEEPSCI:BASELINE-PAYLOAD-RECORD fields when acceptance, waiver, or blocking status matters. Read `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, and `references/baseline-checklist-template.md`.
+8. **Route and stop**. Return DEEPSCI:BASELINE-ROUTE-DECISION once the baseline is accepted, waived, blocked, or route-changed. Do not keep doing comparator work after the current acceptance target is satisfied unless one explicit unresolved comparison risk remains. Read `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, and `references/operational-guidance.md`.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-baseline --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -81,17 +81,17 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 
 ### Metrics
 
-- Metric-contract coverage: fraction of required metric ids, directions, primary metric, derivation or origin path, and comparison caveats recorded in <COMPARABILITY_CONTRACT>; higher is better.
+- Metric-contract coverage: fraction of required metric ids, directions, primary metric, derivation or origin path, and comparison caveats recorded in DEEPSCI:COMPARABILITY-CONTRACT; higher is better.
 - Verification evidence coverage: fraction of trusted comparator metrics or outputs backed by source, package, run, service, or local verification evidence; higher is better.
 
 ### Checks
 
-- Target gate: <BASELINE_CONTEXT_BRIEF> names the trust state, acceptance target, candidate comparator, and active uncertainty.
-- Route gate: <COMPARATOR_ROUTE_RECORD> chooses one dominant route and explains why lighter routes are or are not trustworthy.
-- Contract gate: <COMPARABILITY_CONTRACT> records task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.
-- Evidence gate: <BASELINE_VERIFICATION_EVIDENCE> traces trusted metrics or outputs to real evidence.
-- Acceptance gate: <ACCEPTED_BASELINE_RECORD>, <BASELINE_WAIVER_RECORD>, or <BASELINE_BLOCKER_RECORD> states confirmation, waiver, or blocker status and next route.
-- Handoff gate: <BASELINE_ROUTE_DECISION> leaves one trusted comparator, one explicit blocker, one explicit waiver, or one explicit route change.
+- Target gate: DEEPSCI:BASELINE-CONTEXT-BRIEF names the trust state, acceptance target, candidate comparator, and active uncertainty.
+- Route gate: DEEPSCI:COMPARATOR-ROUTE-RECORD chooses one dominant route and explains why lighter routes are or are not trustworthy.
+- Contract gate: DEEPSCI:COMPARABILITY-CONTRACT records task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.
+- Evidence gate: DEEPSCI:BASELINE-VERIFICATION-EVIDENCE traces trusted metrics or outputs to real evidence.
+- Acceptance gate: DEEPSCI:ACCEPTED-BASELINE-RECORD, DEEPSCI:BASELINE-WAIVER-RECORD, or DEEPSCI:BASELINE-BLOCKER-RECORD states confirmation, waiver, or blocker status and next route.
+- Handoff gate: DEEPSCI:BASELINE-ROUTE-DECISION leaves one trusted comparator, one explicit blocker, one explicit waiver, or one explicit route change.
 
 ## Reference Routing
 

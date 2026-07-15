@@ -2,12 +2,12 @@
 
 ## Workflow
 
-1. Validate <RSCH_WORKSPACE_CONTEXT> for selected topic refs, Topic Creator or Topic Manager evidence, selected production DeepSci skill set, final topic summary signal when formal team material is selected, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
-2. Validate <RSCH_STORAGE_LABEL_PLAN> for available labels, planned labels, optional `custom.*` needs, and blocked support.
-3. Validate <RSCH_PLACEHOLDER_BINDING_REGISTRY> for kind coverage, producer and consumer clarity, and missing binding status.
-4. Validate <RSCH_AGENT_ACCESS_PLAN> for pre-promotion surfaces, generated conveniences, and promotion boundaries.
+1. Validate DEEPSCI:RSCH-WORKSPACE-CONTEXT for selected topic refs, Topic Creator or Topic Manager evidence, selected production DeepSci skill set, final topic summary signal when formal team material is selected, topic-team validation status, topic-team profile material signal, runtime readiness, Agent Workspace context, and actor identity.
+2. Validate DEEPSCI:RSCH-STORAGE-LABEL-PLAN for available labels, planned labels, optional `custom.*` needs, and blocked support.
+3. Validate DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY for kind coverage, producer and consumer clarity, and missing binding status.
+4. Validate DEEPSCI:RSCH-AGENT-ACCESS-PLAN for pre-promotion surfaces, generated conveniences, and promotion boundaries.
 5. Validate reset-survival intent: if bootstrap setup should survive Topic Workspace reset, require a selected reset checkpoint and a planned or completed `isomer-cli project topic-reset update-checkpoint` call that names preserved records, structured payloads, on-demand views, semantic labels, support paths, source label, actor refs, and provenance refs.
-6. Produce <RSCH_BOOTSTRAP_VALIDATION_REPORT> when the production DeepSci research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> when a missing input or platform surface would force later skills to guess.
+6. Produce DEEPSCI:RSCH-BOOTSTRAP-VALIDATION-REPORT when the production DeepSci research loop can start, or DEEPSCI:RSCH-WORKSPACE-BLOCKER-RECORD when a missing input or platform surface would force later skills to guess.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to list the unchecked validation areas and stop with a blocker when durable outputs would otherwise be ambiguous.
 

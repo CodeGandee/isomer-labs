@@ -9,7 +9,7 @@ When performing this step, execute these substeps in order.
 1. **Create identity and frontier fields**. Record topic or workspace, route, run id, hypothesis id when available, stage, active item, next step, next route decision, and blockers.
 2. **Activate only relevant sections**. Keep planning, implementation, smoke or pilot, main run, validation, and closeout items that matter for the current run; remove or defer irrelevant lightweight-run items.
 3. **Update during execution**. Move items from `Next` to `In Progress` to `Done`, keep blockers explicit, and revise the next reporting checkpoint as the frontier changes.
-4. **Synchronize with the plan**. When <EXPERIMENT_PLAN> changes materially, update the checklist before more code or compute work continues.
+4. **Synchronize with the plan**. When DEEPSCI:EXPERIMENT-PLAN changes materially, update the checklist before more code or compute work continues.
 5. **Close the route**. Mark validation and closeout only after outputs, metrics, comparability, durable recording, and next action are explicit.
 
 ## Preferences
@@ -24,8 +24,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <EXPERIMENT_CHECKLIST> must keep the current active item, next step, next route, and blockers visible.
-- <EXPERIMENT_CHECKLIST> should be updated before and after material implementation, smoke, main run, validation, and closeout transitions.
+- DEEPSCI:EXPERIMENT-CHECKLIST must keep the current active item, next step, next route, and blockers visible.
+- DEEPSCI:EXPERIMENT-CHECKLIST should be updated before and after material implementation, smoke, main run, validation, and closeout transitions.
 - Closeout must not be checked complete until the run or blocker is durably recorded and routed.
 
 ## Quality Gates
@@ -100,7 +100,7 @@ Read these gates after producing the step output and before handoff or completio
 
 - [ ] real run launched
 - [ ] health signals confirmed when monitoring is needed
-- [ ] major runtime deviations reflected in <EXPERIMENT_PLAN>
+- [ ] major runtime deviations reflected in DEEPSCI:EXPERIMENT-PLAN
 
 ### Validation
 

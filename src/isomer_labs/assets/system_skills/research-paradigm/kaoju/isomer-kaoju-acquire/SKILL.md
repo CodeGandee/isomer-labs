@@ -9,7 +9,7 @@ description: Use when a Kaoju survey needs a source checkout, paper full text, d
 
 Acquire only the material needed for the accepted evidence purpose, pin its identity, and route governed state changes through existing owners. Availability never substitutes for identity, license, or access checks.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:material-acquisition-manifest` and `kaoju:topic-dataset-manifest` exactly. Return a storage blocker instead of inventing persistence, and keep material bytes outside canonical JSON.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:MATERIAL-ACQUISITION-MANIFEST` and `KAOJU:TOPIC-DATASET-MANIFEST` exactly. Return a storage blocker instead of inventing persistence, and keep material bytes outside canonical JSON.
 
 ## When to Use
 
@@ -24,7 +24,7 @@ Use after discovery or framing identifies material that must be read, checked ou
 5. **Plan governed acquisition**. State size, storage, network, credentials, private-data, license, build, and accelerator implications; obtain required Gates.
 6. **Resolve source-code requests**. Accept a URL, repository name, paper ref, or Reading List item ref. Search the Artifact Library first. When a paper association is unknown, perform bounded metadata discovery, present normal candidates for selection and approval, and preserve ambiguity or access blockers. Candidate metadata receives no evidentiary authority before verification and normal intake approval.
 7. **Route acquisition**. Use `isomer-cli project repos acquire` for repositories and the applicable provider or owner service for other materials. Repository acquisition is depth one by default and deepens only when identity or approved historical inspection requires it. Retain the Service Request, Execution Adapter Command Request, logs, Gate, and provenance refs.
-8. **Verify and register material**. Confirm observed identity, immutable commit or digest, depth posture, access, license, integrity, and deviation from the request. Update the scoped `kaoju:artifact-library`; record verified paper-to-repository relationships in `kaoju:associated-source-code` without merging paper and code identity.
+8. **Verify and register material**. Confirm observed identity, immutable commit or digest, depth posture, access, license, integrity, and deviation from the request. Update the scoped `KAOJU:ARTIFACT-LIBRARY`; record verified paper-to-repository relationships in `KAOJU:ASSOCIATED-SOURCE-CODE` without merging paper and code identity.
 9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-acquire --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 10. **Return status**. Produce Artifact Library, Associated Source Code, Material Acquisition Manifest, or Source Access Blocker refs and the next inspect or execute stage.
 
@@ -38,7 +38,7 @@ For datasets, query the Topic Dataset Manifest first. Registration creates a man
 
 ## Artifact Operations
 
-Resolve `kaoju:artifact-library`, `kaoju:associated-source-code`, `kaoju:material-acquisition-manifest`, and `kaoju:source-access-blocker` through `project artifacts describe`. Persist only through typed `project artifacts put` or binding-permitted `revise`; repository bytes and external materials remain outside structured payloads.
+Resolve `KAOJU:ARTIFACT-LIBRARY`, `KAOJU:ASSOCIATED-SOURCE-CODE`, `KAOJU:MATERIAL-ACQUISITION-MANIFEST`, and `KAOJU:SOURCE-ACCESS-BLOCKER` through `ext kaoju bindings describe KAOJU:WHAT`. Persist only through typed `project artifacts put` or binding-permitted `revise`; repository bytes and external materials remain outside structured payloads.
 
 ## Reference Routing
 

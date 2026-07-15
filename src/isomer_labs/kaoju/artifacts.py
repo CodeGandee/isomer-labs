@@ -9,6 +9,7 @@ import shutil
 from typing import Mapping, Sequence
 import uuid
 
+from isomer_labs.core.artifact_identity import ArtifactIdentityError, parse_artifact_identity
 from isomer_labs.kaoju.content import (
     ArtifactContent,
     checksum_file,
@@ -69,6 +70,8 @@ class KaojuArtifactService:
     def describe(self, semantic_id: str) -> dict[str, object]:
         try:
             binding = describe_binding(semantic_id)
+        except ArtifactIdentityError as exc:
+            raise KaojuServiceError(exc.code, str(exc)) from exc
         except KeyError as exc:
             raise KaojuServiceError("unknown_semantic_id", str(exc), ("List the packaged Kaoju binding registry.",)) from exc
         return {"ok": True, "mutated": False, "operation": "describe", "binding": binding}
@@ -275,6 +278,10 @@ class KaojuArtifactService:
         return {"ok": True, "mutated": apply and bool(changes), "operation": "migrate-scope", "apply": apply, "changes": changes, "skipped": skipped}
 
     def _binding(self, semantic_id: str) -> KaojuBinding:
+        try:
+            parse_artifact_identity(semantic_id, expected_extension="kaoju")
+        except ArtifactIdentityError as exc:
+            raise KaojuServiceError(exc.code, str(exc)) from exc
         binding = load_binding_registry().get(semantic_id)
         if binding is None:
             raise KaojuServiceError("unknown_semantic_id", f"Unknown Kaoju semantic id: {semantic_id}")
@@ -311,12 +318,12 @@ class KaojuArtifactService:
 
     def _validate_content_contract(self, binding: KaojuBinding, content: Path) -> builtins.list[ContractDiagnostic]:
         contract_path = content
-        if binding.semantic_id == "kaoju:generated-dataset" and binding.content_mode == "directory_manifest":
+        if binding.semantic_id == "KAOJU:GENERATED-DATASET" and binding.content_mode == "directory_manifest":
             contract_path = content / "generated-dataset.json"
             if not contract_path.is_file():
                 raise KaojuServiceError(
                     "artifact_contract_invalid",
-                    "kaoju:generated-dataset requires generated-dataset.json at the directory root.",
+                    "KAOJU:GENERATED-DATASET requires generated-dataset.json at the directory root.",
                     ("Write the capability-probe manifest and retry registration.",),
                 )
         elif binding.content_mode != "structured_file":
@@ -379,10 +386,10 @@ class KaojuArtifactService:
         if idempotency_key is not None:
             metadata["idempotency_key"] = idempotency_key
         if binding.content_mode == "structured_file":
-            return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), payload_file=content.content_path, format_profile_ref=binding.profile_ref)
+            return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, skill=producer, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), payload_file=content.content_path, format_profile_ref=binding.profile_ref)
         if content.managed and binding.content_mode == "ordinary_file":
-            return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), body_file=content.content_path, content_name=content.content_path.name)
-        return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), registered_content_path=content.content_path)
+            return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, skill=producer, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), body_file=content.content_path, content_name=content.content_path.name)
+        return ResearchRecordRequest(record_kind=binding.record_kind, record_id=record_id, status=status, semantic_id=binding.semantic_id, scope_key=scope_key, skill=producer, producer=producer, consumer=",".join(binding.consumers), semantic_label=binding.semantic_label, metadata=metadata, relationships=list(relationships), registered_content_path=content.content_path)
 
     def _idempotent_record(self, key: str) -> RuntimeLifecycleRecord | None:
         store, diagnostics = open_workspace_runtime(self.context, env=self.env, read_only=True)

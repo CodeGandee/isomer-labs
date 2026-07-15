@@ -6,7 +6,7 @@ Use this reference at meaningful route boundaries, after measured results, after
 
 When performing this step, execute these substeps in order.
 
-1. **Summarize the current frontier**. Record mode, best branch or line, best run, stagnant branches, candidate backlog, fusion candidates, and blockers in <FRONTIER_REVIEW>.
+1. **Summarize the current frontier**. Record mode, best branch or line, best run, stagnant branches, candidate backlog, fusion candidates, and blockers in DEEPSCI:FRONTIER-REVIEW.
 2. **Summarize evidence**. State strongest support, strongest contradiction, biggest unresolved risk, and whether evidence favors explore, exploit, fusion, debug, or stop.
 3. **Choose the route**. Select explore, exploit, fusion, debug, or stop with why-this-now reasoning.
 4. **Choose the active submode**. Select brief, rank, seed, loop, fusion, debug, or stop and explain why it dominates now.
@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <FRONTIER_REVIEW> must not skip stagnant branches, candidate backlog, fusion candidates, or blockers.
+- DEEPSCI:FRONTIER-REVIEW must not skip stagnant branches, candidate backlog, fusion candidates, or blockers.
 - Route choice must follow evidence rather than momentum.
 - The active submode must be singular for the next pass.
 - Frontier review must name the trigger for another review.

@@ -38,7 +38,7 @@ from isomer_labs.records.store import (
 
 DEFAULT_TEMPLATE_NAME = "main"
 TEMPLATE_RELATIVE_ROOT = Path("intent") / "derived" / "writing-template"
-TEMPLATE_SEMANTIC_ID = "kaoju:writing-template"
+TEMPLATE_SEMANTIC_ID = "KAOJU:WRITING-TEMPLATE"
 TEMPLATE_PROFILE_REF = "isomer:research/record-format/profile/kaoju/control/writing-template/v1"
 
 TemplateCallback = Callable[

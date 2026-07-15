@@ -6,12 +6,12 @@ Use this reference when scout must map a paper, repository, benchmark, or proven
 
 When performing this step, execute these substeps in order.
 
-1. **Set the triage question**. Name the route-changing uncertainty from `<SCOUT_MINIMUM_UNKNOWNS>`.
-2. **Reuse local evidence**. Check `<SCOUT_CONTEXT_BRIEF>` and `<SCOUT_MEMORY_REUSE_NOTE>` before external discovery.
-3. **Search the smallest useful neighborhood**. Build `<SCOUT_DISCOVERY_LEDGER>` around direct, mechanism, and bottleneck neighbors.
-4. **Retain only route-changing references**. Keep papers, repositories, and benchmark docs that affect task framing, `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<NEXT_ROUTE_DECISION>`.
+1. **Set the triage question**. Name the route-changing uncertainty from `DEEPSCI:SCOUT-MINIMUM-UNKNOWNS`.
+2. **Reuse local evidence**. Check `DEEPSCI:SCOUT-CONTEXT-BRIEF` and `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE` before external discovery.
+3. **Search the smallest useful neighborhood**. Build `DEEPSCI:SCOUT-DISCOVERY-LEDGER` around direct, mechanism, and bottleneck neighbors.
+4. **Retain only route-changing references**. Keep papers, repositories, and benchmark docs that affect task framing, `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, or `DEEPSCI:NEXT-ROUTE-DECISION`.
 5. **Inspect repository provenance when needed**. Check official linkage, evaluation path, dependency realism, maintenance signal, license or access blockers, and reproducibility risk.
-6. **Stop on routing clarity**. Convert retained evidence into `<LITERATURE_SCOUTING_REPORT>`, `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<SCOUT_BLOCKER_RECORD>`.
+6. **Stop on routing clarity**. Convert retained evidence into `DEEPSCI:LITERATURE-SCOUTING-REPORT`, `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, or `DEEPSCI:SCOUT-BLOCKER-RECORD`.
 
 ## Preferences
 
@@ -44,4 +44,4 @@ Read these gates after producing the step output and before handoff or completio
 - Triage focus: each search or inspection is tied to a route-changing unknown.
 - Retention quality: retained references say why they matter and which placeholder they inform.
 - Repository viability: candidate repositories are triaged for provenance, evaluation mapping, runtime realism, and access blockers.
-- Stop condition: `<SCOUT_DISCOVERY_LEDGER>` shows why further search is or is not needed.
+- Stop condition: `DEEPSCI:SCOUT-DISCOVERY-LEDGER` shows why further search is or is not needed.

@@ -9,7 +9,7 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 ## Current Decision
 
 - UC-02 does **not** decide how the next survey direction is selected. Direction selection and sequencing belong to UC-01 and to future scheduling logic. UC-02 assumes the direction is already selected when the reading list is built.
-- The reading list artifact is **direction-owned**: one `kaoju:reading-list` artifact per direction. A direction identifier is part of the artifact metadata so downstream stages know which scope the list covers.
+- The reading list artifact is **direction-owned**: one `KAOJU:READING-LIST` artifact per direction. A direction identifier is part of the artifact metadata so downstream stages know which scope the list covers.
 - A default reading list **targets** 3 priority items and 3 secondary items. The agent tries its best to reach that count on the first attempt, but falling short is a warning rather than a blocker; the human can approve a shorter list or ask the agent to expand coverage.
 - Blocked or identity-unresolved candidates remain in discovery provenance but do not count toward the reachable 3+3 target. The agent performs bounded backfill before reporting a coverage deficit.
 - Each reading-list item includes a `priority` field with values `priority` or `secondary`.
@@ -29,7 +29,7 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 
 - Instruction: "this usecase does not concern how to pick the next direction to explore, and it is one artifact containing all in-depth reading list for one direction, so this is direction-owned reading list, default to have 3 items as priority and 3 items as secondary in a reading list"
 - Applied changes:
-  - Updated durable output description for `kaoju:reading-list` to state one artifact per direction.
+  - Updated durable output description for `KAOJU:READING-LIST` to state one artifact per direction.
   - Added `priority` field to the reading-list item metadata table.
   - Updated Event 001 example response to report 6 sources (3 priority, 3 secondary).
   - Updated Event 002 example response to group items under "Priority reads" and "Secondary reads".

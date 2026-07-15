@@ -3,11 +3,11 @@
 ## Workflow
 
 1. Resolve the canonical repository commit, associated paper, accepted Source Digest, task-critical path, dependency hints, data posture, and existing Pixi environment candidates.
-2. Use `$isomer-kaoju-trial` to record `kaoju:env-prep-plan` with flexible compatible constraints, risks, authorization, expected smoke outputs, and environment scope.
+2. Use `$isomer-kaoju-trial` to record `KAOJU:ENV-PREP-PLAN` with flexible compatible constraints, risks, authorization, expected smoke outputs, and environment scope.
 3. Open and synchronously dispatch a Service Request. Apply the Pixi preference order: reuse a satisfying environment; add flexible compatible constraints to an existing environment while preferring `default`; or create a dedicated environment.
-4. Record exact resolved package versions and lock identity in `kaoju:pixi-env-ref`, while preserving flexible intent constraints and before-and-after Gate state in `kaoju:env-gate-revision`.
-5. Create a durable file-backed `kaoju:smoke-run-script` under the Artifact owner surface. A Run-tied staged copy may execute, but neither source-tree nor Local Tmp Surface copies become canonical.
-6. Execute through `smoke_run` and record `kaoju:smoke-run-result`. Environment readiness requires a successful task-critical observation, not only environment creation.
+4. Record exact resolved package versions and lock identity in `KAOJU:PIXI-ENV-REF`, while preserving flexible intent constraints and before-and-after Gate state in `KAOJU:ENV-GATE-REVISION`.
+5. Create a durable file-backed `KAOJU:SMOKE-RUN-SCRIPT` under the Artifact owner surface. A Run-tied staged copy may execute, but neither source-tree nor Local Tmp Surface copies become canonical.
+6. Execute through `smoke_run` and record `KAOJU:SMOKE-RUN-RESULT`. Environment readiness requires a successful task-critical observation, not only environment creation.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
 

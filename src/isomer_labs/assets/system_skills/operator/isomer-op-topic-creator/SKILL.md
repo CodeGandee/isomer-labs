@@ -5,6 +5,10 @@ description: Use when an operator needs to create or resume an Isomer Research T
 
 # Isomer Admin Topic Creator
 
+## Plan First
+
+Topic creation is a complex process. Before executing any topic-creation task, use your internal todo list or planning tool to create a plan for the requested work. Keep the plan current as steps complete, blockers appear, or the requested scope changes.
+
 ## Overview
 
 Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-op-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-op-topic-mgr`. Its `create-research-intent` boundary writes `topic.intent.overview` from a canonical template, and `clarify-research-intent` offers an interactive human-in-the-loop refinement path. Its `finalize` boundary writes `topic.workspace.summary` and creates or refreshes the first structured reset checkpoint from operator-level readiness evidence.
@@ -44,7 +48,7 @@ When this skill is invoked, execute the following steps in order.
    - Topic Workspace readiness summary and first structured reset checkpoint through `finalize`.
 5. **Report topic creation output** using **Essential Output** by default and **Complete Output** when requested.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded topic-creation plan from Project Manifest-backed context, selected Research Topic refs, Topic Workspace refs, semantic path evidence, delegated owner boundaries, blockers, and the user's intended first research action.
+If the user's task does not map cleanly to these steps, refine the existing plan into a bounded topic-creation plan from Project Manifest-backed context, selected Research Topic refs, Topic Workspace refs, semantic path evidence, delegated owner boundaries, blockers, and the user's intended first research action.
 
 ## Subcommands
 

@@ -18,11 +18,11 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | production DeepSci research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
-| next stage or next anchor | `<BASELINE_ROUTE_DECISION>` or `<BASELINE_BLOCKER_RECORD>`, later bound to production DeepSci skill routing. |
+| next stage or next anchor | `DEEPSCI:BASELINE-ROUTE-DECISION` or `DEEPSCI:BASELINE-BLOCKER-RECORD`, later bound to production DeepSci skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
-| `PLAN.md`, `CHECKLIST.md`, `setup.md`, `execution.md`, `verification.md`, `analysis_plan.md`, `REPRO_CHECKLIST.md` | `<BASELINE_ROUTE_PLAN>` or `<BASELINE_GATE_CHECKLIST>` depending on the control-surface role. |
-| `<baseline_root>/json/metric_contract.json` | `<COMPARABILITY_CONTRACT>` until storage binding is finalized. |
-| `attachment.yaml` | `<BASELINE_PROVENANCE_RECORD>` until storage binding is finalized. |
+| `PLAN.md`, `CHECKLIST.md`, `setup.md`, `execution.md`, `verification.md`, `analysis_plan.md`, `REPRO_CHECKLIST.md` | `DEEPSCI:BASELINE-ROUTE-PLAN` or `DEEPSCI:BASELINE-GATE-CHECKLIST` depending on the control-surface role. |
+| `<baseline_root>/json/metric_contract.json` | `DEEPSCI:COMPARABILITY-CONTRACT` until storage binding is finalized. |
+| `attachment.yaml` | `DEEPSCI:BASELINE-PROVENANCE-RECORD` until storage binding is finalized. |
 
 ## Harness Substitutions
 
@@ -31,25 +31,25 @@
 | `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and status the result with the local placeholders. |
 | `artifact.*` | Prefer Isomer Artifacts, Evidence Items, Findings, Decision Records, Gates, and Workspace Runtime records. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and status semantic meaning with placeholders. |
 | `bash_exec(...)` | Use an Execution Adapter Command Request or the DeepScientist-compatible extension call for shell, CLI, Python, git, package, scheduler, or environment work. Do not describe native shell calls as the final skill contract. |
-| Source baseline attach, import, publish, confirm, overwrite, waive, and git calls | Use `<BASELINE_PROVENANCE_RECORD>`, `<BASELINE_VERIFICATION_EVIDENCE>`, `<BASELINE_PAYLOAD_RECORD>`, `<ACCEPTED_BASELINE_RECORD>`, `<BASELINE_WAIVER_RECORD>`, and related placeholders until storage bindings are finalized. |
+| Source baseline attach, import, publish, confirm, overwrite, waive, and git calls | Use `DEEPSCI:BASELINE-PROVENANCE-RECORD`, `DEEPSCI:BASELINE-VERIFICATION-EVIDENCE`, `DEEPSCI:BASELINE-PAYLOAD-RECORD`, `DEEPSCI:ACCEPTED-BASELINE-RECORD`, `DEEPSCI:BASELINE-WAIVER-RECORD`, and related placeholders until storage bindings are finalized. |
 
 ## Storage and Artifact Substitutions
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<BASELINE_CONTEXT_BRIEF>`
-- `<COMPARATOR_ROUTE_RECORD>`
-- `<BASELINE_ROUTE_PLAN>`
-- `<BASELINE_GATE_CHECKLIST>`
-- `<COMPARABILITY_CONTRACT>`
-- `<CODEBASE_AUDIT_RECORD>`
-- `<BASELINE_PROVENANCE_RECORD>`
-- `<BASELINE_VERIFICATION_EVIDENCE>`
-- `<BASELINE_PAYLOAD_RECORD>`
-- `<ACCEPTED_BASELINE_RECORD>`
-- `<BASELINE_WAIVER_RECORD>`
-- `<BASELINE_BLOCKER_RECORD>`
-- `<BASELINE_ROUTE_DECISION>`
+- `DEEPSCI:BASELINE-CONTEXT-BRIEF`
+- `DEEPSCI:COMPARATOR-ROUTE-RECORD`
+- `DEEPSCI:BASELINE-ROUTE-PLAN`
+- `DEEPSCI:BASELINE-GATE-CHECKLIST`
+- `DEEPSCI:COMPARABILITY-CONTRACT`
+- `DEEPSCI:CODEBASE-AUDIT-RECORD`
+- `DEEPSCI:BASELINE-PROVENANCE-RECORD`
+- `DEEPSCI:BASELINE-VERIFICATION-EVIDENCE`
+- `DEEPSCI:BASELINE-PAYLOAD-RECORD`
+- `DEEPSCI:ACCEPTED-BASELINE-RECORD`
+- `DEEPSCI:BASELINE-WAIVER-RECORD`
+- `DEEPSCI:BASELINE-BLOCKER-RECORD`
+- `DEEPSCI:BASELINE-ROUTE-DECISION`
 
 ## Unmatched Skill-Route Substitutions
 

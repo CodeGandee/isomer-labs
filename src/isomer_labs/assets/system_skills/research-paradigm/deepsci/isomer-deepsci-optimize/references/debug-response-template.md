@@ -7,7 +7,7 @@ Use this reference when a strategically valuable candidate failed for a concrete
 When performing this step, execute these substeps in order.
 
 1. **State the concrete failure**. Record error, failed command or check, status, affected candidate, and evidence source.
-2. **Retrieve relevant prior lessons**. Use <OPTIMIZATION_MEMORY_CARD> or local attempt records when similar failures or repair lessons exist.
+2. **Retrieve relevant prior lessons**. Use DEEPSCI:OPTIMIZATION-MEMORY-CARD or local attempt records when similar failures or repair lessons exist.
 3. **Classify root cause**. Mark structural, local, environmental, data, evaluation, dependency, or unknown.
 4. **Choose the minimal fix**. Keep the original solution intent and comparability surface unchanged unless the bug proves the design invalid.
 5. **Define the next check**. State bounded smoke, unit, validation, or quick evaluation needed after the fix.
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <DEBUG_RESPONSE> must not introduce a new performance mechanism under a debug label.
+- DEEPSCI:DEBUG-RESPONSE must not introduce a new performance mechanism under a debug label.
 - Debug must preserve keep-unchanged conditions for comparability.
 - Repeated failure without a new root cause or evidence change should route to archive, decision, or blocker.
 - Post-fix validation must be defined before editing.

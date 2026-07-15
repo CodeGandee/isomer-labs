@@ -9,7 +9,7 @@ description: Use when a user wants to test a genuine paper reproduction claim un
 
 Test one bounded paper reproduction claim while preserving upstream-faithful, adapted, repaired, failed, and blocked attempts as different evidence. Reproduction requires the paper's intended task, source identity, data semantics, evaluator, metrics, and a declared fidelity target.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use the legacy-compatible `kaoju:method-trial` result only for a genuine reproduction summary. `$isomer-kaoju-trial` owns trial plans, generated datasets, execution attempts, and trial results. Return a storage blocker rather than inventing persistence; keep material and raw-output bytes behind recorded refs.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use the legacy-compatible `KAOJU:METHOD-TRIAL` result only for a genuine reproduction summary. `$isomer-kaoju-trial` owns trial plans, generated datasets, execution attempts, and trial results. Return a storage blocker rather than inventing persistence; keep material and raw-output bytes behind recorded refs.
 
 ## When to Use
 
@@ -36,7 +36,7 @@ Use the paper's intended task, data, split, evaluator, and metric semantics. Rec
 
 ## Artifact Operations
 
-Resolve `kaoju:method-trial` through `project artifacts describe`. Persist the compatibility reproduction summary only through `project artifacts put`; all active trial execution records belong to `$isomer-kaoju-trial` and its typed operations.
+Resolve `KAOJU:METHOD-TRIAL` through `ext kaoju bindings describe KAOJU:WHAT`. Persist the compatibility reproduction summary only through `project artifacts put`; all active trial execution records belong to `$isomer-kaoju-trial` and its typed operations.
 
 ## Reference Routing
 

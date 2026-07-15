@@ -11,8 +11,8 @@ UC-03 ingests reading-list items, which may include source-code repositories tha
 - UC-08 supports ingesting a source-code repository from a direct URL.
 - The actor provides the URL and an optional focus area.
 - The system clones the repository with `git clone --depth 1` into the topic workspace extern-repo location.
-- The system reads the local copy, extracts code-level claims and evidence grounded in file paths and line ranges, and produces a `kaoju:source-digest`.
-- The repository is added to `kaoju:artifact-library` and optionally to the current direction's `kaoju:reading-list`.
+- The system reads the local copy, extracts code-level claims and evidence grounded in file paths and line ranges, and produces a `KAOJU:SOURCE-DIGEST`.
+- The repository is added to `KAOJU:ARTIFACT-LIBRARY` and optionally to the current direction's `KAOJU:READING-LIST`.
 - All artifacts are registered in the state database.
 
 ## Affected Artifacts

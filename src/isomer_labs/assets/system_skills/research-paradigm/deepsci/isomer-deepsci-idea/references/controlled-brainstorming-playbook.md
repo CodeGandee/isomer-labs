@@ -6,7 +6,7 @@ Use this reference when the current route is not already obvious and idea work n
 
 When performing this step, execute these substeps in order.
 
-1. **Enter only after framing**. Confirm <OBJECTIVE_CONTRACT> and <CURRENT_BOARD_PACKET> are clear enough to guide widening.
+1. **Enter only after framing**. Confirm DEEPSCI:OBJECTIVE-CONTRACT and DEEPSCI:CURRENT-BOARD-PACKET are clear enough to guide widening.
 2. **Choose the family mix**. Decide whether the pass admits mechanism, objective, measurement, and infrastructure families.
 3. **Generate a bounded slate**. Produce six to twelve raw ideas when the space allows, including local refinement, orthogonal alternative, objective or measurement change, and infrastructure route when relevant.
 4. **Filter aggressively**. Remove candidates that only improve a surrogate, violate constraints, repeat stale routes, are micro-variants, or lack cheap falsification.
@@ -41,7 +41,7 @@ Read these gates after producing the step output and before handoff or completio
 
 ### Checks
 
-- Framing gate: <OBJECTIVE_CONTRACT> and <CURRENT_BOARD_PACKET> are explicit before widening.
+- Framing gate: DEEPSCI:OBJECTIVE-CONTRACT and DEEPSCI:CURRENT-BOARD-PACKET are explicit before widening.
 - Diversity gate: the slate contains at least one non-incumbent family when the problem permits.
 - Filtering gate: weak surrogate-only, stale, invalid, and unfalsifiable ideas are removed or downgraded.
-- Structured-output gate: <CANDIDATE_IDEA_FRONTIER> has enough fields to feed <PRE_IDEA_DRAFT>.
+- Structured-output gate: DEEPSCI:CANDIDATE-IDEA-FRONTIER has enough fields to feed DEEPSCI:PRE-IDEA-DRAFT.

@@ -7,10 +7,10 @@ Use this reference to run analysis work without turning it into an unbounded cam
 When performing this step, execute these substeps in order.
 
 1. **Select the durable evidence route**. Use a light durable report for one bounded answer, or a campaign lineage route when multiple slices, branch isolation, reviewability, writing traceability, or later replay matter.
-2. **Verify executable slices before launch**. Confirm assets, comparators, dependencies, services, credentials, runtime, and workspace needs before committing to <ANALYSIS_CAMPAIGN_PLAN>.
+2. **Verify executable slices before launch**. Confirm assets, comparators, dependencies, services, credentials, runtime, and workspace needs before committing to DEEPSCI:ANALYSIS-CAMPAIGN-PLAN.
 3. **Use faithful execution tactics**. Choose direct verification, a bounded smoke check, or a real slice run based on command uncertainty, output uncertainty, metric-path uncertainty, and evidence value.
 4. **Monitor long-running slices through durable signals**. Use managed Execution Adapter sessions, durable logs, stall signals, and structured progress markers when runtime is long or uncertain.
-5. **Record every launched slice promptly**. After each slice completes, fails, becomes infeasible, or is superseded, update <ANALYSIS_SLICE_RECORD> and the campaign frontier before summarizing.
+5. **Record every launched slice promptly**. After each slice completes, fails, becomes infeasible, or is superseded, update DEEPSCI:ANALYSIS-SLICE-RECORD and the campaign frontier before summarizing.
 6. **Use memory selectively**. Check Workspace Runtime memory when resuming, reopening old command paths, repeated failures, prior slice outcomes, or comparability caveats may affect the route; preserve reusable campaign lessons before exit.
 7. **Keep connector-facing visuals restrained**. If the campaign produces milestone visuals, show the main boundary change clearly, use restrained project palettes, and do not decorate every slice equally.
 
@@ -28,7 +28,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <ANALYSIS_CAMPAIGN_PLAN> must not launch slices before assets, comparators, dependencies, and current runtime feasibility are checked or blockers are recorded.
+- DEEPSCI:ANALYSIS-CAMPAIGN-PLAN must not launch slices before assets, comparators, dependencies, and current runtime feasibility are checked or blockers are recorded.
 - Long-running execution should preserve durable logs and monitoring state.
 - If a slice is invalid, wedged, unsupported by the environment, or superseded, it should be stopped or marked honestly before replacement.
 - Repeated failure with no route, evidence, environment, or design change should route through decision, redesign, experiment, or blocker rather than widening silently.
@@ -46,8 +46,8 @@ Read these gates after producing the step output and before handoff or completio
 ### Checks
 
 - Route gate: the chosen durable evidence route matches slice count, lineage, reviewability, and write-back needs.
-- Resource gate: <ANALYSIS_RESOURCE_ENVELOPE> covers machine class, memory, storage, wall-clock, concurrency, services, credentials, dependencies, and infeasible slices when relevant.
+- Resource gate: DEEPSCI:ANALYSIS-RESOURCE-ENVELOPE covers machine class, memory, storage, wall-clock, concurrency, services, credentials, dependencies, and infeasible slices when relevant.
 - Execution gate: smoke, direct verification, or real run choice is justified by the uncertainty and evidence value.
-- Recording gate: every launched, failed, infeasible, partial, or superseded slice has an <ANALYSIS_SLICE_RECORD>.
-- Continuity gate: reusable lessons, comparability caveats, and route-changing outcomes are preserved in <ANALYSIS_CONTINUITY_UPDATE>.
+- Recording gate: every launched, failed, infeasible, partial, or superseded slice has an DEEPSCI:ANALYSIS-SLICE-RECORD.
+- Continuity gate: reusable lessons, comparability caveats, and route-changing outcomes are preserved in DEEPSCI:ANALYSIS-CONTINUITY-UPDATE.
 - Visual gate: any connector-facing chart highlights the boundary change and stays aligned with the project visual language.

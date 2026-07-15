@@ -23,7 +23,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <BASELINE_PAYLOAD_RECORD> must not omit the trusted comparison surface because one headline metric exists.
+- DEEPSCI:BASELINE-PAYLOAD-RECORD must not omit the trusted comparison surface because one headline metric exists.
 - Accepted baseline payloads must not represent blocked, waived, or incomplete verification states.
 - Route and blocker payloads must include reason, evidence sources, and next direction.
 - Accepted payloads must include baseline id, kind, task, dataset, primary metric, metrics summary, environment, source, and summary when available.

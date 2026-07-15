@@ -18,9 +18,9 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | production DeepSci research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
-| next stage or next anchor | `<ANALYSIS_ROUTE_DECISION>` or `<ANALYSIS_BLOCKER_RECORD>`, later bound to production DeepSci skill routing. |
+| next stage or next anchor | `DEEPSCI:ANALYSIS-ROUTE-DECISION` or `DEEPSCI:ANALYSIS-BLOCKER-RECORD`, later bound to production DeepSci skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
-| `PLAN.md`, local matrices, or checklist files | `<ANALYSIS_CAMPAIGN_PLAN>`, `<ANALYSIS_CAMPAIGN_CHECKLIST>`, or `<ANALYSIS_WRITEBACK_MAP>` depending on the source meaning. |
+| `PLAN.md`, local matrices, or checklist files | `DEEPSCI:ANALYSIS-CAMPAIGN-PLAN`, `DEEPSCI:ANALYSIS-CAMPAIGN-CHECKLIST`, or `DEEPSCI:ANALYSIS-WRITEBACK-MAP` depending on the source meaning. |
 
 ## Harness Substitutions
 
@@ -29,24 +29,24 @@
 | `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and status the result with the local placeholders. |
 | `artifact.*` | Prefer Isomer Artifacts, Evidence Items, Findings, Decision Records, Gates, and Workspace Runtime records. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and status semantic meaning with placeholders. |
 | `bash_exec(...)` | Use an Execution Adapter Command Request or the DeepScientist-compatible extension call for shell, CLI, Python, git, package, scheduler, or environment work. Do not describe native shell calls as the final skill contract. |
-| Source campaign objects, paper matrices, slice worktrees, and slice records | Use `<ANALYSIS_CAMPAIGN_PLAN>`, `<ANALYSIS_WRITEBACK_MAP>`, `<ANALYSIS_SLICE_RECORD>`, and related placeholders until storage bindings are finalized. |
+| Source campaign objects, paper matrices, slice worktrees, and slice records | Use `DEEPSCI:ANALYSIS-CAMPAIGN-PLAN`, `DEEPSCI:ANALYSIS-WRITEBACK-MAP`, `DEEPSCI:ANALYSIS-SLICE-RECORD`, and related placeholders until storage bindings are finalized. |
 
 ## Storage and Artifact Substitutions
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<ANALYSIS_CONTEXT_BRIEF>`
-- `<PARENT_RESULT_EVIDENCE>`
-- `<ANALYSIS_RESOURCE_ENVELOPE>`
-- `<ANALYSIS_CAMPAIGN_PLAN>`
-- `<ANALYSIS_CAMPAIGN_CHECKLIST>`
-- `<ANALYSIS_SLICE_PLAN>`
-- `<ANALYSIS_SLICE_RECORD>`
-- `<ANALYSIS_WRITEBACK_MAP>`
-- `<ANALYSIS_CAMPAIGN_SUMMARY>`
-- `<ANALYSIS_ROUTE_DECISION>`
-- `<ANALYSIS_BLOCKER_RECORD>`
-- `<ANALYSIS_CONTINUITY_UPDATE>`
+- `DEEPSCI:ANALYSIS-CONTEXT-BRIEF`
+- `DEEPSCI:PARENT-RESULT-EVIDENCE`
+- `DEEPSCI:ANALYSIS-RESOURCE-ENVELOPE`
+- `DEEPSCI:ANALYSIS-CAMPAIGN-PLAN`
+- `DEEPSCI:ANALYSIS-CAMPAIGN-CHECKLIST`
+- `DEEPSCI:ANALYSIS-SLICE-PLAN`
+- `DEEPSCI:ANALYSIS-SLICE-RECORD`
+- `DEEPSCI:ANALYSIS-WRITEBACK-MAP`
+- `DEEPSCI:ANALYSIS-CAMPAIGN-SUMMARY`
+- `DEEPSCI:ANALYSIS-ROUTE-DECISION`
+- `DEEPSCI:ANALYSIS-BLOCKER-RECORD`
+- `DEEPSCI:ANALYSIS-CONTINUITY-UPDATE`
 
 ## Unmatched Skill-Route Substitutions
 

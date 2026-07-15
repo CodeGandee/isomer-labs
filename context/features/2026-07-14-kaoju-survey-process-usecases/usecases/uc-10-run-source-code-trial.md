@@ -6,7 +6,7 @@ As a researcher or Topic Actor, I want to run a paper's or repository's source c
 
 ## Use Case
 
-The actor points to a paper or source-code repository and asks the agent to test its source code with either data from a given dataset path or randomly generated data. The system assumes the source code has already been acquired (UC-03 or UC-08) and the environment has been prepared (UC-09). It produces a `kaoju:method-trial-plan` describing the run command, data strategy, and expected outputs. After the actor approves the plan, the agent implements or adapts the minimal wrapper needed to run the source code with the chosen data, executes it, and records the run and result as durable artifacts. If the source code or prepared environment is missing, the system routes to UC-09 or reports a blocker.
+The actor points to a paper or source-code repository and asks the agent to test its source code with either data from a given dataset path or randomly generated data. The system assumes the source code has already been acquired (UC-03 or UC-08) and the environment has been prepared (UC-09). It produces a `KAOJU:METHOD-TRIAL-PLAN` describing the run command, data strategy, and expected outputs. After the actor approves the plan, the agent implements or adapts the minimal wrapper needed to run the source code with the chosen data, executes it, and records the run and result as durable artifacts. If the source code or prepared environment is missing, the system routes to UC-09 or reports a blocker.
 
 ## Supported Actions
 
@@ -23,14 +23,14 @@ Inspect the source code and the chosen data approach and produce a trial plan.
 - action
   - Actor then **asks** the system to plan a source-code trial.
 - result
-  - Actor **gets** a durable `kaoju:method-trial-plan` artifact with source location, data strategy, run command, and expected outputs.
+  - Actor **gets** a durable `KAOJU:METHOD-TRIAL-PLAN` artifact with source location, data strategy, run command, and expected outputs.
 
 ### Run Source Code Trial
 
 Execute the approved trial with the chosen data.
 
 - context
-  - Actor **has** an approved `kaoju:method-trial-plan`.
+  - Actor **has** an approved `KAOJU:METHOD-TRIAL-PLAN`.
   - System **has** the source code, data path or random-data generator, and a prepared environment from UC-09.
 - intent
   - Actor **wants** the code to run and produce observable results.
@@ -38,18 +38,18 @@ Execute the approved trial with the chosen data.
 - action
   - Actor then **asks** the system to run the trial.
 - result
-  - Actor **gets** durable `kaoju:method-trial-run` and `kaoju:method-trial-result` artifacts with execution logs, outputs, and interpretation.
+  - Actor **gets** durable `KAOJU:METHOD-TRIAL-RUN` and `KAOJU:METHOD-TRIAL-RESULT` artifacts with execution logs, outputs, and interpretation.
 
 ## Main Flow
 
 1. Actor asks to test a paper's or repository's source code with data in `<dataset-path>` or with random data.
 2. System checks that the source code exists in the topic workspace artifact library and that a prepared environment is available.
 3. If the environment is not prepared, the system routes to UC-09 and reports a blocker for the current run.
-4. System produces a `kaoju:method-trial-plan` describing the run command, expected inputs/outputs, data strategy, and environment ref.
+4. System produces a `KAOJU:METHOD-TRIAL-PLAN` describing the run command, expected inputs/outputs, data strategy, and environment ref.
 5. Human reviews and approves the plan.
 6. System implements or adapts the minimal wrapper/script needed to run the source code with the chosen data.
 7. System executes the trial and captures stdout, stderr, exit code, artifacts, and timing.
-8. System writes `kaoju:method-trial-run` and `kaoju:method-trial-result` artifacts and registers them in the state database.
+8. System writes `KAOJU:METHOD-TRIAL-RUN` and `KAOJU:METHOD-TRIAL-RESULT` artifacts and registers them in the state database.
 9. Actor reviews the result and asks for re-runs, parameter changes, or approval.
 
 ## Alternative And Exception Flows
@@ -70,7 +70,7 @@ flowchart LR
 
   subgraph System[Kaoju Survey Workflow]
     CheckEnv[Check source code & prepared env]
-    Plan[Write kaoju:method-trial-plan]
+    Plan[Write KAOJU:METHOD-TRIAL-PLAN]
     Approve[Approve plan]
     Implement[Implement trial wrapper]
     Run[Run trial]
@@ -99,25 +99,25 @@ sequenceDiagram
   System->>System: Verify source code and prepared env from UC-09
   System-->>Researcher: Source code located in topic.repos.extern.paper-repo
   System->>System: Build trial plan
-  System-->>Researcher: kaoju:method-trial-plan ref
+  System-->>Researcher: KAOJU:METHOD-TRIAL-PLAN ref
   Researcher->>System: Approve and run
   System->>System: Implement trial wrapper script
   System->>System: Execute with ./datasets/sample
-  System-->>Researcher: kaoju:method-trial-result ref + summary
+  System-->>Researcher: KAOJU:METHOD-TRIAL-RESULT ref + summary
 ```
 
 ## Durable Outputs
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:method-trial-plan` — plan describing source code, data strategy, run command, and expected outputs.
-- `kaoju:method-trial-run` — execution record with command, environment, logs, and timing.
-- `kaoju:method-trial-result` — interpreted results, observed outputs, and comparison to source claims when applicable.
-- `kaoju:source-access-blocker` — if source code cannot be found or accessed.
+- `KAOJU:METHOD-TRIAL-PLAN` — plan describing source code, data strategy, run command, and expected outputs.
+- `KAOJU:METHOD-TRIAL-RUN` — execution record with command, environment, logs, and timing.
+- `KAOJU:METHOD-TRIAL-RESULT` — interpreted results, observed outputs, and comparison to source claims when applicable.
+- `KAOJU:SOURCE-ACCESS-BLOCKER` — if source code cannot be found or accessed.
 
 ## Trial Plan Fields
 
-A `kaoju:method-trial-plan` includes:
+A `KAOJU:METHOD-TRIAL-PLAN` includes:
 
 | Field | Description |
 | --- | --- |
@@ -144,7 +144,7 @@ AI:
 
 > I located the associated repository at `topic.repos.extern.llm-offload` and the prepared Pixi environment from UC-09.
 >
-> Trial plan (`kaoju:method-trial-plan`):
+> Trial plan (`KAOJU:METHOD-TRIAL-PLAN`):
 > - Source: `topic.repos.extern.llm-offload`
 > - Data: `./datasets/sample-prompts`
 > - Pixi env: `default`
@@ -166,7 +166,7 @@ AI:
 >
 > Registered the minimal wrapper as a file-backed Artifact and executed a Run-tied staged copy.
 >
-> Result (`kaoju:method-trial-result`):
+> Result (`KAOJU:METHOD-TRIAL-RESULT`):
 > - Exit code: 0
 > - Throughput: 12.3 tokens/sec with offloading enabled
 > - Peak GPU memory: 4.1 GB

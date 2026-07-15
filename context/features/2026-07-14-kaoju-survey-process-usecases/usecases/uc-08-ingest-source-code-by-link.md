@@ -6,7 +6,7 @@ As a researcher or Topic Actor, I want to give the agent a source-code URL and a
 
 ## Use Case
 
-The actor provides either a source-code URL or a name (e.g., a repository name, project name, or paper title) and tells the agent what to focus on. If a name is given, the system searches online for the most likely repository, verifies it, and clones it with `git clone --depth 1` into the topic workspace's extern-repo location. If the repository cannot be found or is inaccessible, the system reports a blocker and stops. The agent then reads the local copy, focusing on the actor's specified area, extracts code-level claims and evidence grounded in file locators, and produces a structured `kaoju:source-digest`. The repository is added to the artifact library and optionally to the current direction's `kaoju:reading-list`. All artifacts are registered in the state database.
+The actor provides either a source-code URL or a name (e.g., a repository name, project name, or paper title) and tells the agent what to focus on. If a name is given, the system searches online for the most likely repository, verifies it, and clones it with `git clone --depth 1` into the topic workspace's extern-repo location. If the repository cannot be found or is inaccessible, the system reports a blocker and stops. The agent then reads the local copy, focusing on the actor's specified area, extracts code-level claims and evidence grounded in file locators, and produces a structured `KAOJU:SOURCE-DIGEST`. The repository is added to the artifact library and optionally to the current direction's `KAOJU:READING-LIST`. All artifacts are registered in the state database.
 
 ## Supported Actions
 
@@ -23,14 +23,14 @@ Check out a source-code repository from a URL and ingest it in depth.
 - action
   - Actor then **provides** the URL or name and focus area and asks the system to ingest the repository.
 - result
-  - Actor **gets** a durable `kaoju:source-digest` for the code, the repository checked out in the artifact library, and optionally a new reading-list item.
+  - Actor **gets** a durable `KAOJU:SOURCE-DIGEST` for the code, the repository checked out in the artifact library, and optionally a new reading-list item.
 
 ### Inspect Code Source Digest
 
 Review the structured digest produced from the repository.
 
 - context
-  - Actor **has** a `kaoju:source-digest` for the ingested code.
+  - Actor **has** a `KAOJU:SOURCE-DIGEST` for the ingested code.
   - System **has** the digest artifact and the cloned repository.
 - intent
   - Actor **wants** to verify what the agent extracted from the code.
@@ -44,14 +44,14 @@ Review the structured digest produced from the repository.
 
 1. Actor provides a repository URL or name, and a focus area.
 2. If the actor provided a name, the system searches online for the most likely repository URL and verifies it.
-3. If no repository is found or the found repository is inaccessible, the system records a `kaoju:source-access-blocker` and reports a blocker to the actor.
+3. If no repository is found or the found repository is inaccessible, the system records a `KAOJU:SOURCE-ACCESS-BLOCKER` and reports a blocker to the actor.
 4. System resolves the repository identity and determines a stable name/slug.
 5. System queries `isomer-cli` for the resolved extern-repo path (e.g., `topic.repos.extern.<repo-name>`).
 6. System clones the repository with `git clone --depth 1` into the extern-repo location.
 7. System reads the local copy, focusing on the actor's specified area: key files, modules, README, docs, tests, and configuration.
 8. System extracts claims, evidence, code excerpts, contradictions, limitations, and architecture notes, grounding each in file paths and line ranges.
-9. System writes the `kaoju:source-digest` artifact and adds the repository to `kaoju:artifact-library`.
-10. System optionally appends the repository as a new item to the current direction's `kaoju:reading-list`.
+9. System writes the `KAOJU:SOURCE-DIGEST` artifact and adds the repository to `KAOJU:ARTIFACT-LIBRARY`.
+10. System optionally appends the repository as a new item to the current direction's `KAOJU:READING-LIST`.
 11. Actor reviews the digest and approves it or asks for deeper inspection of specific files.
 12. System updates the digest and reports the next allowed stage (next item, synthesis, or paper writing).
 
@@ -61,7 +61,7 @@ Review the structured digest produced from the repository.
 - **A2. Already cloned**: If the repository already exists in the artifact library, the system offers to pull/refresh, reuse the existing clone, or re-clone.
 - **A3. Not a git repository**: If the URL points to an archive or non-git source, the system downloads and extracts it instead of cloning.
 - **A4. Focus area too broad**: If the actor's focus area is too broad for the repository size, the system asks for narrower file patterns or modules.
-- **E1. Repository not found or inaccessible**: If the system cannot find or access the repository for a given name or URL, it records a `kaoju:source-access-blocker` and reports a blocker to the actor.
+- **E1. Repository not found or inaccessible**: If the system cannot find or access the repository for a given name or URL, it records a `KAOJU:SOURCE-ACCESS-BLOCKER` and reports a blocker to the actor.
 - **E2. Clone failure**: If `git clone --depth 1` fails, the system reports the error, records attempted URL and ref, and asks whether to retry or fall back to online browsing.
 - **E3. Focus area not found**: If the repository does not appear to contain content relevant to the focus area, the system reports the gap and asks whether to broaden the focus or skip the repository.
 
@@ -77,7 +77,7 @@ flowchart LR
     ReadLocal[Read local source]
     Focus[Focus on user area]
     Extract[Extract claims & evidence]
-    WriteDigest[Write kaoju:source-digest]
+    WriteDigest[Write KAOJU:SOURCE-DIGEST]
     AddLibrary[Add to artifact library]
     Review[Render digest for human]
   end
@@ -108,7 +108,7 @@ sequenceDiagram
   System-->>Researcher: Repository checked out to topic.repos.extern.kv-offload
   System->>System: Read local files focused on offloading logic
   System->>System: Extract code-level claims and locators
-  System-->>Researcher: kaoju:source-digest ref + summary
+  System-->>Researcher: KAOJU:SOURCE-DIGEST ref + summary
   Researcher->>System: What did you find about the scheduler?
   System-->>Researcher: Rendered digest with file paths and line ranges
   Researcher->>System: Approve
@@ -119,15 +119,15 @@ sequenceDiagram
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:source-digest` — structured extraction for the repository, with code-level claims, evidence, locators, excerpts, and focus-area summary.
-- `kaoju:artifact-library` — checked-out source code, plus an index entry mapping the URL to the workspace path.
-- `kaoju:reading-list` — optional updated reading list with the new repository item.
-- `kaoju:discovery-ledger` — acquisition and extraction provenance.
-- `kaoju:claim-evidence-ledger` — extracted claims linked to source files and line ranges.
+- `KAOJU:SOURCE-DIGEST` — structured extraction for the repository, with code-level claims, evidence, locators, excerpts, and focus-area summary.
+- `KAOJU:ARTIFACT-LIBRARY` — checked-out source code, plus an index entry mapping the URL to the workspace path.
+- `KAOJU:READING-LIST` — optional updated reading list with the new repository item.
+- `KAOJU:DISCOVERY-LEDGER` — acquisition and extraction provenance.
+- `KAOJU:CLAIM-EVIDENCE-LEDGER` — extracted claims linked to source files and line ranges.
 
 ## Source Digest Fields
 
-Each `kaoju:source-digest` for a code repository includes:
+Each `KAOJU:SOURCE-DIGEST` for a code repository includes:
 
 | Field | Description |
 | --- | --- |
@@ -158,7 +158,7 @@ AI:
 
 > Checking out **https://github.com/example/kv-offload** and ingesting it with focus on the offloading logic.
 >
-> Cloned the repository into the artifact library as `topic.repos.extern.kv-offload` with `--depth 1` and produced `kaoju:source-digest` (`digest-...`).
+> Cloned the repository into the artifact library as `topic.repos.extern.kv-offload` with `--depth 1` and produced `KAOJU:SOURCE-DIGEST` (`digest-...`).
 >
 > Key findings:
 > - Offloading is triggered in `src/memory/offload.py` around line 142 when GPU memory exceeds a threshold.

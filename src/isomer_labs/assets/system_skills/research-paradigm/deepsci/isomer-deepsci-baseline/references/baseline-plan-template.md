@@ -24,8 +24,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <BASELINE_ROUTE_PLAN> must not turn route selection into unnecessary paperwork.
-- <BASELINE_ROUTE_PLAN> must preserve comparator identity, metric contract, evidence required, and stop condition when the route is non-trivial.
+- DEEPSCI:BASELINE-ROUTE-PLAN must not turn route selection into unnecessary paperwork.
+- DEEPSCI:BASELINE-ROUTE-PLAN must preserve comparator identity, metric contract, evidence required, and stop condition when the route is non-trivial.
 - User constraints that change comparability must not be omitted.
 - Material route changes should be reflected before more execution or verification work continues.
 

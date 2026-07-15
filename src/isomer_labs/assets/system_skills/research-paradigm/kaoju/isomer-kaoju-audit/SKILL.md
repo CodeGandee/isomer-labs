@@ -9,7 +9,7 @@ description: Use when survey evidence, a Survey Delta, comparison, method trial,
 
 Audit diagnoses whether the requested survey conclusions are supported by accepted evidence. It never repairs or rewrites evidence silently.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:audit-report` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:AUDIT-REPORT` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
 ## When to Use
 
@@ -37,7 +37,7 @@ The readiness decision is `ready`, `ready-with-narrowed-claims`, or `not-ready`.
 
 ## Artifact Operations
 
-Resolve `kaoju:audit-report` and `kaoju:claim-status-table` through `project artifacts describe`. Use typed `project artifacts put` for every non-mutating audit event. Do not revise the audited target or repeat physical binding fields in the command.
+Resolve `KAOJU:AUDIT-REPORT` and `KAOJU:CLAIM-STATUS-TABLE` through `ext kaoju bindings describe KAOJU:WHAT`. Use typed `project artifacts put` for every non-mutating audit event. Do not revise the audited target or repeat physical binding fields in the command.
 
 ## Reference Routing
 

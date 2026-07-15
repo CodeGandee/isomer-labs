@@ -9,9 +9,9 @@ When performing this step, execute these substeps in order.
 1. **Verify access and scheduler availability**. Check remote access, scheduler command, queue visibility, module state, allocation, license, and data availability before submitting work.
 2. **Write a durable job script or command file**. Keep input paths, parameters, modules, environment, launch command, and expected outputs inspectable.
 3. **Submit through the execution surface**. Capture scheduler job id, queue state, stdout path, stderr path, log path, and expected output paths.
-4. **Record queued or running state**. Create <SCIENCE_RUN_RECORD> with queued or running status and metadata before waiting for completion.
+4. **Record queued or running state**. Create DEEPSCI:SCIENCE-RUN-RECORD with queued or running status and metadata before waiting for completion.
 5. **Monitor from durable logs**. Use low-frequency queue and log checks; do not infer completion from a truncated live window.
-6. **Record completion and validation**. Update <SCIENCE_RUN_RECORD> with success, failed, or blocked status, then create <SCIENCE_VALIDATION_RESULT> when correctness matters.
+6. **Record completion and validation**. Update DEEPSCI:SCIENCE-RUN-RECORD with success, failed, or blocked status, then create DEEPSCI:SCIENCE-VALIDATION-RESULT when correctness matters.
 
 ## Preferences
 

@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Classify the slice outcome**. Mark each slice as completed, partial, failed, blocked, infeasible, superseded, or read-only audit; keep non-success outcomes visible.
 3. **Check comparability**. State exactly what changed, what stayed fixed, whether direct comparison still holds, and whether a non-comparable slice is generalization, stress test, boundary evidence, or failure analysis.
 4. **Classify the claim update**. Label stable support, partial support, contradiction, unresolved ambiguity, strengthened, weakened, narrowed, abandoned, or still ambiguous as appropriate.
-5. **Apply paper or review write-back gates**. For paper-ready or reviewer-facing slices, verify <ANALYSIS_WRITEBACK_MAP> points to the relevant outline, matrix, evidence ledger, section, claim, table, reviewer item, or rebuttal item.
+5. **Apply paper or review write-back gates**. For paper-ready or reviewer-facing slices, verify DEEPSCI:ANALYSIS-WRITEBACK-MAP points to the relevant outline, matrix, evidence ledger, section, claim, table, reviewer item, or rebuttal item.
 6. **Choose the route**. Route to continue analysis, experiment, idea, write, decision, stop, reset, or blocker from the evidence boundary, not from the planned slice count.
 
 ## Preferences
@@ -47,5 +47,5 @@ Read these gates after producing the step output and before handoff or completio
 - Outcome gate: the slice status is explicit and non-success states are preserved.
 - Comparability gate: direct, non-comparable, generalization, stress-test, boundary, or failure-analysis status is labeled.
 - Claim gate: claim update and caveat are traceable to slice evidence.
-- Write-back gate: paper or review slices have a current <ANALYSIS_WRITEBACK_MAP> or a recorded blocker.
+- Write-back gate: paper or review slices have a current DEEPSCI:ANALYSIS-WRITEBACK-MAP or a recorded blocker.
 - Route gate: next action follows from the updated evidence boundary.

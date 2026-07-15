@@ -10,12 +10,12 @@ Standalone source-only reading may skip this preflight until the skill writes or
 2. Discover safe follow-up commands with `isomer-cli --print-json project self queries` when additional selectors, paths, or diagnostic queries are needed. Do not infer topic identity from sibling directories, remembered context, or hard-coded paths.
 3. Inspect Workspace Runtime with `isomer-cli --print-json project runtime inspect --topic <topic>` when the selected Research Topic has a Topic Workspace. Treat missing, invalid, stale, or contradictory runtime evidence as a blocker or route-to-bootstrap condition before accepted records are written.
 4. Resolve semantic paths with `isomer-cli --print-json project paths get <semantic-label> --topic <topic>` when path labels matter. Use path-resolution output instead of constructing Topic Workspace, Topic Actor Workspace, Agent Workspace, or record paths by hand.
-5. List stage-relevant records with `isomer-cli --print-json ext research records list --topic <topic> --placeholder '<placeholder-token>'` before using a prior context brief, contract, route decision, hypothesis, result, analysis finding, paper state, blocker, or on-demand view as current.
+5. List stage-relevant records with `isomer-cli --print-json ext research records list --topic <topic> --semantic-id 'DEEPSCI:WHAT'` before using a prior context brief, contract, route decision, hypothesis, result, analysis finding, paper state, blocker, or on-demand view as current.
 6. Inspect candidate records with `isomer-cli --print-json ext research records show <record-id> --topic <topic> --include-payload` when payload fields, rendered review text, status, timestamps, active signals, supersession signals, or route metadata may affect the stage.
 
 ## Freshness Verdict
 
-Produce or feed a stage-local `latest-context-snapshot` verdict before durable record work proceeds. The verdict can live inside the stage's first accepted context object, contract, paper state, route decision, blocker, or equivalent record; it does not require a standalone durable record.
+Produce or feed a stage-local `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` verdict before durable record work proceeds. The verdict can live inside the stage's first accepted context object, contract, paper state, route decision, blocker, or equivalent record; it does not require a standalone durable record.
 
 The verdict must name:
 

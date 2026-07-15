@@ -8,7 +8,7 @@
 4. Normalize each row by skill name, placeholder name, kind, producer, consumer, semantic meaning, semantic target, profile, command shape, metadata guidance, and storage-binding status.
 5. Route by kind first. Use the production DeepSci storage item mapping for `evidence`, `report`, `handoff`, `decision`, `runtime state`, `draft`, `run record`, `figure`, and `code`.
 6. Preserve the exact placeholder name as queryable metadata. Do not rename another skill's placeholder unless this manager is explicitly repairing inconsistent migration material.
-7. Produce <RSCH_PLACEHOLDER_BINDING_REGISTRY> with binding status values such as available, planned, custom-needed, blocked, or deferred.
+7. Produce DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY with binding status values such as available, planned, custom-needed, blocked, or deferred.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a partial registry for the selected skill or route, then state which skills remain unchecked.
 

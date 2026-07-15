@@ -4,20 +4,20 @@ Use this reference when a scout pass needs more than a short clarification step.
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<SCOUT_CONTEXT_BRIEF>`, use the shared Latest Context Preflight. Include the `latest-context-snapshot` fields that matter for scout: Effective Topic Context source, Workspace Runtime inspection, relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when conflict means scout is no longer the right stage. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:SCOUT-CONTEXT-BRIEF`, use the shared Latest Context Preflight. Include the `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` fields that matter for scout: Effective Topic Context source, Workspace Runtime inspection, relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when conflict means scout is no longer the right stage. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
 When performing this step, execute these substeps in order.
 
-1. **Confirm scout is needed**. Check whether existing context already yields `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<NEXT_ROUTE_DECISION>`.
-2. **Reconstruct `<SCOUT_CONTEXT_BRIEF>`**. Summarize the current Research Topic or Research Inquiry, task boundary, dataset and split understanding, metric direction, comparator status, and blockers.
-3. **Reuse prior knowledge**. Build `<SCOUT_MEMORY_REUSE_NOTE>` from Workspace Runtime context, Artifact summaries, Finding summaries, Decision Record summaries, and compatibility memory retrieval before broad discovery.
-4. **Classify `<SCOUT_MINIMUM_UNKNOWNS>`**. Keep only unknowns that block baseline work, idea work, both, a Gate, a Decision Record, or an explicit blocker.
+1. **Confirm scout is needed**. Check whether existing context already yields `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, and `DEEPSCI:NEXT-ROUTE-DECISION`.
+2. **Reconstruct `DEEPSCI:SCOUT-CONTEXT-BRIEF`**. Summarize the current Research Topic or Research Inquiry, task boundary, dataset and split understanding, metric direction, comparator status, and blockers.
+3. **Reuse prior knowledge**. Build `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE` from Workspace Runtime context, Artifact summaries, Finding summaries, Decision Record summaries, and compatibility memory retrieval before broad discovery.
+4. **Classify `DEEPSCI:SCOUT-MINIMUM-UNKNOWNS`**. Keep only unknowns that block baseline work, idea work, both, a Gate, a Decision Record, or an explicit blocker.
 5. **Resolve route-changing unknowns only**. Use local evidence first, then the smallest useful paper, repository, benchmark, or provenance discovery surface.
-6. **Create route-facing outputs**. Draft `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, and `<LITERATURE_SCOUTING_REPORT>` only to the extent needed for downstream routing.
-7. **Choose the next route**. Record `<NEXT_ROUTE_DECISION>` for baseline, idea, decision, Gate, blocker, or another justified production DeepSci route.
-8. **Record continuity**. Preserve `<SCOUT_CONTINUITY_UPDATE>` when scout changes the frame, records a blocker, or produces a reusable literature, comparator, or metric lesson.
+6. **Create route-facing outputs**. Draft `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, and `DEEPSCI:LITERATURE-SCOUTING-REPORT` only to the extent needed for downstream routing.
+7. **Choose the next route**. Record `DEEPSCI:NEXT-ROUTE-DECISION` for baseline, idea, decision, Gate, blocker, or another justified production DeepSci route.
+8. **Record continuity**. Preserve `DEEPSCI:SCOUT-CONTINUITY-UPDATE` when scout changes the frame, records a blocker, or produces a reusable literature, comparator, or metric lesson.
 
 ## Preferences
 
@@ -37,7 +37,7 @@ Read these constraints as the validity boundary for this step. Treat `must` and 
 - Scout must not ask routine technical questions before checking local durable evidence.
 - Scout must not guess metric, split, comparator identity, or evaluation contract when evidence is ambiguous.
 - Scout must not repeat the same broad discovery when prior Artifacts, Findings, Decision Records, or Workspace Runtime notes already narrow the space.
-- Scout must not write long paper summaries that do not change `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, `<NEXT_ROUTE_DECISION>`, or `<SCOUT_BLOCKER_RECORD>`.
+- Scout must not write long paper summaries that do not change `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, `DEEPSCI:NEXT-ROUTE-DECISION`, or `DEEPSCI:SCOUT-BLOCKER-RECORD`.
 - Scout must search for disconfirming evidence, not only supportive evidence.
 - Scout must record a blocked state when required source evidence, evaluation choice, or comparator viability remains unresolved.
 
@@ -53,11 +53,11 @@ Read these gates after producing the step output and before handoff or completio
 ### Checks
 
 - Entry fit: scout runs only when framing ambiguity blocks routing, and exits when routing is already clear.
-- Context quality: `<SCOUT_CONTEXT_BRIEF>` states current task, dataset, split, metric, comparator status, evidence already available, and blockers.
-- Unknown quality: `<SCOUT_MINIMUM_UNKNOWNS>` contains only questions that can change baseline, idea, decision, Gate, or blocker routing.
-- Discovery quality: `<SCOUT_DISCOVERY_LEDGER>` is limited to retained evidence that changes the frame, evaluation contract, comparator shortlist, or next route.
-- Output quality: `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, `<LITERATURE_SCOUTING_REPORT>`, and `<NEXT_ROUTE_DECISION>` are just detailed enough for the next route.
-- Blocker quality: `<SCOUT_BLOCKER_RECORD>` names what is missing, why it matters, which route is blocked, and what user choice or source is needed.
+- Context quality: `DEEPSCI:SCOUT-CONTEXT-BRIEF` states current task, dataset, split, metric, comparator status, evidence already available, and blockers.
+- Unknown quality: `DEEPSCI:SCOUT-MINIMUM-UNKNOWNS` contains only questions that can change baseline, idea, decision, Gate, or blocker routing.
+- Discovery quality: `DEEPSCI:SCOUT-DISCOVERY-LEDGER` is limited to retained evidence that changes the frame, evaluation contract, comparator shortlist, or next route.
+- Output quality: `DEEPSCI:EVALUATION-CONTRACT`, `DEEPSCI:BASELINE-SHORTLIST`, `DEEPSCI:LITERATURE-SCOUTING-REPORT`, and `DEEPSCI:NEXT-ROUTE-DECISION` are just detailed enough for the next route.
+- Blocker quality: `DEEPSCI:SCOUT-BLOCKER-RECORD` names what is missing, why it matters, which route is blocked, and what user choice or source is needed.
 
 ## Compatibility Harness
 

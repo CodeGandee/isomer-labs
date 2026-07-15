@@ -52,7 +52,6 @@ def _build_index_parts(
         "topic_workspace_id": record.topic_workspace_id,
         "record_kind": record.record_kind,
         "status": record.status,
-        "placeholder": identity["placeholder"],
         "artifact_family": identity["artifact_family"],
         "semantic_id": identity["semantic_id"],
         "scope_key": _optional_string(record_metadata.get("scope_key")),

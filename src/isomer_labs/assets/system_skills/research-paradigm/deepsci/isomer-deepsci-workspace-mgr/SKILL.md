@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -46,12 +46,12 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Confirm bootstrap entry**. Build <RSCH_WORKSPACE_CONTEXT> from minimal readiness signals across base Topic Workspace, selected Topic Actor, selected production DeepSci skill set, and optional formal team layers. Read `references/bootstrap-workflow.md`.
+1. **Confirm bootstrap entry**. Build DEEPSCI:RSCH-WORKSPACE-CONTEXT from minimal readiness signals across base Topic Workspace, selected Topic Actor, selected production DeepSci skill set, and optional formal team layers. Read `references/bootstrap-workflow.md`.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-workspace-mgr --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Inspect semantic surfaces**. Build <RSCH_STORAGE_LABEL_PLAN> by checking existing topic record labels, planned evidence/provenance/package labels, optional `custom.*` needs, and missing support. Read `references/semantic-surface-plan.md`.
-4. **Bind production DeepSci placeholders by kind**. Produce <RSCH_PLACEHOLDER_BINDING_REGISTRY> from the production DeepSci placeholder kind table and the active skill set, preserving exact placeholder names as metadata. Read `references/placeholder-binding-registry.md`.
-5. **Prepare worker access**. Produce <RSCH_AGENT_ACCESS_PLAN> for Topic Actor or formal Agent Workspace pre-promotion surfaces, generated conveniences, actor metadata, accepted research artifact guidance, and promotion boundaries. Read `references/agent-access-plan.md`.
-6. **Record bootstrap result**. Produce <RSCH_STORAGE_BOOTSTRAP_RECORD> when the contract is usable, <RSCH_BOOTSTRAP_VALIDATION_REPORT> for readiness checks, or <RSCH_WORKSPACE_BLOCKER_RECORD> when required support is missing. Read `references/validation-and-blockers.md`.
+3. **Inspect semantic surfaces**. Build DEEPSCI:RSCH-STORAGE-LABEL-PLAN by checking existing topic record labels, planned evidence/provenance/package labels, optional `custom.*` needs, and missing support. Read `references/semantic-surface-plan.md`.
+4. **Bind production DeepSci placeholders by kind**. Produce DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY from the production DeepSci placeholder kind table and the active skill set, preserving exact placeholder names as metadata. Read `references/placeholder-binding-registry.md`.
+5. **Prepare worker access**. Produce DEEPSCI:RSCH-AGENT-ACCESS-PLAN for Topic Actor or formal Agent Workspace pre-promotion surfaces, generated conveniences, actor metadata, accepted research artifact guidance, and promotion boundaries. Read `references/agent-access-plan.md`.
+6. **Record bootstrap result**. Produce DEEPSCI:RSCH-STORAGE-BOOTSTRAP-RECORD when the contract is usable, DEEPSCI:RSCH-BOOTSTRAP-VALIDATION-REPORT for readiness checks, or DEEPSCI:RSCH-WORKSPACE-BLOCKER-RECORD when required support is missing. Read `references/validation-and-blockers.md`.
 7. **Update reset checkpoint when bootstrap should survive reset**. If the selected reset checkpoint should preserve production DeepSci bootstrap records, call `isomer-cli project topic-reset update-checkpoint --topic <research-topic-id> <checkpoint-id>` with the bootstrap record ids, structured payload ids, payload file paths, explicit export paths, semantic labels, support paths, source label, actor refs, and provenance refs.
 8. **Return next route**. Hand control to the selected production DeepSci research skill only after the bootstrap outputs name durable semantic targets or explicit blockers, and after reset-survival intent has either been recorded in the checkpoint or explicitly left as redo-after-reset behavior.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-workspace-mgr --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
@@ -77,15 +77,15 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 ### Metrics
 
 - Readiness-signal coverage: fraction of base Topic Workspace readiness, selected Topic Actor readiness, selected production DeepSci skill readiness, optional formal team readiness, Workspace Runtime readiness, record-label readiness, placeholder binding guidance, and worker identity checked before bootstrap; higher is better.
-- Unbound placeholder-kind count: number of production DeepSci placeholder kinds that lack a semantic target, access rule, planned support label, or explicit blocker in <RSCH_PLACEHOLDER_BINDING_REGISTRY>; lower is better.
+- Unbound placeholder-kind count: number of production DeepSci placeholder kinds that lack a semantic target, access rule, planned support label, or explicit blocker in DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY; lower is better.
 
 ### Checks
 
-- Entry check: <RSCH_WORKSPACE_CONTEXT> confirms base Topic Workspace readiness, selected Topic Actor readiness, selected production DeepSci skill readiness, and optional formal team readiness using minimal readiness signals rather than broad fragile file detection.
-- Surface check: <RSCH_STORAGE_LABEL_PLAN> distinguishes existing labels, planned labels, optional `custom.*` needs, and missing support.
-- Binding check: <RSCH_PLACEHOLDER_BINDING_REGISTRY> maps production DeepSci placeholder kinds to semantic targets while preserving exact placeholder names as metadata.
-- Access check: <RSCH_AGENT_ACCESS_PLAN> tells Topic Actors or formal agents where pre-promotion outputs belong, what metadata to preserve, and how accepted research artifacts should cite durable semantic refs.
-- Validation check: <RSCH_BOOTSTRAP_VALIDATION_REPORT> states whether the production DeepSci research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> names what must be prepared first.
+- Entry check: DEEPSCI:RSCH-WORKSPACE-CONTEXT confirms base Topic Workspace readiness, selected Topic Actor readiness, selected production DeepSci skill readiness, and optional formal team readiness using minimal readiness signals rather than broad fragile file detection.
+- Surface check: DEEPSCI:RSCH-STORAGE-LABEL-PLAN distinguishes existing labels, planned labels, optional `custom.*` needs, and missing support.
+- Binding check: DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY maps production DeepSci placeholder kinds to semantic targets while preserving exact placeholder names as metadata.
+- Access check: DEEPSCI:RSCH-AGENT-ACCESS-PLAN tells Topic Actors or formal agents where pre-promotion outputs belong, what metadata to preserve, and how accepted research artifacts should cite durable semantic refs.
+- Validation check: DEEPSCI:RSCH-BOOTSTRAP-VALIDATION-REPORT states whether the production DeepSci research loop can start, or DEEPSCI:RSCH-WORKSPACE-BLOCKER-RECORD names what must be prepared first.
 - Reset-survival check: production DeepSci bootstrap outputs that should survive Topic Workspace reset are added to the selected reset checkpoint; unrecorded bootstrap output is treated as redo-after-reset behavior.
 - Route check: the next production DeepSci research skill is invoked only after durable semantic targets or explicit blockers are recorded.
 
@@ -93,11 +93,11 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 
 This skill can end only when all applicable checks are true:
 
-- <RSCH_WORKSPACE_CONTEXT> identifies the Topic Workspace, Topic Creator summary or Topic Manager evidence, selected production DeepSci skill set, selected Topic Actors, actor workspace readiness, optional formal team material, runtime readiness, and worker context used for bootstrap.
-- <RSCH_STORAGE_LABEL_PLAN> distinguishes existing semantic labels, planned labels, optional `custom.*` labels, and missing support.
-- <RSCH_PLACEHOLDER_BINDING_REGISTRY> maps production DeepSci placeholder kinds to semantic targets without forcing hard-coded paths.
-- <RSCH_AGENT_ACCESS_PLAN> tells working Topic Actors or formal agents where pre-promotion outputs belong, which actor metadata to preserve, and how durable refs should be cited after accepted research artifacts are promoted.
-- <RSCH_BOOTSTRAP_VALIDATION_REPORT> says the production DeepSci research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> states what must be prepared first.
+- DEEPSCI:RSCH-WORKSPACE-CONTEXT identifies the Topic Workspace, Topic Creator summary or Topic Manager evidence, selected production DeepSci skill set, selected Topic Actors, actor workspace readiness, optional formal team material, runtime readiness, and worker context used for bootstrap.
+- DEEPSCI:RSCH-STORAGE-LABEL-PLAN distinguishes existing semantic labels, planned labels, optional `custom.*` labels, and missing support.
+- DEEPSCI:RSCH-PLACEHOLDER-BINDING-REGISTRY maps production DeepSci placeholder kinds to semantic targets without forcing hard-coded paths.
+- DEEPSCI:RSCH-AGENT-ACCESS-PLAN tells working Topic Actors or formal agents where pre-promotion outputs belong, which actor metadata to preserve, and how durable refs should be cited after accepted research artifacts are promoted.
+- DEEPSCI:RSCH-BOOTSTRAP-VALIDATION-REPORT says the production DeepSci research loop can start, or DEEPSCI:RSCH-WORKSPACE-BLOCKER-RECORD states what must be prepared first.
 
 ## Guardrails
 

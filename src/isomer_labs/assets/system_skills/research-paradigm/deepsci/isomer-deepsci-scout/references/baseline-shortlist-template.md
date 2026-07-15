@@ -6,11 +6,11 @@ Use this when scout must recommend a concrete comparator route before baseline o
 
 When performing this step, execute these substeps in order.
 
-1. **Start from the evaluation contract**. Use `<EVALUATION_CONTRACT>` to decide which comparator candidates are relevant.
-2. **Gather candidate evidence**. Use `<SCOUT_DISCOVERY_LEDGER>`, `<LITERATURE_SCOUTING_REPORT>`, repository inspection, and existing Artifacts, Evidence Items, Findings, or Decision Records.
+1. **Start from the evaluation contract**. Use `DEEPSCI:EVALUATION-CONTRACT` to decide which comparator candidates are relevant.
+2. **Gather candidate evidence**. Use `DEEPSCI:SCOUT-DISCOVERY-LEDGER`, `DEEPSCI:LITERATURE-SCOUTING-REPORT`, repository inspection, and existing Artifacts, Evidence Items, Findings, or Decision Records.
 3. **Score serious candidates only**. Keep the shortlist small and score provenance, metric and split fit, implementation availability, environment risk, expected cost, downstream value, why it matters, and main risk.
 4. **Assign one route per candidate**. Mark each candidate as attach, import, reproduce, or reject.
-5. **Recommend one next action**. End with `<BASELINE_SHORTLIST>`, `<NEXT_ROUTE_DECISION>`, and `<SCOUT_BLOCKER_RECORD>` if no candidate is responsible to use.
+5. **Recommend one next action**. End with `DEEPSCI:BASELINE-SHORTLIST`, `DEEPSCI:NEXT-ROUTE-DECISION`, and `DEEPSCI:SCOUT-BLOCKER-RECORD` if no candidate is responsible to use.
 
 ## Preferences
 
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- `<BASELINE_SHORTLIST>` must start from `<EVALUATION_CONTRACT>`.
+- `DEEPSCI:BASELINE-SHORTLIST` must start from `DEEPSCI:EVALUATION-CONTRACT`.
 - Each serious comparator candidate must have provenance, metric and split match, implementation availability, expected cost, downstream value, main risk, and route.
 - Scout must not route to idea when no comparator basis is durable enough.
 - A rejected comparator should state the reason when the rejection prevents future rework.
@@ -43,4 +43,4 @@ Read these gates after producing the step output and before handoff or completio
 - Comparator relevance: every retained candidate can affect `isomer-deepsci-baseline`, `isomer-deepsci-idea`, or `isomer-deepsci-decision`.
 - Evidence sufficiency: the recommended route has enough paper, repository, benchmark, or local evidence to justify the next action.
 - Route clarity: each candidate has exactly one route recommendation.
-- Blocker clarity: if no candidate is usable, `<SCOUT_BLOCKER_RECORD>` names what evidence or decision is missing.
+- Blocker clarity: if no candidate is usable, `DEEPSCI:SCOUT-BLOCKER-RECORD` names what evidence or decision is missing.

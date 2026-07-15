@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **State what to compute or analyze**. List calculations, simulations, dataset analyses, reproductions, parameter sweeps, validations, or code optimizations.
 3. **State setup and constraints**. Record physical parameters, units, package preferences, datasets, hardware, remote/HPC expectations, privacy, budget, runtime, and resource limits.
 4. **State success criteria**. Define convergence, correctness, reproducibility, comparison, schema, units, tolerance, or validation checks.
-5. **State deliverables and evidence plan**. Name expected scripts, logs, outputs, figures, tables, reports, data files, <SCIENCE_PACKAGE_CHECK>, <SCIENCE_RUN_RECORD>, <SCIENCE_VALIDATION_RESULT>, and <SCIENCE_CLAIM_RECORD>.
+5. **State deliverables and evidence plan**. Name expected scripts, logs, outputs, figures, tables, reports, data files, DEEPSCI:SCIENCE-PACKAGE-CHECK, DEEPSCI:SCIENCE-RUN-RECORD, DEEPSCI:SCIENCE-VALIDATION-RESULT, and DEEPSCI:SCIENCE-CLAIM-RECORD.
 6. **Use optimization brief shape when needed**. For scientific code optimization, add package, language, target hot path, editable scope, performance metric, correctness constraints, representative workloads, build commands, and deterministic runtime constraints.
 
 ## Preferences
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <SCIENCE_TASK_BRIEF> must not require a fixed source filename or `goal.md` shape.
+- DEEPSCI:SCIENCE-TASK-BRIEF must not require a fixed source filename or `goal.md` shape.
 - Scientific code optimization must preserve scientific semantics, numeric invariants, tolerances, and forbidden shortcuts.
 - Success criteria must be inspectable from outputs, logs, validation records, or evidence paths.
 - Expected package checks and evidence node types must be explicit when computation is planned.

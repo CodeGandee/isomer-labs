@@ -4,13 +4,13 @@ Use this reference at the start of an `isomer-deepsci-idea` pass whenever the re
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<OBJECTIVE_CONTRACT>` or `<CURRENT_BOARD_PACKET>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, objective and board placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the Research Topic scope, comparator basis, metric contract, evaluation contract, paper target, or claim boundary changed. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:OBJECTIVE-CONTRACT` or `DEEPSCI:CURRENT-BOARD-PACKET`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, objective and board placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the Research Topic scope, comparator basis, metric contract, evaluation contract, paper target, or claim boundary changed. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
 When performing this step, execute these substeps in order.
 
-1. **Name the real target**. Create <OBJECTIVE_CONTRACT> with the primary objective, scoreboard metric, trusted proxy metrics, false-progress signals, hard constraints, contribution frame, and exit rule.
+1. **Name the real target**. Create DEEPSCI:OBJECTIVE-CONTRACT with the primary objective, scoreboard metric, trusted proxy metrics, false-progress signals, hard constraints, contribution frame, and exit rule.
 2. **Separate proxies from progress**. State which intermediate metrics may guide thinking and which apparent improvements must not count as route health.
 3. **Check constraint validity**. Mark leakage, unavailable features, deployment constraints, comparability rules, and scope limits that invalidate a route even if a proxy improves.
 4. **Gate frontier widening**. Do not move into candidate generation until the contract can distinguish true progress, false progress, and invalid routes.
@@ -27,7 +27,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <OBJECTIVE_CONTRACT> must name the primary objective, scoreboard metric, trusted proxies, false-progress signals, hard constraints, contribution frame, and exit rule.
+- DEEPSCI:OBJECTIVE-CONTRACT must name the primary objective, scoreboard metric, trusted proxies, false-progress signals, hard constraints, contribution frame, and exit rule.
 - The idea pass must not widen the frontier while the true target and invalid routes are unclear.
 - Candidate routes must not depend on submit-time unavailable features, leakage-prone labels, or post-hoc ranking information.
 - Implementation convenience must not outrank target alignment.
@@ -43,7 +43,7 @@ Read these gates after producing the step output and before handoff or completio
 
 ### Checks
 
-- Target clarity: <OBJECTIVE_CONTRACT> lets a later agent tell whether a candidate improves the real target or only a proxy.
+- Target clarity: DEEPSCI:OBJECTIVE-CONTRACT lets a later agent tell whether a candidate improves the real target or only a proxy.
 - Constraint clarity: every hard constraint is testable enough to reject an invalid route.
 - False-progress clarity: the contract names at least one concrete misleading signal when the source context exposes one.
-- Exit readiness: the contract is explicit enough to support <CURRENT_BOARD_PACKET> and <CANDIDATE_IDEA_FRONTIER> without guessing.
+- Exit readiness: the contract is explicit enough to support DEEPSCI:CURRENT-BOARD-PACKET and DEEPSCI:CANDIDATE-IDEA-FRONTIER without guessing.

@@ -7,7 +7,7 @@ Use this reference only when attach, import, or verify-local-existing is not eno
 When performing this step, execute these substeps in order.
 
 1. **Confirm audit necessity**. Start a source audit only when lighter routes cannot establish comparator trust.
-2. **Record source identity**. Capture repository, package, version, tag, commit, source paper, and baseline variant in <CODEBASE_AUDIT_RECORD>.
+2. **Record source identity**. Capture repository, package, version, tag, commit, source paper, and baseline variant in DEEPSCI:CODEBASE-AUDIT-RECORD.
 3. **Map execution and evaluation**. Identify main entrypoints, scripts likely to be run directly, evaluation path, command or endpoint, configuration, data loading, preprocessing, metrics computation, outputs, checkpoints, and logs.
 4. **Identify implementation structure**. Record key classes, functions, model components, data modules, metric modules, and service boundaries that affect trust.
 5. **Check practical constraints**. Record external services, downloads, credentials, hardware assumptions, brittle setup, undocumented environment needs, and expected cost.
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CODEBASE_AUDIT_RECORD> must not become a broad codebase tour detached from comparator trust.
+- DEEPSCI:CODEBASE-AUDIT-RECORD must not become a broad codebase tour detached from comparator trust.
 - Source audit should not precede attach, import, or verify-local-existing when those routes are concrete and trustworthy.
 - External service, download, credential, hardware, and brittle environment constraints must be recorded when they affect feasibility or comparability.
 - Later stages should be able to understand how the baseline runs and is evaluated without reopening the source from scratch.
@@ -45,4 +45,4 @@ Read these gates after producing the step output and before handoff or completio
 - Identity gate: source, version, package, or commit is recorded.
 - Execution gate: entrypoints, evaluation path, config, data, metrics, outputs, and checkpoints are mapped.
 - Constraint gate: environment, hardware, services, downloads, and credentials that affect trust are visible.
-- Summary gate: <CODEBASE_AUDIT_RECORD> explains baseline behavior, run path, evaluation path, and risks.
+- Summary gate: DEEPSCI:CODEBASE-AUDIT-RECORD explains baseline behavior, run path, evaluation path, and risks.

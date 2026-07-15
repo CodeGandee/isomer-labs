@@ -311,7 +311,7 @@ class ResearchTemplatesExtensionTests(unittest.TestCase):
                 "--record-kind",
                 "artifact",
                 "--semantic-id",
-                "kaoju:unrelated-artifact",
+                "KAOJU:UNRELATED-ARTIFACT",
                 "--project",
                 str(root),
                 "--topic",

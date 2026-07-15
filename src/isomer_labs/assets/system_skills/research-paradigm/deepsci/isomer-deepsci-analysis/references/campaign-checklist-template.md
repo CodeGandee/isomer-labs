@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <ANALYSIS_CAMPAIGN_CHECKLIST> must not replace slice records.
+- DEEPSCI:ANALYSIS-CAMPAIGN-CHECKLIST must not replace slice records.
 - The current frontier must be explicit before additional slices are launched.
 - Paper or review closeout must not be marked complete when write-back targets are stale or missing.
 - Closeout must not hide null, negative, failed, partial, blocked, infeasible, or contradictory findings.

@@ -6,12 +6,12 @@ Use this reference when the idea stage needs a concrete creation flow for produc
 
 When performing this step, execute these substeps in order.
 
-1. **Confirm literature readiness**. Do not start serious ideation until <LITERATURE_SURVEY_REPORT> and closest-prior-work coverage are sufficient or explicitly reused.
+1. **Confirm literature readiness**. Do not start serious ideation until DEEPSCI:LITERATURE-SURVEY-REPORT and closest-prior-work coverage are sufficient or explicitly reused.
 2. **Write one limitation card**. Capture observed symptom, condition, metric or claim importance, and strongest evidence.
 3. **Split the limitation**. Separate symptom, mechanism hypothesis, and consequence, then preserve competing hypotheses.
 4. **Name the lever bucket**. Choose the primary data, model, objective, optimization, inference, evaluation, or infrastructure lever.
-5. **Generate direction families**. Produce <RAW_IDEA_SLATE> with six to twelve raw ideas when the space is not tiny, then collapse to <CANDIDATE_IDEA_FRONTIER> with two or three serious candidates and at most five.
-6. **Record selected, deferred, and rejected buckets**. Create <REJECTED_AND_DEFERRED_IDEAS> with durable reasons for why each non-selected route is not first.
+5. **Generate direction families**. Produce DEEPSCI:RAW-IDEA-SLATE with six to twelve raw ideas when the space is not tiny, then collapse to DEEPSCI:CANDIDATE-IDEA-FRONTIER with two or three serious candidates and at most five.
+6. **Record selected, deferred, and rejected buckets**. Create DEEPSCI:REJECTED-AND-DEFERRED-IDEAS with durable reasons for why each non-selected route is not first.
 7. **Prepare challenge drafts**. Send serious surviving candidates into `references/pre-idea-draft-template.md` before final promotion.
 
 ## Preferences
@@ -27,9 +27,9 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Serious ideation must not begin before a real literature pass or a recorded reuse justification.
-- <RAW_IDEA_SLATE> must not be only renamed variants of one mechanism family.
-- <CANDIDATE_IDEA_FRONTIER> must keep candidates as compact decision packages, not slogans.
-- <REJECTED_AND_DEFERRED_IDEAS> must preserve enough rationale to prevent later rediscovery.
+- DEEPSCI:RAW-IDEA-SLATE must not be only renamed variants of one mechanism family.
+- DEEPSCI:CANDIDATE-IDEA-FRONTIER must keep candidates as compact decision packages, not slogans.
+- DEEPSCI:REJECTED-AND-DEFERRED-IDEAS must preserve enough rationale to prevent later rediscovery.
 
 ## Quality Gates
 

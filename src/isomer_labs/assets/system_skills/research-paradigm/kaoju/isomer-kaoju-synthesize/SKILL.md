@@ -9,7 +9,7 @@ description: Use when an accepted Kaoju Audit Report and accepted survey evidenc
 
 Write the strongest survey conclusion supported by accepted evidence and no stronger. Preserve contradictions, failures, limitations, uncertainty, and unresolved questions as first-class outputs.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:related-work-catalog`, `kaoju:claim-status-table`, `kaoju:field-summary`, and `kaoju:kaoju-dossier` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`, `KAOJU:FIELD-SUMMARY`, and `KAOJU:KAOJU-DOSSIER` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
 ## When to Use
 
@@ -36,7 +36,7 @@ The Claim Status Table gives each conclusion a status, depth, verdict, supportin
 
 ## Artifact Operations
 
-Resolve `kaoju:field-summary` and `kaoju:kaoju-dossier` through `project artifacts describe`. Persist accepted synthesis only through typed `project artifacts put` or binding-permitted `revise`; let the service infer profile, semantic label, scope, and managed content locator.
+Resolve `KAOJU:FIELD-SUMMARY` and `KAOJU:KAOJU-DOSSIER` through `ext kaoju bindings describe KAOJU:WHAT`. Persist accepted synthesis only through typed `project artifacts put` or binding-permitted `revise`; let the service infer profile, semantic label, scope, and managed content locator.
 
 ## Reference Routing
 

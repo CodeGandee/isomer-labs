@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from importlib.resources import files
 import json
 from pathlib import Path
 import re
@@ -12,7 +13,13 @@ from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, va
 REPO_ROOT = Path(__file__).resolve().parents[2]
 KAOJU_ROOT = REPO_ROOT / "src/isomer_labs/assets/system_skills/research-paradigm/kaoju"
 CATALOG_PATH = REPO_ROOT / "src/isomer_labs/artifact_formats/assets/research_record_formats/profiles/kaoju.v1.json"
-SCHEMA_PATH = KAOJU_ROOT / "contracts/bindings.v2.schema.json"
+
+
+def resource_json(name: str) -> dict[str, object]:
+    raw = files("isomer_labs.kaoju").joinpath("resources", name).read_text(encoding="utf-8")
+    value = json.loads(raw)
+    assert isinstance(value, dict)
+    return value
 
 
 class KaojuArtifactBindingTests(unittest.TestCase):
@@ -20,17 +27,17 @@ class KaojuArtifactBindingTests(unittest.TestCase):
         bindings = load_binding_registry()
         contract = load_contract()
         summary_text = (KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-semantics.md").read_text(encoding="utf-8")
-        summary_ids = set(re.findall(r"`(kaoju:[a-z0-9-]+)`", summary_text))
+        summary_ids = set(re.findall(r"`(KAOJU:[A-Z0-9-]+)`", summary_text))
         self.assertEqual(set(bindings), summary_ids)
 
         catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
-        profiles = {f"{entry['family']}:{entry['semantic_id']}": entry for entry in catalog["profiles"]}
+        profiles = {entry["semantic_id"]: entry for entry in catalog["profiles"]}
         for semantic_id, binding in bindings.items():
             if binding.profile_ref is None:
                 self.assertNotEqual("structured_file", binding.content_mode, semantic_id)
                 continue
             profile = profiles[semantic_id]
-            expected_ref = f"isomer:research/record-format/profile/{profile['family']}/{profile['artifact_class']}/{profile['semantic_id']}/{profile['version']}"
+            expected_ref = f"isomer:research/record-format/profile/{profile['family']}/{profile['artifact_class']}/{profile['profile_slug']}/{profile['version']}"
             self.assertEqual(expected_ref, binding.profile_ref)
             self.assertIn(binding.record_kind, profile["compatible_record_kinds"])
             self.assertTrue(profile["renderer"])
@@ -48,18 +55,19 @@ class KaojuArtifactBindingTests(unittest.TestCase):
             match = re.search(r"(?m)^Produced semantic ids:\s*(.+)$", text)
             self.assertIsNotNone(match, producer)
             assert match is not None
-            self.assertEqual(expected, set(re.findall(r"kaoju:[a-z0-9-]+", match.group(1))))
-            self.assertIn("contracts/bindings.v2.json", text)
-            self.assertIn("project artifacts describe", text)
+            self.assertEqual(expected, set(re.findall(r"KAOJU:[A-Z0-9-]+", match.group(1))))
+            self.assertIn("ext kaoju bindings describe KAOJU:WHAT", text)
+            self.assertNotIn("contracts/", text)
+            self.assertNotIn("bindings.v2.json", text)
             self.assertNotRegex(text, r"--(?:record-kind|semantic-label|format-profile|payload-file)")
 
     def test_registry_invalid_fixtures_are_rejected_deterministically(self) -> None:
-        raw = json.loads((KAOJU_ROOT / "contracts/bindings.v2.json").read_text(encoding="utf-8"))
-        schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+        raw = resource_json("bindings.v2.json")
+        schema = resource_json("bindings.v2.schema.json")
         duplicate = deepcopy(raw)
         duplicate["bindings"].append(deepcopy(duplicate["bindings"][0]))
         malformed = deepcopy(raw)
-        malformed["bindings"][0]["semantic_id"] = "other:wrong"
+        malformed["bindings"][0]["semantic_id"] = "OTHER:WRONG"
         missing_scope = deepcopy(raw)
         del missing_scope["bindings"][0]["scope_key_policy"]
         cases = (duplicate, malformed, missing_scope)

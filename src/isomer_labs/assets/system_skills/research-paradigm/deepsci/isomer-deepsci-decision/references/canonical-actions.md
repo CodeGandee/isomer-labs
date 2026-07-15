@@ -41,5 +41,5 @@ Read these gates after producing the step output and before handoff or completio
 
 - Action fit: the chosen action resolves the route question with no larger move than necessary.
 - Alternative visibility: main rejected actions and decisive reasons are recorded.
-- Downstream clarity: the next production DeepSci skill or blocker can act from <ROUTE_DECISION_RECORD>.
+- Downstream clarity: the next production DeepSci skill or blocker can act from DEEPSCI:ROUTE-DECISION-RECORD.
 - Special-route compliance: baseline, paper, optimization, branch, and user-sensitive routes satisfy their extra rules.

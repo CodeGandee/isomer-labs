@@ -15,7 +15,7 @@ Kaoju maps and verifies existing work. DeepSci develops or evaluates a research 
 
 | Path | Role |
 | --- | --- |
-| `deepsci/isomer-deepsci-<purpose>/` | Active production research-method and companion skills. Core loop skills use semantic placeholders such as `[[rsch-object:research-frame]]`; refactor-migrated companion skills use local placeholders such as `<PAPER_CONTRACT>`. |
+| `deepsci/isomer-deepsci-<purpose>/` | Active production research-method and companion skills. Durable extension artifacts use exact uppercase identifiers such as `DEEPSCI:RESEARCH-FRAME` and `DEEPSCI:PAPER-CONTRACT`. |
 | Analysis notes | Design notes used while adapting upstream research-method skills. This is not an active runtime input for installed skills. |
 | `licenses/` | Shared license material for adapted upstream content. |
 
@@ -75,13 +75,17 @@ These paper-writing skills were refactor-migrated from the paper-writing source 
 
 Active execution guidance lives in each skill's `SKILL.md`, `agents/openai.yaml`, directly linked `references/`, active `assets/`, and active `scripts/`. Migration and traceability material lives under `migrate/`, `org/analysis/`, `org/src/`, passive `templates/`, provenance files, license notices, and deferred-resource notes. Those files preserve review history and source context; they are not required runtime inputs when invoking an installed skill.
 
-## Placeholder Contract
+## Extension Artifact Identity Contract
 
-Core-loop skills name reusable research objects with `[[rsch-object:<id>]]` placeholders. The authoritative registry is `deepsci/isomer-deepsci-shared/references/semantic-placeholders.md`.
+Every durable extension artifact uses exact uppercase `EXTENSION-NAME:WHAT` identity. DeepSci uses `DEEPSCI:WHAT`; Kaoju uses `KAOJU:WHAT`. Skills, registries, binding pages, commands, record metadata, schemas, source constants, and tests preserve the same value without wrappers, aliases, case conversion, or inferred prefixes.
 
-Refactor-migrated companion skills may name handoff objects with uppercase angle-bracket placeholders such as `<PAPER_CONTRACT>`. Those placeholders are local to the skill and must be listed in that skill's `migrate/placeholders.md`.
+DeepSci semantic inventories remain in bundle-local registry pages such as `migrate/placeholders.md`, and their storage mappings remain in the owning skill's `placeholder-bindings.md`. The filenames retain their migration history; the identifiers inside them use only the uppercase canonical form.
 
-These placeholders define semantics only. Storage binding belongs in local `placeholder-bindings.md` pages and the workspace manager bootstrap pass, not in freeform method prose.
+## Skill and Shared Resource Ownership
+
+A resource used by one skill belongs inside that skill directory and local links must stay below that directory. Data shared by several skills belongs to the extension package and agents query it through `isomer-cli ext <extension-name>` commands. Common command processes and evidence procedures belong in the extension's `<prefix>-shared` skill. Bundle-local summaries are non-authoritative projections and must name the extension query that owns the data.
+
+Installed skills must not depend on sibling skill files, parent traversal, a family-root registry, a source checkout, or a package-data path. Private implementation resources may remain packaged outside materialized skill directories when only extension code loads them.
 
 ## Retired Generations
 
@@ -91,6 +95,6 @@ The retired `v1` skills and temporary `v2` paths are no longer active and are no
 
 Production `SKILL.md` files should use valid frontmatter with `name` and `description`, a near-top `## Workflow`, numbered workflow steps, semantic inputs, semantic outputs, guardrails, and explicit reference routing when references exist. The `agents/openai.yaml` manifest must use the same suffixless skill name in `interface.display_name` and `interface.default_prompt`.
 
-Do not add unbounded active storage, runtime, scheduler, provider, lifecycle, or concrete path binding to method guidance. If a core skill needs to name a research object, add or reuse a registered `[[rsch-object:<id>]]` placeholder instead.
+Do not add unbounded active storage, runtime, scheduler, provider, lifecycle, or concrete path binding to method guidance. If a skill needs to name a durable extension artifact, add or reuse an exact uppercase canonical identifier owned by its extension.
 
 Operator skills belong under `skillset/operator/` with `isomer-op-*` names. Service skills belong under `skillset/service/` with `isomer-srv-*` names.

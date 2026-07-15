@@ -7,11 +7,11 @@ Use this reference to record the measured result. This page distills the source 
 When performing this step, execute these substeps in order.
 
 1. **Summarize the run**. Write a concise `1-2` sentence outcome summary that names the research question, intervention, primary metric result, comparator relation, and strongest caveat.
-2. **Record the execution payload**. Attach contract, code or config delta, commands, logs, outputs, metric values, seeds, environment facts, changed files, and relevant config paths to <MAIN_RUN_RECORD> and <EXPERIMENT_ARTIFACT_MANIFEST>.
-3. **Validate the claim**. Create <CLAIM_VALIDATION_RECORD> that maps claim, metric key, expected direction, observed result, and verdict: `supported`, `refuted`, `inconclusive`, `partial`, or `blocked`.
-4. **Write the stable evaluation summary**. Fill `takeaway`, `claim_update`, `baseline_relation`, `comparability`, `failure_mode`, and `next_action` in <EXPERIMENT_RESULT_SUMMARY>.
+2. **Record the execution payload**. Attach contract, code or config delta, commands, logs, outputs, metric values, seeds, environment facts, changed files, and relevant config paths to DEEPSCI:MAIN-RUN-RECORD and DEEPSCI:EXPERIMENT-ARTIFACT-MANIFEST.
+3. **Validate the claim**. Create DEEPSCI:CLAIM-VALIDATION-RECORD that maps claim, metric key, expected direction, observed result, and verdict: `supported`, `refuted`, `inconclusive`, `partial`, or `blocked`.
+4. **Write the stable evaluation summary**. Fill `takeaway`, `claim_update`, `baseline_relation`, `comparability`, `failure_mode`, and `next_action` in DEEPSCI:EXPERIMENT-RESULT-SUMMARY.
 5. **Record partial or blocked states honestly**. If the run failed before comparable metrics, record what was attempted, where failure occurred, whether it was methodological or infrastructural, and the single best next action.
-6. **Route from the record**. Produce <EXPERIMENT_ROUTE_DECISION> only after the result or blocker is recorded.
+6. **Route from the record**. Produce DEEPSCI:EXPERIMENT-ROUTE-DECISION only after the result or blocker is recorded.
 
 ## Preferences
 
@@ -26,10 +26,10 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <MAIN_RUN_RECORD> must not claim completion before durable evidence exists.
-- <EXPERIMENT_RESULT_SUMMARY> must not omit comparability, failure mode, or next action.
-- <CLAIM_VALIDATION_RECORD> must not map a claim to a missing, non-finite, or non-comparable metric as if it were supported.
-- <EXPERIMENT_ROUTE_DECISION> must not be chosen before the result or blocker is recorded.
+- DEEPSCI:MAIN-RUN-RECORD must not claim completion before durable evidence exists.
+- DEEPSCI:EXPERIMENT-RESULT-SUMMARY must not omit comparability, failure mode, or next action.
+- DEEPSCI:CLAIM-VALIDATION-RECORD must not map a claim to a missing, non-finite, or non-comparable metric as if it were supported.
+- DEEPSCI:EXPERIMENT-ROUTE-DECISION must not be chosen before the result or blocker is recorded.
 - A partial or blocked run must be labeled partial or blocked rather than converted into a success story.
 
 ## Quality Gates

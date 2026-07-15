@@ -6,7 +6,7 @@ Use this reference to calibrate scientific claims to evidence type. Placeholder 
 
 When performing this step, execute these substeps in order.
 
-1. **Classify computed claims**. Use computed only when the value or conclusion was produced by real execution in the current workspace and is linked to <SCIENCE_RUN_RECORD> or <SCIENCE_VALIDATION_RESULT>.
+1. **Classify computed claims**. Use computed only when the value or conclusion was produced by real execution in the current workspace and is linked to DEEPSCI:SCIENCE-RUN-RECORD or DEEPSCI:SCIENCE-VALIDATION-RESULT.
 2. **Classify parsed claims**. Use parsed when the claim comes from user-provided data, existing files, tables, metadata parsing, or schema inspection.
 3. **Classify digitized claims**. Use digitized when the claim comes from a paper figure, image, PDF plot, OCR, or manual extraction.
 4. **Classify hypotheses**. Use hypothesis when the statement is plausible but not verified by current computation or data.
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <SCIENCE_CLAIM_RECORD> must state computed, parsed, digitized, or hypothesis.
+- DEEPSCI:SCIENCE-CLAIM-RECORD must state computed, parsed, digitized, or hypothesis.
 - Computed claims must link to current-run evidence, outputs, or validation records.
 - Parsed claims must include input data and parser or inspection evidence.
 - Digitized claims must include source figure/image/PDF, extraction method, and uncertainty note.

@@ -136,7 +136,7 @@ class DeepScientistCompatibilityExtensionTests(unittest.TestCase):
         discovered: set[str] = set()
         for binding in sorted((REPO_ROOT / "skillset" / "research-paradigm" / "deepsci").glob("*/placeholder-bindings.md")):
             for line in binding.read_text(encoding="utf-8").splitlines():
-                if not (line.startswith("| <") or line.startswith("| `")):
+                if not (line.startswith("| DEEPSCI:") or line.startswith("| `DEEPSCI:")):
                     continue
                 cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
                 if len(cells) >= 6:

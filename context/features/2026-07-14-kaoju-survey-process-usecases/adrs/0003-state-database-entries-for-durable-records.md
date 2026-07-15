@@ -4,7 +4,7 @@ Status: accepted
 Date: 2026-07-14
 Related: ADR-0001, ADR-0002
 
-The use cases currently describe durable outputs as filesystem artifacts with semantic ids such as `kaoju:direction-set`, `kaoju:reading-list`, and `kaoju:source-digest`. For an agent to find these artifacts reliably across a Topic Workspace, each durable record should also have an entry in the topic workspace state database. The DB entry holds the artifact metadata and a link to the actual file stored in the topic workspace filesystem.
+The use cases currently describe durable outputs as filesystem artifacts with semantic ids such as `KAOJU:DIRECTION-SET`, `KAOJU:READING-LIST`, and `KAOJU:SOURCE-DIGEST`. For an agent to find these artifacts reliably across a Topic Workspace, each durable record should also have an entry in the topic workspace state database. The DB entry holds the artifact metadata and a link to the actual file stored in the topic workspace filesystem.
 
 ## Current Decision
 

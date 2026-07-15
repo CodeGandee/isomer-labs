@@ -28,7 +28,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <MECHANISM_FRAMING> must separate symptom, mechanism hypothesis, and consequence.
+- DEEPSCI:MECHANISM-FRAMING must separate symptom, mechanism hypothesis, and consequence.
 - A serious route must name its lever bucket before candidate generation.
 - A selected route must not remain a bag of possibilities.
 - Cross-domain mechanisms must be translated causally rather than metaphorically.
@@ -47,4 +47,4 @@ Read these gates after producing the step output and before handoff or completio
 - Limitation quality: the failure is concrete, important, and supported by evidence.
 - Hypothesis quality: the main hypothesis and competing hypotheses can be distinguished by evidence.
 - Mechanism quality: the route has code touchpoints and assumptions, not only a surface metric.
-- Research-object quality: the output is one clear object fit for <SELECTED_HYPOTHESIS> or a clear blocker.
+- Research-object quality: the output is one clear object fit for DEEPSCI:SELECTED-HYPOTHESIS or a clear blocker.

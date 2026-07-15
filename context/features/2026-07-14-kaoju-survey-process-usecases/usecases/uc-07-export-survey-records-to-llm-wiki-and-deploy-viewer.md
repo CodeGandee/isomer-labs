@@ -23,7 +23,7 @@ Export Kaoju survey records into an LLM Wiki at the resolved Topic Workspace def
 - action
   - Actor then **asks** the system to convert the records and may provide a target-directory override.
 - result
-  - Actor **gets** a populated LLM Wiki directory and a durable `kaoju:llm-wiki-export` record with metadata and a link to the wiki root.
+  - Actor **gets** a populated LLM Wiki directory and a durable `KAOJU:LLM-WIKI-EXPORT` record with metadata and a link to the wiki root.
 
 ### Deploy Viewer To Target Wiki
 
@@ -38,7 +38,7 @@ Deploy the package-owned compatible viewer to the resolved Topic Workspace defau
 - action
   - Actor then **asks** the system to deploy the viewer and may provide an installation-directory override.
 - result
-  - Actor **gets** a deployed viewer directory with a manifest file pointing to the wiki root, plus a `kaoju:llm-wiki-viewer` record.
+  - Actor **gets** a deployed viewer directory with a manifest file pointing to the wiki root, plus a `KAOJU:LLM-WIKI-VIEWER` record.
 
 ### Start Viewer
 
@@ -62,10 +62,10 @@ Launch the deployed viewer on a local port.
 3. System creates the LLM Wiki directory structure: `README.md`, `wiki/index.md`, `wiki/concepts/`, `wiki/entities/`, `wiki/summaries/`, `raw/`, `audit/`, `log/`, `outputs/`.
 4. System converts each survey artifact into wiki pages with YAML frontmatter and canonical wikilinks.
 5. System writes canonical JSON metadata describing the exported records, their provenance, and the mapping from Kaoju artifact ids to wiki page paths.
-6. System registers the export as `kaoju:llm-wiki-export` in the state database with metadata and a filesystem link.
+6. System registers the export as `KAOJU:LLM-WIKI-EXPORT` in the state database with metadata and a filesystem link.
 7. Actor asks the system to deploy a viewer to a target directory, pointing at the wiki.
 8. System copies the bundled viewer source to the target directory and writes a `viewer-manifest.json` (or YAML) file containing the wiki root path, viewer version, deployment timestamp, and default port.
-9. System registers the deployment as `kaoju:llm-wiki-viewer` in the state database.
+9. System registers the deployment as `KAOJU:LLM-WIKI-VIEWER` in the state database.
 10. Actor asks the system to start the viewer.
 11. System reads the viewer manifest, resolves an available port, and launches the viewer process.
 12. System reports the local URL and process information to the actor.
@@ -90,9 +90,9 @@ flowchart LR
     CreateWiki[Create LLM Wiki structure]
     Convert[Convert records to wiki pages]
     WriteMeta[Write JSON metadata and changelog]
-    RegisterExport[Register kaoju:llm-wiki-export]
+    RegisterExport[Register KAOJU:LLM-WIKI-EXPORT]
     DeployViewer[Deploy viewer + manifest]
-    RegisterViewer[Register kaoju:llm-wiki-viewer]
+    RegisterViewer[Register KAOJU:LLM-WIKI-VIEWER]
     StartViewer[Start viewer on port]
   end
 
@@ -121,10 +121,10 @@ sequenceDiagram
   System->>System: Read direction-set, reading-list, source-digests, synthesis records
   System->>System: Create wiki structure and pages
   System->>System: Write JSON metadata and changelog
-  System-->>Researcher: kaoju:llm-wiki-export ref + wiki path
+  System-->>Researcher: KAOJU:LLM-WIKI-EXPORT ref + wiki path
   Researcher->>System: Deploy a viewer to ~/viewer/pmt-wiki targeting that wiki
   System->>System: Copy bundled viewer and write viewer-manifest.json
-  System-->>Researcher: kaoju:llm-wiki-viewer ref + viewer path
+  System-->>Researcher: KAOJU:LLM-WIKI-VIEWER ref + viewer path
   Researcher->>System: Start the viewer
   System->>System: Launch viewer on http://127.0.0.1:8080
   System-->>Researcher: Viewer running at http://127.0.0.1:8080
@@ -134,10 +134,10 @@ sequenceDiagram
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem or the user-specified export path, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:llm-wiki-export` — record of the exported LLM Wiki, including wiki root path and exported artifact ids.
-- `kaoju:llm-wiki-metadata` — canonical JSON metadata describing the exported records, page mappings, provenance, and managed-path ownership.
-- `kaoju:llm-wiki-viewer` — record of the deployed viewer, including viewer directory and target wiki.
-- `kaoju:llm-wiki-viewer-manifest` — manifest file inside the viewer directory pointing to the wiki root and recording deployment settings.
+- `KAOJU:LLM-WIKI-EXPORT` — record of the exported LLM Wiki, including wiki root path and exported artifact ids.
+- `KAOJU:LLM-WIKI-METADATA` — canonical JSON metadata describing the exported records, page mappings, provenance, and managed-path ownership.
+- `KAOJU:LLM-WIKI-VIEWER` — record of the deployed viewer, including viewer directory and target wiki.
+- `KAOJU:LLM-WIKI-VIEWER-MANIFEST` — manifest file inside the viewer directory pointing to the wiki root and recording deployment settings.
 
 ## Wiki Page Mapping
 
@@ -145,17 +145,17 @@ Survey artifacts map to LLM Wiki pages as follows:
 
 | Survey Artifact | Wiki Location | Page Type |
 | --- | --- | --- |
-| `kaoju:direction-set` | `wiki/concepts/Survey-Directions/index.md` or `wiki/concepts/Survey-Scope.md` | concept |
-| `kaoju:reading-list` (per direction) | `wiki/concepts/<direction-slug>/Reading-List.md` | concept |
-| `kaoju:source-digest` (per item) | `wiki/summaries/<item-slug>.md` | summary |
-| `kaoju:claim-evidence-ledger` | `wiki/concepts/Claims-And-Evidence.md` | concept |
-| `kaoju:field-summary` | `wiki/concepts/Field-Summary.md` | concept |
-| `kaoju:related-work-catalog` | `wiki/concepts/Related-Work-Catalog.md` | concept |
-| `kaoju:paper-draft-myst` | `wiki/concepts/Paper-Draft.md` or `outputs/paper-draft.md` | concept / output |
+| `KAOJU:DIRECTION-SET` | `wiki/concepts/Survey-Directions/index.md` or `wiki/concepts/Survey-Scope.md` | concept |
+| `KAOJU:READING-LIST` (per direction) | `wiki/concepts/<direction-slug>/Reading-List.md` | concept |
+| `KAOJU:SOURCE-DIGEST` (per item) | `wiki/summaries/<item-slug>.md` | summary |
+| `KAOJU:CLAIM-EVIDENCE-LEDGER` | `wiki/concepts/Claims-And-Evidence.md` | concept |
+| `KAOJU:FIELD-SUMMARY` | `wiki/concepts/Field-Summary.md` | concept |
+| `KAOJU:RELATED-WORK-CATALOG` | `wiki/concepts/Related-Work-Catalog.md` | concept |
+| `KAOJU:PAPER-DRAFT-MYST` | `wiki/concepts/Paper-Draft.md` or `outputs/paper-draft.md` | concept / output |
 
 ## Metadata Schema
 
-The `kaoju:llm-wiki-metadata` file includes at minimum:
+The `KAOJU:LLM-WIKI-METADATA` file includes at minimum:
 
 ```json
 {
@@ -164,11 +164,11 @@ The `kaoju:llm-wiki-metadata` file includes at minimum:
   "source_topic_workspace": "predictive-memory-tiering-survey",
   "artifact_mapping": [
     {
-      "kaoju_id": "kaoju:direction-set",
+      "kaoju_id": "KAOJU:DIRECTION-SET",
       "wiki_page": "wiki/concepts/Survey-Scope.md"
     },
     {
-      "kaoju_id": "kaoju:source-digest:vllm-cacheconfig",
+      "kaoju_id": "KAOJU:SOURCE-DIGEST:vllm-cacheconfig",
       "wiki_page": "wiki/summaries/vllm-cacheconfig.md"
     }
   ],
@@ -195,9 +195,9 @@ AI:
 >
 > Created the wiki structure and exported 1 direction set, 2 reading lists, 6 source digests, 1 claim-evidence ledger, 1 field summary, 1 related-work catalog, and 1 paper draft.
 >
-> I also wrote `kaoju:llm-wiki-metadata.json` with the artifact-to-page mapping and recorded the managed-file changelog.
+> I also wrote `KAOJU:LLM-WIKI-METADATA.json` with the artifact-to-page mapping and recorded the managed-file changelog.
 >
-> Registered as `kaoju:llm-wiki-export` (`export-...`). Next, you can deploy a viewer.
+> Registered as `KAOJU:LLM-WIKI-EXPORT` (`export-...`). Next, you can deploy a viewer.
 
 ### Event 002 - Deploy And Start Viewer
 
@@ -211,7 +211,7 @@ AI:
 
 > Deployed the LLM Wiki viewer to `~/viewer/pmt-wiki` and wrote `viewer-manifest.json` pointing to `~/wikis/pmt-survey`.
 >
-> Registered as `kaoju:llm-wiki-viewer` (`viewer-...`).
+> Registered as `KAOJU:LLM-WIKI-VIEWER` (`viewer-...`).
 >
 > Started the viewer at `http://127.0.0.1:8080`.
 

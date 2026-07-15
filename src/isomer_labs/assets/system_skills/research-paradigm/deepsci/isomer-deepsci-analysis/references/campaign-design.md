@@ -4,18 +4,18 @@ Use this reference to design the smallest analysis campaign that can change a pa
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<ANALYSIS_CONTEXT_BRIEF>` or analysis route records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, parent result, claim, route, paper gap, reviewer item, and blocker records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the parent boundary is stale or conflicting. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:ANALYSIS-CONTEXT-BRIEF` or analysis route records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, parent result, claim, route, paper gap, reviewer item, and blocker records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the parent boundary is stale or conflicting. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
 When performing this step, execute these substeps in order.
 
-1. **Name the parent boundary**. State the parent object, parent claim or gap, evidence question, comparison target, and stop condition in <ANALYSIS_CONTEXT_BRIEF>.
+1. **Name the parent boundary**. State the parent object, parent claim or gap, evidence question, comparison target, and stop condition in DEEPSCI:ANALYSIS-CONTEXT-BRIEF.
 2. **Choose the route shape**. Select analysis-lite, artifact-backed campaign, writing-facing campaign, review or rebuttal campaign, or failure-analysis route based on traceability, lineage, paper utility, and slice count.
-3. **Audit the real envelope**. Record current devices, memory, storage, wall-clock, dependencies, credentials, services, queue, and concurrency constraints in <ANALYSIS_RESOURCE_ENVELOPE>.
+3. **Audit the real envelope**. Record current devices, memory, storage, wall-clock, dependencies, credentials, services, queue, and concurrency constraints in DEEPSCI:ANALYSIS-RESOURCE-ENVELOPE.
 4. **Prioritize by soundness gain**. Rank claim-critical contradiction checks first, then robustness or sensitivity checks, failure-mode explanation, and efficiency or secondary support.
 5. **Screen candidate slices**. Tag each candidate as runnable now, runnable with downscope, or blocked by resources; replace infeasible high-value slices with honest proxies only when the proxy still answers the question.
-6. **Finalize the smallest frontier**. Create <ANALYSIS_SLICE_PLAN> with slice class, evidence question, fixed conditions, metric or observable, priority, expected output, and stop condition.
+6. **Finalize the smallest frontier**. Create DEEPSCI:ANALYSIS-SLICE-PLAN with slice class, evidence question, fixed conditions, metric or observable, priority, expected output, and stop condition.
 
 ## Preferences
 
@@ -30,7 +30,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <ANALYSIS_SLICE_PLAN> must not include slices that lack a parent claim, parent result, paper gap, reviewer item, rebuttal item, or route decision.
+- DEEPSCI:ANALYSIS-SLICE-PLAN must not include slices that lack a parent claim, parent result, paper gap, reviewer item, rebuttal item, or route decision.
 - Campaign scope must not assume hardware, memory, storage, runtime, services, or credentials that are not actually available.
 - Infeasible slices must be downscoped, replaced, deferred with a blocker, or dropped explicitly.
 - A slice frontier must not keep widening after the next route is already clear.
@@ -50,4 +50,4 @@ Read these gates after producing the step output and before handoff or completio
 - Route-shape gate: the selected analysis route matches the required traceability and slice count.
 - Resource gate: candidate slices are screened against the actual execution envelope.
 - Priority gate: claim-critical, robustness, failure, and support slices are ordered by decision value per cost.
-- Frontier gate: <ANALYSIS_SLICE_PLAN> contains only slices that can change, confirm, narrow, or block the parent evidence boundary.
+- Frontier gate: DEEPSCI:ANALYSIS-SLICE-PLAN contains only slices that can change, confirm, narrow, or block the parent evidence boundary.

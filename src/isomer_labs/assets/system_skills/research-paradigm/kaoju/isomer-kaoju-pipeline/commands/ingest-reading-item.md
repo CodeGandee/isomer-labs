@@ -4,10 +4,10 @@
 
 1. Resolve the exact Reading List item, version family, source class, requested inspection depth, and existing Artifact Library entry from the state DB.
 2. Use `$isomer-kaoju-acquire` for artifact-library-first lookup. Acquire by source type and use an authorized online fallback only when local material cannot satisfy the accepted depth.
-3. Preserve inaccessible sources as `kaoju:source-access-blocker`; never reconstruct missing evidence from snippets or memory.
+3. Preserve inaccessible sources as `KAOJU:SOURCE-ACCESS-BLOCKER`; never reconstruct missing evidence from snippets or memory.
 4. Use `$isomer-kaoju-examine` to inspect the primary work and linked material. Record exact page, section, equation, figure, table, or immutable commit plus file and line locators.
 5. Keep source statements, interpretation, provisional visual evidence, code findings, and executed behavior distinct. Verify provisional figure or table evidence before promotion.
-6. Persist or revise `kaoju:artifact-library`, `kaoju:associated-source-code`, `kaoju:source-digest`, and `kaoju:claim-evidence-ledger` as applicable, then present them for approval or refinement.
+6. Persist or revise `KAOJU:ARTIFACT-LIBRARY`, `KAOJU:ASSOCIATED-SOURCE-CODE`, `KAOJU:SOURCE-DIGEST`, and `KAOJU:CLAIM-EVIDENCE-LEDGER` as applicable, then present them for approval or refinement.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
 

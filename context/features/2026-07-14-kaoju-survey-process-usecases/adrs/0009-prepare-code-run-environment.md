@@ -31,6 +31,6 @@ Running source code to verify paper claims requires a working environment with t
 - Instruction: "prepare code run for paper/<repo-name-or-link>"; agent inspects repo, ensures existence, updates topic env gate (intent and derived), installs packages with pixi, creates smoke run script; preference: reuse existing pixi env, add packages to existing env (prefer `default`) without breaking, otherwise create new pixi env; use `"*"` to let pixi pick compatible versions instead of insisting on exact repo deps.
 - Applied changes:
   - Created UC-09 with prepare and verify actions.
-  - Defined durable outputs: `kaoju:env-prep-plan`, `kaoju:env-gate-revision`, `kaoju:pixi-env-ref`, `kaoju:smoke-run-script`, `kaoju:smoke-run-result`.
+  - Defined durable outputs: `KAOJU:ENV-PREP-PLAN`, `KAOJU:ENV-GATE-REVISION`, `KAOJU:PIXI-ENV-REF`, `KAOJU:SMOKE-RUN-SCRIPT`, `KAOJU:SMOKE-RUN-RESULT`.
   - Added environment-strategy preference and version-flexibility notes.
   - Added ADR-0009.

@@ -7,7 +7,7 @@ Use this reference when an analysis campaign supports a paper-like deliverable a
 When performing this step, execute these substeps in order.
 
 1. **Recover the write-back target**. Identify selected outline, paper matrix, evidence ledger, section, claim, table, reviewer item, rebuttal item, or display target before calling a slice paper-ready.
-2. **Create <ANALYSIS_WRITEBACK_MAP>**. Include stable ids such as experiment id, todo id, slice id, research question, experimental design, paper role, section id, item id, claim links, analysis role, reviewer question, target display, and main or appendix role when those fields exist.
+2. **Create DEEPSCI:ANALYSIS-WRITEBACK-MAP**. Include stable ids such as experiment id, todo id, slice id, research question, experimental design, paper role, section id, item id, claim links, analysis role, reviewer question, target display, and main or appendix role when those fields exist.
 3. **State failure interpretation**. Record how a null, contradictory, or failed slice should change the paper, review answer, or route.
 4. **Separate manuscript takeaway from protocol detail**. Keep internal setup, local execution notes, command history, and provenance out of manuscript-facing prose.
 5. **Update the write-back target after completion**. Do not leave a completed writing-facing slice visible only as a free-floating analysis result.
@@ -42,7 +42,7 @@ Read these gates after producing the step output and before handoff or completio
 ### Checks
 
 - Target gate: selected outline, matrix, evidence ledger, section, claim, reviewer item, rebuttal item, or display target is identified.
-- Metadata gate: <ANALYSIS_WRITEBACK_MAP> includes stable ids and role fields needed for write-back.
+- Metadata gate: DEEPSCI:ANALYSIS-WRITEBACK-MAP includes stable ids and role fields needed for write-back.
 - Failure gate: failure interpretation states how null or contradictory evidence changes the paper or route.
 - Takeaway gate: manuscript-facing takeaway is separated from setup, command history, and provenance.
 - Update gate: paper or review contract is updated, verified current, or marked blocked.

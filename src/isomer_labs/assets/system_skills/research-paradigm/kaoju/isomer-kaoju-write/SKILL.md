@@ -17,11 +17,11 @@ Use only after audit accepts the requested synthesis. Use for canonical MyST dra
 
 ## Workflow
 
-1. **Accept audited inputs**. Require an accepted `kaoju:audit-report`, the exact accepted synthesis refs, source and display refs, a paper-line scope, target reader or venue, and publication Gate policy. A missing or not-ready audit blocks drafting.
+1. **Accept audited inputs**. Require an accepted `KAOJU:AUDIT-REPORT`, the exact accepted synthesis refs, source and display refs, a paper-line scope, target reader or venue, and publication Gate policy. A missing or not-ready audit blocks drafting.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-write --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Select an adaptive structure profile**. Choose and explain a typed structure based on the accepted direction, target reader, evidence shape, and venue. Record section jobs, display jobs, evidence boundaries, and required limitations in `kaoju:paper-structure-myst`; do not impose one empirical-paper outline on every survey.
+3. **Select an adaptive structure profile**. Choose and explain a typed structure based on the accepted direction, target reader, evidence shape, and venue. Record section jobs, display jobs, evidence boundaries, and required limitations in `KAOJU:PAPER-STRUCTURE-MYST`; do not impose one empirical-paper outline on every survey.
 4. **Lock the paper contract**. Record survey questions, scope, contribution posture, paper line, accepted evidence, canonical MyST policy, typed structure profile, citation roles, display expectations, build policy, quality checks, and Gates.
-5. **Create canonical MyST state**. Create or revise `kaoju:paper-template-myst`, `kaoju:paper-draft-myst`, `kaoju:citation-map`, and `kaoju:paper-revision-log`. Store every selected figure or table as a separate file-backed `kaoju:paper-display`, then refer to its stable ref through a typed `{{figure:<artifact-ref>}}` or `{{table:<artifact-ref>}}` placeholder. The citation map records its display role, evidence refs, caption or interpretation status, and insertion locator. Every supported, contradicted, inconclusive, and limited claim retains its accepted evidence lineage.
+5. **Create canonical MyST state**. Create or revise `KAOJU:PAPER-TEMPLATE-MYST`, `KAOJU:PAPER-DRAFT-MYST`, `KAOJU:CITATION-MAP`, and `KAOJU:PAPER-REVISION-LOG`. Store every selected figure or table as a separate file-backed `KAOJU:PAPER-DISPLAY`, then refer to its stable ref through a typed `{{figure:<artifact-ref>}}` or `{{table:<artifact-ref>}}` placeholder. The citation map records its display role, evidence refs, caption or interpretation status, and insertion locator. Every supported, contradicted, inconclusive, and limited claim retains its accepted evidence lineage.
 6. **Validate before promotion**. Run `isomer-cli ext kaoju paper validate` for MyST syntax, required sections, directives, roles, citations, placeholders, displays, source refs, and evidence boundaries. Report structured file and line diagnostics. Invalid staging content never mutates canonical state.
 7. **Handle actor template exchange**. Use `ext kaoju paper export-template` for a versioned export with base digest, source revision, paper line, tied draft, source refs, and explicit actor-target update policy. Use `apply-template` only after manifest, optimistic-concurrency, required-section, placeholder, source, and orphan checks. Unconfirmed orphaned grounded content or a stale base causes no canonical mutation.
 8. **Derive review Markdown when requested**. Run `derive-markdown` deterministically from the accepted MyST revision. Register checksum, source revision, unsupported-construct diagnostics, lineage, and `canonical: false`; never edit the Markdown as canonical paper state.
@@ -35,13 +35,13 @@ If the task does not map cleanly to these steps, use the native planning tool to
 
 ## MyST Paper Graph
 
-`kaoju:paper-structure-myst`, `kaoju:paper-template-myst`, `kaoju:paper-draft-myst`, `kaoju:citation-map`, and `kaoju:paper-revision-log` are canonical paper state. `kaoju:paper-draft-md` is a deterministic review view. TeX templates and drafts are derived conversion products. Compile logs, PDF files, PDF revision logs, build Runs, validation reports, and publication bundles descend from the exact canonical MyST revision.
+`KAOJU:PAPER-STRUCTURE-MYST`, `KAOJU:PAPER-TEMPLATE-MYST`, `KAOJU:PAPER-DRAFT-MYST`, `KAOJU:CITATION-MAP`, and `KAOJU:PAPER-REVISION-LOG` are canonical paper state. `KAOJU:PAPER-DRAFT-MD` is a deterministic review view. TeX templates and drafts are derived conversion products. Compile logs, PDF files, PDF revision logs, build Runs, validation reports, and publication bundles descend from the exact canonical MyST revision.
 
 Legacy writing and manuscript records remain readable. Never auto-promote historical TeX or Markdown into canonical MyST. Actor-authorized legacy TeX registration records it only as a derived TeX Artifact with source identity and provenance. New template work uses `ext kaoju paper`; the historical `ext research templates` surface is inspection and repair compatibility only.
 
 ## Artifact Operations
 
-Resolve every semantic id in `artifact-bindings.md` with `isomer-cli --print-json project artifacts describe <semantic-id>`. Use typed `project artifacts put` and binding-permitted `revise`; use `ext kaoju paper` for validation, exchange, derivation, TeX initialization, and PDF build orchestration. Producers never repeat record kind, profile, semantic label, scope policy, or internal managed path.
+Resolve every semantic id in `artifact-bindings.md` with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Use typed `project artifacts put` and binding-permitted `revise`; use `ext kaoju paper` for validation, exchange, derivation, TeX initialization, and PDF build orchestration. Producers never repeat record kind, profile, semantic label, scope policy, or internal managed path.
 
 ## Reference Routing
 

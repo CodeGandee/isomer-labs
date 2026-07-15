@@ -5,7 +5,7 @@ from pathlib import Path
 import unittest
 
 from isomer_labs.artifact_formats.research_record_formats import ResearchRecordFormatProvider
-from isomer_labs.kaoju.contracts import load_binding_registry, resolve_semantic_id
+from isomer_labs.kaoju.contracts import load_binding_registry
 from isomer_labs.kaoju.survey import (
     choose_environment_strategy,
     classify_trial_retry,
@@ -23,18 +23,17 @@ def codes(diagnostics: object) -> set[str]:
 
 
 class KaojuSurveyProcessTests(unittest.TestCase):
-    def test_every_use_case_semantic_id_resolves_through_binding_or_adr_alias(self) -> None:
+    def test_every_use_case_uses_an_exact_registered_semantic_id(self) -> None:
         semantic_ids: set[str] = set()
         for path in sorted(USE_CASE_ROOT.glob("uc-*.md")):
-            semantic_ids.update(re.findall(r"kaoju:[a-z0-9]+(?:-[a-z0-9]+)*", path.read_text(encoding="utf-8")))
+            semantic_ids.update(re.findall(r"KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*", path.read_text(encoding="utf-8")))
         bindings = load_binding_registry()
         profiles = ResearchRecordFormatProvider()
-        self.assertGreaterEqual(len(semantic_ids), 40)
+        self.assertGreaterEqual(len(semantic_ids), 35)
         for named_id in sorted(semantic_ids):
             with self.subTest(semantic_id=named_id):
-                canonical_id, alias = resolve_semantic_id(named_id)
-                binding = bindings.get(canonical_id)
-                self.assertIsNotNone(binding, f"{named_id} resolved to unbound {canonical_id}")
+                binding = bindings.get(named_id)
+                self.assertIsNotNone(binding, f"{named_id} is not registered")
                 assert binding is not None
                 self.assertTrue(binding.producer)
                 self.assertTrue(binding.consumers)
@@ -45,9 +44,6 @@ class KaojuSurveyProcessTests(unittest.TestCase):
                 if binding.content_mode == "structured_file":
                     self.assertIsNotNone(binding.profile_ref)
                     self.assertIsNotNone(profiles.resolve_profile(str(binding.profile_ref)))
-                if alias is not None:
-                    self.assertFalse(alias["automatic_promotion"])
-                    self.assertEqual("adr-0006-diagram-alias", alias["disposition"])
 
     def test_direction_set_accepts_multiple_and_custom_actor_confirmed_directions(self) -> None:
         proposals = []

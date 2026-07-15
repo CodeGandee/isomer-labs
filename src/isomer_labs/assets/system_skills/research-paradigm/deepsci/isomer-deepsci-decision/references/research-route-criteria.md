@@ -7,7 +7,7 @@ Use this reference when choosing among candidate branches, idea packages, experi
 When performing this step, execute these substeps in order.
 
 1. **Name the insufficiency**. State what exact problem, blocker, result gap, evidence conflict, or route ambiguity this decision must resolve.
-2. **Compress evidence**. Build <DECISION_EVIDENCE_PACKET> with strongest support, strongest contradiction, main risk, main cost, reversibility, and genuinely new evidence.
+2. **Compress evidence**. Build DEEPSCI:DECISION-EVIDENCE-PACKET with strongest support, strongest contradiction, main risk, main cost, reversibility, and genuinely new evidence.
 3. **Compare the serious frontier**. Identify the winner, strongest alternatives, selection criteria, expected learnings, and why rejected options lost.
 4. **Apply route-specific gates**. For paper routes, apply publishability and exploration-depth gates; for algorithm-first routes, consult the optimization frontier; for baseline reuse, confirm concrete attachment path.
 5. **Check user sensitivity**. Ask the user only when preference, scope, or cost cannot be resolved safely from local evidence.
@@ -25,8 +25,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <ROUTE_QUESTION> must name the real choice before evidence is judged.
-- <DECISION_EVIDENCE_PACKET> must name support, contradiction, cost, risk, reversibility, and user-preference sensitivity when relevant.
+- DEEPSCI:ROUTE-QUESTION must name the real choice before evidence is judged.
+- DEEPSCI:DECISION-EVIDENCE-PACKET must name support, contradiction, cost, risk, reversibility, and user-preference sensitivity when relevant.
 - Paper routes must not advance to write, review, or finalize without publishability and coverage gates.
 - Algorithm-first routes must not override the optimization frontier unless newer durable evidence clearly dominates.
 - A blocked state must not be hidden behind a vague continue decision.

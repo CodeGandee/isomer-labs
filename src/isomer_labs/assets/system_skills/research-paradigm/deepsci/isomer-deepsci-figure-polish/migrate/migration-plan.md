@@ -33,12 +33,12 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<FIGURE_SURFACE_CLASS>`
-- `<FIGURE_MESSAGE>`
-- `<FIGURE_STYLE_CONTRACT>`
-- `<FIGURE_RENDER_REVIEW>`
-- `<FINAL_FIGURE_EXPORT>`
-- `<FIGURE_PROVENANCE_RECORD>`
+- `DEEPSCI:FIGURE-SURFACE-CLASS`
+- `DEEPSCI:FIGURE-MESSAGE`
+- `DEEPSCI:FIGURE-STYLE-CONTRACT`
+- `DEEPSCI:FIGURE-RENDER-REVIEW`
+- `DEEPSCI:FINAL-FIGURE-EXPORT`
+- `DEEPSCI:FIGURE-PROVENANCE-RECORD`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -78,14 +78,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <FIGURE_SURFACE_CLASS> as milestone, paper main figure, appendix figure, internal review figure, or another justified surface.
-- Produce <FIGURE_MESSAGE> with the one comparison or claim the figure must communicate.
+- Produce DEEPSCI:FIGURE-SURFACE-CLASS as milestone, paper main figure, appendix figure, internal review figure, or another justified surface.
+- Produce DEEPSCI:FIGURE-MESSAGE with the one comparison or claim the figure must communicate.
 - Select the chart form by research question, not visual taste, and remove panels that do not carry unique evidence.
-- Produce <FIGURE_STYLE_CONTRACT> with restrained academic styling, readable labels, muted palette, clear hierarchy, and surface-appropriate dimensions.
+- Produce DEEPSCI:FIGURE-STYLE-CONTRACT with restrained academic styling, readable labels, muted palette, clear hierarchy, and surface-appropriate dimensions.
 - Generate an actual image output through the active execution adapter and record the script, input data, and output paths semantically.
-- Inspect the rendered output and produce <FIGURE_RENDER_REVIEW>.
-- Produce <FINAL_FIGURE_EXPORT> in the surface-appropriate formats, usually PNG for milestones and PDF/SVG plus PNG preview for paper-facing figures.
-- Produce <FIGURE_PROVENANCE_RECORD> linking the figure to source data, script, claim, paper section, review item, or Artifact placeholder.
+- Inspect the rendered output and produce DEEPSCI:FIGURE-RENDER-REVIEW.
+- Produce DEEPSCI:FINAL-FIGURE-EXPORT in the surface-appropriate formats, usually PNG for milestones and PDF/SVG plus PNG preview for paper-facing figures.
+- Produce DEEPSCI:FIGURE-PROVENANCE-RECORD linking the figure to source data, script, claim, paper section, review item, or Artifact placeholder.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

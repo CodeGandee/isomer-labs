@@ -26,7 +26,7 @@ status = "active"
 id = "predmem-survey"
 schema_version = "isomer-topic-workspace.v1"
 research_topic_id = "predmem-survey"
-path = "predmem-survey"
+path = "isomer-content/topic-ws/predmem-survey"
 status = "active"
 [operator.system_extensions]
 installed = ["kaoju"]

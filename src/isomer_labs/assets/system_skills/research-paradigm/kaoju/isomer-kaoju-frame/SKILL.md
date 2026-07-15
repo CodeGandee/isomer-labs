@@ -9,7 +9,7 @@ description: Use when a Kaoju request needs a bounded Survey Contract, clarifica
 
 Turn the user's survey question into an explicit contract before discovery or execution changes its scope. Ambiguity that changes cost, evidence strength, or comparability must become a user-visible decision.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:direction-set`, `kaoju:survey-contract`, or `kaoju:comparison-intent` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:DIRECTION-SET`, `KAOJU:SURVEY-CONTRACT`, or `KAOJU:COMPARISON-INTENT` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
 
 ## When to Use
 
@@ -22,7 +22,7 @@ Use at the start of a survey procedure, when a prior contract no longer fits, or
 3. **Inspect ambiguity**. Identify unclear boundaries, source classes, time horizon, seed role, inclusion rules, desired depth, deliverables, resources, and Gates.
 4. **Clarify when requested or material**. Use the A/B/C/D clarification contract, mark exactly one suggested option, then ask whether to clarify more or proceed.
 5. **Propose and confirm directions when requested**. Propose three directions by default. Give each a stable id, scoped question, boundary, source classes, coverage date, expected depth, deliverables, and empirical-feasibility annotation. Mark one suggestion, accept multiple selections and custom directions, and revise or reject proposals until the actor explicitly confirms the set. Current host capability may annotate feasibility but cannot filter or rank directions by itself.
-6. **Persist the confirmed set**. Put or revise one `kaoju:direction-set` in its topic scope with proposals, selections, custom inputs, rejected or revised entries, actor confirmation, and lineage. Never conflate it with a frozen Survey Contract.
+6. **Persist the confirmed set**. Put or revise one `KAOJU:DIRECTION-SET` in its topic scope with proposals, selections, custom inputs, rejected or revised entries, actor confirmation, and lineage. Never conflate it with a frozen Survey Contract.
 7. **Freeze the contract**. Optionally derive one combined or per-direction Survey Contract with question, boundary, source classes, coverage date, inclusion and exclusion rules, evidence contract, resources, Gate posture, outputs, and stop conditions.
 8. **Add empirical intent when applicable**. For actual-run comparison, create the Comparison Intent Document and wait for a Proceed Decision before preparation or Runs.
 9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
@@ -38,7 +38,7 @@ For comparative Runs, the Comparison Intent Document additionally states candida
 
 ## Artifact Operations
 
-Resolve `kaoju:direction-set`, `kaoju:survey-contract`, and `kaoju:comparison-intent` with `isomer-cli --print-json project artifacts describe <semantic-id>`. Use `project artifacts put` for a new scoped object and `project artifacts revise` for an actor-approved current-state update; the service infers all physical binding fields.
+Resolve `KAOJU:DIRECTION-SET`, `KAOJU:SURVEY-CONTRACT`, and `KAOJU:COMPARISON-INTENT` with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Use `project artifacts put` for a new scoped object and `project artifacts revise` for an actor-approved current-state update; the service infers all physical binding fields.
 
 ## Reference Routing
 

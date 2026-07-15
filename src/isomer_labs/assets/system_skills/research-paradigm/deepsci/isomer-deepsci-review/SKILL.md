@@ -11,13 +11,13 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
-Idea-recording reminder: review findings should not mutate idea state implicitly. If review routes a concept to rejection, follow-up, merge, or supersession, read `isomer-deepsci-shared/references/research-idea-recording.md` and realize the Research Idea with an exact object-valued source path, not the review report, issue list, TODO list, or rendered Markdown.
+Idea-recording reminder: review findings should not mutate idea state implicitly. If review routes a concept to rejection, follow-up, merge, or supersession, read `isomer-deepsci-shared` and realize the Research Idea with an exact object-valued source path, not the review report, issue list, TODO list, or rendered Markdown.
 
 Review audits from evidence rather than author optimism. It builds an audit plan, benchmarks nearby literature and venue expectations, writes a skeptical review report, turns issues into a revision log, creates experiment TODOs only for real evidence gaps, and routes the next step.
 
@@ -43,14 +43,14 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Plan the audit**. Produce `<REVIEW_AUDIT_PLAN>` with claim set, strongest and weakest evidence, likely rejection reasons, experiment/analysis inventory, comparator papers, language hygiene risks, and likely routes.
+1. **Plan the audit**. Produce `DEEPSCI:REVIEW-AUDIT-PLAN` with claim set, strongest and weakest evidence, likely rejection reasons, experiment/analysis inventory, comparator papers, language hygiene risks, and likely routes.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Run literature and benchmark checks**. Produce `<LITERATURE_BENCHMARK_NOTE>` from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
-4. **Write the review report**. Produce `<REVIEW_REPORT>` using `references/review-report-template.md`, naming strengths, weaknesses, key issues, actionable suggestions, storyline advice, experiment inventory, novelty verification, comparison to strong papers, and canonical parents from the manuscript or paper bundle under review.
-5. **Produce the revision log**. Produce `<REVISION_LOG>` using `references/revision-log-template.md`, turning review findings into concrete text, evidence, figure, analysis, baseline, literature, and decision items; link it with `follow_up_to` lineage from `<REVIEW_REPORT>`.
-6. **Create evidence TODOs only when needed**. If real evidence is missing, produce `<REVIEW_EXPERIMENT_TODO>` with concrete follow-up work using `references/experiment-todo-template.md`; otherwise avoid fake experiments.
-7. **Update paper experiment planning**. When experiment planning changes, produce `<PAPER_EXPERIMENT_MATRIX_UPDATE>` so writing and rebuttal-facing work remain aligned.
-8. **Route the next step**. Produce `<REVIEW_ROUTE_DECISION>` to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence, priority ordering, and lineage to the review report or revision log that caused the route.
+3. **Run literature and benchmark checks**. Produce `DEEPSCI:LITERATURE-BENCHMARK-NOTE` from nearby strong papers, official venue expectations, existing literature notes, and verified sources when novelty or positioning is uncertain.
+4. **Write the review report**. Produce `DEEPSCI:REVIEW-REPORT` using `references/review-report-template.md`, naming strengths, weaknesses, key issues, actionable suggestions, storyline advice, experiment inventory, novelty verification, comparison to strong papers, and canonical parents from the manuscript or paper bundle under review.
+5. **Produce the revision log**. Produce `DEEPSCI:REVISION-LOG` using `references/revision-log-template.md`, turning review findings into concrete text, evidence, figure, analysis, baseline, literature, and decision items; link it with `follow_up_to` lineage from `DEEPSCI:REVIEW-REPORT`.
+6. **Create evidence TODOs only when needed**. If real evidence is missing, produce `DEEPSCI:REVIEW-EXPERIMENT-TODO` with concrete follow-up work using `references/experiment-todo-template.md`; otherwise avoid fake experiments.
+7. **Update paper experiment planning**. When experiment planning changes, produce `DEEPSCI:PAPER-EXPERIMENT-MATRIX-UPDATE` so writing and rebuttal-facing work remain aligned.
+8. **Route the next step**. Produce `DEEPSCI:REVIEW-ROUTE-DECISION` to write, scout, baseline, analysis, decision, rebuttal, or finalize with evidence, priority ordering, and lineage to the review report or revision log that caused the route.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-review --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -103,9 +103,9 @@ Read these pages as needed:
 
 This skill can end when all applicable checks are true:
 
-- `<REVIEW_REPORT>` and `<REVISION_LOG>` exist for the reviewed draft.
-- Any new evidence request appears in `<REVIEW_EXPERIMENT_TODO>` with concrete scope, or the report explains why no new evidence is needed.
-- `<REVIEW_ROUTE_DECISION>` names the next responsible route.
+- `DEEPSCI:REVIEW-REPORT` and `DEEPSCI:REVISION-LOG` exist for the reviewed draft.
+- Any new evidence request appears in `DEEPSCI:REVIEW-EXPERIMENT-TODO` with concrete scope, or the report explains why no new evidence is needed.
+- `DEEPSCI:REVIEW-ROUTE-DECISION` names the next responsible route.
 
 ## Guardrails
 

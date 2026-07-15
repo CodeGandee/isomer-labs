@@ -18,10 +18,10 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | production DeepSci research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
-| next stage or next anchor | `<EXPERIMENT_ROUTE_DECISION>` or `<EXPERIMENT_BLOCKER_RECORD>`, later bound to production DeepSci skill routing. |
+| next stage or next anchor | `DEEPSCI:EXPERIMENT-ROUTE-DECISION` or `DEEPSCI:EXPERIMENT-BLOCKER-RECORD`, later bound to production DeepSci skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
-| `PLAN.md` | `<EXPERIMENT_PLAN>` until Isomer storage bindings are finalized. |
-| `CHECKLIST.md` | `<EXPERIMENT_CHECKLIST>` until Isomer storage bindings are finalized. |
+| `PLAN.md` | `DEEPSCI:EXPERIMENT-PLAN` until Isomer storage bindings are finalized. |
+| `CHECKLIST.md` | `DEEPSCI:EXPERIMENT-CHECKLIST` until Isomer storage bindings are finalized. |
 
 ## Harness Substitutions
 
@@ -30,24 +30,24 @@
 | `memory.*` | Prefer Workspace Runtime-backed retrieval or recording. When compatibility is required, use `isomer-cli ext deepsci call memory.<tool> --input-json <json-object>` and status the result with the local placeholders. |
 | `artifact.*` | Prefer Isomer Artifacts, Evidence Items, Findings, Decision Records, Gates, and Workspace Runtime records. When compatibility is required, use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` and status semantic meaning with placeholders. |
 | `bash_exec(...)` | Use an Execution Adapter Command Request or the DeepScientist-compatible extension call for shell, CLI, Python, git, package, scheduler, or environment work. Do not describe native shell calls as the final skill contract. |
-| Source durable run directories, summaries, metric files, and logs | Use `<EXPERIMENT_ARTIFACT_MANIFEST>`, `<MAIN_RUN_RECORD>`, `<EXPERIMENT_RESULT_SUMMARY>`, and related placeholders until storage bindings are finalized. |
+| Source durable run directories, summaries, metric files, and logs | Use `DEEPSCI:EXPERIMENT-ARTIFACT-MANIFEST`, `DEEPSCI:MAIN-RUN-RECORD`, `DEEPSCI:EXPERIMENT-RESULT-SUMMARY`, and related placeholders until storage bindings are finalized. |
 
 ## Storage and Artifact Substitutions
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<EXPERIMENT_CONTEXT_BRIEF>`
-- `<EXPERIMENT_CONTRACT>`
-- `<EXPERIMENT_PLAN>`
-- `<EXPERIMENT_CHECKLIST>`
-- `<IMPLEMENTATION_CHANGE_MAP>`
-- `<SMOKE_CHECK_RECORD>`
-- `<MAIN_RUN_RECORD>`
-- `<EXPERIMENT_ARTIFACT_MANIFEST>`
-- `<CLAIM_VALIDATION_RECORD>`
-- `<EXPERIMENT_RESULT_SUMMARY>`
-- `<EXPERIMENT_ROUTE_DECISION>`
-- `<EXPERIMENT_BLOCKER_RECORD>`
+- `DEEPSCI:EXPERIMENT-CONTEXT-BRIEF`
+- `DEEPSCI:EXPERIMENT-CONTRACT`
+- `DEEPSCI:EXPERIMENT-PLAN`
+- `DEEPSCI:EXPERIMENT-CHECKLIST`
+- `DEEPSCI:IMPLEMENTATION-CHANGE-MAP`
+- `DEEPSCI:SMOKE-CHECK-RECORD`
+- `DEEPSCI:MAIN-RUN-RECORD`
+- `DEEPSCI:EXPERIMENT-ARTIFACT-MANIFEST`
+- `DEEPSCI:CLAIM-VALIDATION-RECORD`
+- `DEEPSCI:EXPERIMENT-RESULT-SUMMARY`
+- `DEEPSCI:EXPERIMENT-ROUTE-DECISION`
+- `DEEPSCI:EXPERIMENT-BLOCKER-RECORD`
 
 ## Unmatched Skill-Route Substitutions
 

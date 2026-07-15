@@ -5,6 +5,10 @@ description: Use when a user asks to choose survey directions, build or ingest a
 
 # Kaoju Pipeline
 
+## Plan First
+
+Pipeline execution is a complex process. Before executing any pipeline task, use your internal todo list or planning tool to create a plan for the requested work. Keep the plan current as stages complete, blockers appear, or the requested scope changes.
+
 ## Overview
 
 Route one accepted survey intent to its bounded owner, preserve Gates and durable checkpoints, and stop at the selected terminal boundary. This skill never performs a focused owner's research or operational work.
@@ -17,7 +21,7 @@ Use as the single public router for the ten current survey intents, retained com
 
 1. **Resolve context**. Identify the Research Topic, Topic Workspace, user intent, clarification posture, accepted refs, and requested resume stage.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Load the checked contract**. Treat `../contracts/survey-process.v2.json` as the exact skill, intent, compatibility, and manager inventory. Do not invent a public command.
+3. **Load the checked contract**. Run `isomer-cli --print-json ext kaoju process show` and treat its versioned process data as the exact skill, intent, compatibility, and manager inventory. Do not invent a public command or read a package path directly.
 4. **Route one intent**. Select the exact command page below. This skill coordinates stages but does not search, interpret evidence, mutate environments, execute trials, author canonical paper content, or write wiki files itself.
 5. **Begin a Run**. Use `isomer-cli project runs begin` with the procedure id, control mode, input refs, expected outputs, and first stage.
 6. **Honor clarification and Gates**. Ask one material choice at a time, preserve custom and multiple selections, and stop at every required human, publication, or network-exposure Gate.
@@ -27,7 +31,7 @@ Use as the single public router for the ten current survey intents, retained com
 10. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 11. **Return one terminal report**. Report `complete`, `paused`, or `blocked`; accepted refs; Run, Gate, Service Request, and blocker refs; limitations; and resume point. Do not choose another macro intent autonomously.
 
-If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
+If the task does not map cleanly to these steps, refine the existing plan into a step-by-step plan from this skill's constraints, then execute it.
 
 ## Survey Intents
 
@@ -72,7 +76,7 @@ Use `$isomer-kaoju-shared` for Artifact, evidence, interaction, Gate, owner-rout
 
 ## Artifact Operations
 
-Resolve `kaoju:proceed-decision` and `kaoju:survey-terminal-report` through `project artifacts describe`. Persist them only through typed `project artifacts put` or binding-permitted `revise`; use `project runs` for procedure checkpoints and terminal Run state.
+Resolve `KAOJU:PROCEED-DECISION` and `KAOJU:SURVEY-TERMINAL-REPORT` through `ext kaoju bindings describe KAOJU:WHAT`. Persist them only through typed `project artifacts put` or binding-permitted `revise`; use `project runs` for procedure checkpoints and terminal Run state.
 
 ## Miscellaneous
 

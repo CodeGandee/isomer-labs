@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.kaoju.contracts import load_binding_registry
 
 
 def write(path: Path, content: str) -> None:
@@ -113,7 +114,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
                     "summary": f"Durable {semantic_id} integration fixture.",
                     "artifact_family": "kaoju",
                     "semantic_id": semantic_id,
-                    "artifact_type": semantic_id.removeprefix("kaoju:"),
+                    "artifact_type": load_binding_registry()[semantic_id].artifact_type,
                     "sections": sections,
                 },
                 indent=2,
@@ -196,7 +197,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
 
     def register_source_evidence(self, repository: dict[str, str]) -> None:
         self.put_structured(
-            "kaoju:associated-source-code",
+            "KAOJU:ASSOCIATED-SOURCE-CODE",
             "associated-code-1",
             "isomer-kaoju-acquire",
             {
@@ -208,7 +209,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             scope="source:paper-1",
         )
         self.put_structured(
-            "kaoju:artifact-library",
+            "KAOJU:ARTIFACT-LIBRARY",
             "artifact-library-1",
             "isomer-kaoju-acquire",
             {
@@ -226,7 +227,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             {"material": "associated-code-1"},
         )
         self.put_structured(
-            "kaoju:source-digest",
+            "KAOJU:SOURCE-DIGEST",
             "source-digest-code-1",
             "isomer-kaoju-examine",
             {
@@ -253,7 +254,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
 
     def prepare_environment(self, repository: dict[str, str]) -> dict[str, str]:
         self.put_structured(
-            "kaoju:env-prep-plan",
+            "KAOJU:ENV-PREP-PLAN",
             "env-plan-1",
             "isomer-kaoju-trial",
             {
@@ -291,19 +292,19 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertEqual("command_request_ambient_environment", ambient["error"]["code"])  # type: ignore[index]
 
-        failed_request = self.create_execution_request("service-request-smoke-failed", "smoke_run", ["sh", "-c", "exit 7"], expected=["kaoju:smoke-run-result"])
+        failed_request = self.create_execution_request("service-request-smoke-failed", "smoke_run", ["sh", "-c", "exit 7"], expected=["KAOJU:SMOKE-RUN-RESULT"])
         status, failed = self.service_request("dispatch", failed_request, "--service-actor-ref", "service-agent:environment")
         self.assertEqual(1, status)
         self.assertEqual("failed", failed["terminal_status"])
         self.assertTrue(failed["support_artifact_ref"])
 
-        smoke_request = self.create_execution_request("service-request-smoke-ready", "smoke_run", ["sh", "-c", "printf 'ready\\n'"], expected=["kaoju:smoke-run-result"])
+        smoke_request = self.create_execution_request("service-request-smoke-ready", "smoke_run", ["sh", "-c", "printf 'ready\\n'"], expected=["KAOJU:SMOKE-RUN-RESULT"])
         status, dispatched = self.service_request("dispatch", smoke_request, "--service-actor-ref", "service-agent:environment")
         self.assertEqual(0, status, dispatched)
         self.assertEqual("complete", dispatched["terminal_status"])
         command_request_ref = str(dispatched["command_request_ref"])
         self.put_structured(
-            "kaoju:env-gate-revision",
+            "KAOJU:ENV-GATE-REVISION",
             "env-gate-1",
             "isomer-srv-topic-env-setup",
             {"before": {"environment": "default", "state": "candidate"}, "after": {"environment": "default", "state": "ready"}, "decision": {"status": "approved", "actor_ref": "topic-actor:researcher"}},
@@ -311,7 +312,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             scope="environment:method",
         )
         self.put_structured(
-            "kaoju:pixi-env-ref",
+            "KAOJU:PIXI-ENV-REF",
             "pixi-env-1",
             "isomer-srv-topic-env-setup",
             {"intent_constraints": {"python": ">=3.11"}, "resolved_packages": {"python": "3.11.13"}, "lock": {"identity": "sha256:lock-method", "status": "ready"}},
@@ -321,7 +322,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         smoke_script = self.root / "inputs/smoke-method.sh"
         write(smoke_script, "#!/bin/sh\npython -c 'from src.method import score; assert score(2) == 4'\n")
         script_result = self.put_file(
-            "kaoju:smoke-run-script",
+            "KAOJU:SMOKE-RUN-SCRIPT",
             "smoke-script-1",
             "isomer-srv-topic-env-setup",
             smoke_script,
@@ -333,7 +334,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         self.assertFalse(canonical_script.is_relative_to(Path(repository["path"])))
         self.assertFalse(canonical_script.is_relative_to(self.workspace / "tmp"))
         self.put_structured(
-            "kaoju:smoke-run-result",
+            "KAOJU:SMOKE-RUN-RESULT",
             "smoke-result-1",
             "isomer-srv-topic-env-setup",
             {
@@ -412,7 +413,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         write(invalid, json.dumps(payload, indent=2) + "\n")
         status, rejected = self.artifact(
             "put",
-            "kaoju:source-digest",
+            "KAOJU:SOURCE-DIGEST",
             str(invalid),
             "--producer",
             "isomer-kaoju-examine",
@@ -436,7 +437,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         status, failed_status = self.service_request("status", "service-request-smoke-failed")
         self.assertEqual(0, status, failed_status)
         self.assertEqual("failed", failed_status["record"]["status"])  # type: ignore[index]
-        status, ready = self.artifact("latest", "kaoju:smoke-run-result", "--scope-key", "environment:method")
+        status, ready = self.artifact("latest", "KAOJU:SMOKE-RUN-RESULT", "--scope-key", "environment:method")
         self.assertEqual(0, status, ready)
         self.assertEqual(["smoke-result-1"], [record["record_id"] for record in ready["records"]])  # type: ignore[index]
 
@@ -449,7 +450,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         write(invalid_dataset / "input.json", "[1, 2, 3]\n")
         status, rejected_dataset = self.artifact(
             "put",
-            "kaoju:generated-dataset",
+            "KAOJU:GENERATED-DATASET",
             str(invalid_dataset),
             "--producer",
             "isomer-kaoju-trial",
@@ -472,7 +473,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
                     "title": "Generated integer probe",
                     "summary": "Seeded inputs for execution capability only.",
                     "artifact_family": "kaoju",
-                    "semantic_id": "kaoju:generated-dataset",
+                    "semantic_id": "KAOJU:GENERATED-DATASET",
                     "artifact_type": "generated-dataset",
                     "sections": {
                         "purpose": "capability-probe",
@@ -489,7 +490,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         )
         status, generated_result = self.artifact(
             "put",
-            "kaoju:generated-dataset",
+            "KAOJU:GENERATED-DATASET",
             str(generated),
             "--producer",
             "isomer-kaoju-trial",
@@ -510,7 +511,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             "authorization": {"attempt_bound": 3, "resource_limits": {"wall_seconds": 30}, "human_gate": {"status": "rejected", "actor_ref": "topic-actor:researcher"}},
         }
         self.put_structured(
-            "kaoju:method-trial-plan",
+            "KAOJU:METHOD-TRIAL-PLAN",
             "trial-plan-rejected",
             "isomer-kaoju-trial",
             rejected_plan_sections,
@@ -523,7 +524,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         approved_sections["authorization"]["human_gate"] = {"status": "approved", "actor_ref": "topic-actor:researcher"}
         write(
             approved_source,
-            json.dumps({"title": "Approved random trial", "summary": "Actor-approved bounded capability probe.", "artifact_family": "kaoju", "semantic_id": "kaoju:method-trial-plan", "artifact_type": "method-trial-plan", "sections": approved_sections}, indent=2) + "\n",
+            json.dumps({"title": "Approved random trial", "summary": "Actor-approved bounded capability probe.", "artifact_family": "kaoju", "semantic_id": "KAOJU:METHOD-TRIAL-PLAN", "artifact_type": "method-trial-plan", "sections": approved_sections}, indent=2) + "\n",
         )
         status, approved = self.artifact(
             "revise",
@@ -543,7 +544,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         wrapper_source = self.root / "inputs/trial-wrapper.sh"
         write(wrapper_source, "#!/bin/sh\nprintf '{\"score\": 6}\\n' > trial-output.json\n")
         wrapper = self.put_file(
-            "kaoju:method-trial-wrapper",
+            "KAOJU:METHOD-TRIAL-WRAPPER",
             "trial-wrapper-1",
             "isomer-kaoju-trial",
             wrapper_source,
@@ -587,7 +588,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         self.assertTrue((self.workspace / "trial-output.json").is_file())
         self.record_trial_run("trial-run-success", "complete", success_dispatch, repository, environment, wrapper_path)
         self.put_structured(
-            "kaoju:method-trial-result",
+            "KAOJU:METHOD-TRIAL-RESULT",
             "trial-result-success",
             "isomer-kaoju-trial",
             {
@@ -599,7 +600,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
             {"trial_run": "trial-run-success", "trial_plan": "trial-plan-approved"},
             scope="trial:random",
         )
-        status, attempts = self.artifact("list", "--semantic-id", "kaoju:method-trial-run", "--scope-key", "trial:random")
+        status, attempts = self.artifact("list", "--semantic-id", "KAOJU:METHOD-TRIAL-RUN", "--scope-key", "trial:random")
         self.assertEqual(0, status, attempts)
         self.assertEqual({"trial-run-failed", "trial-run-success"}, {record["id"] for record in attempts["records"]})  # type: ignore[index]
         status, immutable = self.artifact(
@@ -617,7 +618,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
         self.assertEqual("artifact_revision_forbidden", immutable["error"]["code"])  # type: ignore[index]
 
         self.put_structured(
-            "kaoju:method-trial-plan",
+            "KAOJU:METHOD-TRIAL-PLAN",
             "trial-plan-path-data",
             "isomer-kaoju-trial",
             {
@@ -641,7 +642,7 @@ class KaojuCodeTrialIntegrationTests(unittest.TestCase):
     ) -> None:
         succeeded = terminal_status == "complete"
         self.put_structured(
-            "kaoju:method-trial-run",
+            "KAOJU:METHOD-TRIAL-RUN",
             record_id,
             "isomer-kaoju-trial",
             {

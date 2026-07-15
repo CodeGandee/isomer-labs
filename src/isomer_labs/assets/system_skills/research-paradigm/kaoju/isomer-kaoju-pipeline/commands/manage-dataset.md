@@ -3,9 +3,9 @@
 ## Workflow
 
 1. **Select an action**. Accept exactly one of `register`, `list`, `show`, `refresh`, or `remove` and resolve the Topic Workspace.
-2. **Inspect current manifest state**. Query `kaoju:topic-dataset-manifest` with `project artifacts latest`; report scope ambiguity rather than choosing by timestamp or scanning files. Validate the selected entry or candidate source without mutation.
+2. **Inspect current manifest state**. Query `KAOJU:TOPIC-DATASET-MANIFEST` with `project artifacts latest`; report scope ambiguity rather than choosing by timestamp or scanning files. Validate the selected entry or candidate source without mutation.
 3. **Route material mutations**. For `register`, `refresh`, or `remove`, send external inspection and managed-link mutation to the Topic Workspace owner. Never mutate the external target.
-4. **Revise the manifest**. Consume the owner's immutable locator, managed-link, file, actor, and provenance refs; validate a new canonical payload and run typed `project artifacts revise` for `kaoju:topic-dataset-manifest`. Let the binding registry supply the record kind, profile, label, scope, and managed path. Preserve the prior version.
+4. **Revise the manifest**. Consume the owner's immutable locator, managed-link, file, actor, and provenance refs; validate a new canonical payload and run typed `project artifacts revise` for `KAOJU:TOPIC-DATASET-MANIFEST`. Let the binding registry supply the record kind, profile, label, scope, and managed path. Preserve the prior version.
 5. **Validate and return**. Check dataset id, locators, observed metadata, fingerprint or staleness policy, access, license, provenance, owner result, latest posture, and what later empirical stages may reuse.
 
 If the request does not map cleanly to these actions, use the native planning tool to build and execute a bounded dataset-management plan without modifying the external dataset.

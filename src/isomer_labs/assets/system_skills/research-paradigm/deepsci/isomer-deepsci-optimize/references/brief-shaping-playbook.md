@@ -11,7 +11,7 @@ When performing this step, execute these substeps in order.
 3. **Compare on one shared surface**. Compare expected upside, comparability safety, implementation surface, mechanism distinctness, failure risk, and why this route is best now.
 4. **Recommend exactly one lead brief**. Explain why it is best now, why alternatives are deferred, and what would quickly disconfirm it.
 5. **Self-check before promotion**. Verify bottleneck, limitation, why-now, comparability boundary, tradeoff basis, and handoff clarity.
-6. **Emit the brief package**. Create <CANDIDATE_BRIEF> or <METHOD_BRIEF> with fields ready for ranking or promotion.
+6. **Emit the brief package**. Create DEEPSCI:CANDIDATE-BRIEF or DEEPSCI:METHOD-BRIEF with fields ready for ranking or promotion.
 
 ## Preferences
 
@@ -27,7 +27,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Candidate shaping must not jump from intuition directly to branch creation.
-- <CANDIDATE_BRIEF> must answer what bottleneck is targeted, why the current line is limited, how the mechanism addresses it, and what must remain unchanged.
+- DEEPSCI:CANDIDATE-BRIEF must answer what bottleneck is targeted, why the current line is limited, how the mechanism addresses it, and what must remain unchanged.
 - Same-mechanism variants must not be counted as a differentiated slate.
 - More than one lead brief must not be promoted without an explicit promotion cap reason.
 
@@ -46,4 +46,4 @@ Read these gates after producing the step output and before handoff or completio
 - Diversity gate: serious slate covers distinct mechanism families or explains why it cannot.
 - Comparison gate: all serious candidates are judged on one shared surface.
 - Recommendation gate: one lead brief, deferred alternatives, and disconfirmation signal are explicit.
-- Handoff gate: <CANDIDATE_BRIEF> or <METHOD_BRIEF> can be ranked by another agent without chat context.
+- Handoff gate: DEEPSCI:CANDIDATE-BRIEF or DEEPSCI:METHOD-BRIEF can be ranked by another agent without chat context.

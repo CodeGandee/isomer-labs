@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <RESUME_PACKET> must identify current state, node history, accepted baseline, strongest evidence, blockers, next action, first-read material, do-not-repeat notes, and reopen conditions.
+- DEEPSCI:RESUME-PACKET must identify current state, node history, accepted baseline, strongest evidence, blockers, next action, first-read material, do-not-repeat notes, and reopen conditions.
 - The packet must not leave future agents guessing which route or node is authoritative.
 - A pause-ready route must not rely only on memory; it should point to durable summary, status, report, manifest, decision, or handoff records.
 

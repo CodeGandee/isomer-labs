@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Choose node type**. Use package check, computational run, dataset analysis, parameter sweep, validation result, or claim.
 3. **Use stable node ids**. Create once for a new logical node id; append later status, evidence, validation, or interpretation updates instead of rewriting history.
 4. **Fill common fields**. Record title, summary, status, domain, package id, task type, key results, inputs, logs, outputs, evidence paths, parent nodes, related nodes, metadata, and canvas hints when useful.
-5. **Link claims to evidence**. Connect <SCIENCE_CLAIM_RECORD> to <SCIENCE_RUN_RECORD>, <SCIENCE_VALIDATION_RESULT>, package checks, or evidence paths.
+5. **Link claims to evidence**. Connect DEEPSCI:SCIENCE-CLAIM-RECORD to DEEPSCI:SCIENCE-RUN-RECORD, DEEPSCI:SCIENCE-VALIDATION-RESULT, package checks, or evidence paths.
 6. **Record failures and blockers**. Failed or blocked package checks and runs should still become evidence when they determine the route.
 
 ## Preferences
@@ -26,10 +26,10 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <SCIENCE_PACKAGE_CHECK> with passed status must include environment-check evidence.
-- <SCIENCE_RUN_RECORD> with success status must include input, log, output, or evidence paths.
-- <SCIENCE_VALIDATION_RESULT> must reference the run, analysis, or sweep it validates.
-- <SCIENCE_CLAIM_RECORD> must include claim type.
+- DEEPSCI:SCIENCE-PACKAGE-CHECK with passed status must include environment-check evidence.
+- DEEPSCI:SCIENCE-RUN-RECORD with success status must include input, log, output, or evidence paths.
+- DEEPSCI:SCIENCE-VALIDATION-RESULT must reference the run, analysis, or sweep it validates.
+- DEEPSCI:SCIENCE-CLAIM-RECORD must include claim type.
 - Computed claims must not exist without evidence paths or related computed/validation nodes.
 
 ## Quality Gates

@@ -398,19 +398,19 @@ def _validate_trial_result(payload: Mapping[str, Any], diagnostics: list[Contrac
 
 
 _SEMANTIC_VALIDATORS = {
-    "kaoju:direction-set": _validate_direction_set,
-    "kaoju:reading-list": _validate_reading_list,
-    "kaoju:source-digest": _validate_source_digest,
-    "kaoju:env-prep-plan": _validate_env_plan,
-    "kaoju:env-gate-revision": _validate_env_gate_revision,
-    "kaoju:pixi-env-ref": _validate_pixi_env_ref,
-    "kaoju:smoke-run-result": _validate_smoke_result,
-    "kaoju:method-trial-plan": _validate_trial_plan,
-    "kaoju:method-trial-run": _validate_trial_run,
-    "kaoju:method-trial-result": _validate_trial_result,
-    "kaoju:generated-dataset": _validate_generated_dataset,
-    "kaoju:associated-source-code": _validate_associated_source_code,
-    "kaoju:artifact-library": _validate_artifact_library,
+    "KAOJU:DIRECTION-SET": _validate_direction_set,
+    "KAOJU:READING-LIST": _validate_reading_list,
+    "KAOJU:SOURCE-DIGEST": _validate_source_digest,
+    "KAOJU:ENV-PREP-PLAN": _validate_env_plan,
+    "KAOJU:ENV-GATE-REVISION": _validate_env_gate_revision,
+    "KAOJU:PIXI-ENV-REF": _validate_pixi_env_ref,
+    "KAOJU:SMOKE-RUN-RESULT": _validate_smoke_result,
+    "KAOJU:METHOD-TRIAL-PLAN": _validate_trial_plan,
+    "KAOJU:METHOD-TRIAL-RUN": _validate_trial_run,
+    "KAOJU:METHOD-TRIAL-RESULT": _validate_trial_result,
+    "KAOJU:GENERATED-DATASET": _validate_generated_dataset,
+    "KAOJU:ASSOCIATED-SOURCE-CODE": _validate_associated_source_code,
+    "KAOJU:ARTIFACT-LIBRARY": _validate_artifact_library,
 }
 
 

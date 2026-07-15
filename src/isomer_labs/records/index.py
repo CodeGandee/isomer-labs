@@ -210,7 +210,7 @@ def query_index_list(
     if facet is not None and facet not in QUERY_FACETS:
         return _invalid_query_payload("query.list", f"Unsupported query facet: {facet}")
     if semantic_id is not None and not valid_semantic_id(semantic_id):
-        return _invalid_query_payload("query.list", "Semantic id must use exact <family>:<semantic-id> lowercase slug syntax.")
+        return _invalid_query_payload("query.list", "Semantic id must use exact uppercase EXTENSION-NAME:WHAT syntax.")
     store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     if store is None:
         return _runtime_missing_payload("query.list", diagnostics), diagnostics

@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CANDIDATE_RANKING> must state candidate set, criteria, ranked candidates, winner, non-winner handling, and promotion cap.
+- DEEPSCI:CANDIDATE-RANKING must state candidate set, criteria, ranked candidates, winner, non-winner handling, and promotion cap.
 - "All promising" must not justify promoting everything.
 - Ranking must not ignore family diversity and change-layer diversity.
 - Promotion must not exceed the cap without a stated reason.

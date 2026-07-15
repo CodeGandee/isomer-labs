@@ -122,8 +122,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @_topic_selection_options
     @click.option("--record-kind", default=None, help="Filter by Workspace Runtime lifecycle record kind.")
     @click.option("--status", default=None, help="Filter by lifecycle status.")
-    @click.option("--placeholder", default=None, help="Filter by exact research placeholder token.")
-    @click.option("--semantic-id", default=None, help="Filter by exact <family>:<semantic-id> identity.")
+    @click.option("--semantic-id", default=None, help="Filter by exact uppercase EXTENSION-NAME:WHAT identity.")
     @click.option("--scope-key", default=None, help="Filter by exact binding-defined scope key.")
     @click.option("--profile", default=None, help="Filter by artifact or record profile.")
     @click.option("--skill", default=None, help="Filter by producing skill name.")
@@ -151,7 +150,6 @@ def register_research_record_ext_commands(app: click.Group) -> None:
                 env=os.environ,
                 record_kind=filters.get("record_kind"),
                 status=filters.get("status"),
-                placeholder=filters.get("placeholder"),
                 semantic_id=filters.get("semantic_id"),
                 scope_key=filters.get("scope_key"),
                 profile=filters.get("profile"),
@@ -338,7 +336,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     @click.option("--status", default=None, help="Filter by lifecycle status.")
     @click.option("--profile", default=None, help="Filter by profile or Artifact Format Profile ref.")
     @click.option("--artifact-family", default=None, help="Filter by exact artifact family.")
-    @click.option("--semantic-id", default=None, help="Filter by exact <family>:<semantic-id> identity.")
+    @click.option("--semantic-id", default=None, help="Filter by exact uppercase EXTENSION-NAME:WHAT identity.")
     @click.option("--scope-key", default=None, help="Filter by exact binding-defined scope key.")
     @click.option("--procedure", default=None, help="Filter by exact survey or research procedure.")
     @click.option("--latest-only", is_flag=True, help="Return explicit latest candidates and report ambiguity.")
@@ -569,8 +567,7 @@ def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
         command = click.option("--producer", default=None, help="Producer metadata.")(command)
         command = click.option("--skill", default=None, help="Producing or owning skill name.")(command)
         command = click.option("--profile", default=None, help="Artifact or record profile.")(command)
-        command = click.option("--placeholder", default=None, help="Exact research placeholder token.")(command)
-        command = click.option("--semantic-id", default=None, help="Exact <family>:<semantic-id> identity.")(command)
+        command = click.option("--semantic-id", default=None, help="Exact uppercase EXTENSION-NAME:WHAT artifact identity.")(command)
         command = click.option("--scope-key", default=None, help="Binding-defined current-state scope key.")(command)
         command = click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name metadata.")(command)
         command = click.option("--actor-kind", default=None, help="Topic Actor kind metadata.")(command)
@@ -648,7 +645,6 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         record_kind=str(values.get("record_kind") or ""),
         record_id=values.get("record_id"),
         status=str(values.get("status") or "ready"),
-        placeholder=values.get("placeholder"),
         semantic_id=values.get("semantic_id"),
         scope_key=values.get("scope_key"),
         profile=values.get("profile"),

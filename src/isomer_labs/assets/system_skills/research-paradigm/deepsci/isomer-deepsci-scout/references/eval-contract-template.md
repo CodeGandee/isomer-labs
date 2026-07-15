@@ -6,9 +6,9 @@ Use this when scout must make task, dataset, split, metric, fairness, evidence, 
 
 When performing this step, execute these substeps in order.
 
-1. **Collect evidence**. Start from `<SCOUT_CONTEXT_BRIEF>`, `<SCOUT_MEMORY_REUSE_NOTE>`, `<SCOUT_DISCOVERY_LEDGER>`, user constraints, Workspace Runtime records, Artifacts, Evidence Items, Findings, Decision Records, literature sources, benchmark docs, and repository sources.
+1. **Collect evidence**. Start from `DEEPSCI:SCOUT-CONTEXT-BRIEF`, `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE`, `DEEPSCI:SCOUT-DISCOVERY-LEDGER`, user constraints, Workspace Runtime records, Artifacts, Evidence Items, Findings, Decision Records, literature sources, benchmark docs, and repository sources.
 2. **State the contract**. Fill the task, dataset or benchmark, version or source, split, official evaluation path, primary metric, metric direction, secondary metrics, useful-improvement threshold, and fair-comparison rule.
-3. **Name ambiguity honestly**. If two contracts conflict and would change downstream conclusions, record `<SCOUT_BLOCKER_RECORD>` or route to `isomer-deepsci-decision`.
+3. **Name ambiguity honestly**. If two contracts conflict and would change downstream conclusions, record `DEEPSCI:SCOUT-BLOCKER-RECORD` or route to `isomer-deepsci-decision`.
 4. **Connect downstream use**. State which downstream skill needs the contract and why.
 5. **Stop at sufficient clarity**. Do not turn the contract into a full benchmark report unless routing depends on that detail.
 
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- `<EVALUATION_CONTRACT>` must state task, dataset, split, metric direction, fair-comparison rule, useful-improvement threshold, evidence, known ambiguities, and decision impact when those fields affect routing.
+- `DEEPSCI:EVALUATION-CONTRACT` must state task, dataset, split, metric direction, fair-comparison rule, useful-improvement threshold, evidence, known ambiguities, and decision impact when those fields affect routing.
 - Scout must not guess metric, split, or comparator identity when local evidence is ambiguous.
 - Baseline, idea, experiment, analysis, decision, or Gate routing must not proceed from conflicting evaluation contracts.
 - Remaining ambiguity must be recorded rather than hidden.

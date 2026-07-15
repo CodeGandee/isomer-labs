@@ -1,44 +1,84 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import asdict
 from importlib.resources import files
 import json
 import unittest
 
+from isomer_labs.core.artifact_identity import ArtifactIdentityError
 from isomer_labs.artifact_formats.research_record_formats import ResearchRecordFormatProvider
-from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, validate_binding_registry_document
+from isomer_labs.kaoju.contracts import (
+    describe_binding,
+    load_binding_registry,
+    load_contract,
+    load_semantic_registry,
+    resource_coverage_diagnostics,
+    validate_binding_registry_document,
+    validate_semantic_registry_document,
+)
 
 
 class KaojuContractTests(unittest.TestCase):
-    def test_checked_inventory_and_binding_registry_are_complete(self) -> None:
+    def resource_json(self, name: str) -> dict[str, object]:
+        resource = files("isomer_labs.kaoju").joinpath("resources", name)
+        self.assertTrue(resource.is_file(), name)
+        value = json.loads(resource.read_text(encoding="utf-8"))
+        assert isinstance(value, dict)
+        return value
+
+    def test_checked_process_semantics_and_bindings_are_complete(self) -> None:
         contract = load_contract()
         self.assertEqual(14, len(contract.skills))
         self.assertEqual(10, len(contract.survey_intents))
         self.assertEqual("isomer-kaoju-pipeline", contract.skills[0])
         self.assertEqual(
-            {"manage-survey", "manage-dataset", "manage-paper-template"},
-            set(contract.manager_actions),
+            {
+                "list": "isomer-cli --print-json ext kaoju bindings list",
+                "describe": "isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT",
+            },
+            contract.binding_queries,
         )
+        self.assertNotIn("semantic_aliases", contract.raw)
+        self.assertNotIn("binding_registry_resource", contract.raw)
+
         bindings = load_binding_registry()
-        required = {
-            "kaoju:direction-set",
-            "kaoju:reading-list",
-            "kaoju:artifact-library",
-            "kaoju:associated-source-code",
-            "kaoju:paper-structure-myst",
-            "kaoju:paper-draft-myst",
-            "kaoju:paper-display",
-            "kaoju:paper-pdf",
-            "kaoju:llm-wiki-export",
-            "kaoju:llm-wiki-viewer-manifest",
-            "kaoju:env-prep-plan",
-            "kaoju:smoke-run-script",
-            "kaoju:method-trial-plan",
-            "kaoju:method-trial-wrapper",
-            "kaoju:method-trial-result",
-        }
-        self.assertLessEqual(required, set(bindings))
-        self.assertEqual(len(bindings), len(set(bindings)))
+        semantics = load_semantic_registry()
+        self.assertEqual(61, len(bindings))
+        self.assertEqual(set(bindings), set(semantics))
+        self.assertEqual((), resource_coverage_diagnostics())
+        for semantic_id in bindings:
+            self.assertRegex(semantic_id, r"^KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+            semantic = semantics[semantic_id]
+            self.assertTrue(semantic.meaning)
+            self.assertTrue(semantic.minimum_content)
+            self.assertEqual(bindings[semantic_id].producer, semantic.producer)
+            self.assertEqual(bindings[semantic_id].consumers, semantic.consumers)
+
+    def test_joined_descriptions_preserve_exact_identity_and_binding_fields(self) -> None:
+        description = describe_binding("KAOJU:SURVEY-CONTRACT")
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", description["semantic_id"])
+        self.assertEqual("isomer-kaoju-frame", description["producer"])
+        self.assertEqual("artifact", description["record_kind"])
+        self.assertEqual("current_state", description["revision_mode"])
+        self.assertIn("accepted question", description["meaning"])
+        self.assertTrue(description["minimum_content"])
+        self.assertTrue(description["update_intent"])
+
+        for invalid in (
+            "kaoju:survey-contract",
+            "Kaoju:SURVEY-CONTRACT",
+            "KAOJU:survey-contract",
+            "<KAOJU:SURVEY-CONTRACT>",
+            "[[KAOJU:SURVEY-CONTRACT]]",
+            "KAOJU:SURVEY_CONTRACT",
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(ArtifactIdentityError):
+                describe_binding(invalid)
+        with self.assertRaises(ArtifactIdentityError):
+            describe_binding("DEEPSCI:SURVEY-CONTRACT")
+        with self.assertRaises(KeyError):
+            describe_binding("KAOJU:UNKNOWN-CONTRACT")
 
     def test_structured_bindings_resolve_and_non_structured_bindings_are_explicit(self) -> None:
         provider = ResearchRecordFormatProvider()
@@ -52,16 +92,42 @@ class KaojuContractTests(unittest.TestCase):
                 self.assertNotIn("subpath", asdict(binding))
                 self.assertNotIn("path_template", asdict(binding))
 
-    def test_invalid_registry_fixture_has_deterministic_diagnostics(self) -> None:
-        resource = files("isomer_labs").joinpath(
-            "assets/system_skills/research-paradigm/kaoju/contracts/bindings.v2.json"
+    def test_invalid_binding_and_semantic_fixtures_are_rejected_deterministically(self) -> None:
+        raw_bindings = self.resource_json("bindings.v2.json")
+        duplicate_bindings = deepcopy(raw_bindings)
+        duplicate_bindings["bindings"][1]["semantic_id"] = duplicate_bindings["bindings"][0]["semantic_id"]  # type: ignore[index]
+        self.assertTrue(any("duplicate KAOJU:WORKSPACE-READINESS" in item for item in validate_binding_registry_document(duplicate_bindings)))
+
+        invalid_binding_ids = (
+            "kaoju:survey-contract",
+            "Kaoju:SURVEY-CONTRACT",
+            "DEEPSCI:SURVEY-CONTRACT",
+            "<KAOJU:SURVEY-CONTRACT>",
+            "KAOJU:PAPER-DRAFT",
         )
-        raw = json.loads(resource.read_text(encoding="utf-8"))
-        raw["bindings"][1]["semantic_id"] = raw["bindings"][0]["semantic_id"]
-        raw["bindings"][2]["content_mode"] = "directory_scan"
-        diagnostics = validate_binding_registry_document(raw)
-        self.assertTrue(any("duplicate kaoju:workspace-readiness" in item for item in diagnostics))
-        self.assertTrue(any("directory_scan" in item for item in diagnostics))
+        for invalid in invalid_binding_ids:
+            fixture = deepcopy(raw_bindings)
+            fixture["bindings"][0]["semantic_id"] = invalid  # type: ignore[index]
+            with self.subTest(binding=invalid):
+                self.assertTrue(validate_binding_registry_document(fixture))
+
+        raw_semantics = self.resource_json("artifact-semantics.v1.json")
+        duplicate_semantics = deepcopy(raw_semantics)
+        duplicate_semantics["artifacts"].append(deepcopy(duplicate_semantics["artifacts"][0]))  # type: ignore[union-attr,index]
+        self.assertTrue(any("duplicate KAOJU:WORKSPACE-READINESS" in item for item in validate_semantic_registry_document(duplicate_semantics)))
+        malformed_semantics = deepcopy(raw_semantics)
+        malformed_semantics["artifacts"][0]["semantic_id"] = "KAOJU:WORKSPACE_READINESS"  # type: ignore[index]
+        self.assertTrue(validate_semantic_registry_document(malformed_semantics))
+
+    def test_all_five_resources_load_from_the_installed_package_namespace(self) -> None:
+        for name in (
+            "survey-process.v2.json",
+            "bindings.v2.json",
+            "bindings.v2.schema.json",
+            "artifact-semantics.v1.json",
+            "artifact-semantics.v1.schema.json",
+        ):
+            self.resource_json(name)
 
     def test_supersession_and_dependency_decisions_are_locked(self) -> None:
         raw = load_contract().raw

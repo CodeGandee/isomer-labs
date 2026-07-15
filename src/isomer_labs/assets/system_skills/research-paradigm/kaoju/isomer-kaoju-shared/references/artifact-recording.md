@@ -2,7 +2,7 @@
 
 ## Latest-Context Preflight
 
-Before a durable write, resolve Effective Topic Context and fresh Workspace Runtime state. Read the applicable semantic id from `artifact-semantics.md`, resolve its physical contract with `isomer-cli --print-json project artifacts describe <semantic-id>`, and read the producer skill's concise `artifact-bindings.md`. Query the state DB with `project artifacts latest|list|show`, the exact semantic id, and the binding-defined scope key. Inspect revision and supersession lineage, and stop with a storage blocker when the registry, profile, label, query surface, content mode, actor posture, or current choice is unavailable or ambiguous. Never scan directories to discover durable state.
+Before a durable write, resolve Effective Topic Context and fresh Workspace Runtime state. Read the applicable semantic id from `artifact-semantics.md`, resolve its physical contract with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`, and read the producer skill's concise `artifact-bindings.md`. Query the state DB with `project artifacts latest|list|show`, the exact semantic id, and the binding-defined scope key. Inspect revision and supersession lineage, and stop with a storage blocker when the registry, profile, label, query surface, content mode, actor posture, or current choice is unavailable or ambiguous. Never scan directories to discover durable state.
 
 ## Canonical Payload
 

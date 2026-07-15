@@ -8,6 +8,7 @@ import json
 import re
 from typing import Any, Iterable, Mapping
 
+from isomer_labs.core.artifact_identity import parse_artifact_identity
 from isomer_labs.artifact_formats.models import ArtifactFormatResolution, digest_bytes
 from isomer_labs.artifact_formats.registry import ArtifactFormatRegistry, default_registry
 
@@ -90,7 +91,7 @@ class ResearchRecordFormatProvider:
             "metadata": {
                 "provider": "research",
                 "artifact_family": raw["family"],
-                "semantic_id": f"{raw['family']}:{raw['semantic_id']}",
+                "semantic_id": raw["semantic_id"],
                 "artifact_type": raw["artifact_type"],
                 "artifact_class": raw["artifact_class"],
                 "compatible_record_kinds": raw["compatible_record_kinds"],
@@ -168,7 +169,16 @@ def _load_catalogs(catalog_resources: Iterable[str]) -> dict[str, Mapping[str, o
 def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: str) -> dict[str, object]:
     entry_family = _slug_field(entry, "family", source)
     artifact_class = _slug_field(entry, "artifact_class", source)
-    semantic_id = _slug_field(entry, "semantic_id", source)
+    profile_slug = _slug_field(entry, "profile_slug", source)
+    semantic_id = str(entry.get("semantic_id") or "")
+    try:
+        identity = parse_artifact_identity(semantic_id, expected_extension=family)
+    except ValueError as exc:
+        raise ValueError(f"Research format profile at {source} has invalid semantic_id {semantic_id!r}: {exc}") from exc
+    if identity.what != profile_slug.upper():
+        raise ValueError(
+            f"Research format profile at {source} semantic_id {semantic_id!r} does not match profile_slug {profile_slug!r}."
+        )
     artifact_type = _slug_field(entry, "artifact_type", source)
     version = str(entry.get("version") or "")
     status = str(entry.get("status") or "")
@@ -178,12 +188,12 @@ def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: st
         raise ValueError(f"Research format profile at {source} uses unsupported version {version!r}.")
     if status not in {"active", "disabled"}:
         raise ValueError(f"Research format profile at {source} has unsupported status {status!r}.")
-    expected_ref = research_profile_ref(family, artifact_class, semantic_id, version=version)
+    expected_ref = research_profile_ref(family, artifact_class, profile_slug, version=version)
     declared_ref = str(entry.get("ref") or expected_ref)
     parsed = parse_research_profile_ref(declared_ref)
     if parsed is None:
         raise ValueError(f"Research format profile at {source} has invalid ref {declared_ref!r}.")
-    if parsed.family != family or parsed.artifact_class != artifact_class or parsed.semantic_id != semantic_id:
+    if parsed.family != family or parsed.artifact_class != artifact_class or parsed.semantic_id != profile_slug:
         raise ValueError(f"Research format profile semantic-id mismatch at {source}: {declared_ref!r}.")
     if declared_ref != expected_ref:
         raise ValueError(f"Research format profile ref mismatch at {source}: expected {expected_ref!r}.")
@@ -198,6 +208,7 @@ def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: st
     return {
         "ref": declared_ref,
         "family": family,
+        "profile_slug": profile_slug,
         "semantic_id": semantic_id,
         "artifact_class": artifact_class,
         "artifact_type": artifact_type,

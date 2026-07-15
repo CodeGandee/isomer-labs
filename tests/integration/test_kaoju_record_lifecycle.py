@@ -96,7 +96,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
 
         binding_index = self.payload(
             "binding-index.json",
-            semantic_id="kaoju:binding-index",
+            semantic_id="KAOJU:BINDING-INDEX",
             artifact_type="binding-index",
             section_name="bindings",
             summary="Selected Kaoju bindings are ready.",
@@ -109,7 +109,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
                 "--record-kind",
                 "view_manifest",
                 "--semantic-id",
-                "kaoju:binding-index",
+                "KAOJU:BINDING-INDEX",
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/control/binding-index/v1",
                 "--payload-file",
@@ -119,7 +119,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, binding_record)
         readiness = self.payload(
             "workspace-readiness.json",
-            semantic_id="kaoju:workspace-readiness",
+            semantic_id="KAOJU:WORKSPACE-READINESS",
             artifact_type="workspace-readiness",
             section_name="readiness",
             summary="Kaoju storage surfaces are ready.",
@@ -132,7 +132,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
                 "--record-kind",
                 "artifact",
                 "--semantic-id",
-                "kaoju:workspace-readiness",
+                "KAOJU:WORKSPACE-READINESS",
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/control/workspace-readiness/v1",
                 "--payload-file",
@@ -147,20 +147,20 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
 
         contract_v1 = self.payload(
             "contract-v1.json",
-            semantic_id="kaoju:survey-contract",
+            semantic_id="KAOJU:SURVEY-CONTRACT",
             artifact_type="survey-contract",
             section_name="scope",
             summary="Initial survey boundary.",
         )
         profile = "isomer:research/record-format/profile/kaoju/contract/survey-contract/v1"
         status, created = self.record_command(
-            ["create", "--id", "contract-v1", "--record-kind", "artifact", "--semantic-id", "kaoju:survey-contract", "--format-profile", profile, "--payload-file", str(contract_v1)]
+            ["create", "--id", "contract-v1", "--record-kind", "artifact", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--format-profile", profile, "--payload-file", str(contract_v1)]
         )
         self.assertEqual(0, status, created)
 
         contract_v2 = self.payload(
             "contract-v2.json",
-            semantic_id="kaoju:survey-contract",
+            semantic_id="KAOJU:SURVEY-CONTRACT",
             artifact_type="survey-contract",
             section_name="scope",
             summary="Revised survey boundary.",
@@ -170,7 +170,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
 
         catalog = self.payload(
             "catalog.json",
-            semantic_id="kaoju:related-work-catalog",
+            semantic_id="KAOJU:RELATED-WORK-CATALOG",
             artifact_type="related-work-catalog",
             section_name="works",
             summary="Accepted related works.",
@@ -183,7 +183,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
                 "--record-kind",
                 "artifact",
                 "--semantic-id",
-                "kaoju:related-work-catalog",
+                "KAOJU:RELATED-WORK-CATALOG",
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/catalog/related-work-catalog/v1",
                 "--payload-file",
@@ -198,7 +198,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
 
         catalog_v2 = self.payload(
             "catalog-v2.json",
-            semantic_id="kaoju:related-work-catalog",
+            semantic_id="KAOJU:RELATED-WORK-CATALOG",
             artifact_type="related-work-catalog",
             section_name="works",
             summary="Revised accepted related works.",
@@ -208,7 +208,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(0, status, revised_catalog)
 
-        status, latest = self.record_command(["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:survey-contract", "--latest-only"])
+        status, latest = self.record_command(["query", "list", "--artifact-family", "kaoju", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--latest-only"])
         self.assertEqual(0, status, latest)
         self.assertEqual(["contract-v2"], [item["record_id"] for item in latest["records"]])
         status, lineage = self.record_command(["query", "lineage", "catalog-v1"])
@@ -220,7 +220,7 @@ class KaojuRecordLifecycleIntegrationTests(unittest.TestCase):
             )
         )
         status, latest_catalog = self.record_command(
-            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:related-work-catalog", "--latest-only"]
+            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "KAOJU:RELATED-WORK-CATALOG", "--latest-only"]
         )
         self.assertEqual(0, status, latest_catalog)
         self.assertEqual(["catalog-v2"], [item["record_id"] for item in latest_catalog["records"]])

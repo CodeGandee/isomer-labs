@@ -10,6 +10,7 @@ from isomer_labs.artifact_formats import (
     ArtifactFormatResolver,
     register_builtin_artifact_format_providers,
 )
+from isomer_labs.core.artifact_identity import valid_artifact_identity
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.records import RuntimeLifecycleRecord
 
@@ -21,29 +22,32 @@ def semantic_index_identity(
     payload_json: Mapping[str, object],
     profile_ref: str | None,
 ) -> dict[str, object]:
-    """Resolve authored, payload, or compatibility-derived semantic identity."""
+    """Resolve an exact authored or payload canonical semantic identity."""
 
     profile_metadata = resolved_profile_metadata(profile_ref)
     authored = _optional_string(record_metadata.get("semantic_id"))
     payload_semantic_id = _optional_string(payload_json.get("semantic_id"))
-    placeholder = _optional_string(record_metadata.get("placeholder"))
-    derived = _semantic_id_from_placeholder(placeholder) if authored is None and payload_semantic_id is None else None
-    semantic_id = authored or payload_semantic_id or derived
-    source = "authored" if authored is not None else "payload" if payload_semantic_id is not None else "derived_placeholder" if derived is not None else None
+    valid_authored = authored if authored is not None and valid_artifact_identity(authored) else None
+    valid_payload = payload_semantic_id if payload_semantic_id is not None and valid_artifact_identity(payload_semantic_id) else None
+    semantic_id = valid_authored or valid_payload
+    source = "authored" if valid_authored is not None else "payload" if valid_payload is not None else None
     artifact_family = _first_string(
         payload_json.get("artifact_family"),
-        semantic_id.split(":", 1)[0] if semantic_id is not None else None,
+        semantic_id.split(":", 1)[0].lower() if semantic_id is not None else None,
         profile_metadata.get("artifact_family"),
     )
     diagnostics: list[dict[str, object]] = []
+    if authored is not None and not valid_artifact_identity(authored):
+        diagnostics.append({"code": "query_index_invalid_authored_semantic_id", "semantic_id": authored})
+    if payload_semantic_id is not None and not valid_artifact_identity(payload_semantic_id):
+        diagnostics.append({"code": "query_index_invalid_payload_semantic_id", "semantic_id": payload_semantic_id})
     if authored is not None and payload_semantic_id is not None and authored != payload_semantic_id:
         diagnostics.append({"code": "query_index_semantic_id_mismatch", "metadata": authored, "payload": payload_semantic_id})
     payload_family = _optional_string(payload_json.get("artifact_family"))
-    if payload_family is not None and semantic_id is not None and payload_family != semantic_id.split(":", 1)[0]:
+    if payload_family is not None and semantic_id is not None and payload_family != semantic_id.split(":", 1)[0].lower():
         diagnostics.append({"code": "query_index_artifact_family_mismatch", "payload": payload_family, "semantic_id": semantic_id})
     return {
         "profile_metadata": profile_metadata,
-        "placeholder": placeholder,
         "artifact_family": artifact_family,
         "semantic_id": semantic_id,
         "semantic_id_source": source,
@@ -198,14 +202,6 @@ def _declared_path_values(payload: object, declared_path: str) -> list[tuple[str
         if not current:
             break
     return current
-
-
-def _semantic_id_from_placeholder(placeholder: str | None) -> str | None:
-    if placeholder is None:
-        return None
-    value = placeholder.strip("<>").lower().replace("_", "-")
-    value = "".join(character for character in value if character.isalnum() or character == "-").strip("-")
-    return f"deepsci:{value}" if value else None
 
 
 def _optional_string(value: object) -> str | None:

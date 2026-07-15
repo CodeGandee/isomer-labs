@@ -7,7 +7,7 @@
 3. Confirm pre-promotion surfaces for each Topic Actor: `topic.actors.workspace`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, and `topic.actors.tmp`.
 4. Confirm pre-promotion surfaces for each formal agent when selected: `agent.private_artifacts`, `agent.scratch`, `agent.logs`, `agent.public_share`, and `agent.links`.
 5. Explain which surfaces are private, disposable, peer-readable, advisory, or promotion candidates.
-6. Prepare <RSCH_AGENT_ACCESS_PLAN> that tells Topic Actors and formal agents where to place draft outputs before promotion, which Topic Actor or formal-agent metadata to preserve, how accepted research artifacts are recorded, and how to cite durable semantic refs after promotion.
+6. Prepare DEEPSCI:RSCH-AGENT-ACCESS-PLAN that tells Topic Actors and formal agents where to place draft outputs before promotion, which Topic Actor or formal-agent metadata to preserve, how accepted research artifacts are recorded, and how to cite durable semantic refs after promotion.
 7. Treat generated links as convenience paths only. Do not let a link target replace semantic labels or typed refs in durable reports.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build an agent-by-agent access summary and mark missing context as a blocker.

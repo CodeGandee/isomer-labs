@@ -29,7 +29,7 @@ Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `
 
 ## Durable State and CLI Boundaries
 
-The versioned `contracts/bindings.v2.json` registry is the single physical binding authority. Skills resolve it with `isomer-cli project artifacts describe`, discover durable state only through `project artifacts latest|list|show`, and persist through typed `put` or `revise`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-candidate resolution, lineage, and stable refs. Producers must not infer managed subpaths or scan directories as a fallback.
+The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover durable state only through `project artifacts latest|list|show` and persist through typed `put` or `revise`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-candidate resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, or scan directories as a fallback.
 
 `isomer-cli project runs` owns resumable procedure checkpoints. `project repos acquire` performs verified depth-one repository acquisition before registration. `project service-requests` records and synchronously dispatches Service Team work. Executable repository, Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
 
@@ -54,7 +54,7 @@ paper-template-tex  paper-draft-tex
                       paper-pdf
 ```
 
-MyST is the only canonical paper source. Figures and tables are separate file-backed `kaoju:paper-display` Artifacts referenced by typed placeholders and citation-map entries. TeX trees, compile logs, PDFs, and viewer directories retain checksummed file or directory manifests and lineage to their exact canonical inputs.
+MyST is the only canonical paper source. Figures and tables are separate file-backed `KAOJU:PAPER-DISPLAY` Artifacts referenced by typed placeholders and citation-map entries. TeX trees, compile logs, PDFs, and viewer directories retain checksummed file or directory manifests and lineage to their exact canonical inputs.
 
 ## Reset and Resume Semantics
 
@@ -62,7 +62,7 @@ A reset is a checkpoint decision, not a filesystem cleanup. The pipeline queries
 
 ## Migration
 
-Legacy `kaoju:survey-manuscript` and `kaoju:writing-template` records remain readable but are never promoted automatically into canonical MyST state. Historical `ext research templates` inspection and repair remain supported; new paper work uses `ext kaoju paper`. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
+Legacy `KAOJU:SURVEY-MANUSCRIPT` and `KAOJU:WRITING-TEMPLATE` records remain readable but are never promoted automatically into canonical MyST state. Historical `ext research templates` inspection and repair remain supported; new paper work uses `ext kaoju paper`. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
 
 ## Installation
 

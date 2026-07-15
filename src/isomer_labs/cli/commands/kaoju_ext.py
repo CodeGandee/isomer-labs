@@ -1,4 +1,4 @@
-"""Kaoju paper and wiki extension commands."""
+"""Kaoju shared-resource, paper, and wiki extension commands."""
 
 from __future__ import annotations
 
@@ -9,10 +9,17 @@ from typing import Any, Callable
 
 import click
 
+from isomer_labs.core.artifact_identity import ArtifactIdentityError
 from isomer_labs.cli.handlers.shared import _context_for_options
 from isomer_labs.cli.options import common_options, merge_options, topic_selection_options
 from isomer_labs.cli.output import emit_output
 from isomer_labs.kaoju.artifacts import KaojuServiceError
+from isomer_labs.kaoju.contracts import (
+    describe_binding,
+    list_binding_summaries,
+    load_contract,
+    resource_versions,
+)
 from isomer_labs.kaoju.paper import KaojuPaperService, REQUIRED_PAPER_SECTIONS
 from isomer_labs.kaoju.wiki import KaojuWikiService
 from isomer_labs.models import EffectiveTopicContext
@@ -22,7 +29,7 @@ ServiceCallback = Callable[[EffectiveTopicContext], dict[str, object]]
 
 
 def register_kaoju_ext_commands(app: click.Group) -> None:
-    """Register ``ext kaoju paper`` and ``ext kaoju wiki``."""
+    """Register context-free resources and topic-scoped Kaoju services."""
 
     ext_command = app.commands.get("ext")
     if not isinstance(ext_command, click.Group):
@@ -32,6 +39,126 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @ext_command.group(name="kaoju", help="Use checked Kaoju survey-process services.")
     def kaoju_group() -> None:
         pass
+
+    @kaoju_group.group(name="process", help="Inspect the extension-owned Kaoju survey process.")
+    def process_group() -> None:
+        pass
+
+    @process_group.command(name="show", help="Show the versioned Kaoju process and logical binding queries.")
+    @click.pass_context
+    def process_show(ctx: click.Context) -> int:
+        try:
+            contract = load_contract()
+            payload: dict[str, Any] = {
+                "ok": True,
+                "mutated": False,
+                "operation": "process.show",
+                "versions": resource_versions(),
+                "process": contract.raw,
+            }
+            lines = [
+                f"Kaoju process: {contract.schema_version}",
+                f"Entry skill: {contract.raw['entry_skill']}",
+                f"Binding list: {contract.binding_queries['list']}",
+                f"Binding describe: {contract.binding_queries['describe']}",
+                f"Survey intents: {', '.join(contract.survey_intents)}",
+                f"Compatibility procedures: {', '.join(contract.compatibility_procedures)}",
+            ]
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "operation": "process.show",
+                "error": {"code": "kaoju_resource_load_failed", "message": str(exc)},
+            }
+            lines = [str(exc)]
+        return emit_output("ext.kaoju.process.show", merge_options(ctx), payload, [], lines)
+
+    @kaoju_group.group(name="bindings", help="Query canonical Kaoju artifact semantics and storage bindings.")
+    def bindings_group() -> None:
+        pass
+
+    @bindings_group.command(name="list", help="List canonical Kaoju artifact identifiers in sorted order.")
+    @click.pass_context
+    def bindings_list(ctx: click.Context) -> int:
+        try:
+            summaries = list_binding_summaries()
+            payload: dict[str, Any] = {
+                "ok": True,
+                "mutated": False,
+                "operation": "bindings.list",
+                "versions": resource_versions(),
+                "count": len(summaries),
+                "bindings": summaries,
+            }
+            lines = [
+                f"{item['semantic_id']} | {item['artifact_type']} | {item['record_kind']} | {item['producer']} | {item['meaning']}"
+                for item in summaries
+            ]
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "operation": "bindings.list",
+                "error": {"code": "kaoju_resource_load_failed", "message": str(exc)},
+            }
+            lines = [str(exc)]
+        return emit_output("ext.kaoju.bindings.list", merge_options(ctx), payload, [], lines)
+
+    @bindings_group.command(name="describe", help="Describe one exact uppercase KAOJU:WHAT artifact identifier.")
+    @click.argument("semantic_id")
+    @click.pass_context
+    def bindings_describe(ctx: click.Context, semantic_id: str) -> int:
+        try:
+            binding = describe_binding(semantic_id)
+            payload: dict[str, Any] = {
+                "ok": True,
+                "mutated": False,
+                "operation": "bindings.describe",
+                "versions": resource_versions(),
+                "binding": binding,
+            }
+            lines = [
+                f"Semantic id: {binding['semantic_id']}",
+                f"Meaning: {binding['meaning']}",
+                f"Minimum content: {'; '.join(binding['minimum_content'])}",
+                f"Producer: {binding['producer']}",
+                f"Consumers: {', '.join(binding['consumers'])}",
+                f"Record kind: {binding['record_kind']}",
+                f"Profile: {binding['profile_ref'] or 'none'}",
+                f"Revision: {binding['revision_mode']}",
+                f"Update intent: {binding['update_intent']}",
+            ]
+        except ArtifactIdentityError as exc:
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "operation": "bindings.describe",
+                "error": {"code": exc.code, "message": str(exc)},
+                "artifact_identity": semantic_id,
+            }
+            if exc.expected_namespace is not None:
+                payload["expected_namespace"] = exc.expected_namespace
+            lines = [str(exc)]
+        except KeyError:
+            message = f"Unknown Kaoju semantic id: {semantic_id}"
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "operation": "bindings.describe",
+                "error": {"code": "unknown_semantic_id", "message": message},
+                "artifact_identity": semantic_id,
+            }
+            lines = [message]
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            payload = {
+                "ok": False,
+                "mutated": False,
+                "operation": "bindings.describe",
+                "error": {"code": "kaoju_resource_load_failed", "message": str(exc)},
+            }
+            lines = [str(exc)]
+        return emit_output("ext.kaoju.bindings.describe", merge_options(ctx), payload, [], lines)
 
     @kaoju_group.group(name="paper", help="Validate and derive the canonical MyST-first paper graph.")
     def paper_group() -> None:

@@ -1,6 +1,6 @@
 # Validation
 
-A successful build does not make a paper ready. A bound `kaoju:paper-validation-report` applies required checks from canonical MyST through derived TeX and PDF and records unavailable checks explicitly.
+A successful build does not make a paper ready. A bound `KAOJU:PAPER-VALIDATION-REPORT` applies required checks from canonical MyST through derived TeX and PDF and records unavailable checks explicitly.
 
 ## Structural and Textual Checks
 

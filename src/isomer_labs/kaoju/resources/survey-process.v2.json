@@ -41,34 +41,32 @@
     "create-paper-template"
   ],
   "manager_actions": {
-    "manage-survey": ["list", "show", "status", "export"],
-    "manage-dataset": ["register", "list", "show", "refresh", "remove"],
-    "manage-paper-template": ["export", "apply", "inspect", "status"]
-  },
-  "binding_registry_resource": "contracts/bindings.v2.json",
-  "semantic_aliases": {
-    "kaoju:paper-structure": {
-      "canonical_semantic_id": "kaoju:paper-structure-myst",
-      "disposition": "adr-0006-diagram-alias",
-      "automatic_promotion": false
-    },
-    "kaoju:paper-template": {
-      "canonical_semantic_id": "kaoju:paper-template-myst",
-      "disposition": "adr-0006-diagram-alias",
-      "automatic_promotion": false
-    },
-    "kaoju:paper-draft": {
-      "canonical_semantic_id": "kaoju:paper-draft-myst",
-      "disposition": "adr-0006-diagram-alias",
-      "automatic_promotion": false
-    }
+    "manage-survey": [
+      "list",
+      "show",
+      "status",
+      "export"
+    ],
+    "manage-dataset": [
+      "register",
+      "list",
+      "show",
+      "refresh",
+      "remove"
+    ],
+    "manage-paper-template": [
+      "export",
+      "apply",
+      "inspect",
+      "status"
+    ]
   },
   "supersession": {
     "source_change": "add-kaoju-paper-writing",
     "governing_decision": "context/features/2026-07-14-kaoju-survey-process-usecases/adrs/0006-myst-as-canonical-paper-format.md",
     "replaced_requirements": [
       "LaTeX source is canonical paper state",
-      "kaoju:writing-template is the canonical template",
+      "KAOJU:WRITING-TEMPLATE is the canonical template",
       "ext research templates creates new canonical templates",
       "Markdown publication input is rejected instead of represented as a derived view",
       "create-paper-template writes a canonical LaTeX tree under intent/derived/writing-template"
@@ -102,5 +100,10 @@
       "prohibition": "Do not copy, import, load, or invoke candidate viewer or external imsight-llm-wiki skill code.",
       "implementation": "Package an independently written static viewer that reads the documented Kaoju wiki JSON manifest."
     }
-  }
+  },
+  "binding_queries": {
+    "list": "isomer-cli --print-json ext kaoju bindings list",
+    "describe": "isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT"
+  },
+  "resource_authority": "isomer-cli ext kaoju"
 }

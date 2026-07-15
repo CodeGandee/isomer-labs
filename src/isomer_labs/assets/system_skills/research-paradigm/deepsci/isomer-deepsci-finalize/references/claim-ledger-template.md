@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CLAIM_LEDGER> must classify every important claim as supported, partially supported, unsupported, or deferred.
+- DEEPSCI:CLAIM-LEDGER must classify every important claim as supported, partially supported, unsupported, or deferred.
 - Each claim must include evidence, caveats, safe-to-surface status, and recommendation.
 - Claims that were once believed and later weakened must preserve the belief-change reason.
 - Unsupported claims must not appear in final summary as supported findings.

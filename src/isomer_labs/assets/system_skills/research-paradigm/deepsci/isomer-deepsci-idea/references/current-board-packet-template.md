@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Name decisive evidence**. Record the latest result that changed route quality, the strongest negative evidence, and any active blocker.
 3. **Mark stale routes**. List routes that should not be reopened unless new evidence weakens the current mainline.
 4. **Set decision scope and budget class**. Classify whether this pass is choosing a mechanism, objective, measurement, or infrastructure route, and whether validation is `fast-check` or `slow-check`.
-5. **Gate widening**. If the packet cannot be made coherent, produce <IDEA_BLOCKER_RECORD> and route to decision, intake audit, scout, or baseline instead of generating candidates.
+5. **Gate widening**. If the packet cannot be made coherent, produce DEEPSCI:IDEA-BLOCKER-RECORD and route to decision, intake audit, scout, or baseline instead of generating candidates.
 
 ## Preferences
 
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CURRENT_BOARD_PACKET> must include incumbent, current mainline, latest decisive result, strongest negative evidence, active blocker, stale routes, next decision scope, and budget class.
+- DEEPSCI:CURRENT-BOARD-PACKET must include incumbent, current mainline, latest decisive result, strongest negative evidence, active blocker, stale routes, next decision scope, and budget class.
 - The idea pass must not reopen stale routes without new evidence.
 - The idea pass must not continue from an incoherent board state.
 - The board packet should identify whether the next route is about mechanism, objective, measurement, or infrastructure.

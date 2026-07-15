@@ -8,7 +8,7 @@
     "title": {"type": "string", "minLength": 1},
     "summary": {"type": "string", "minLength": 1},
     "artifact_family": {"const": "kaoju"},
-    "semantic_id": {"const": "kaoju:llm-wiki-metadata"},
+    "semantic_id": {"const": "KAOJU:LLM-WIKI-METADATA"},
     "artifact_type": {"const": "llm-wiki-metadata"},
     "version": {"type": "string", "minLength": 1},
     "source_fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},

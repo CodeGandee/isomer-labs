@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Separate levels**. Use `brief` for branchless method proposals and `implementation` for within-line attempts.
 3. **Keep parent lineage visible**. Parent may be a branch, idea id, run id, candidate id, durable line, or frontier record.
 4. **Use route strategy labels**. Prefer explore, exploit, fusion, debug, or stop as the candidate strategy.
-5. **Update after each meaningful pass**. Keep <CANDIDATE_BOARD> synchronized with <OPTIMIZATION_FRONTIER> and <OPTIMIZE_CHECKLIST>.
+5. **Update after each meaningful pass**. Keep DEEPSCI:CANDIDATE-BOARD synchronized with DEEPSCI:OPTIMIZATION-FRONTIER and DEEPSCI:OPTIMIZE-CHECKLIST.
 
 ## Preferences
 
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CANDIDATE_BOARD> must not merge candidate briefs with implementation attempts.
+- DEEPSCI:CANDIDATE-BOARD must not merge candidate briefs with implementation attempts.
 - Candidate status must not imply promotion before ranking or route decision exists.
 - Observed results must not replace expected gain unless evidence exists.
 - Board updates should not create new candidates without frontier recovery.

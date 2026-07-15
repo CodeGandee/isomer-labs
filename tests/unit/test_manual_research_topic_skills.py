@@ -31,6 +31,9 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             combined,
             (
                 "isomer-op-topic-creator",
+                "## Plan First",
+                "Topic creation is a complex process.",
+                "use your internal todo list or planning tool to create a plan",
                 "prepared Topic Workspace",
                 "`ensure-project`",
                 "`resolve-topic-input`",

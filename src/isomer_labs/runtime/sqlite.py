@@ -387,7 +387,6 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             topic_workspace_id TEXT NOT NULL,
             record_kind TEXT NOT NULL,
             status TEXT NOT NULL,
-            placeholder TEXT,
             artifact_family TEXT,
             semantic_id TEXT,
             scope_key TEXT,

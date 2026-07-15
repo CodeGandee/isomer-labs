@@ -78,7 +78,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
                     "title": title,
                     "summary": "Actor-confirmed survey directions.",
                     "artifact_family": "kaoju",
-                    "semantic_id": "kaoju:direction-set",
+                    "semantic_id": "KAOJU:DIRECTION-SET",
                     "artifact_type": "direction-set",
                     "sections": {
                         "proposals": [
@@ -126,7 +126,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         return path
 
     def test_binding_inference_scoped_revision_and_producer_rejection(self) -> None:
-        status, described = self.artifact("describe", "kaoju:direction-set")
+        status, described = self.artifact("describe", "KAOJU:DIRECTION-SET")
         self.assertEqual(0, status, described)
         binding = described["binding"]
         self.assertNotIn("subpath", binding)
@@ -136,7 +136,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         relationships = '[{"role":"survey_contract","target_record_id":"contract-v1"}]'
         status, rejected = self.artifact(
             "put",
-            "kaoju:direction-set",
+            "KAOJU:DIRECTION-SET",
             str(payload),
             "--producer",
             "isomer-kaoju-discover",
@@ -150,7 +150,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
 
         status, created = self.artifact(
             "put",
-            "kaoju:direction-set",
+            "KAOJU:DIRECTION-SET",
             str(payload),
             "--producer",
             "isomer-kaoju-frame",
@@ -167,7 +167,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         self.assertEqual("directions-v1", created["record"]["id"])
         status, replay = self.artifact(
             "put",
-            "kaoju:direction-set",
+            "KAOJU:DIRECTION-SET",
             str(payload),
             "--producer",
             "isomer-kaoju-frame",
@@ -194,7 +194,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             "directions-v2",
         )
         self.assertEqual(0, status, revised)
-        status, latest = self.artifact("latest", "kaoju:direction-set", "--scope-key", "survey-main")
+        status, latest = self.artifact("latest", "KAOJU:DIRECTION-SET", "--scope-key", "survey-main")
         self.assertEqual(0, status, latest)
         self.assertEqual(["directions-v2"], [item["record_id"] for item in latest["records"]])
 
@@ -213,14 +213,14 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
                 "--record-kind",
                 "decision_record",
                 "--semantic-id",
-                "kaoju:direction-set",
+                "KAOJU:DIRECTION-SET",
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/decision/direction-set/v1",
                 "--payload-file",
                 str(payload),
             )
             self.assertEqual(0, status, legacy)
-        status, ambiguous = self.artifact("latest", "kaoju:direction-set")
+        status, ambiguous = self.artifact("latest", "KAOJU:DIRECTION-SET")
         self.assertEqual(1, status)
         self.assertEqual("artifact_latest_ambiguous", ambiguous["error"]["code"])
 
@@ -231,7 +231,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         relationships = '[{"role":"paper_template","target_record_id":"template-v1"},{"role":"paper_draft","target_record_id":"draft-v1"}]'
         status, created = self.artifact(
             "put",
-            "kaoju:paper-template-export",
+            "KAOJU:PAPER-TEMPLATE-EXPORT",
             str(tree),
             "--producer",
             "isomer-kaoju-write",
@@ -266,7 +266,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         ):
             status, failed = self.artifact(
                 "put",
-                "kaoju:paper-template-export",
+                "KAOJU:PAPER-TEMPLATE-EXPORT",
                 str(failed_tree),
                 "--producer",
                 "isomer-kaoju-write",
@@ -418,7 +418,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             "--scope-ref",
             "alpha",
             "--expected-output-ref",
-            "kaoju:smoke-run-result",
+            "KAOJU:SMOKE-RUN-RESULT",
             "--authorization",
             "execute the recorded smoke command inside the selected Topic Workspace",
             "--dispatch-form",

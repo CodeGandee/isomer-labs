@@ -9,8 +9,8 @@ When performing this step, execute these substeps in order.
 1. **Choose the flow**. Decide whether the route is attach, import, verify-local-existing, reproduce, repair, publish, waive, or block.
 2. **Materialize and inspect evidence**. Record package, path, service, outputs, provenance, and metric contract before acceptance.
 3. **Verify only what trust requires**. Run or inspect the minimum evidence needed for the acceptance target.
-4. **Write the comparison contract**. Ensure <COMPARABILITY_CONTRACT> exists before acceptance.
-5. **Close gate explicitly**. Produce <ACCEPTED_BASELINE_RECORD>, <BASELINE_WAIVER_RECORD>, or <BASELINE_BLOCKER_RECORD>.
+4. **Write the comparison contract**. Ensure DEEPSCI:COMPARABILITY-CONTRACT exists before acceptance.
+5. **Close gate explicitly**. Produce DEEPSCI:ACCEPTED-BASELINE-RECORD, DEEPSCI:BASELINE-WAIVER-RECORD, or DEEPSCI:BASELINE-BLOCKER-RECORD.
 
 ## Preferences
 
@@ -27,7 +27,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Attach, import, or publish alone must not open the gate.
-- <COMPARABILITY_CONTRACT> must precede acceptance.
+- DEEPSCI:COMPARABILITY-CONTRACT must precede acceptance.
 - Attached or imported packages require durable provenance.
 - Published baseline material must not be half-verified.
 - Waiver must record what was tried, what remains missing, and why continuation is justified.
@@ -38,7 +38,7 @@ Read these gates after producing the step output and before handoff or completio
 
 ### Metrics
 
-- Contract-before-acceptance coverage: fraction of acceptance, import, verify, publish, or waiver flows where <COMPARABILITY_CONTRACT> exists before accepted closeout; higher is better.
+- Contract-before-acceptance coverage: fraction of acceptance, import, verify, publish, or waiver flows where DEEPSCI:COMPARABILITY-CONTRACT exists before accepted closeout; higher is better.
 - Incomplete-trust closeout count: number of attach, import, publish, or waiver flows treated as accepted before verification, provenance, metric contract, and caveats are durable; lower is better.
 
 ### Checks
@@ -46,7 +46,7 @@ Read these gates after producing the step output and before handoff or completio
 - Flow gate: selected flow matches route and acceptance target.
 - Evidence gate: outputs, provenance, metrics, and package or service identity are inspected.
 - Verification gate: minimum evidence needed for trust is collected.
-- Contract gate: <COMPARABILITY_CONTRACT> exists.
+- Contract gate: DEEPSCI:COMPARABILITY-CONTRACT exists.
 - Closeout gate: acceptance, waiver, blocker, or route decision is durable.
 
 ## Examples
@@ -56,24 +56,24 @@ Read these gates after producing the step output and before handoff or completio
 1. Attach or materialize the reusable baseline.
 2. Inspect package, outputs, provenance, and metric contract.
 3. Run only minimum extra verification needed for current trust.
-4. Produce or reuse <COMPARABILITY_CONTRACT>.
-5. Produce <ACCEPTED_BASELINE_RECORD>.
+4. Produce or reuse DEEPSCI:COMPARABILITY-CONTRACT.
+5. Produce DEEPSCI:ACCEPTED-BASELINE-RECORD.
 
 ### Import a Local Package or Bundle
 
 1. Materialize the imported package under the Topic Workspace baseline surface.
-2. Preserve <BASELINE_PROVENANCE_RECORD>.
+2. Preserve DEEPSCI:BASELINE-PROVENANCE-RECORD.
 3. Inspect outputs, metrics, and provenance.
-4. Produce or reuse <COMPARABILITY_CONTRACT>.
-5. Produce <ACCEPTED_BASELINE_RECORD> or <BASELINE_BLOCKER_RECORD>.
+4. Produce or reuse DEEPSCI:COMPARABILITY-CONTRACT.
+5. Produce DEEPSCI:ACCEPTED-BASELINE-RECORD or DEEPSCI:BASELINE-BLOCKER-RECORD.
 
 ### Verify a Local-Existing Comparator
 
 1. Identify the user-provided comparator location or endpoint.
 2. Identify the real evaluation command or endpoint.
 3. Verify outputs or metrics under the intended contract.
-4. Produce <COMPARABILITY_CONTRACT>.
-5. Produce <ACCEPTED_BASELINE_RECORD>.
+4. Produce DEEPSCI:COMPARABILITY-CONTRACT.
+5. Produce DEEPSCI:ACCEPTED-BASELINE-RECORD.
 
 ### Publish a Reusable Baseline
 
@@ -86,4 +86,4 @@ Read these gates after producing the step output and before handoff or completio
 
 1. Record why the gate cannot be cleared now.
 2. Record what was tried and what remains missing.
-3. Produce <BASELINE_WAIVER_RECORD> with the next route.
+3. Produce DEEPSCI:BASELINE-WAIVER-RECORD with the next route.

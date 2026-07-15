@@ -9,13 +9,24 @@ import json
 import re
 import sys
 import tomllib
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Iterable
 
 from packaging.version import InvalidVersion, Version
-from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 import yaml
+
+from isomer_labs.core.artifact_identity import (
+    ArtifactIdentityError,
+    packaged_extension_ids,
+    parse_artifact_identity,
+)
+from isomer_labs.kaoju.contracts import (
+    load_binding_registry,
+    load_contract,
+    load_semantic_registry,
+    resource_coverage_diagnostics,
+)
 
 
 @dataclass(frozen=True)
@@ -42,12 +53,17 @@ FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 CODE_SPAN_RE = re.compile(r"`([^`]+)`")
 TBD_PLACEHOLDER_RE = re.compile(r"\[\[tbd-surface:([a-z0-9][a-z0-9-]*)\]\]")
-RSCH_OBJECT_PLACEHOLDER_RE = re.compile(r"\[\[rsch-object:([a-z0-9][a-z0-9-]*)\]\]")
-MIGRATION_PLACEHOLDER_RE = re.compile(r"<([A-Z][A-Z0-9_]*)>")
-MIGRATION_PLACEHOLDER_CELL_RE = re.compile(r"^<?([A-Z][A-Z0-9_]*)>?$")
+RSCH_OBJECT_PLACEHOLDER_RE = re.compile(r"\[\[rsch-object:([^\]]+)\]\]")
+MIGRATION_PLACEHOLDER_RE = re.compile(r"(?<![A-Z0-9:-])(DEEPSCI:[A-Z0-9]+(?:-[A-Z0-9]+)*)(?![A-Z0-9:-])")
+MIGRATION_PLACEHOLDER_CELL_RE = re.compile(r"^(DEEPSCI:[A-Z0-9]+(?:-[A-Z0-9]+)*)$")
 PLACEHOLDER_PATH_SEGMENT_RE = re.compile(r"<[A-Za-z0-9_-]+>")
 REGISTRY_ROW_ID_RE = re.compile(r"^(?:path|api|schema|policy|provider)-[a-z0-9-]+$")
-SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+SEMANTIC_PLACEHOLDER_ID_RE = re.compile(r"^DEEPSCI:[A-Z0-9]+(?:-[A-Z0-9]+)*$")
+CANONICAL_IDENTITY_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9-])([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*:[A-Z0-9]+(?:-[A-Z0-9]+)*)(?![A-Za-z0-9-])")
+NONCANONICAL_EXTENSION_ID_RE = re.compile(r"(?<![A-Za-z0-9-])((?:deepsci|kaoju|DeepSci|Kaoju):[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)(?![A-Za-z0-9-])")
+WRAPPED_IDENTITY_RE = re.compile(r"<([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*:[A-Z0-9]+(?:-[A-Z0-9]+)*)>")
+LEGACY_ANGLE_ARTIFACT_RE = re.compile(r"<([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)>")
+DOUBLE_BRACKET_ARTIFACT_RE = re.compile(r"\[\[(?:rsch-object|artifact|placeholder):[^\]]+\]\]", re.I)
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 MAX_DEEPSCI_WORKFLOW_LINE = 45
@@ -116,7 +132,7 @@ FAMILY_CONFIGS = (
         max_workflow_line=40,
         required=False,
         semantic_registry="isomer-kaoju-shared/references/artifact-semantics.md",
-        semantic_id_pattern=re.compile(r"^kaoju:[a-z0-9][a-z0-9-]*$"),
+        semantic_id_pattern=re.compile(r"^KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*$"),
         binding_filename="artifact-bindings.md",
         profile_namespace="isomer:research/record-format/profile/kaoju/",
         binding_owners=frozenset(
@@ -907,11 +923,13 @@ def validate_release_version_metadata(
 
 def clean_reference(raw: str) -> str | None:
     value = raw.strip().strip("<>").strip()
-    if "://" in value or value.startswith("#"):
+    if "://" in value or value.startswith("#") or any(character.isspace() for character in value):
         return None
     value = value.split("#", 1)[0].strip()
-    value = value.strip(".,;:)")
-    if any(value.startswith(prefix) for prefix in LOCAL_REFERENCE_PREFIXES):
+    value = value.rstrip(".,;:)")
+    if any(value.startswith(prefix) for prefix in LOCAL_REFERENCE_PREFIXES) or value.startswith(("./", "../")):
+        return value
+    if re.match(r"^isomer-(?:deepsci|kaoju)-[a-z0-9-]+/", value):
         return value
     return None
 
@@ -994,7 +1012,7 @@ def parse_migration_placeholder_ids(lines: tuple[str, ...]) -> dict[str, int]:
         if not cells:
             continue
         raw_id = cells[0].strip("`")
-        if raw_id.casefold() in {"placeholder", "---"} or set(raw_id) <= {"-"}:
+        if raw_id.casefold() in {"placeholder", "id", "---"} or set(raw_id) <= {"-"}:
             continue
         match = MIGRATION_PLACEHOLDER_CELL_RE.match(raw_id)
         if match:
@@ -1011,12 +1029,154 @@ def parse_placeholder_binding_ids(lines: tuple[str, ...]) -> dict[str, int]:
         if not cells:
             continue
         raw_id = cells[0].strip("`")
-        if raw_id.casefold() in {"placeholder", "---"} or set(raw_id) <= {"-"}:
+        if raw_id.casefold() in {"placeholder", "id", "---"} or set(raw_id) <= {"-"}:
             continue
         match = MIGRATION_PLACEHOLDER_CELL_RE.match(raw_id)
         if match:
             ids[match.group(1)] = line_number
     return ids
+
+
+def _identity_table_cells(path: Path) -> list[tuple[int, str]]:
+    cells: list[tuple[int, str]] = []
+    for line_number, line in enumerate(read_lines(path), start=1):
+        if not line.startswith("|"):
+            continue
+        raw_id = line.strip().strip("|").split("|", 1)[0].strip().strip("`")
+        if raw_id.casefold() in {"placeholder", "id", "semantic id", "---"} or set(raw_id) <= {"-"}:
+            continue
+        if ":" in raw_id or raw_id.startswith(("DEEPSCI", "<", "[[")):
+            cells.append((line_number, raw_id))
+    return cells
+
+
+def validate_deepsci_identity_inventory(
+    skill_dirs: list[tuple[Path, str]],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> set[str]:
+    """Validate collision-free canonical DeepSci registry and binding coverage."""
+
+    binding_occurrences: dict[str, tuple[Path, int]] = {}
+    migration_ids: set[str] = set()
+    binding_ids: set[str] = set()
+    for skill_dir, generation in skill_dirs:
+        if generation != "deepsci":
+            continue
+        migration_path = skill_dir / "migrate" / "placeholders.md"
+        binding_path = skill_dir / "placeholder-bindings.md"
+        local_migration: set[str] = set()
+        local_bindings: set[str] = set()
+        for path, destination in ((migration_path, local_migration), (binding_path, local_bindings)):
+            if not path.exists():
+                continue
+            seen: dict[str, int] = {}
+            for line_number, semantic_id in _identity_table_cells(path):
+                try:
+                    parsed = parse_artifact_identity(semantic_id, expected_extension="deepsci")
+                except ArtifactIdentityError as exc:
+                    add(diagnostics, repo_root, path, line_number, "RPS028", f"invalid DeepSci artifact identity '{semantic_id}': {exc}")
+                    continue
+                if parsed.value in seen:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "RPS012",
+                        f"duplicate DeepSci artifact identity '{parsed.value}'; first declared on line {seen[parsed.value]}",
+                    )
+                    continue
+                seen[parsed.value] = line_number
+                destination.add(parsed.value)
+                if path == binding_path:
+                    prior = binding_occurrences.get(parsed.value)
+                    if prior is not None:
+                        add(
+                            diagnostics,
+                            repo_root,
+                            path,
+                            line_number,
+                            "RPS012",
+                            f"DeepSci binding identity '{parsed.value}' collides with {relpath(prior[0], repo_root)}:{prior[1]}",
+                        )
+                    else:
+                        binding_occurrences[parsed.value] = (path, line_number)
+        migration_ids.update(local_migration)
+        binding_ids.update(local_bindings)
+        if migration_path.exists():
+            for semantic_id in sorted(local_migration - local_bindings):
+                add(diagnostics, repo_root, binding_path, 1, "RPS012", f"binding coverage is missing '{semantic_id}'")
+            for semantic_id in sorted(local_bindings - local_migration):
+                add(diagnostics, repo_root, binding_path, 1, "RPS012", f"binding row '{semantic_id}' has no matching source registry row")
+
+    for semantic_id in sorted(migration_ids - binding_ids):
+        add(diagnostics, repo_root, repo_root, 1, "RPS012", f"DeepSci source inventory has no binding for '{semantic_id}'")
+
+    semantic_path = next(
+        (
+            skill_dir / "references" / "semantic-placeholders.md"
+            for skill_dir, generation in skill_dirs
+            if generation == "deepsci" and skill_dir.name == "isomer-deepsci-shared"
+        ),
+        None,
+    )
+    semantic_ids: set[str] = set()
+    if semantic_path is not None and semantic_path.exists():
+        for line_number, semantic_id in _identity_table_cells(semantic_path):
+            try:
+                semantic_ids.add(parse_artifact_identity(semantic_id, expected_extension="deepsci").value)
+            except ArtifactIdentityError as exc:
+                add(diagnostics, repo_root, semantic_path, line_number, "RPS028", f"invalid DeepSci artifact identity '{semantic_id}': {exc}")
+    return binding_ids | migration_ids | semantic_ids
+
+
+def validate_artifact_identity_guidance(
+    document: Document,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    registered_by_family: dict[str, set[str]],
+) -> None:
+    """Reject superseded, unowned, unknown, and lossy artifact identity forms."""
+
+    family = "deepsci" if "deepsci" in document.roles else "kaoju" if "kaoju" in document.roles else None
+    if family is None or not is_active_guidance(document):
+        return
+    registered = registered_by_family.get(family, set())
+    known_whats = {identity.split(":", 1)[1] for identity in registered}
+    known_legacy = {what.replace("-", "_") for what in known_whats}
+    for line_number, line in enumerate(document.lines, start=1):
+        offenders: set[str] = set()
+        if "--placeholder" in line:
+            offenders.add("--placeholder")
+        offenders.update(match.group(0) for match in WRAPPED_IDENTITY_RE.finditer(line))
+        offenders.update(match.group(0) for match in DOUBLE_BRACKET_ARTIFACT_RE.finditer(line))
+        offenders.update(
+            match.group(0)
+            for match in LEGACY_ANGLE_ARTIFACT_RE.finditer(line)
+            if match.group(1) in known_legacy
+        )
+        offenders.update(match.group(1) for match in NONCANONICAL_EXTENSION_ID_RE.finditer(line))
+        for offender in sorted(offenders):
+            add(diagnostics, repo_root, document.path, line_number, "RPS028", f"superseded artifact identity form '{offender}' is forbidden")
+
+        for match in CANONICAL_IDENTITY_TOKEN_RE.finditer(line):
+            semantic_id = match.group(1)
+            try:
+                parse_artifact_identity(
+                    semantic_id,
+                    expected_extension=family,
+                    known_extensions=packaged_extension_ids(),
+                )
+            except ArtifactIdentityError as exc:
+                add(diagnostics, repo_root, document.path, line_number, "RPS028", f"artifact identity '{semantic_id}' violates ownership: {exc}")
+                continue
+            if semantic_id not in registered and semantic_id != f"{family.upper()}:WHAT":
+                add(diagnostics, repo_root, document.path, line_number, "RPS028", f"artifact identity '{semantic_id}' is not registered")
+
+        for code_span in CODE_SPAN_RE.findall(line):
+            if code_span in known_whats or code_span in known_legacy:
+                add(diagnostics, repo_root, document.path, line_number, "RPS028", f"bare artifact identity '{code_span}' is forbidden")
 
 
 def normalize_resolution(text: str) -> str:
@@ -1109,18 +1269,17 @@ def validate_rsch_object_placeholders(
 ) -> None:
     if "deepsci" not in document.roles or not is_active_guidance(document):
         return
+    _ = registered_ids
     for line_number, line in enumerate(document.lines, start=1):
         for match in RSCH_OBJECT_PLACEHOLDER_RE.finditer(line):
-            placeholder_id = match.group(1)
-            if placeholder_id not in registered_ids:
-                add(
-                    diagnostics,
-                    repo_root,
-                    document.path,
-                    line_number,
-                    "RPS009",
-                    f"research object placeholder '{placeholder_id}' is not registered in the production DeepSci semantic-placeholder registry",
-                )
+            add(
+                diagnostics,
+                repo_root,
+                document.path,
+                line_number,
+                "RPS028",
+                f"superseded double-bracket artifact identity '{match.group(0)}' is forbidden",
+            )
 
 
 def validate_migration_placeholders(
@@ -1136,19 +1295,18 @@ def validate_migration_placeholders(
     parts = document.rel_target.split("/")
     if len(parts) < 3 or parts[0] != "deepsci":
         return
-    skill_rel = "/".join(parts[:2])
-    registered_ids = registered_by_skill.get(skill_rel, set())
+    registered_ids = set().union(*registered_by_skill.values()) if registered_by_skill else set()
     for line_number, line in enumerate(document.lines, start=1):
         for match in MIGRATION_PLACEHOLDER_RE.finditer(line):
-            placeholder_id = match.group(1)
-            if placeholder_id not in registered_ids:
+            semantic_id = match.group(1)
+            if semantic_id not in registered_ids and semantic_id != "DEEPSCI:WHAT":
                 add(
                     diagnostics,
                     repo_root,
                     document.path,
                     line_number,
                     "RPS009",
-                    f"migration placeholder '{placeholder_id}' is not registered in migrate/placeholders.md",
+                    f"DeepSci artifact identity '{semantic_id}' is not registered in migrate/placeholders.md",
                 )
 
 
@@ -1184,7 +1342,7 @@ def validate_deepsci_placeholder_bindings(
                 binding_path,
                 heading_line,
                 "RPS012",
-                f"placeholder-bindings.md is missing migration placeholder '<{placeholder_id}>'",
+                f"placeholder-bindings.md is missing canonical identity '{placeholder_id}'",
             )
         for placeholder_id in sorted(set(actual) - set(expected)):
             add(
@@ -1193,7 +1351,7 @@ def validate_deepsci_placeholder_bindings(
                 binding_path,
                 actual[placeholder_id],
                 "RPS012",
-                f"placeholder-bindings.md has extra migration placeholder '<{placeholder_id}>'",
+                f"placeholder-bindings.md has extra canonical identity '{placeholder_id}'",
             )
 
 
@@ -1264,7 +1422,7 @@ def validate_deepsci_payload_first_bindings(
                     "RPS014",
                     "structured binding guidance must not treat SQLite payload_json as the only durable structured payload copy",
                 )
-            if not line.startswith(("| <", "| `")):
+            if not line.startswith(("| DEEPSCI:", "| `DEEPSCI:")):
                 continue
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
             if len(cells) < 7:
@@ -1717,28 +1875,14 @@ def load_kaoju_process_contract(
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> dict[str, object] | None:
-    path = kaoju_root / "contracts" / "survey-process.v2.json"
+    path = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
     try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju survey-process contract is unavailable: {exc}")
+        contract = load_contract()
+        raw = contract.raw
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju extension process resource is unavailable: {exc}")
         return None
-    if not isinstance(raw, dict):
-        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju survey-process contract must be an object")
-        return None
-    required_lists = ("skills", "survey_intents", "compatibility_procedures")
-    for field in required_lists:
-        values = raw.get(field)
-        if not isinstance(values, list) or not values or not all(isinstance(value, str) and value for value in values):
-            add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju contract field '{field}' must be a non-empty string list")
-        elif len(values) != len(set(values)):
-            add(diagnostics, repo_root, path, 1, "RPS026", f"Kaoju contract field '{field}' contains duplicates")
-    managers = raw.get("manager_actions")
-    if not isinstance(managers, dict) or not managers:
-        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju contract manager_actions must be a non-empty object")
-    if raw.get("entry_skill") != "isomer-kaoju-pipeline":
-        add(diagnostics, repo_root, path, 1, "RPS026", "Kaoju contract entry_skill must be isomer-kaoju-pipeline")
-    return raw
+    return dict(raw)
 
 
 def _contract_commands(contract: dict[str, object]) -> tuple[str, ...]:
@@ -1759,7 +1903,7 @@ def validate_kaoju_package_contract(
     diagnostics: list[Diagnostic],
     contract: dict[str, object],
 ) -> None:
-    contract_path = kaoju_root / "contracts" / "survey-process.v2.json"
+    contract_path = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
     skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
     intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
     if len(skills) != 14:
@@ -1859,9 +2003,41 @@ def validate_kaoju_active_guidance(
     if "kaoju" not in document.roles or not is_active_guidance(document):
         return
     for line_number, line in enumerate(document.lines, start=1):
+        if re.search(r"(?:survey-process\.v2|bindings\.v2(?:\.schema)?|artifact-semantics\.v1(?:\.schema)?)\.json", line):
+            add(diagnostics, repo_root, document.path, line_number, "RPS029", "active Kaoju guidance names an extension-owned resource file directly")
         for label, pattern in KAOJU_FORBIDDEN_ACTIVE_PATTERNS:
             if pattern.search(line) and not is_rejection_line(line):
                 add(diagnostics, repo_root, document.path, line_number, "RPS020", f"active Kaoju guidance contains {label}")
+
+
+def validate_kaoju_resource_and_shared_routing(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    """Enforce extension-query data access and the family shared-procedure route."""
+
+    pipeline = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
+    if pipeline.exists():
+        text = pipeline.read_text(encoding="utf-8")
+        if "isomer-cli --print-json ext kaoju process show" not in text:
+            add(diagnostics, repo_root, pipeline, 1, "RPS029", "Kaoju pipeline must load process data through ext kaoju process show")
+        if "## Plan First" not in text or "internal todo list or planning tool" not in text:
+            add(diagnostics, repo_root, pipeline, 1, "RPS029", "Kaoju pipeline must preserve its upfront internal planning requirement")
+
+    shared = kaoju_root / "isomer-kaoju-shared"
+    for path in (shared / "SKILL.md", shared / "references" / "artifact-semantics.md"):
+        if path.exists() and "ext kaoju bindings describe KAOJU:WHAT" not in path.read_text(encoding="utf-8"):
+            add(diagnostics, repo_root, path, 1, "RPS029", "shared Kaoju artifact guidance must route through ext kaoju bindings describe KAOJU:WHAT")
+
+    for skill_dir in sorted(path for path in kaoju_root.glob("isomer-kaoju-*") if path.is_dir()):
+        skill_md = skill_dir / "SKILL.md"
+        if skill_dir.name != "isomer-kaoju-shared" and skill_md.exists():
+            if "isomer-kaoju-shared" not in skill_md.read_text(encoding="utf-8"):
+                add(diagnostics, repo_root, skill_md, 1, "RPS029", "common Kaoju procedure must route through isomer-kaoju-shared")
+        binding_page = skill_dir / "artifact-bindings.md"
+        if binding_page.exists() and len(read_lines(binding_page)) > 25:
+            add(diagnostics, repo_root, binding_page, 1, "RPS024", "producer binding projection is oversized and competes with extension query authority")
 
 
 def _markdown_table(lines: tuple[str, ...], required_header: str) -> tuple[list[str], list[tuple[int, list[str]]]]:
@@ -1893,11 +2069,16 @@ def _kaoju_catalog_profiles(repo_root: Path) -> dict[str, dict[str, object]]:
     for entry in raw.get("profiles", []):
         if not isinstance(entry, dict):
             continue
-        semantic_id = f"{entry.get('family')}:{entry.get('semantic_id')}"
+        semantic_id = str(entry.get("semantic_id") or "")
+        try:
+            parse_artifact_identity(semantic_id, expected_extension="kaoju")
+        except ArtifactIdentityError:
+            continue
+        profile_slug = str(entry.get("profile_slug") or "")
         profile_ref = str(
             entry.get("ref")
             or "isomer:research/record-format/profile/"
-            f"{entry.get('family')}/{entry.get('artifact_class')}/{entry.get('semantic_id')}/{entry.get('version')}"
+            f"{entry.get('family')}/{entry.get('artifact_class')}/{profile_slug}/{entry.get('version')}"
         )
         normalized = dict(entry)
         normalized["profile_ref"] = profile_ref
@@ -1913,36 +2094,20 @@ def validate_kaoju_artifact_bindings(
 ) -> None:
     if config.semantic_id_pattern is None or config.binding_filename is None:
         return
-    registry_path = kaoju_root / "contracts" / "bindings.v2.json"
-    schema_path = kaoju_root / "contracts" / "bindings.v2.schema.json"
     summary_path = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md"
+    registry_path = summary_path
     try:
-        raw = json.loads(registry_path.read_text(encoding="utf-8"))
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        add(diagnostics, repo_root, registry_path, 1, "RPS021", f"Kaoju binding registry is unavailable: {exc}")
+        coverage = resource_coverage_diagnostics()
+        loaded_bindings = load_binding_registry()
+        loaded_semantics = load_semantic_registry()
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", f"Kaoju extension resources are unavailable: {exc}")
         return
-    schema_errors = sorted(
-        Draft202012Validator(schema).iter_errors(raw),
-        key=lambda error: tuple(str(part) for part in error.path),
-    )
-    for error in schema_errors:
-        location = "/".join(str(part) for part in error.path) or "<root>"
-        add(diagnostics, repo_root, registry_path, 1, "RPS021", f"{location}: {error.message}")
-    if not isinstance(raw, dict) or not isinstance(raw.get("bindings"), list):
-        return
-    bindings: dict[str, dict[str, object]] = {}
-    for index, candidate in enumerate(raw["bindings"]):
-        if not isinstance(candidate, dict):
-            continue
-        semantic_id = candidate.get("semantic_id")
-        if not isinstance(semantic_id, str) or config.semantic_id_pattern.fullmatch(semantic_id) is None:
-            add(diagnostics, repo_root, registry_path, 1, "RPS021", f"bindings/{index} has an invalid semantic id")
-            continue
-        if semantic_id in bindings:
-            add(diagnostics, repo_root, registry_path, 1, "RPS021", f"duplicate Kaoju binding for '{semantic_id}'")
-            continue
-        bindings[semantic_id] = candidate
+    for message in coverage:
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", message)
+    bindings = {semantic_id: asdict(binding) for semantic_id, binding in loaded_bindings.items()}
+    if set(bindings) != set(loaded_semantics):
+        add(diagnostics, repo_root, registry_path, 1, "RPS021", "Kaoju semantic and binding resource identifiers differ")
 
     catalog = _kaoju_catalog_profiles(repo_root)
     for semantic_id, binding in sorted(bindings.items()):
@@ -1970,7 +2135,7 @@ def validate_kaoju_artifact_bindings(
         add(diagnostics, repo_root, registry_path, 1, "RPS022", f"profile catalog id '{semantic_id}' has no binding")
 
     if summary_path.exists():
-        summary_ids = set(re.findall(r"`(kaoju:[a-z0-9][a-z0-9-]*)`", summary_path.read_text(encoding="utf-8")))
+        summary_ids = set(re.findall(r"`(KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*)`", summary_path.read_text(encoding="utf-8")))
         if summary_ids != set(bindings):
             missing = sorted(set(bindings) - summary_ids)
             extra = sorted(summary_ids - set(bindings))
@@ -1979,19 +2144,6 @@ def validate_kaoju_artifact_bindings(
         add(diagnostics, repo_root, summary_path, 1, "RPS022", "generated Kaoju semantic summary is missing")
 
     contract = load_kaoju_process_contract(kaoju_root, repo_root, diagnostics)
-    if contract is not None:
-        raw_aliases = contract.get("semantic_aliases", {})
-        if not isinstance(raw_aliases, dict):
-            add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", "semantic_aliases must be an object")
-        else:
-            for alias, disposition in sorted(raw_aliases.items()):
-                target = disposition.get("canonical_semantic_id") if isinstance(disposition, dict) else None
-                if not isinstance(alias, str) or not isinstance(target, str) or target not in bindings:
-                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' has no registered canonical target")
-                elif alias in bindings:
-                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' must not compete with a canonical binding")
-                if isinstance(disposition, dict) and disposition.get("automatic_promotion") is not False:
-                    add(diagnostics, repo_root, kaoju_root / "contracts" / "survey-process.v2.json", 1, "RPS021", f"semantic alias '{alias}' must prohibit automatic promotion")
     skill_names = set(str(value) for value in contract.get("skills", [])) if contract is not None else set(EXPECTED_KAOJU_SKILLS)
     allowed_participants = skill_names | {"isomer-srv-topic-env-setup"}
     produced: dict[str, set[str]] = {name: set() for name in skill_names}
@@ -2002,7 +2154,7 @@ def validate_kaoju_artifact_bindings(
             add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' has unknown producer '{producer}'")
         if isinstance(producer, str) and producer in produced:
             produced[producer].add(semantic_id)
-        if not isinstance(consumers, list) or any(consumer not in allowed_participants for consumer in consumers):
+        if not isinstance(consumers, (list, tuple)) or any(consumer not in allowed_participants for consumer in consumers):
             add(diagnostics, repo_root, registry_path, 1, "RPS022", f"binding '{semantic_id}' has an unknown consumer")
 
     for owner, expected_ids in sorted(produced.items()):
@@ -2014,10 +2166,10 @@ def validate_kaoju_artifact_bindings(
             continue
         text = binding_path.read_text(encoding="utf-8")
         match = re.search(r"(?m)^Produced semantic ids:\s*(.+)$", text)
-        actual_ids = set(re.findall(r"kaoju:[a-z0-9][a-z0-9-]*", match.group(1))) if match else set()
+        actual_ids = set(re.findall(r"KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*", match.group(1))) if match else set()
         if actual_ids != expected_ids:
             add(diagnostics, repo_root, binding_path, 1, "RPS022", f"producer summary differs from registry; expected={sorted(expected_ids)}, actual={sorted(actual_ids)}")
-        for term in ("contracts/bindings.v2.json", "project artifacts describe", "project artifacts put", "project artifacts revise"):
+        for term in ("ext kaoju bindings describe KAOJU:WHAT", "project artifacts put", "project artifacts revise"):
             if term not in text:
                 add(diagnostics, repo_root, binding_path, 1, "RPS024", f"binding summary is missing '{term}'")
         if re.search(r"--(?:record-kind|semantic-label|format-profile|payload-file|content-name)", text):
@@ -2030,7 +2182,7 @@ def validate_kaoju_artifact_bindings(
         if path.parts[-2:] == ("references", "artifact-recording.md"):
             continue
         for line_number, line in enumerate(read_lines(path), start=1):
-            for semantic_id in re.findall(r"kaoju:[a-z0-9][a-z0-9-]*", line):
+            for semantic_id in re.findall(r"KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*", line):
                 active_refs.setdefault(semantic_id, (path, line_number))
             if path.name == "SKILL.md" and (
                 (config.profile_namespace and config.profile_namespace in line)
@@ -2039,7 +2191,7 @@ def validate_kaoju_artifact_bindings(
             ):
                 add(diagnostics, repo_root, path, line_number, "RPS023", "active stage prose contains physical binding instead of routing to artifact-bindings.md")
     for semantic_id, (path, line_number) in sorted(active_refs.items()):
-        if semantic_id not in bindings:
+        if semantic_id not in bindings and semantic_id != "KAOJU:WHAT":
             add(diagnostics, repo_root, path, line_number, "RPS021", f"active Kaoju guidance references unregistered semantic id '{semantic_id}'")
 
     shared_recording = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-recording.md"
@@ -2054,12 +2206,12 @@ def validate_kaoju_architecture_guidance(kaoju_root: Path, repo_root: Path, diag
     """Check the cross-skill architecture rules that prevent workflow drift."""
 
     requirements = {
-        "isomer-kaoju-shared/SKILL.md": ("binding registry", "state DB", "Service Request", "Execution Adapter Command Request", "Run", "Gate"),
+        "isomer-kaoju-shared/SKILL.md": ("ext kaoju bindings describe", "state DB", "Service Request", "Execution Adapter Command Request", "Run", "Gate"),
         "isomer-kaoju-workspace-mgr/SKILL.md": ("binding registry", "state DB", "scope", "content mode", "Run", "reset"),
-        "isomer-kaoju-write/SKILL.md": ("MyST", "canonical", "accepted `kaoju:audit-report`", "paper-display", "project artifacts"),
+        "isomer-kaoju-write/SKILL.md": ("MyST", "canonical", "accepted `KAOJU:AUDIT-REPORT`", "paper-display", "project artifacts"),
         "isomer-kaoju-trial/SKILL.md": ("Service Request", "code_trial", "ambient environment", "method-trial-wrapper", "project artifacts"),
         "isomer-kaoju-reproduce/SKILL.md": ("genuine reproduction", "isomer-kaoju-trial", "capability-probe"),
-        "isomer-kaoju-export/SKILL.md": ("state DB", "isomer-cli ext kaoju wiki", "package-owned viewer", "Do not invoke", "project artifacts"),
+        "isomer-kaoju-export/SKILL.md": ("state DB", "isomer-cli ext kaoju wiki", "package-owned viewer", "Do not invoke", "typed Artifact service"),
     }
     for relative, terms in requirements.items():
         path = kaoju_root / relative
@@ -2197,6 +2349,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             validate_kaoju_direct_references(skill_dir, repo_root, diagnostics)
 
     documents = collect_documents(target, repo_root, file_roles)
+    deepsci_identity_ids = validate_deepsci_identity_inventory(skill_dirs, repo_root, diagnostics)
     registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "tbd-surface-registry.md"
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
@@ -2207,6 +2360,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
     semantic_registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "semantic-placeholders.md"
     if semantic_registry_path.exists():
         semantic_placeholder_ids = set(parse_semantic_placeholder_ids(read_lines(semantic_registry_path)))
+        deepsci_identity_ids.update(semantic_placeholder_ids)
     else:
         semantic_placeholder_ids = set()
         add(diagnostics, repo_root, semantic_registry_path, 1, "RPS009", "production DeepSci semantic-placeholder registry is missing")
@@ -2219,10 +2373,18 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             migration_placeholder_ids_by_skill[rel_skill_dir] = set(
                 parse_migration_placeholder_ids(read_lines(placeholder_path))
             )
+    migration_placeholder_ids_by_skill["__canonical_inventory__"] = set(deepsci_identity_ids)
+
+    kaoju_identity_ids: set[str] = set()
+    if (target / "kaoju").exists():
+        try:
+            kaoju_identity_ids = set(load_binding_registry())
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+    registered_by_family = {"deepsci": deepsci_identity_ids, "kaoju": kaoju_identity_ids}
 
     for document in documents:
         validate_tbd_placeholders(document, repo_root, diagnostics, registered_ids)
-        validate_rsch_object_placeholders(document, repo_root, diagnostics, semantic_placeholder_ids)
         validate_migration_placeholders(document, repo_root, diagnostics, migration_placeholder_ids_by_skill)
         validate_resolved_id_text(document, repo_root, diagnostics, allow_zones)
         validate_stale_terms(document, repo_root, diagnostics, allow_zones)
@@ -2233,6 +2395,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_deepsci_display_contract_guidance(document, repo_root, diagnostics)
         validate_deepsci_support_section_intros(document, repo_root, diagnostics)
         validate_kaoju_active_guidance(document, repo_root, diagnostics)
+        validate_artifact_identity_guidance(document, repo_root, diagnostics, registered_by_family)
     validate_deepsci_placeholder_bindings(skill_dirs, repo_root, diagnostics)
     validate_deepsci_payload_first_bindings(skill_dirs, repo_root, diagnostics)
     validate_workspace_manager_team_specialization_gate(target, repo_root, diagnostics)
@@ -2246,6 +2409,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_shared_references(kaoju_root, repo_root, diagnostics)
         validate_kaoju_artifact_bindings(kaoju_root, repo_root, diagnostics, family_by_key["kaoju"])
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
+        validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     return sorted(set(diagnostics))
 

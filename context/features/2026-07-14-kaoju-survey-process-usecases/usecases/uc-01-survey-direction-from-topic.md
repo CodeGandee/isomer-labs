@@ -6,7 +6,7 @@ As a researcher or Topic Actor, I want to give the system a topic and receive on
 
 ## Use Case
 
-The user (or a Topic Actor acting on behalf of the user) provides a topic, research question, or rough area of interest. The system inspects the topic intent, existing related works if any, and the Survey Contract boundary rules, then proposes concrete survey directions. Each direction includes a scoped research question, candidate source classes, coverage date, expected depth, and deliverables. The user selects one or more directions, adds a new custom direction, or refines/rejects directions through clarification-first A/B/C/D choices. The accepted directions are recorded as `kaoju:direction-set`, the durable "next direction set to be explored." The set becomes the input to the next use case (online collection / discovery) and may optionally be frozen into one or more Survey Contracts.
+The user (or a Topic Actor acting on behalf of the user) provides a topic, research question, or rough area of interest. The system inspects the topic intent, existing related works if any, and the Survey Contract boundary rules, then proposes concrete survey directions. Each direction includes a scoped research question, candidate source classes, coverage date, expected depth, and deliverables. The user selects one or more directions, adds a new custom direction, or refines/rejects directions through clarification-first A/B/C/D choices. The accepted directions are recorded as `KAOJU:DIRECTION-SET`, the durable "next direction set to be explored." The set becomes the input to the next use case (online collection / discovery) and may optionally be frozen into one or more Survey Contracts.
 
 ## Supported Actions
 
@@ -38,7 +38,7 @@ Select one or more proposed directions, add a custom direction, or refine direct
 - action
   - Actor then **selects** one or more directions, **adds** a new custom direction with a scoped question and boundary, or **asks** the system to refine a specific aspect (e.g., narrower boundary, different source class, later coverage date).
 - result
-  - Actor **gets** an updated direction set and, once accepted, a durable `kaoju:direction-set` ref that records every direction queued for exploration.
+  - Actor **gets** an updated direction set and, once accepted, a durable `KAOJU:DIRECTION-SET` ref that records every direction queued for exploration.
 
 ## Main Flow
 
@@ -48,9 +48,9 @@ Select one or more proposed directions, add a custom direction, or refine direct
 4. System proposes one or more survey directions, marking a suggested option.
 5. Actor selects one or more directions, adds a custom direction, asks for refinement, or requests more options.
 6. System updates the direction set and repeats clarification until the actor accepts the set.
-7. System writes the durable `kaoju:direction-set` recording every queued direction.
-8. System optionally freezes one or more `kaoju:survey-contract` artifacts from the direction set.
-9. System reports the next allowed stage (online collection / discovery) and the `kaoju:direction-set` ref.
+7. System writes the durable `KAOJU:DIRECTION-SET` recording every queued direction.
+8. System optionally freezes one or more `KAOJU:SURVEY-CONTRACT` artifacts from the direction set.
+9. System reports the next allowed stage (online collection / discovery) and the `KAOJU:DIRECTION-SET` ref.
 
 ## Alternative And Exception Flows
 
@@ -69,7 +69,7 @@ flowchart LR
     Resolve[Resolve topic & workspace]
     Propose[Propose directions]
     Clarify[Clarify A/B/C/D]
-    DirectionSet[Write kaoju:direction-set]
+    DirectionSet[Write KAOJU:DIRECTION-SET]
     Freeze[Freeze Survey Contract]
   end
 
@@ -94,16 +94,16 @@ sequenceDiagram
   Researcher->>System: Select, add, or refine directions
   System-->>Researcher: Updated direction set
   Researcher->>System: Accept direction set
-  System-->>Researcher: kaoju:direction-set ref + next stage
+  System-->>Researcher: KAOJU:DIRECTION-SET ref + next stage
 ```
 
 ## Durable Outputs
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:direction-set` — durable record of the next direction set to be explored, including each direction's scoped question, boundary, source classes, coverage date, expected depth, and deliverables.
-- `kaoju:survey-contract` — frozen Survey Contract(s) derived from the direction set when the actor chooses to lock scope.
-- `kaoju:proceed-decision` — if any direction implies empirical work later.
+- `KAOJU:DIRECTION-SET` — durable record of the next direction set to be explored, including each direction's scoped question, boundary, source classes, coverage date, expected depth, and deliverables.
+- `KAOJU:SURVEY-CONTRACT` — frozen Survey Contract(s) derived from the direction set when the actor chooses to lock scope.
+- `KAOJU:PROCEED-DECISION` — if any direction implies empirical work later.
 - Clarification record — retained A/B/C/D choices, custom direction input, and rationale (inside direction-set lineage).
 
 ## Example Prompt And Expected AI Response
@@ -146,7 +146,7 @@ AI:
 > 2. **C** — Activation-sparsity lineage
 > 3. **Custom** — Compare bandwidth assumptions in OS far-memory vs. LLM offloading papers
 >
-> I recorded this as `kaoju:direction-set` (`artifact-...`). The set contains 3 directions queued for exploration. Next stage is online collection / discovery. Do you want me to freeze a single combined Survey Contract now, or create one contract per direction?
+> I recorded this as `KAOJU:DIRECTION-SET` (`artifact-...`). The set contains 3 directions queued for exploration. Next stage is online collection / discovery. Do you want me to freeze a single combined Survey Contract now, or create one contract per direction?
 
 ## Assumptions And Decisions
 

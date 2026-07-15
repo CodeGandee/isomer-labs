@@ -4,7 +4,7 @@ Use this reference when the decision route needs longer tactical notes than the 
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<DECISION_CONTEXT_BRIEF>` or a route-bearing decision record, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, decision-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when active durable records conflict. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:DECISION-CONTEXT-BRIEF` or a route-bearing decision record, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, decision-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when active durable records conflict. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
@@ -15,8 +15,8 @@ When performing this step, execute these substeps in order.
 3. **Handle baseline reuse concretely**. When the judgment lands on baseline reuse or attachment, leave a concrete attach or confirm path, blocker, or waiver.
 4. **Select among packages explicitly**. When multiple candidates exist, record candidates, criteria, winner, and why alternatives lost.
 5. **Apply paper-route checks**. Judge method fidelity, evidence support, story coherence, exploration depth, publishability, and stop-loss conditions before write, review, or finalize.
-6. **Ask the user only for real choices**. Use <USER_DECISION_REQUEST> when preference, scope, or cost cannot be derived locally.
-7. **Write checkpoint memory when needed**. Create <DECISION_CHECKPOINT_MEMORY> when the authoritative resume point changes.
+6. **Ask the user only for real choices**. Use DEEPSCI:USER-DECISION-REQUEST when preference, scope, or cost cannot be derived locally.
+7. **Write checkpoint memory when needed**. Create DEEPSCI:DECISION-CHECKPOINT-MEMORY when the authoritative resume point changes.
 
 ## Preferences
 
@@ -50,4 +50,4 @@ Read these gates after producing the step output and before handoff or completio
 - Tactical fit: the decision changes the route once instead of re-explaining the same state.
 - Baseline fit: reuse, attach, or publish decisions leave a concrete next path or blocker.
 - Package-selection fit: candidate decisions name the winner and why alternatives lost.
-- User-request fit: <USER_DECISION_REQUEST> is used only for genuine preference, scope, or cost choices.
+- User-request fit: DEEPSCI:USER-DECISION-REQUEST is used only for genuine preference, scope, or cost choices.

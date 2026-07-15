@@ -1,6 +1,6 @@
 # Method Brief Template
 
-Use this reference to shape <METHOD_BRIEF> or <CANDIDATE_BRIEF> fields before ranking or promotion. Placeholder definitions live in `../migrate/placeholders.md`.
+Use this reference to shape DEEPSCI:METHOD-BRIEF or DEEPSCI:CANDIDATE-BRIEF fields before ranking or promotion. Placeholder definitions live in `../migrate/placeholders.md`.
 
 ## Guidance
 
@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <METHOD_BRIEF> must not omit keep-unchanged conditions.
+- DEEPSCI:METHOD-BRIEF must not omit keep-unchanged conditions.
 - Change layer and mechanism family must not be left implicit.
 - Implementation surface must distinguish local, moderate, and broad scope.
 - Promotion status must include why.

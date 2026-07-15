@@ -33,17 +33,17 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<PAPER_CONTROL_STATE>`
-- `<PAPER_CONTRACT>`
-- `<PAPER_OUTLINE>`
-- `<WRITING_PLAN>`
-- `<SOURCE_MATERIAL_LEDGER>`
-- `<CITATION_LEDGER>`
-- `<DISPLAY_PLAN>`
-- `<DRAFT_SECTION_SET>`
-- `<MANUSCRIPT_VALIDATION_REPORT>`
-- `<PAPER_BUNDLE_CHECKPOINT>`
-- `<WRITING_ROUTE_DECISION>`
+- `DEEPSCI:PAPER-CONTROL-STATE`
+- `DEEPSCI:PAPER-CONTRACT`
+- `DEEPSCI:PAPER-OUTLINE`
+- `DEEPSCI:WRITING-PLAN`
+- `DEEPSCI:SOURCE-MATERIAL-LEDGER`
+- `DEEPSCI:CITATION-LEDGER`
+- `DEEPSCI:DISPLAY-PLAN`
+- `DEEPSCI:DRAFT-SECTION-SET`
+- `DEEPSCI:MANUSCRIPT-VALIDATION-REPORT`
+- `DEEPSCI:PAPER-BUNDLE-CHECKPOINT`
+- `DEEPSCI:WRITING-ROUTE-DECISION`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -146,16 +146,16 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Build <PAPER_CONTROL_STATE> from the Research Topic, paper contract, current outline, evidence ledger, experiment matrix, figures, references, Workspace Runtime records, and active draft surfaces.
-- Produce or update <PAPER_CONTRACT> with the central claim, venue or report target, evidence boundary, required figures, citation state, and bundle status.
-- Check <PAPER_OUTLINE> for a real reader-facing thesis, scoped claims, method abstraction, evaluation plan, analysis plan, and evidence map.
-- Turn a valid outline into <WRITING_PLAN> with section jobs, source inputs, claim limits, figure needs, citation needs, and draft-stop criteria.
-- Create <SOURCE_MATERIAL_LEDGER> separating manuscript claims, experiment settings, reproducibility details, implementation details, artifact history, and appendix-only material.
-- Create <CITATION_LEDGER> from verified sources before citing.
-- Create <DISPLAY_PLAN> for figures, tables, and appendix displays.
-- Produce <DRAFT_SECTION_SET> from the section jobs, using references/section_rewrite_checklist.
-- Produce <MANUSCRIPT_VALIDATION_REPORT> covering claim support, citation legitimacy, figure readiness, section coverage, language hygiene, bundle readiness, and remaining blockers.
-- Submit <PAPER_BUNDLE_CHECKPOINT> when the draft, review package, or submission package is coherent; otherwise produce <WRITING_ROUTE_DECISION> to analysis, review, finalize, paper-outline, or a Nature companion skill as justified.
+- Build DEEPSCI:PAPER-CONTROL-STATE from the Research Topic, paper contract, current outline, evidence ledger, experiment matrix, figures, references, Workspace Runtime records, and active draft surfaces.
+- Produce or update DEEPSCI:PAPER-CONTRACT with the central claim, venue or report target, evidence boundary, required figures, citation state, and bundle status.
+- Check DEEPSCI:PAPER-OUTLINE for a real reader-facing thesis, scoped claims, method abstraction, evaluation plan, analysis plan, and evidence map.
+- Turn a valid outline into DEEPSCI:WRITING-PLAN with section jobs, source inputs, claim limits, figure needs, citation needs, and draft-stop criteria.
+- Create DEEPSCI:SOURCE-MATERIAL-LEDGER separating manuscript claims, experiment settings, reproducibility details, implementation details, artifact history, and appendix-only material.
+- Create DEEPSCI:CITATION-LEDGER from verified sources before citing.
+- Create DEEPSCI:DISPLAY-PLAN for figures, tables, and appendix displays.
+- Produce DEEPSCI:DRAFT-SECTION-SET from the section jobs, using references/section_rewrite_checklist.
+- Produce DEEPSCI:MANUSCRIPT-VALIDATION-REPORT covering claim support, citation legitimacy, figure readiness, section coverage, language hygiene, bundle readiness, and remaining blockers.
+- Submit DEEPSCI:PAPER-BUNDLE-CHECKPOINT when the draft, review package, or submission package is coherent; otherwise produce DEEPSCI:WRITING-ROUTE-DECISION to analysis, review, finalize, paper-outline, or a Nature companion skill as justified.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

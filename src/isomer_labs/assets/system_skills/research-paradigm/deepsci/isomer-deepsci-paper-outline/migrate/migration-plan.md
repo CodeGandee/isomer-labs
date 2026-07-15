@@ -33,14 +33,14 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<PAPER_STATE_SNAPSHOT>`
-- `<ONE_SENTENCE_PAPER_IDEA>`
-- `<CLAIM_EVIDENCE_BOUNDARY>`
-- `<PAPER_VIEW>`
-- `<EVIDENCE_VIEW>`
-- `<OUTLINE_VALIDATION_REPORT>`
-- `<SECTION_WRITING_PLAN>`
-- `<PAPER_OUTLINE_ROUTE_DECISION>`
+- `DEEPSCI:PAPER-STATE-SNAPSHOT`
+- `DEEPSCI:ONE-SENTENCE-PAPER-IDEA`
+- `DEEPSCI:CLAIM-EVIDENCE-BOUNDARY`
+- `DEEPSCI:PAPER-VIEW`
+- `DEEPSCI:EVIDENCE-VIEW`
+- `DEEPSCI:OUTLINE-VALIDATION-REPORT`
+- `DEEPSCI:SECTION-WRITING-PLAN`
+- `DEEPSCI:PAPER-OUTLINE-ROUTE-DECISION`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -81,14 +81,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Build <PAPER_STATE_SNAPSHOT> from current outline, paper contract, evidence surfaces, run records, figures, reviewer needs, and user constraints.
-- Produce <ONE_SENTENCE_PAPER_IDEA> stating what readers should remember and why the result matters.
-- Produce <CLAIM_EVIDENCE_BOUNDARY> that distinguishes measured facts, allowed interpretations, limitations, and unsupported claims.
-- Draft <PAPER_VIEW> with thesis, story spine, scoped claims, method abstraction, evaluation plan, analysis plan, and target reader logic.
-- Draft <EVIDENCE_VIEW> with runs, paths, metrics, settings, source data, figures, reproducibility details, and appendix-only support separated from manuscript story.
-- Produce <OUTLINE_VALIDATION_REPORT> using claim support, falsification boundary, method clarity, evaluation coverage, analysis maturity, and reviewer-risk checks.
+- Build DEEPSCI:PAPER-STATE-SNAPSHOT from current outline, paper contract, evidence surfaces, run records, figures, reviewer needs, and user constraints.
+- Produce DEEPSCI:ONE-SENTENCE-PAPER-IDEA stating what readers should remember and why the result matters.
+- Produce DEEPSCI:CLAIM-EVIDENCE-BOUNDARY that distinguishes measured facts, allowed interpretations, limitations, and unsupported claims.
+- Draft DEEPSCI:PAPER-VIEW with thesis, story spine, scoped claims, method abstraction, evaluation plan, analysis plan, and target reader logic.
+- Draft DEEPSCI:EVIDENCE-VIEW with runs, paths, metrics, settings, source data, figures, reproducibility details, and appendix-only support separated from manuscript story.
+- Produce DEEPSCI:OUTLINE-VALIDATION-REPORT using claim support, falsification boundary, method clarity, evaluation coverage, analysis maturity, and reviewer-risk checks.
 - If validation fails, revise the paper view, evidence view, or claim boundary.
-- When validation passes, produce <SECTION_WRITING_PLAN> for isomer-rsch-write, including section jobs, required displays, citation needs, and evidence limits.
+- When validation passes, produce DEEPSCI:SECTION-WRITING-PLAN for isomer-rsch-write, including section jobs, required displays, citation needs, and evidence limits.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

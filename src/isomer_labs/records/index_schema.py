@@ -67,7 +67,6 @@ record_index = Table(
     Column("topic_workspace_id", Text, nullable=False),
     Column("record_kind", Text, nullable=False),
     Column("status", Text, nullable=False),
-    Column("placeholder", Text),
     Column("artifact_family", Text),
     Column("semantic_id", Text),
     Column("scope_key", Text),

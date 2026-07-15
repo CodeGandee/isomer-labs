@@ -8,7 +8,7 @@ When performing this step, execute these substeps in order.
 
 1. **Choose the evidence flow**. Decide whether the answer is a read-only audit, one-slice analysis, multi-slice campaign, writing-facing slice, failed or infeasible slice, or blocker route.
 2. **Create only useful lineage**. Use a campaign lineage route when branch or workspace isolation, Canvas visibility, reviewability, writing traceability, or later replay matters.
-3. **Record launched slices immediately**. Every launched slice should become <ANALYSIS_SLICE_RECORD> before campaign-level interpretation.
+3. **Record launched slices immediately**. Every launched slice should become DEEPSCI:ANALYSIS-SLICE-RECORD before campaign-level interpretation.
 4. **Preserve non-success flows**. Failed, infeasible, partial, and superseded slices should still leave records, blockers, and route implications.
 5. **Avoid false campaign claims**. Existing-output audits can produce reports or decisions, but should not be described as launched campaign slices.
 
@@ -37,16 +37,16 @@ Read these gates after producing the step output and before handoff or completio
 
 ### Metrics
 
-- Launched-slice record coverage: fraction of launched slices that have <ANALYSIS_SLICE_RECORD> before campaign-level interpretation; higher is better.
+- Launched-slice record coverage: fraction of launched slices that have DEEPSCI:ANALYSIS-SLICE-RECORD before campaign-level interpretation; higher is better.
 - Flow-mismatch count: number of evidence flows whose selected route does not match existing, one-slice, multi-slice, writing-facing, failed, infeasible, or audit-only status; lower is better.
 
 ### Checks
 
 - Flow gate: the selected flow matches whether evidence is existing, one-slice, multi-slice, writing-facing, failed, infeasible, or audit-only.
 - Lineage gate: campaign lineage is used when it adds durable trust, not as automatic ceremony.
-- Record gate: every launched slice has <ANALYSIS_SLICE_RECORD>.
+- Record gate: every launched slice has DEEPSCI:ANALYSIS-SLICE-RECORD.
 - Non-success gate: failure, infeasibility, partial evidence, and blockers remain visible.
-- Summary gate: <ANALYSIS_CAMPAIGN_SUMMARY> aggregates only recorded evidence.
+- Summary gate: DEEPSCI:ANALYSIS-CAMPAIGN-SUMMARY aggregates only recorded evidence.
 
 ## Examples
 
@@ -55,19 +55,19 @@ Read these gates after producing the step output and before handoff or completio
 Use when one extra slice is enough but lineage or reviewability matters.
 
 1. Resolve unclear runtime identifiers.
-2. Create <ANALYSIS_CAMPAIGN_PLAN> with one slice when lineage matters.
+2. Create DEEPSCI:ANALYSIS-CAMPAIGN-PLAN with one slice when lineage matters.
 3. Run the returned slice in the assigned workspace or record why a different surface is used.
-4. Produce <ANALYSIS_SLICE_RECORD>.
-5. Record <ANALYSIS_ROUTE_DECISION>.
+4. Produce DEEPSCI:ANALYSIS-SLICE-RECORD.
+5. Record DEEPSCI:ANALYSIS-ROUTE-DECISION.
 
 ### Multi-Slice Evidence Package
 
 Use when several slices together answer one evidence question.
 
 1. Define the justified slice frontier.
-2. Create <ANALYSIS_CAMPAIGN_PLAN>.
+2. Create DEEPSCI:ANALYSIS-CAMPAIGN-PLAN.
 3. Execute slices one by one.
-4. Produce <ANALYSIS_SLICE_RECORD> after each launched slice.
+4. Produce DEEPSCI:ANALYSIS-SLICE-RECORD after each launched slice.
 5. Aggregate only after slice-level evidence exists.
 
 ### Writing-Facing Slice
@@ -75,9 +75,9 @@ Use when several slices together answer one evidence question.
 Use when the slice directly supports a paper-like contract.
 
 1. Recover selected outline, matrix, evidence ledger, section, claim, or reviewer target when relevant.
-2. Create <ANALYSIS_WRITEBACK_MAP>.
+2. Create DEEPSCI:ANALYSIS-WRITEBACK-MAP.
 3. Run the slice.
-4. Produce <ANALYSIS_SLICE_RECORD>.
+4. Produce DEEPSCI:ANALYSIS-SLICE-RECORD.
 5. Update the write-back target or record the stale target as a blocker.
 
 ### Failed or Infeasible Slice
@@ -86,7 +86,7 @@ Use when the slice cannot complete honestly.
 
 1. Stop or mark the slice when blocked.
 2. Keep the real blocker visible.
-3. Produce <ANALYSIS_SLICE_RECORD> with non-success status.
+3. Produce DEEPSCI:ANALYSIS-SLICE-RECORD with non-success status.
 4. Route to redesign, decision, experiment, or stop.
 
 ### Read-Only Bounded Audit

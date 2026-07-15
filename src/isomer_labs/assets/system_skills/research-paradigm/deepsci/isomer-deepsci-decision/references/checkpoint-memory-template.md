@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <DECISION_CHECKPOINT_MEMORY> must be written when the decision changes the authoritative resume point.
+- DEEPSCI:DECISION-CHECKPOINT-MEMORY must be written when the decision changes the authoritative resume point.
 - The checkpoint must not leave later turns guessing which node, branch, run, or blocker is active.
 - Reopen conditions must be concrete enough to prevent accidental churn.
 

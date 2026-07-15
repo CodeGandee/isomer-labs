@@ -11,13 +11,13 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
-Idea-recording reminder: rebuttal work may change evidence or wording, but it should update Research Ideas only when reviewer pressure changes the concept, creates a follow-up, or supersedes a route. Read `isomer-deepsci-shared/references/research-idea-recording.md` before that write, and use `--source-json-path` for one idea object rather than reviewer comments, action matrices, response letters, or rendered Markdown.
+Idea-recording reminder: rebuttal work may change evidence or wording, but it should update Research Ideas only when reviewer pressure changes the concept, creates a follow-up, or supersedes a route. Read `isomer-deepsci-shared` before that write, and use `--source-json-path` for one idea object rather than reviewer comments, action matrices, response letters, or rendered Markdown.
 
 Rebuttal turns reviewer pressure into auditable work items. It preserves reviewer meaning, assigns stable item ids, classifies each issue, routes real evidence gaps to the right skill, records text deltas, and assembles a point-by-point response only after critical feasible rows are resolved or explicitly limited.
 
@@ -43,14 +43,14 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Normalize the review package**. Produce `<REVIEW_PACKAGE_NORMALIZATION>` and `<REVIEWER_ITEM_MATRIX>` from reviewer text, keeping source-faithful wording, stable item ids, class, severity, affected claim, evidence anchor, and route. Use `references/review-matrix-template.md`.
+1. **Normalize the review package**. Produce `DEEPSCI:REVIEW-PACKAGE-NORMALIZATION` and `DEEPSCI:REVIEWER-ITEM-MATRIX` from reviewer text, keeping source-faithful wording, stable item ids, class, severity, affected claim, evidence anchor, and route. Use `references/review-matrix-template.md`.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-rebuttal --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Decide required changes**. Produce `<REBUTTAL_ACTION_PLAN>` using `references/action-plan-template.md`, classifying each item as explanation, text edit, evidence repackaging, new analysis, baseline recovery, literature positioning, limitation, claim downgrade, or manuscript rewrite.
-4. **Route evidence work only when needed**. For novelty or positioning route to scout, for comparator gaps route to baseline, and for reviewer-linked evidence route to analysis. Record `<REVIEWER_LINKED_EVIDENCE_TODO>` only when it answers named reviewer ids.
-5. **Route manuscript changes explicitly**. Route structure, claim-scope, and wording changes to write, and record `<MANUSCRIPT_TEXT_DELTA>` for each changed claim, section, caption, or limitation.
-6. **Update the rebuttal matrix**. After each routed fix, produce `<REBUTTAL_EVIDENCE_UPDATE>` using `references/evidence-update-template.md`, keeping status, evidence, text delta, limitation, and unresolved risk tied to item ids.
-7. **Assemble the response letter**. Draft `<RESPONSE_LETTER_DRAFT>` using `references/response-letter-template.md`, with respectful point-by-point answers, evidence basis, manuscript deltas, and explicit limitations.
-8. **Prepare final revision handoff**. Produce `<REVISION_HANDOFF_BUNDLE>` with response letter, text deltas, evidence updates, unresolved limitations, and route decision for finalization or continued work.
+3. **Decide required changes**. Produce `DEEPSCI:REBUTTAL-ACTION-PLAN` using `references/action-plan-template.md`, classifying each item as explanation, text edit, evidence repackaging, new analysis, baseline recovery, literature positioning, limitation, claim downgrade, or manuscript rewrite.
+4. **Route evidence work only when needed**. For novelty or positioning route to scout, for comparator gaps route to baseline, and for reviewer-linked evidence route to analysis. Record `DEEPSCI:REVIEWER-LINKED-EVIDENCE-TODO` only when it answers named reviewer ids.
+5. **Route manuscript changes explicitly**. Route structure, claim-scope, and wording changes to write, and record `DEEPSCI:MANUSCRIPT-TEXT-DELTA` for each changed claim, section, caption, or limitation.
+6. **Update the rebuttal matrix**. After each routed fix, produce `DEEPSCI:REBUTTAL-EVIDENCE-UPDATE` using `references/evidence-update-template.md`, keeping status, evidence, text delta, limitation, and unresolved risk tied to item ids.
+7. **Assemble the response letter**. Draft `DEEPSCI:RESPONSE-LETTER-DRAFT` using `references/response-letter-template.md`, with respectful point-by-point answers, evidence basis, manuscript deltas, and explicit limitations.
+8. **Prepare final revision handoff**. Produce `DEEPSCI:REVISION-HANDOFF-BUNDLE` with response letter, text deltas, evidence updates, unresolved limitations, and route decision for finalization or continued work.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-rebuttal --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -85,12 +85,12 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 
 ### Checks
 
-- Review-matrix check: <REVIEWER_ITEM_MATRIX> preserves reviewer wording faithfully and gives each substantive item a stable id, class, severity, effect, evidence anchor, and preliminary route.
-- Action-plan check: <REBUTTAL_ACTION_PLAN> records stance, route, sufficiency reason, existing evidence, missing work, and for experimental items a hypothesis, required metrics, minimal plan, enhanced plan, and fallback response.
+- Review-matrix check: DEEPSCI:REVIEWER-ITEM-MATRIX preserves reviewer wording faithfully and gives each substantive item a stable id, class, severity, effect, evidence anchor, and preliminary route.
+- Action-plan check: DEEPSCI:REBUTTAL-ACTION-PLAN records stance, route, sufficiency reason, existing evidence, missing work, and for experimental items a hypothesis, required metrics, minimal plan, enhanced plan, and fallback response.
 - Experiment-routing check: supplementary runs are launched only for named reviewer concerns and link back to reviewer ids and paper experiment matrix ids when those ids exist.
-- Text-delta check: <MANUSCRIPT_TEXT_DELTA> identifies section, old claim or weakness, new wording or scope, and evidence basis for manuscript changes.
-- Response-honesty check: <RESPONSE_LETTER_DRAFT> is evidence-backed, calm, specific, and explicit about limitations or infeasible requests instead of promising unsupported work.
-- Handoff check: <REVISION_HANDOFF_BUNDLE> covers overall response, reviewer-specific replies, revision strategy, evidence mapping, unresolved risks, and next route.
+- Text-delta check: DEEPSCI:MANUSCRIPT-TEXT-DELTA identifies section, old claim or weakness, new wording or scope, and evidence basis for manuscript changes.
+- Response-honesty check: DEEPSCI:RESPONSE-LETTER-DRAFT is evidence-backed, calm, specific, and explicit about limitations or infeasible requests instead of promising unsupported work.
+- Handoff check: DEEPSCI:REVISION-HANDOFF-BUNDLE covers overall response, reviewer-specific replies, revision strategy, evidence mapping, unresolved risks, and next route.
 
 ## Reference Routing
 
@@ -106,8 +106,8 @@ Read these pages as needed:
 This skill can end when all applicable checks are true:
 
 - Every reviewer-critical feasible matrix row is resolved, routed, or explicitly limited.
-- `<RESPONSE_LETTER_DRAFT>` cites the evidence or text delta for each response.
-- `<REVISION_HANDOFF_BUNDLE>` records remaining risks and final route.
+- `DEEPSCI:RESPONSE-LETTER-DRAFT` cites the evidence or text delta for each response.
+- `DEEPSCI:REVISION-HANDOFF-BUNDLE` records remaining risks and final route.
 
 ## Guardrails
 

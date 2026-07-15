@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-import json
 import re
 import unittest
 from pathlib import Path
+
+from isomer_labs.kaoju.contracts import load_contract
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 KAOJU_ROOT = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "kaoju"
 
-CONTRACT = json.loads((KAOJU_ROOT / "contracts/survey-process.v2.json").read_text(encoding="utf-8"))
-EXPECTED_SKILLS = set(CONTRACT["skills"])
-COMMANDS = set(CONTRACT["survey_intents"]) | set(CONTRACT["compatibility_procedures"]) | set(CONTRACT["manager_actions"])
+
+CONTRACT = load_contract()
+EXPECTED_SKILLS = set(CONTRACT.skills)
+COMMANDS = set(CONTRACT.survey_intents) | set(CONTRACT.compatibility_procedures) | set(CONTRACT.manager_actions)
 
 
 class KaojuSkillAssetTests(unittest.TestCase):

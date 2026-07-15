@@ -3,25 +3,22 @@
 from __future__ import annotations
 
 import json
-import re
 from typing import Any, Iterable, Mapping
 
 from sqlalchemy import create_engine, select, text
 
 from isomer_labs.core.diagnostics import Diagnostic
+from isomer_labs.core.artifact_identity import valid_artifact_identity
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.runtime.store import open_workspace_runtime
 
 from .index_schema import record_index
 
 
-SEMANTIC_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*$")
-
-
 def valid_semantic_id(value: str) -> bool:
     """Return whether a semantic id uses canonical family syntax."""
 
-    return SEMANTIC_ID_RE.fullmatch(value) is not None
+    return valid_artifact_identity(value)
 
 
 def invalid_query_payload(operation: str, message: str) -> tuple[dict[str, object], list[Any]]:

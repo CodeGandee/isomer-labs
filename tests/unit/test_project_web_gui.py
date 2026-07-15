@@ -270,7 +270,7 @@ class ProjectWebGuiTests(unittest.TestCase):
                     "title": "Source Digest",
                     "summary": "Exact inspection of one work.",
                     "artifact_family": "kaoju",
-                    "semantic_id": "kaoju:source-digest",
+                    "semantic_id": "KAOJU:SOURCE-DIGEST",
                     "artifact_type": "source-digest",
                     "procedure": "landscape-pass",
                     "sections": {
@@ -298,7 +298,7 @@ class ProjectWebGuiTests(unittest.TestCase):
                 "--record-kind",
                 "evidence_item",
                 "--semantic-id",
-                "kaoju:source-digest",
+                "KAOJU:SOURCE-DIGEST",
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/evidence/source-digest/v1",
                 "--payload-file",
@@ -313,7 +313,7 @@ class ProjectWebGuiTests(unittest.TestCase):
         validate_gui_payload(detail, RecordDetailResponseContract)
         self.assertTrue(detail["ok"], detail)
         self.assertEqual("Source Digest", detail["query_summary"]["title"])
-        self.assertEqual("kaoju:source-digest", detail["query_summary"]["semantic_id"])
+        self.assertEqual("KAOJU:SOURCE-DIGEST", detail["query_summary"]["semantic_id"])
         self.assertEqual("kaoju", detail["query_summary"]["artifact_family"])
         self.assertEqual("Method uses retrieval.", detail["facets"]["claims"][0]["claim"])
         self.assertTrue(any(item["file_role"] == "structured_payload" for item in detail["files"]))

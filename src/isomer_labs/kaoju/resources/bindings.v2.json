@@ -1,0 +1,2091 @@
+{
+  "schema_version": "isomer-kaoju-binding-registry.v2",
+  "family": "kaoju",
+  "bindings": [
+    {
+      "semantic_id": "KAOJU:WORKSPACE-READINESS",
+      "artifact_type": "workspace-readiness",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/workspace-readiness/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [
+        "binding_index"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "none",
+        "dimension": "topic"
+      },
+      "latest_selection_policy": "topic_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:BINDING-INDEX",
+      "artifact_type": "binding-index",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/binding-index/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "none",
+        "dimension": "topic"
+      },
+      "latest_selection_policy": "topic_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-CONTRACT",
+      "artifact_type": "survey-contract",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/contract/survey-contract/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-discover",
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "relationships": [],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "active"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:DIRECTION-SET",
+      "artifact_type": "direction-set",
+      "record_kind": "decision_record",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/decision/direction-set/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-discover",
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [
+        "survey_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "active"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-INTENT",
+      "artifact_type": "comparison-intent",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/contract/comparison-intent/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-compare"
+      ],
+      "relationships": [
+        "survey_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PROCEED-DECISION",
+      "artifact_type": "proceed-decision",
+      "record_kind": "decision_record",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/decision/proceed-decision/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-pipeline",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [
+        "run"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "request"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:DISCOVERY-LEDGER",
+      "artifact_type": "discovery-ledger",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/catalog/discovery-ledger/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [
+        "survey_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "direction"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:READING-LIST",
+      "artifact_type": "reading-list",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/catalog/reading-list/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-acquire",
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "direction_set",
+        "discovery_ledger"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "direction"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:RELATED-WORK-CATALOG",
+      "artifact_type": "related-work-catalog",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/catalog/related-work-catalog/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "survey_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:RELATED-WORK-DELTA",
+      "artifact_type": "related-work-delta",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/catalog/related-work-delta/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-discover"
+      ],
+      "relationships": [
+        "related_work_catalog"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "direction"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:CURATED-INTAKE-DELTA",
+      "artifact_type": "curated-intake-delta",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/catalog/curated-intake-delta/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-acquire"
+      ],
+      "relationships": [
+        "related_work_catalog"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:ARTIFACT-LIBRARY",
+      "artifact_type": "artifact-library",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/material/artifact-library/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "material"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "none",
+        "dimension": "topic"
+      },
+      "latest_selection_policy": "topic_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:ASSOCIATED-SOURCE-CODE",
+      "artifact_type": "associated-source-code",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/material/associated-source-code/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "source",
+        "repository"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "source"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:MATERIAL-ACQUISITION-MANIFEST",
+      "artifact_type": "material-acquisition-manifest",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/material/material-acquisition-manifest/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine"
+      ],
+      "relationships": [
+        "source"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "source"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:TOPIC-DATASET-MANIFEST",
+      "artifact_type": "topic-dataset-manifest",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/material/topic-dataset-manifest/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-compare"
+      ],
+      "relationships": [
+        "dataset"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "none",
+        "dimension": "topic"
+      },
+      "latest_selection_policy": "topic_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:GENERATED-DATASET",
+      "artifact_type": "generated-dataset",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/material/generated-dataset/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "trial_run"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SOURCE-DIGEST",
+      "artifact_type": "source-digest",
+      "record_kind": "evidence_item",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/evidence/source-digest/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-examine",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "source",
+        "repository"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "source"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "supported"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SOURCE-ACCESS-BLOCKER",
+      "artifact_type": "source-access-blocker",
+      "record_kind": "evidence_item",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/evidence/source-access-blocker/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-pipeline",
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "source"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "source"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "blocked",
+          "resolved"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:CLAIM-EVIDENCE-LEDGER",
+      "artifact_type": "claim-evidence-ledger",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/evidence/claim-evidence-ledger/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-examine",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "source_digest"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:THEORY-COMPARISON",
+      "artifact_type": "theory-comparison",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/comparison/theory-comparison/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "relationships": [
+        "source_digest"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-MATRIX",
+      "artifact_type": "comparison-matrix",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/comparison/comparison-matrix/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "relationships": [
+        "comparison_run"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-RUN",
+      "artifact_type": "comparison-run",
+      "record_kind": "run",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/comparison-run/v1",
+      "semantic_label": "topic.records.runs",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "comparison_intent"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "complete",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:AUDIT-REPORT",
+      "artifact_type": "audit-report",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/audit-report/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-audit",
+      "consumers": [
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "claim_ledger",
+        "catalog"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:CLAIM-STATUS-TABLE",
+      "artifact_type": "claim-status-table",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/claim-status-table/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-audit",
+      "consumers": [
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "claim_ledger"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:FIELD-SUMMARY",
+      "artifact_type": "field-summary",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/field-summary/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-synthesize",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "audit_report"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:KAOJU-DOSSIER",
+      "artifact_type": "kaoju-dossier",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/kaoju-dossier/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-synthesize",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "record"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "survey"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-TERMINAL-REPORT",
+      "artifact_type": "survey-terminal-report",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/survey-terminal-report/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-pipeline",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "relationships": [
+        "run"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "request"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:ENV-PREP-PLAN",
+      "artifact_type": "env-prep-plan",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/environment/env-prep-plan/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-srv-topic-env-setup"
+      ],
+      "relationships": [
+        "repository",
+        "research_task",
+        "run"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "environment"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:ENV-GATE-REVISION",
+      "artifact_type": "env-gate-revision",
+      "record_kind": "gate",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/environment/env-gate-revision/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "env_prep_plan",
+        "service_request"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "environment"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PIXI-ENV-REF",
+      "artifact_type": "pixi-env-ref",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/environment/pixi-env-ref/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "env_gate_revision"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "environment"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SMOKE-RUN-SCRIPT",
+      "artifact_type": "smoke-run-script",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "pixi_env",
+        "repository"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "environment"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SMOKE-RUN-RESULT",
+      "artifact_type": "smoke-run-result",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/environment/smoke-run-result/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "smoke_script",
+        "run",
+        "pixi_env"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "environment"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-PLAN",
+      "artifact_type": "method-trial-plan",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/method-trial-plan/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "relationships": [
+        "repository",
+        "pixi_env",
+        "dataset"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-WRAPPER",
+      "artifact_type": "method-trial-wrapper",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "trial_plan",
+        "repository"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL",
+      "artifact_type": "method-trial",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/method-trial/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-reproduce",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "source",
+        "run"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "failed"
+        ],
+        "gate": "human"
+      },
+      "status": "compatibility",
+      "migration": {
+        "canonical_successor": "KAOJU:METHOD-TRIAL-RESULT",
+        "automatic_promotion": false,
+        "permitted_relationships": [
+          "derived_from",
+          "selected_from"
+        ]
+      }
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-RUN",
+      "artifact_type": "method-trial-run",
+      "record_kind": "run",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/method-trial-run/v1",
+      "semantic_label": "topic.records.runs",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "trial_plan",
+        "repository",
+        "pixi_env",
+        "dataset"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "complete",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-RESULT",
+      "artifact_type": "method-trial-result",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/method-trial-result/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "relationships": [
+        "trial_run",
+        "trial_plan"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "trial"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-CONTRACT",
+      "artifact_type": "paper-contract",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/contract/paper-contract/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "audit_report",
+        "field_summary",
+        "claim_status"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-STRUCTURE-MYST",
+      "artifact_type": "paper-structure-myst",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
+      "artifact_type": "paper-template-myst",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_structure"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-MYST",
+      "artifact_type": "paper-draft-myst",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_structure",
+        "paper_template",
+        "citation_map"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-MD",
+      "artifact_type": "paper-draft-md",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_draft_myst"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DISPLAY",
+      "artifact_type": "paper-display",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "evidence"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:CITATION-MAP",
+      "artifact_type": "citation-map",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/evidence/citation-map/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_draft",
+        "evidence"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-EXPORT",
+      "artifact_type": "paper-template-export",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_template",
+        "paper_draft"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MANIFEST",
+      "artifact_type": "paper-template-manifest",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/paper-template-manifest/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "template_export",
+        "source_revision"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-REVISION-LOG",
+      "artifact_type": "paper-revision-log",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/paper-revision-log/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_revision"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-TEX",
+      "artifact_type": "paper-template-tex",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_template_myst"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-TEX",
+      "artifact_type": "paper-draft-tex",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_draft_myst",
+        "paper_template_tex"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-PDF",
+      "artifact_type": "paper-pdf",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_build_run",
+        "paper_draft_tex"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "publication"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-COMPILE-LOG",
+      "artifact_type": "paper-compile-log",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.logs",
+      "content_mode": "ordinary_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_build_run"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "file-integrity"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "failed"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-PDF-REVISION-LOG",
+      "artifact_type": "paper-pdf-revision-log",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/paper-pdf-revision-log/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_pdf",
+        "paper_build_run"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-BUILD-RUN",
+      "artifact_type": "paper-build-run",
+      "record_kind": "run",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/run/paper-build-run/v1",
+      "semantic_label": "topic.records.runs",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_draft_tex",
+        "paper_template_tex"
+      ],
+      "revision_mode": "immutable",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "immutable_ref",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "complete",
+          "failed"
+        ],
+        "gate": "publication"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-VALIDATION-REPORT",
+      "artifact_type": "paper-validation-report",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/report/paper-validation-report/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_build_run",
+        "paper_pdf",
+        "audit_report"
+      ],
+      "revision_mode": "append_only",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "append_only",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked",
+          "failed"
+        ],
+        "gate": "publication"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PUBLICATION-BUNDLE",
+      "artifact_type": "publication-bundle",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/bundle/publication-bundle/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "paper_draft_myst",
+        "paper_pdf",
+        "paper_validation",
+        "audit_report"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "publication"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-MANUSCRIPT",
+      "artifact_type": "survey-manuscript",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/manuscript/survey-manuscript/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "archived"
+        ],
+        "gate": "publication"
+      },
+      "status": "compatibility",
+      "migration": {
+        "canonical_successor": "KAOJU:PAPER-DRAFT-MYST",
+        "automatic_promotion": false,
+        "permitted_relationships": [
+          "prior_work",
+          "legacy_source"
+        ]
+      }
+    },
+    {
+      "semantic_id": "KAOJU:WRITING-TEMPLATE",
+      "artifact_type": "writing-template",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/writing-template/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [
+        "paper_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "optional",
+        "dimension": "paper_line"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "archived"
+        ],
+        "gate": "none"
+      },
+      "status": "compatibility",
+      "migration": {
+        "canonical_successor": "KAOJU:PAPER-TEMPLATE-MYST",
+        "automatic_promotion": false,
+        "permitted_relationships": [
+          "prior_work",
+          "legacy_source"
+        ]
+      }
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-EXPORT",
+      "artifact_type": "llm-wiki-export",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "accepted_artifact"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-METADATA",
+      "artifact_type": "llm-wiki-metadata",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/llm-wiki-metadata/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "wiki_export",
+        "accepted_artifact"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-VIEWER",
+      "artifact_type": "llm-wiki-viewer",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "wiki_export"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-VIEWER-MANIFEST",
+      "artifact_type": "llm-wiki-viewer-manifest",
+      "record_kind": "view_manifest",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/control/llm-wiki-viewer-manifest/v1",
+      "semantic_label": "topic.records.views",
+      "content_mode": "structured_file",
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "relationships": [
+        "wiki_viewer",
+        "wiki_export"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "export_target"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "stale"
+        ],
+        "gate": "network_exposure"
+      },
+      "status": "active"
+    }
+  ]
+}

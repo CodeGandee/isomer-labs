@@ -5,9 +5,13 @@ description: Use when a research task matches one of the named single-pass resea
 
 # Isomer Research Pipeline
 
+## Plan First
+
+Pipeline execution is a complex process. Before executing any pipeline task, use your internal todo list or planning tool to create a plan for the requested work. Keep the plan current as stages complete, blockers appear, or the requested scope changes.
+
 ## Overview
 
-`isomer-deepsci-pipeline` executes one named single-pass research procedure. Each procedure (called a "pass") is a linear sequence of production DeepSci skills with automatic artifact handoffs. The skill does not loop, retry, or make macro-strategy decisions; it runs the selected pass once and produces a `pipeline-terminal-report` for an external controller.
+`isomer-deepsci-pipeline` executes one named single-pass research procedure. Each procedure (called a "pass") is a linear sequence of production DeepSci skills with automatic artifact handoffs. The skill does not loop, retry, or make macro-strategy decisions; it runs the selected pass once and produces a `DEEPSCI:PIPELINE-TERMINAL-REPORT` for an external controller.
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
@@ -22,14 +26,14 @@ Use this skill when a research task matches one named single-pass procedure and 
 When this skill is invoked, execute the following steps in order.
 
 1. **Resolve the pipeline name**. Read the user request and determine which pass to run. See **Subcommands**.
-2. **Run the latest context preflight**. Before accepting durable inputs or emitting durable records, load or create a `latest-context-snapshot` for the active Research Topic. Compare prompt memory, chat memory, prior prose, and worker-local files against durable records. Report conflicts instead of silently overwriting durable state.
+2. **Run the latest context preflight**. Before accepting durable inputs or emitting durable records, load or create a `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` for the active Research Topic. Compare prompt memory, chat memory, prior prose, and worker-local files against durable records. Report conflicts instead of silently overwriting durable state.
 3. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-pipeline --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-4. **Validate the recipe context**. Build `pipeline-recipe-context` from the named pass, optional starting stage, input artifacts, parameters, and budget or checkpoint preferences.
-5. **Invoke the pass subcommand**. Execute the workflow in `commands/<pass-name>.md`. Let the subcommand load its recipe, run the stages, and produce `pipeline-terminal-report`.
+4. **Validate the recipe context**. Build `DEEPSCI:PIPELINE-RECIPE-CONTEXT` from the named pass, optional starting stage, input artifacts, parameters, and budget or checkpoint preferences.
+5. **Invoke the pass subcommand**. Execute the workflow in `commands/<pass-name>.md`. Let the subcommand load its recipe, run the stages, and produce `DEEPSCI:PIPELINE-TERMINAL-REPORT`.
 6. **Return the terminal report**. Surface the report to the caller or external controller; do not choose the next macro action.
 7. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-pipeline --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, its subcommands, and the user's request, then execute the plan.
+If the user's task does not map cleanly to these steps, refine the existing plan into a step-by-step plan from this skill, its subcommands, and the user's request, then execute the plan.
 
 ## Subcommands
 
@@ -63,7 +67,7 @@ Every pass subcommand follows these rules unless its own page overrides them.
 - Load the recipe from `commands/<pass-name>.md` and run the stages listed there.
 - Hand artifacts from stage N to stage N+1 automatically.
 - Apply `references/transition-rules.md` after each stage to decide continue, pause, or block.
-- Produce `pipeline-terminal-report` using `references/terminal-report-template.md`.
+- Produce `DEEPSCI:PIPELINE-TERMINAL-REPORT` using `references/terminal-report-template.md`.
 - Preserve each wrapped skill's callbacks, quality gates, and blocker semantics.
 
 ## Placeholders and Storage
@@ -77,9 +81,9 @@ Every pass subcommand follows these rules unless its own page overrides them.
 
 This skill can end only when one of the following is durably true:
 
-- The selected pass completed and `pipeline-terminal-report` has `status: complete`.
-- A stage paused the pipeline and `pipeline-terminal-report` has `status: paused` with a `resume_point`.
-- A stage blocked the pipeline and `pipeline-terminal-report` has `status: blocked` with a `resume_point` and blocker record.
+- The selected pass completed and `DEEPSCI:PIPELINE-TERMINAL-REPORT` has `status: complete`.
+- A stage paused the pipeline and `DEEPSCI:PIPELINE-TERMINAL-REPORT` has `status: paused` with a `resume_point`.
+- A stage blocked the pipeline and `DEEPSCI:PIPELINE-TERMINAL-REPORT` has `status: blocked` with a `resume_point` and blocker record.
 - The requested pass is unknown and a help or `list-passes` response was returned.
 
 ## Operational Notes

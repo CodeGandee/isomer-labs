@@ -9,7 +9,7 @@ description: Use when a Kaoju survey needs broad field discovery, curated refere
 
 Find relevant work through recorded routes and preserve the difference between a conceptual work, its versions, and linked implementation materials. Search rank, date, and citation count inform discovery but never decide inclusion alone.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:discovery-ledger`, `kaoju:related-work-delta`, and `kaoju:curated-intake-delta` exactly. Return a storage blocker instead of inventing a path, profile, direct Markdown state, or untracked JSON.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:DISCOVERY-LEDGER`, `KAOJU:RELATED-WORK-DELTA`, and `KAOJU:CURATED-INTAKE-DELTA` exactly. Return a storage blocker instead of inventing a path, profile, direct Markdown state, or untracked JSON.
 
 ## When to Use
 
@@ -45,7 +45,7 @@ Every Discovery Ledger entry records the query text or seed, provider or access 
 
 ## Artifact Operations
 
-Resolve each produced semantic id with `isomer-cli --print-json project artifacts describe <semantic-id>`. Use `project artifacts put` for append-only deltas and new scoped objects and `project artifacts revise` for a current Reading List or catalog update; never repeat or override inferred record kind, profile, label, scope, or locator fields.
+Resolve each produced semantic id with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Use `project artifacts put` for append-only deltas and new scoped objects and `project artifacts revise` for a current Reading List or catalog update; never repeat or override inferred record kind, profile, label, scope, or locator fields.
 
 ## Reference Routing
 

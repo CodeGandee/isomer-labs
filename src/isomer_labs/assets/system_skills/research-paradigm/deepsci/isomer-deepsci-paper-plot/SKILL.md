@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,14 +41,14 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Confirm the chart question**. Produce `<CHART_QUESTION>` with comparison, units, grouping, key message, required labels, and output target.
+1. **Confirm the chart question**. Produce `DEEPSCI:CHART-QUESTION` with comparison, units, grouping, key message, required labels, and output target.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Choose the bundled style**. Select `<PLOT_STYLE_SELECTION>` from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
+3. **Choose the bundled style**. Select `DEEPSCI:PLOT-STYLE-SELECTION` from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
 4. **Read the style reference**. Read the matching reference page before editing code, including colors, rcParams, layout, legend, width, tick, and annotation expectations.
-5. **Copy the template script**. Create `<PLOT_TEMPLATE_COPY>` by copying the matching script from `scripts/` into a Research Task figure area in the active Topic Workspace or Agent Workspace. Do not mutate the bundled template.
-6. **Replace data and labels only**. Record `<PLOT_DATA_SUBSTITUTION_RECORD>` for changed data arrays, labels, units, category names, legend text, and output filenames. Avoid unrelated style rewrites.
-7. **Run and inspect the copied script**. Generate `<FIRST_PASS_FIGURE>` through the selected execution route, then inspect the actual render and record `<PLOT_RENDER_INSPECTION>`.
-8. **Route durable figures**. If the figure is paper-facing, appendix-facing, milestone-facing, or final, create `<FIGURE_POLISH_HANDOFF>` for `isomer-deepsci-figure-polish`; otherwise stop with the first-pass figure and substitution record.
+5. **Copy the template script**. Create `DEEPSCI:PLOT-TEMPLATE-COPY` by copying the matching script from `scripts/` into a Research Task figure area in the active Topic Workspace or Agent Workspace. Do not mutate the bundled template.
+6. **Replace data and labels only**. Record `DEEPSCI:PLOT-DATA-SUBSTITUTION-RECORD` for changed data arrays, labels, units, category names, legend text, and output filenames. Avoid unrelated style rewrites.
+7. **Run and inspect the copied script**. Generate `DEEPSCI:FIRST-PASS-FIGURE` through the selected execution route, then inspect the actual render and record `DEEPSCI:PLOT-RENDER-INSPECTION`.
+8. **Route durable figures**. If the figure is paper-facing, appendix-facing, milestone-facing, or final, create `DEEPSCI:FIGURE-POLISH-HANDOFF` for `isomer-deepsci-figure-polish`; otherwise stop with the first-pass figure and substitution record.
 9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-plot --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -108,8 +108,8 @@ Read these pages as needed:
 This skill can end when all applicable checks are true:
 
 - A copied script exists outside the bundled template area.
-- `<FIRST_PASS_FIGURE>` was rendered and inspected.
-- Durable or paper-facing outputs have a `<FIGURE_POLISH_HANDOFF>`.
+- `DEEPSCI:FIRST-PASS-FIGURE` was rendered and inspected.
+- Durable or paper-facing outputs have a `DEEPSCI:FIGURE-POLISH-HANDOFF`.
 
 ## Guardrails
 

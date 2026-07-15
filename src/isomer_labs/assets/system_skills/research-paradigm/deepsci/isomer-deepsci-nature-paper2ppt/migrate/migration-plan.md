@@ -33,15 +33,15 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<PAPER_PRESENTATION_SOURCE_PACKET>`
-- `<PAPER_TYPE_CLASSIFICATION>`
-- `<CHINESE_PRESENTATION_PLAN>`
-- `<PRESENTATION_FIGURE_SELECTION>`
-- `<PRESENTATION_ASSET_MANIFEST>`
-- `<CHINESE_SLIDE_CONTENT>`
-- `<PPTX_DECK>`
-- `<PPTX_QA_REPORT>`
-- `<PPTX_REVISION_LOG>`
+- `DEEPSCI:PAPER-PRESENTATION-SOURCE-PACKET`
+- `DEEPSCI:PAPER-TYPE-CLASSIFICATION`
+- `DEEPSCI:CHINESE-PRESENTATION-PLAN`
+- `DEEPSCI:PRESENTATION-FIGURE-SELECTION`
+- `DEEPSCI:PRESENTATION-ASSET-MANIFEST`
+- `DEEPSCI:CHINESE-SLIDE-CONTENT`
+- `DEEPSCI:PPTX-DECK`
+- `DEEPSCI:PPTX-QA-REPORT`
+- `DEEPSCI:PPTX-REVISION-LOG`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -81,14 +81,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <PAPER_PRESENTATION_SOURCE_PACKET> with metadata, abstract, headings, figure legends, table captions, claims, methods, results, and limitations from available source material.
-- Produce <PAPER_TYPE_CLASSIFICATION> before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
+- Produce DEEPSCI:PAPER-PRESENTATION-SOURCE-PACKET with metadata, abstract, headings, figure legends, table captions, claims, methods, results, and limitations from available source material.
+- Produce DEEPSCI:PAPER-TYPE-CLASSIFICATION before slide planning: discovery, mechanism, method, resource, clinical, materials/engineering, review, or another justified type.
 - Select claim-first, question-to-evidence, problem-to-solution, workflow-to-validation, evidence-map, or another suited logic.
-- Produce <CHINESE_PRESENTATION_PLAN> with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
-- Produce <PRESENTATION_FIGURE_SELECTION> with only figures and panels that carry the argument.
-- Produce <PRESENTATION_ASSET_MANIFEST> for figure crops, rendered pages, provenance, captions, and local asset quality.
-- Produce <CHINESE_SLIDE_CONTENT> with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
-- Create <PPTX_DECK>, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce <PPTX_QA_REPORT> plus <PPTX_REVISION_LOG> when revisions occur.
+- Produce DEEPSCI:CHINESE-PRESENTATION-PLAN with 10-16 slide sequence, story spine, section flow, and audience-facing emphasis.
+- Produce DEEPSCI:PRESENTATION-FIGURE-SELECTION with only figures and panels that carry the argument.
+- Produce DEEPSCI:PRESENTATION-ASSET-MANIFEST for figure crops, rendered pages, provenance, captions, and local asset quality.
+- Produce DEEPSCI:CHINESE-SLIDE-CONTENT with Chinese titles, bullets, captions, takeaways, and speaker notes, preserving evidence limits and citation/attribution needs.
+- Create DEEPSCI:PPTX-DECK, reopen or inspect package structure, render previews when a renderer is available, revise defects, and produce DEEPSCI:PPTX-QA-REPORT plus DEEPSCI:PPTX-REVISION-LOG when revisions occur.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

@@ -11,7 +11,7 @@ When performing this step, execute these substeps in order.
 3. **Validate qualitative evidence**. Use qualitative or reviewer-example evidence only with a concrete sample, rubric or inspection basis, trace, and caveat.
 4. **Stop after one decisive slice**. End the campaign when one slice clarifies the claim boundary and extra slices add polish rather than route-changing information.
 5. **Stop repeated no-evidence failure loops**. Record a blocker, redesign, return to experiment, or route through decision when the same failure class repeats without new route, evidence, or environment change.
-6. **Separate pre-outline from paper-ready analysis**. Run pre-outline analysis when it determines whether writing is worthwhile, and require <ANALYSIS_WRITEBACK_MAP> before calling a slice paper-ready.
+6. **Separate pre-outline from paper-ready analysis**. Run pre-outline analysis when it determines whether writing is worthwhile, and require DEEPSCI:ANALYSIS-WRITEBACK-MAP before calling a slice paper-ready.
 7. **Keep extra comparators local**. Use extra comparator evidence only as analysis-local support unless a separate route changes the canonical comparator basis.
 8. **Separate support, contradiction, and ambiguity**. Do not blur stable support, contradiction, and unresolved ambiguity into one optimistic summary.
 
@@ -49,7 +49,7 @@ Read these gates after producing the step output and before handoff or completio
 - Comparability gate: direct, non-comparable, stress-test, limitation-boundary, or failure-analysis status is labeled.
 - Qualitative gate: rubric, sample, inspection basis, trace, caveat, and route relevance are recorded.
 - Stop gate: repeated failure and one-slice sufficiency cases route instead of widening silently.
-- Interpretation gate: stable support, contradiction, and unresolved ambiguity are separate in <ANALYSIS_CAMPAIGN_SUMMARY>.
+- Interpretation gate: stable support, contradiction, and unresolved ambiguity are separate in DEEPSCI:ANALYSIS-CAMPAIGN-SUMMARY.
 
 ## Boundary Cases
 

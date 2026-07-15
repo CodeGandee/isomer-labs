@@ -9,7 +9,7 @@ description: Use when a Kaoju survey needs full-text or source inspection, exact
 
 Inspect accepted materials at exact, repeatable locators and separate what the source states from what the agent infers. Source inspection raises evidence depth only to the level actually achieved.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:source-digest`, `kaoju:source-access-blocker`, and `kaoju:claim-evidence-ledger` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:SOURCE-DIGEST`, `KAOJU:SOURCE-ACCESS-BLOCKER`, and `KAOJU:CLAIM-EVIDENCE-LEDGER` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
 ## When to Use
 
@@ -38,7 +38,7 @@ Source Digests are current-state records that the actor may inspect, refine, and
 
 ## Artifact Operations
 
-Resolve `kaoju:source-digest` and `kaoju:claim-evidence-ledger` through `project artifacts describe`. Use `project artifacts put` for a new scoped digest or ledger and binding-permitted `project artifacts revise` for refinement. Let the service validate source and code locators and infer the managed structured content path.
+Resolve `KAOJU:SOURCE-DIGEST` and `KAOJU:CLAIM-EVIDENCE-LEDGER` through `ext kaoju bindings describe KAOJU:WHAT`. Use `project artifacts put` for a new scoped digest or ledger and binding-permitted `project artifacts revise` for refinement. Let the service validate source and code locators and infer the managed structured content path.
 
 ## Reference Routing
 

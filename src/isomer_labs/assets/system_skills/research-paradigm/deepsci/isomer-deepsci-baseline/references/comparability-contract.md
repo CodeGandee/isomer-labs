@@ -11,7 +11,7 @@ When performing this step, execute these substeps in order.
 3. **Record metric contract**. State required metric ids, metric directions, primary metric, supplementary metrics, derivation or origin path, and source reference for each canonical metric.
 4. **Record deviations and caveats**. Name known differences from paper, source package, local reference, registry package, service behavior, environment, or selected target.
 5. **Classify the verdict**. Use verified match, verified close, verified diverged, trusted with caveats, broken, waived, or blocked.
-6. **Prepare handoff fields**. Ensure <COMPARABILITY_CONTRACT> and <BASELINE_PAYLOAD_RECORD> are sufficient for downstream idea, experiment, analysis, or decision work.
+6. **Prepare handoff fields**. Ensure DEEPSCI:COMPARABILITY-CONTRACT and DEEPSCI:BASELINE-PAYLOAD-RECORD are sufficient for downstream idea, experiment, analysis, or decision work.
 
 ## Preferences
 
@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <COMPARABILITY_CONTRACT> must include task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.
+- DEEPSCI:COMPARABILITY-CONTRACT must include task, dataset, split, evaluation path, required metric ids, metric directions, source identity, known deviations, and caveats.
 - The primary metric must not erase the rest of the comparison surface.
 - Supplementary metrics must not replace required canonical metrics.
 - If downstream experiment work would still need to guess required metric ids or directions, the baseline is not ready.

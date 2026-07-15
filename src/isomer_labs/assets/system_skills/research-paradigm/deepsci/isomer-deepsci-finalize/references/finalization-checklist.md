@@ -7,7 +7,7 @@ Use this checklist before closing, pausing, archiving, publishing, or handing of
 When performing this step, execute these substeps in order.
 
 1. **Answer closure questions**. Confirm what is genuinely supported, partially supported, failed, unresolved, and recommended next.
-2. **Check final report contents**. Ensure <FINAL_SUMMARY> includes executive state, strongest findings, negative results, limitations, packaging status, recommendation, and reopen conditions.
+2. **Check final report contents**. Ensure DEEPSCI:FINAL-SUMMARY includes executive state, strongest findings, negative results, limitations, packaging status, recommendation, and reopen conditions.
 3. **Check claim ledger minimums**. Ensure each major claim has text or id, status, evidence, caveats, and safe-to-surface status.
 4. **Check package inventory**. Identify baseline package, decisive runs, reports, analysis outputs, drafts, outlines, review or proofing outputs, summary, and status files when present.
 5. **Check reopen conditions**. State exactly what would justify reopening the Research Topic.
@@ -44,4 +44,4 @@ Read these gates after producing the step output and before handoff or completio
 - Checklist coverage: closure questions, report contents, claim ledger, package inventory, and reopen conditions are all checked.
 - Anti-pattern gate: none of the source anti-patterns remain true.
 - Inventory gate: package, run, report, analysis, writing, summary, and status records are named when present.
-- Closure confidence: the checklist supports <CLOSURE_DECISION> or identifies <FINALIZE_BLOCKER_RECORD>.
+- Closure confidence: the checklist supports DEEPSCI:CLOSURE-DECISION or identifies DEEPSCI:FINALIZE-BLOCKER-RECORD.

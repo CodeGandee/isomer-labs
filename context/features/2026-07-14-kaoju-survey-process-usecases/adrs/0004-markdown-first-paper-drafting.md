@@ -9,7 +9,7 @@ The feature requirement originally stated that paper production must be Tectonic
 ## Current Decision
 
 - Paper production in this feature is **Markdown-first and content-focused**.
-- The agent produces a `kaoju:paper-structure` artifact (Markdown with placeholders) and then a `kaoju:paper-draft` artifact (filled Markdown).
+- The agent produces a `KAOJU:PAPER-STRUCTURE-MYST` artifact and then a `KAOJU:PAPER-DRAFT-MYST` artifact.
 - LaTeX formatting, PDF rendering, typography, and citation styling are explicitly out of scope for UC-04 and for this feature's paper-writing workflow.
 - The feature requirement and UC-04 are updated to reflect this decision.
 

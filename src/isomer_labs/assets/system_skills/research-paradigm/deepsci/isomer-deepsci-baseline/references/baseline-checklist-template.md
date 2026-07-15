@@ -7,7 +7,7 @@ Use this reference as a compact acceptance-boundary checklist when it helps. It 
 When performing this step, execute these substeps in order.
 
 1. **Record identity and frontier**. State baseline id, route, acceptance target, primary comparator, next step, active uncertainty, and next route if the gate clears.
-2. **Apply the core gate**. Check comparator provenance, dataset, split, evaluation path, required metrics, metric directions, output pointers, smoke or direct verification rationale, and <COMPARABILITY_CONTRACT>.
+2. **Apply the core gate**. Check comparator provenance, dataset, split, evaluation path, required metrics, metric directions, output pointers, smoke or direct verification rationale, and DEEPSCI:COMPARABILITY-CONTRACT.
 3. **Apply the blocked boundary**. If blocked, record failure class, tried steps, evidence sources, and next best move.
 4. **Close out**. Summarize the baseline and name the next route after acceptance, waiver, blocker, or route change.
 
@@ -23,8 +23,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <BASELINE_GATE_CHECKLIST> must not replace verification evidence.
-- Acceptance cannot be checked complete without <COMPARABILITY_CONTRACT> and <BASELINE_VERIFICATION_EVIDENCE>.
+- DEEPSCI:BASELINE-GATE-CHECKLIST must not replace verification evidence.
+- Acceptance cannot be checked complete without DEEPSCI:COMPARABILITY-CONTRACT and DEEPSCI:BASELINE-VERIFICATION-EVIDENCE.
 - Blocked closeout must state tried steps, evidence sources, failure class, and next best move.
 - Closeout must name the next route explicitly.
 
@@ -67,7 +67,7 @@ Read these gates after producing the step output and before handoff or completio
 - [ ] trusted outputs or metrics are traceable to concrete files, logs, service responses, source records, or accepted package records
 - [ ] smoke was used, skipped, or replaced by direct verification for an explicit reason when that choice matters
 - [ ] expected result files or trusted-output pointers have been checked
-- [ ] <COMPARABILITY_CONTRACT> exists or will be produced before acceptance
+- [ ] DEEPSCI:COMPARABILITY-CONTRACT exists or will be produced before acceptance
 - [ ] baseline is accepted, blocked, waived, or route-changed with a durable note
 
 ### Blocked Boundary

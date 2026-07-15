@@ -105,7 +105,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         context = resolve_payload_source_fragment(payload, "$.sections.filter_notes", format_profile_ref=canonical_record_format_ref("report.raw-idea-slate", "profile"))
         self.assertEqual(SOURCE_STATUS_BROAD_PATH, context.status)
 
-    def test_record_crud_preserves_placeholder_metadata_and_body(self) -> None:
+    def test_record_crud_preserves_semantic_identity_and_body(self) -> None:
         root = self.make_project()
         status, created = self.run_records(
             root,
@@ -115,8 +115,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "artifact-main-run",
                 "--record-kind",
                 "artifact",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--profile",
                 "run.main-experiment",
                 "--skill",
@@ -144,7 +144,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual("ready", record["status"])
         metadata = record["transition_metadata"]
         assert isinstance(metadata, dict)
-        self.assertEqual("<MAIN_RUN_RECORD>", metadata["placeholder"])
+        self.assertEqual("DEEPSCI:MAIN-RUN-RECORD", metadata["semantic_id"])
+        self.assertNotIn("placeholder", metadata)
         self.assertEqual("run.main-experiment", metadata["profile"])
         self.assertEqual("draft", metadata["quality"])
         lifecycle_refs = record["lifecycle_refs"]
@@ -160,8 +161,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "list",
                 "--record-kind",
                 "artifact",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--profile",
                 "run.main-experiment",
             ],
@@ -182,8 +183,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "artifact",
                 "--status",
                 "complete",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--body",
                 "updated run body",
                 "--content-name",
@@ -218,7 +219,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                         "title": "Survey Contract",
                         "summary": summary,
                         "artifact_family": "kaoju",
-                        "semantic_id": "kaoju:survey-contract",
+                        "semantic_id": "KAOJU:SURVEY-CONTRACT",
                         "artifact_type": "survey-contract",
                         "procedure": "survey-field",
                         "sections": {"scope": {"question": "What methods exist?"}},
@@ -238,7 +239,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "--record-kind",
                 "artifact",
                 "--semantic-id",
-                "kaoju:survey-contract",
+                "KAOJU:SURVEY-CONTRACT",
                 "--format-profile",
                 profile_ref,
                 "--skill",
@@ -249,22 +250,22 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         )
         self.assertEqual(0, status, created)
         metadata = created["record"]["transition_metadata"]
-        self.assertEqual("kaoju:survey-contract", metadata["semantic_id"])
-        self.assertEqual("kaoju:survey-contract", created["query_index"]["counts"] and metadata["semantic_id"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", metadata["semantic_id"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", created["query_index"]["counts"] and metadata["semantic_id"])
 
         status, shown = self.run_records(root, ["show", "survey-contract-1", "--include-payload"])
         self.assertEqual(0, status, shown)
-        self.assertEqual("kaoju:survey-contract", shown["structured_payload"]["payload"]["semantic_id"])
-        status, listed = self.run_records(root, ["list", "--semantic-id", "kaoju:survey-contract"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", shown["structured_payload"]["payload"]["semantic_id"])
+        status, listed = self.run_records(root, ["list", "--semantic-id", "KAOJU:SURVEY-CONTRACT"])
         self.assertEqual(0, status, listed)
         self.assertEqual(["survey-contract-1"], [record["id"] for record in listed["records"]])
 
         status, updated = self.run_records(
             root,
-            ["update", "survey-contract-1", "--record-kind", "artifact", "--semantic-id", "kaoju:survey-contract", "--status", "complete"],
+            ["update", "survey-contract-1", "--record-kind", "artifact", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--status", "complete"],
         )
         self.assertEqual(0, status, updated)
-        self.assertEqual("kaoju:survey-contract", updated["record"]["transition_metadata"]["semantic_id"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", updated["record"]["transition_metadata"]["semantic_id"])
 
         revised_payload = root / "survey-contract-revised.json"
         payload(revised_payload, "Revised bounded survey scope.")
@@ -273,12 +274,12 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
             ["revise", "survey-contract-1", "--id", "survey-contract-2", "--payload-file", str(revised_payload)],
         )
         self.assertEqual(0, status, revised)
-        self.assertEqual("kaoju:survey-contract", revised["record"]["transition_metadata"]["semantic_id"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", revised["record"]["transition_metadata"]["semantic_id"])
         self.assertEqual("survey-contract-1", revised["revision_of_record_id"])
 
         status, latest = self.run_records(
             root,
-            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:survey-contract", "--procedure", "survey-field", "--latest-only"],
+            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--procedure", "survey-field", "--latest-only"],
         )
         self.assertEqual(0, status, latest)
         self.assertEqual(["survey-contract-2"], [record["record_id"] for record in latest["records"]])
@@ -293,7 +294,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "--record-kind",
                 "artifact",
                 "--semantic-id",
-                "kaoju:survey-contract",
+                "KAOJU:SURVEY-CONTRACT",
                 "--format-profile",
                 profile_ref,
                 "--payload-file",
@@ -303,7 +304,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, competing)
         status, ambiguous = self.run_records(
             root,
-            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "kaoju:survey-contract", "--latest-only"],
+            ["query", "list", "--artifact-family", "kaoju", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--latest-only"],
         )
         self.assertEqual(0, status, ambiguous)
         self.assertEqual({"survey-contract-2", "survey-contract-competing"}, {record["record_id"] for record in ambiguous["records"]})
@@ -330,35 +331,114 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         payload(mismatch_payload, "Mismatched request identity.")
         status, mismatch = self.run_records(
             root,
-            ["create", "--record-kind", "artifact", "--semantic-id", "kaoju:field-summary", "--format-profile", profile_ref, "--payload-file", str(mismatch_payload)],
+            ["create", "--record-kind", "artifact", "--semantic-id", "KAOJU:FIELD-SUMMARY", "--format-profile", profile_ref, "--payload-file", str(mismatch_payload)],
         )
         self.assertEqual(1, status)
         self.assertTrue(any(item["code"] == "semantic_id_payload_mismatch" for item in mismatch["diagnostics"]))
 
         status, kind_mismatch = self.run_records(
             root,
-            ["create", "--record-kind", "evidence_item", "--semantic-id", "kaoju:survey-contract", "--format-profile", profile_ref, "--payload-file", str(first_payload)],
+            ["create", "--record-kind", "evidence_item", "--semantic-id", "KAOJU:SURVEY-CONTRACT", "--format-profile", profile_ref, "--payload-file", str(first_payload)],
         )
         self.assertEqual(1, status)
         self.assertTrue(any(item["code"] == "record_kind_profile_mismatch" for item in kind_mismatch["diagnostics"]))
 
         status, invalid = self.run_records(root, ["list", "--semantic-id", "not-valid"])
         self.assertEqual(1, status)
-        self.assertEqual("invalid_semantic_id", invalid["error"]["code"])
+        self.assertEqual("invalid_artifact_identity", invalid["error"]["code"])
 
-    def test_placeholder_index_identity_remains_compatible_and_derived(self) -> None:
+        status, wrong_owner = self.run_records(
+            root,
+            [
+                "create",
+                "--record-kind",
+                "artifact",
+                "--semantic-id",
+                "KAOJU:SURVEY-CONTRACT",
+                "--skill",
+                "isomer-deepsci-experiment",
+                "--body",
+                "wrong owner",
+            ],
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_identity_extension_mismatch", wrong_owner["error"]["code"])
+        self.assertEqual("DEEPSCI", wrong_owner["expected_namespace"])
+        self.assertNotIn("canonical_recovery", wrong_owner)
+
+    def test_old_identity_forms_are_rejected_and_never_derived_during_indexing(self) -> None:
         root = self.make_project()
+        status, rejected = self.run_main(
+            [
+                "ext",
+                "research",
+                "records",
+                "create",
+                "--id",
+                "legacy-placeholder",
+                "--record-kind",
+                "artifact",
+                "--placeholder",
+                "<MAIN_RUN_RECORD>",
+                "--body",
+                "legacy",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+            ],
+            cwd=root,
+        )
+        self.assertNotEqual(0, status)
+        self.assertIn("--placeholder", rejected)
+
         status, created = self.run_records(
             root,
-            ["create", "--id", "legacy-placeholder", "--record-kind", "artifact", "--placeholder", "<MAIN_RUN_RECORD>", "--body", "legacy"],
+            [
+                "create",
+                "--id",
+                "legacy-placeholder",
+                "--record-kind",
+                "artifact",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
+                "--skill",
+                "isomer-deepsci-experiment",
+                "--body",
+                "legacy",
+            ],
         )
         self.assertEqual(0, status, created)
-        self.assertEqual("<MAIN_RUN_RECORD>", created["record"]["transition_metadata"]["placeholder"])
-        status, listed = self.run_records(root, ["query", "list", "--semantic-id", "deepsci:main-run-record"])
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            raw_metadata = connection.execute(
+                "SELECT transition_metadata_json FROM lifecycle_records WHERE id = ?",
+                ("legacy-placeholder",),
+            ).fetchone()[0]
+            legacy_metadata = json.loads(raw_metadata)
+            legacy_metadata.pop("semantic_id")
+            legacy_metadata["placeholder"] = "<DEEPSCI:MAIN-RUN-RECORD>"
+            connection.execute(
+                "UPDATE lifecycle_records SET transition_metadata_json = ? WHERE id = ?",
+                (json.dumps(legacy_metadata, sort_keys=True), "legacy-placeholder"),
+            )
+        status, rebuilt = self.run_records(root, ["index", "rebuild", "--record-id", "legacy-placeholder"])
+        self.assertEqual(0, status, rebuilt)
+        status, listed = self.run_records(root, ["query", "list", "--semantic-id", "DEEPSCI:MAIN-RUN-RECORD"])
         self.assertEqual(0, status, listed)
-        self.assertEqual(1, listed["count"])
-        self.assertEqual("derived_placeholder", listed["records"][0]["semantic_id_source"])
-        self.assertEqual("<MAIN_RUN_RECORD>", listed["records"][0]["placeholder"])
+        self.assertEqual(0, listed["count"])
+
+        status, unfiltered = self.run_records(root, ["query", "list"])
+        self.assertEqual(0, status, unfiltered)
+        indexed = next(record for record in unfiltered["records"] if record["record_id"] == "legacy-placeholder")
+        self.assertIsNone(indexed["semantic_id"])
+        self.assertIsNone(indexed["semantic_id_source"])
+        self.assertNotIn("placeholder", indexed)
+
+        status, lowercase = self.run_records(root, ["list", "--semantic-id", "deepsci:main-run-record"])
+        self.assertEqual(1, status)
+        self.assertEqual("invalid_artifact_identity", lowercase["error"]["code"])
+        self.assertNotIn("canonical_recovery", lowercase)
 
     def test_structured_record_v1_profile_is_rejected_for_new_writes(self) -> None:
         root = self.make_project()
@@ -398,8 +478,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "run",
                 "--id",
                 "run-alpha",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--body-file",
                 str(body_file),
                 "--content-name",
@@ -423,8 +503,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "artifact",
                 "--id",
                 "artifact-actor-note",
-                "--placeholder",
-                "<ACTOR_NOTE>",
+                "--semantic-id",
+                "DEEPSCI:ACTOR-NOTE",
                 "--topic-actor",
                 "operator",
                 "--actor-kind",
@@ -480,8 +560,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "artifact-structured-main-run",
                 "--record-kind",
                 "artifact",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--format-profile",
                 profile_ref,
                 "--payload-file",
@@ -575,8 +655,8 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "artifact",
                 "--status",
                 "complete",
-                "--placeholder",
-                "<MAIN_RUN_RECORD>",
+                "--semantic-id",
+                "DEEPSCI:MAIN-RUN-RECORD",
                 "--format-profile",
                 profile_ref,
                 "--payload-file",

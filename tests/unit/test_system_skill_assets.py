@@ -65,6 +65,18 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertEqual(14, len(extensions[1].skills))
         self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", extensions[1].skills)
 
+    def test_extension_pipeline_entrypoints_require_upfront_planning(self) -> None:
+        for skill_path in (
+            "research-paradigm/deepsci/isomer-deepsci-pipeline",
+            "research-paradigm/kaoju/isomer-kaoju-pipeline",
+        ):
+            with self.subTest(skill_path=skill_path):
+                text = resolve_system_skill(skill_path).joinpath("SKILL.md").read_text(encoding="utf-8")
+                self.assertIn("## Plan First", text)
+                self.assertIn("Pipeline execution is a complex process.", text)
+                self.assertIn("use your internal todo list or planning tool to create a plan", text)
+                self.assertLess(text.index("## Plan First"), text.index("## Overview"))
+
     def test_manifest_declares_callback_insertion_points(self) -> None:
         self.assertEqual(("begin", "end"), callback_insertion_point_stage_names())
         points = iter_system_skill_callback_insertion_points(include_core=True, include_all_extensions=True)
@@ -182,6 +194,14 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-recording.md").is_file())
             binding_pages = tuple(kaoju.glob("isomer-kaoju-*/artifact-bindings.md"))
             self.assertEqual(13, len(binding_pages))
+            self.assertFalse((kaoju / "contracts").exists())
+            for skill_dir in kaoju.glob("isomer-kaoju-*"):
+                self.assertFalse(skill_dir.is_symlink(), skill_dir)
+                self.assertTrue((skill_dir / "SKILL.md").is_file(), skill_dir)
+            for path in kaoju.rglob("*.md"):
+                text = path.read_text(encoding="utf-8")
+                self.assertNotIn("../contracts", text, path)
+                self.assertNotIn("contracts/bindings.v2.json", text, path)
             self.assertFalse((target / "research-paradigm" / "deepsci").exists())
 
     def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:

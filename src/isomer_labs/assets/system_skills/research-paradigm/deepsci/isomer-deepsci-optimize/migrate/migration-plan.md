@@ -18,10 +18,10 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | production DeepSci research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
-| next stage or next anchor | `<OPTIMIZE_ROUTE_DECISION>` or `<OPTIMIZE_BLOCKER_RECORD>`, later bound to production DeepSci skill routing. |
+| next stage or next anchor | `DEEPSCI:OPTIMIZE-ROUTE-DECISION` or `DEEPSCI:OPTIMIZE-BLOCKER-RECORD`, later bound to production DeepSci skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
-| `OPTIMIZE_CHECKLIST.md` | `<OPTIMIZE_CHECKLIST>` until storage binding is finalized. |
-| `CANDIDATE_BOARD.md` | `<CANDIDATE_BOARD>` until storage binding is finalized. |
+| `OPTIMIZE_CHECKLIST.md` | `DEEPSCI:OPTIMIZE-CHECKLIST` until storage binding is finalized. |
+| `CANDIDATE_BOARD.md` | `DEEPSCI:CANDIDATE-BOARD` until storage binding is finalized. |
 
 ## Harness Substitutions
 
@@ -36,24 +36,24 @@
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<OPTIMIZATION_CONTEXT_BRIEF>`
-- `<OPTIMIZATION_FRONTIER>`
-- `<OPTIMIZE_CHECKLIST>`
-- `<CANDIDATE_BOARD>`
-- `<CANDIDATE_BRIEF>`
-- `<METHOD_BRIEF>`
-- `<CANDIDATE_RANKING>`
-- `<CODEGEN_ROUTE_PLAN>`
-- `<PROMOTED_OPTIMIZATION_LINE>`
-- `<OPTIMIZATION_ATTEMPT_RECORD>`
-- `<DEBUG_RESPONSE>`
-- `<FUSION_PLAN>`
-- `<PLATEAU_RESPONSE>`
-- `<PROMPT_CONTRACT>`
-- `<OPTIMIZATION_MEMORY_CARD>`
-- `<FRONTIER_REVIEW>`
-- `<OPTIMIZE_ROUTE_DECISION>`
-- `<OPTIMIZE_BLOCKER_RECORD>`
+- `DEEPSCI:OPTIMIZATION-CONTEXT-BRIEF`
+- `DEEPSCI:OPTIMIZATION-FRONTIER`
+- `DEEPSCI:OPTIMIZE-CHECKLIST`
+- `DEEPSCI:CANDIDATE-BOARD`
+- `DEEPSCI:CANDIDATE-BRIEF`
+- `DEEPSCI:METHOD-BRIEF`
+- `DEEPSCI:CANDIDATE-RANKING`
+- `DEEPSCI:CODEGEN-ROUTE-PLAN`
+- `DEEPSCI:PROMOTED-OPTIMIZATION-LINE`
+- `DEEPSCI:OPTIMIZATION-ATTEMPT-RECORD`
+- `DEEPSCI:DEBUG-RESPONSE`
+- `DEEPSCI:FUSION-PLAN`
+- `DEEPSCI:PLATEAU-RESPONSE`
+- `DEEPSCI:PROMPT-CONTRACT`
+- `DEEPSCI:OPTIMIZATION-MEMORY-CARD`
+- `DEEPSCI:FRONTIER-REVIEW`
+- `DEEPSCI:OPTIMIZE-ROUTE-DECISION`
+- `DEEPSCI:OPTIMIZE-BLOCKER-RECORD`
 
 ## Unmatched Skill-Route Substitutions
 

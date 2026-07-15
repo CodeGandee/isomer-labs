@@ -6,7 +6,7 @@ Use this reference to keep the pass-level frontier and next action explicit. Pla
 
 When performing this step, execute these substeps in order.
 
-1. **Refresh the frontier**. Confirm <OPTIMIZATION_FRONTIER>, recent lessons, current line, candidates, failures, and active route.
+1. **Refresh the frontier**. Confirm DEEPSCI:OPTIMIZATION-FRONTIER, recent lessons, current line, candidates, failures, and active route.
 2. **Select route and submode**. Mark explore, exploit, fusion, debug, or stop, and primary submode: brief, rank, seed, loop, fusion, debug, or stop.
 3. **Track candidate slate quality**. Check mechanism-family diversity, change-layer diversity, candidate ranking, promotion cap, and candidate board status.
 4. **Track implementation pool**. Record smoke queue, full-eval queue, failure classification, stagnation, family-shift trigger, and fusion eligibility.
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <OPTIMIZE_CHECKLIST> must not list candidate creation as completion by itself.
+- DEEPSCI:OPTIMIZE-CHECKLIST must not list candidate creation as completion by itself.
 - Checklist state must distinguish candidate briefs from implementation attempts.
 - Stagnation and family-shift checks must not be skipped after repeated non-improvement.
 - Completion must leave a durable next action or stop condition.

@@ -5,7 +5,7 @@
 1. Resolve the paper line, canonical MyST refs, current export manifest, actor target, and requested action.
 2. Select and execute exactly one action:
 
-- `export`: resolve the actor target or managed default, assign an automatic export revision, write the MyST template and versioned manifest, and register `kaoju:paper-template-export` plus `kaoju:paper-template-manifest` with base digest, source revision, paper line, tied draft, and source refs. An actor target requires explicit update or overwrite policy.
+- `export`: resolve the actor target or managed default, assign an automatic export revision, write the MyST template and versioned manifest, and register `KAOJU:PAPER-TEMPLATE-EXPORT` plus `KAOJU:PAPER-TEMPLATE-MANIFEST` with base digest, source revision, paper line, tied draft, and source refs. An actor target requires explicit update or overwrite policy.
 - `apply`: validate the manifest, base digest, optimistic concurrency, required sections, placeholders, citation roles, and source refs before mutation. Report orphaned grounded content and require confirmation before removing it. Create a canonical template revision and draft-regeneration handoff only after every check passes.
 - `inspect`: show manifest, base and current revisions, checksums, placeholders, source refs, conflicts, and derived-draft posture without mutation.
 - `status`: report current export and template refs, stale or conflicting state, and the next permitted action.

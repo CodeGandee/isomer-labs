@@ -8,7 +8,7 @@
     "title": {"type": "string", "minLength": 1},
     "summary": {"type": "string", "minLength": 1},
     "artifact_family": {"const": "kaoju"},
-    "semantic_id": {"const": "kaoju:llm-wiki-viewer-manifest"},
+    "semantic_id": {"const": "KAOJU:LLM-WIKI-VIEWER-MANIFEST"},
     "artifact_type": {"const": "llm-wiki-viewer-manifest"},
     "version": {"type": "string", "minLength": 1},
     "sections": {

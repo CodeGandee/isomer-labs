@@ -23,6 +23,7 @@ from myst_parser.parsers.docutils_ import Parser as MystParser
 
 from isomer_labs.kaoju.artifacts import KaojuArtifactService, KaojuServiceError
 from isomer_labs.kaoju.content import checksum_file
+from isomer_labs.kaoju.contracts import load_binding_registry
 from isomer_labs.kaoju.execution import ExecutionAdapterCommandRequest, command_environment, execute_command_request
 from isomer_labs.models import EffectiveTopicContext
 
@@ -196,13 +197,13 @@ class KaojuPaperService:
         target_policy: str,
         display_refs: Sequence[str] = (),
     ) -> dict[str, object]:
-        source_path, source_record = self._record_file(source_ref, expected={"kaoju:paper-structure-myst", "kaoju:paper-template-myst"})
-        self._record_file(draft_ref, expected={"kaoju:paper-draft-myst"})
-        self._record_file(citation_map_ref, expected={"kaoju:citation-map"})
+        source_path, source_record = self._record_file(source_ref, expected={"KAOJU:PAPER-STRUCTURE-MYST", "KAOJU:PAPER-TEMPLATE-MYST"})
+        self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
+        self._record_file(citation_map_ref, expected={"KAOJU:CITATION-MAP"})
         for source_digest_ref in source_digest_refs:
-            self._record_file(source_digest_ref, expected={"kaoju:source-digest"})
+            self._record_file(source_digest_ref, expected={"KAOJU:SOURCE-DIGEST"})
         for display_ref in display_refs:
-            self._record_file(display_ref, expected={"kaoju:paper-display"})
+            self._record_file(display_ref, expected={"KAOJU:PAPER-DISPLAY"})
         source_text = source_path.read_text(encoding="utf-8")
         placeholders = sorted(set(PLACEHOLDER_RE.findall(source_text)))
         diagnostics = validate_myst(source_text, allowed_placeholders=placeholders, source_refs=source_digest_refs, display_refs=display_refs)
@@ -235,7 +236,7 @@ class KaojuPaperService:
             "exported_at": _utc_now(),
             "required_sections": list(REQUIRED_PAPER_SECTIONS),
             "allowed_placeholders": placeholders,
-            "grounded_sections": _section_names(self._record_file(draft_ref, expected={"kaoju:paper-draft-myst"})[0].read_text(encoding="utf-8")),
+            "grounded_sections": _section_names(self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})[0].read_text(encoding="utf-8")),
             "apply_command_hint": f"isomer-cli ext kaoju paper apply-template {selected_target}",
         }
         self._write_export_target(selected_target, source_text, manifest, policy=target_policy)
@@ -243,7 +244,7 @@ class KaojuPaperService:
         export_id = f"artifact-paper-template-export-{uuid.uuid4().hex[:12]}"
         export_scope = f"paper:{paper_line}:template-export"
         export_result = self.artifacts.put(
-            "kaoju:paper-template-export",
+            "KAOJU:PAPER-TEMPLATE-EXPORT",
             selected_target,
             producer="isomer-kaoju-write",
             scope_key=export_scope,
@@ -254,9 +255,9 @@ class KaojuPaperService:
         )
         with self._temporary_directory("paper-manifest-") as temporary:
             payload_path = temporary / "paper-template-manifest.json"
-            _write_json(payload_path, _structured_payload("kaoju:paper-template-manifest", "Paper template export manifest", "Versioned MyST template exchange state.", {"export": manifest, "base": {"source_ref": source_ref, "digest": base_digest}, "files": ["paper-template.md", "manifest.json"], "placeholders": placeholders}))
+            _write_json(payload_path, _structured_payload("KAOJU:PAPER-TEMPLATE-MANIFEST", "Paper template export manifest", "Versioned MyST template exchange state.", {"export": manifest, "base": {"source_ref": source_ref, "digest": base_digest}, "files": ["paper-template.md", "manifest.json"], "placeholders": placeholders}))
             manifest_result = self.artifacts.put(
-                "kaoju:paper-template-manifest",
+                "KAOJU:PAPER-TEMPLATE-MANIFEST",
                 payload_path,
                 producer="isomer-kaoju-write",
                 scope_key=export_scope,
@@ -307,12 +308,12 @@ class KaojuPaperService:
         )
         for source_digest_ref in _strings(manifest.get("source_digest_refs")):
             try:
-                self._record_file(source_digest_ref, expected={"kaoju:source-digest"})
+                self._record_file(source_digest_ref, expected={"KAOJU:SOURCE-DIGEST"})
             except KaojuServiceError:
                 diagnostics.append(PaperDiagnostic("myst_source_ref_missing", f"Manifest source ref is unavailable: {source_digest_ref}", 1))
         for display_ref in _strings(manifest.get("display_refs")):
             try:
-                self._record_file(display_ref, expected={"kaoju:paper-display"})
+                self._record_file(display_ref, expected={"KAOJU:PAPER-DISPLAY"})
             except KaojuServiceError:
                 diagnostics.append(PaperDiagnostic("myst_display_ref_missing", f"Manifest display ref is unavailable: {display_ref}", 1))
         if _errors(diagnostics):
@@ -327,27 +328,27 @@ class KaojuPaperService:
         paper_line = str(manifest["paper_line"])
         source_semantic = str(manifest["source_semantic_id"])
         template_result = self._upsert_current(
-            "kaoju:paper-template-myst",
+            "KAOJU:PAPER-TEMPLATE-MYST",
             template_path,
             paper_line,
             relationships=_relationships(paper_structure=source_ref),
         )
         template_ref = _record_id(template_result)
-        old_draft_path, _old_draft_record = self._record_file(str(manifest["paper_draft_ref"]), expected={"kaoju:paper-draft-myst"})
+        old_draft_path, _old_draft_record = self._record_file(str(manifest["paper_draft_ref"]), expected={"KAOJU:PAPER-DRAFT-MYST"})
         regenerated = _fill_template_from_draft(edited, old_draft_path.read_text(encoding="utf-8"))
         with self._temporary_directory("paper-apply-") as temporary:
             draft_path = temporary / "paper-draft.md"
             draft_path.write_text(regenerated, encoding="utf-8")
             draft_result = self._upsert_current(
-                "kaoju:paper-draft-myst",
+                "KAOJU:PAPER-DRAFT-MYST",
                 draft_path,
                 paper_line,
                 relationships=_relationships(paper_structure=source_ref, paper_template=template_ref, citation_map=str(manifest["citation_map_ref"])),
             )
             draft_ref = _record_id(draft_result)
             log_path = temporary / "paper-revision-log.json"
-            _write_json(log_path, _structured_payload("kaoju:paper-revision-log", "Paper template apply", "Append-only paper template application and regeneration event.", {"revisions": [{"actor": "topic-actor", "reason": "manual-template-apply", "input_revision": source_ref, "template_revision": template_ref, "output_revision": draft_ref, "orphaned_sections": orphaned, "confirmed_orphans": confirm_orphans, "validation": [diagnostic.to_json() for diagnostic in diagnostics], "source_semantic_id": source_semantic}]}))
-            log_result = self.artifacts.put("kaoju:paper-revision-log", log_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_revision=draft_ref))
+            _write_json(log_path, _structured_payload("KAOJU:PAPER-REVISION-LOG", "Paper template apply", "Append-only paper template application and regeneration event.", {"revisions": [{"actor": "topic-actor", "reason": "manual-template-apply", "input_revision": source_ref, "template_revision": template_ref, "output_revision": draft_ref, "orphaned_sections": orphaned, "confirmed_orphans": confirm_orphans, "validation": [diagnostic.to_json() for diagnostic in diagnostics], "source_semantic_id": source_semantic}]}))
+            log_result = self.artifacts.put("KAOJU:PAPER-REVISION-LOG", log_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_revision=draft_ref))
         return {
             "ok": True,
             "mutated": True,
@@ -361,13 +362,13 @@ class KaojuPaperService:
         }
 
     def derive_markdown(self, *, source_ref: str, paper_line: str, output: Path | None = None) -> dict[str, object]:
-        source_path, _record = self._record_file(source_ref, expected={"kaoju:paper-draft-myst"})
+        source_path, _record = self._record_file(source_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
         rendered, diagnostics = derive_markdown_text(source_path.read_text(encoding="utf-8"))
         with self._temporary_directory("paper-markdown-") as temporary:
             generated = output.resolve(strict=False) if output is not None else temporary / "paper-draft.md"
             generated.parent.mkdir(parents=True, exist_ok=True)
             generated.write_text(rendered, encoding="utf-8")
-            result = self._upsert_current("kaoju:paper-draft-md", generated, paper_line, relationships=_relationships(paper_draft_myst=source_ref))
+            result = self._upsert_current("KAOJU:PAPER-DRAFT-MD", generated, paper_line, relationships=_relationships(paper_draft_myst=source_ref))
         return {
             "ok": True,
             "mutated": True,
@@ -392,8 +393,8 @@ class KaojuPaperService:
         toolchain_policy: str,
         citation_refs: Sequence[str],
     ) -> dict[str, object]:
-        draft_path, _draft_record = self._record_file(draft_ref, expected={"kaoju:paper-draft-myst"})
-        self._record_file(template_myst_ref, expected={"kaoju:paper-template-myst", "kaoju:paper-structure-myst"})
+        draft_path, _draft_record = self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
+        self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"})
         text = draft_path.read_text(encoding="utf-8")
         myst_diagnostics = validate_myst(text)
         if _errors(myst_diagnostics):
@@ -401,7 +402,7 @@ class KaojuPaperService:
         constructs = sorted(set(DIRECTIVE_RE.findall(text)) | ({"table"} if "|" in text else set()) | ({"citation"} if CITATION_RE.search(text) else set()))
         fingerprint_payload = {"venue": venue, "document_class": document_class, "toolchain_policy": toolchain_policy, "required_constructs": constructs}
         fingerprint = _digest_json(fingerprint_payload)
-        existing_template_ref = self._latest_ref("kaoju:paper-template-tex", paper_line)
+        existing_template_ref = self._latest_ref("KAOJU:PAPER-TEMPLATE-TEX", paper_line)
         reused = False
         if existing_template_ref is not None:
             existing_manifest = self._directory_member_json(existing_template_ref, "manifest.json")
@@ -414,15 +415,15 @@ class KaojuPaperService:
                 template_tree = temporary / "template"
                 template_tree.mkdir()
                 (template_tree / "template.tex").write_text(_tex_template(document_class, venue), encoding="utf-8")
-                _write_json(template_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "template", "compatibility_fingerprint": fingerprint, "fingerprint_dimensions": fingerprint_payload, "source_ref": template_myst_ref, "source_checksum": checksum_file(self._record_file(template_myst_ref, expected={"kaoju:paper-template-myst", "kaoju:paper-structure-myst"})[0]), "tool": "isomer-myst-initializer.v1", "included_files": ["template.tex"]})
-                template_result = self._upsert_current("kaoju:paper-template-tex", template_tree, paper_line, relationships=_relationships(paper_template_myst=template_myst_ref))
+                _write_json(template_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "template", "compatibility_fingerprint": fingerprint, "fingerprint_dimensions": fingerprint_payload, "source_ref": template_myst_ref, "source_checksum": checksum_file(self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"})[0]), "tool": "isomer-myst-initializer.v1", "included_files": ["template.tex"]})
+                template_result = self._upsert_current("KAOJU:PAPER-TEMPLATE-TEX", template_tree, paper_line, relationships=_relationships(paper_template_myst=template_myst_ref))
                 template_ref = _record_id(template_result)
             draft_tree = temporary / "draft"
             draft_tree.mkdir()
             converted, conversion_diagnostics = _myst_to_tex(text)
             (draft_tree / "main.tex").write_text(_tex_document(document_class, venue, converted), encoding="utf-8")
             _write_json(draft_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "draft", "compatibility_fingerprint": fingerprint, "source_ref": draft_ref, "source_checksum": checksum_file(draft_path), "template_ref": template_ref, "citation_inputs": list(citation_refs), "included_files": ["main.tex"], "conversion_diagnostics": [diagnostic.to_json() for diagnostic in conversion_diagnostics], "agent_inspection": {"status": "required", "reason": "mechanical initialization does not establish build readiness"}})
-            draft_result = self._upsert_current("kaoju:paper-draft-tex", draft_tree, paper_line, relationships=_relationships(paper_draft_myst=draft_ref, paper_template_tex=template_ref))
+            draft_result = self._upsert_current("KAOJU:PAPER-DRAFT-TEX", draft_tree, paper_line, relationships=_relationships(paper_draft_myst=draft_ref, paper_template_tex=template_ref))
         all_diagnostics = [*myst_diagnostics, *conversion_diagnostics]
         return {
             "ok": True,
@@ -453,9 +454,9 @@ class KaojuPaperService:
     ) -> dict[str, object]:
         if not inspected:
             raise KaojuServiceError("paper_tex_inspection_required", "Mechanically initialized TeX requires recorded agent inspection before build.")
-        draft_manifest_path, _record = self._record_file(draft_tex_ref, expected={"kaoju:paper-draft-tex"}, allow_directory=True)
-        self._record_file(template_tex_ref, expected={"kaoju:paper-template-tex"}, allow_directory=True)
-        _audit_path, audit_record = self._record_file(audit_ref, expected={"kaoju:audit-report"})
+        draft_manifest_path, _record = self._record_file(draft_tex_ref, expected={"KAOJU:PAPER-DRAFT-TEX"}, allow_directory=True)
+        self._record_file(template_tex_ref, expected={"KAOJU:PAPER-TEMPLATE-TEX"}, allow_directory=True)
+        _audit_path, audit_record = self._record_file(audit_ref, expected={"KAOJU:AUDIT-REPORT"})
         if audit_record.get("status") != "ready":
             raise KaojuServiceError("paper_audit_not_accepted", f"Audit Report {audit_ref} is not accepted and ready; PDF build is blocked.")
         source_tree = draft_manifest_path.parent
@@ -475,22 +476,22 @@ class KaojuPaperService:
             pdf_valid = pdf_path.is_file() and pdf_path.stat().st_size > 8 and pdf_path.read_bytes()[:4] == b"%PDF"
             terminal = "complete" if observation.get("status") == "succeeded" and pdf_valid else "failed"
             run_path = temporary / "paper-build-run.json"
-            _write_json(run_path, _structured_payload("kaoju:paper-build-run", "Paper PDF build Run", "Immutable registered document-build attempt.", {"execution": {"command_request": observation.get("request"), "toolchain": selected, "fallback": fallback, "input_refs": [draft_tex_ref, template_tex_ref]}, "result": {"terminal_status": terminal, "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "pdf_magic_valid": pdf_valid}}))
-            run_result = self.artifacts.put("kaoju:paper-build-run", run_path, producer="isomer-kaoju-write", scope_key=paper_line, record_id=build_id, status=terminal, relationships=_relationships(paper_draft_tex=draft_tex_ref, paper_template_tex=template_tex_ref))
-            log_result = self.artifacts.put("kaoju:paper-compile-log", log_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if terminal == "complete" else "failed", relationships=_relationships(paper_build_run=build_id))
+            _write_json(run_path, _structured_payload("KAOJU:PAPER-BUILD-RUN", "Paper PDF build Run", "Immutable registered document-build attempt.", {"execution": {"command_request": observation.get("request"), "toolchain": selected, "fallback": fallback, "input_refs": [draft_tex_ref, template_tex_ref]}, "result": {"terminal_status": terminal, "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "pdf_magic_valid": pdf_valid}}))
+            run_result = self.artifacts.put("KAOJU:PAPER-BUILD-RUN", run_path, producer="isomer-kaoju-write", scope_key=paper_line, record_id=build_id, status=terminal, relationships=_relationships(paper_draft_tex=draft_tex_ref, paper_template_tex=template_tex_ref))
+            log_result = self.artifacts.put("KAOJU:PAPER-COMPILE-LOG", log_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if terminal == "complete" else "failed", relationships=_relationships(paper_build_run=build_id))
             affected = [_record_id(run_result), _record_id(log_result)]
             if terminal != "complete":
                 return {"ok": False, "mutated": True, "operation": "paper.build-pdf", "terminal_status": terminal, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected, "recovery_actions": ["Inspect the registered compile log and classify any repair as presentation-only or material before retrying."]}
-            pdf_result = self.artifacts.put("kaoju:paper-pdf", pdf_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_build_run=build_id, paper_draft_tex=draft_tex_ref))
+            pdf_result = self.artifacts.put("KAOJU:PAPER-PDF", pdf_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_build_run=build_id, paper_draft_tex=draft_tex_ref))
             pdf_ref = _record_id(pdf_result)
             revision_path = temporary / "paper-pdf-revision-log.json"
-            _write_json(revision_path, _structured_payload("kaoju:paper-pdf-revision-log", "Paper PDF revision log", "Append-only build attempt and repair provenance.", {"builds": [{"build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "toolchain": selected, "fallback": fallback, "repair_class": "none"}]}))
-            revision_result = self.artifacts.put("kaoju:paper-pdf-revision-log", revision_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_pdf=pdf_ref, paper_build_run=build_id))
+            _write_json(revision_path, _structured_payload("KAOJU:PAPER-PDF-REVISION-LOG", "Paper PDF revision log", "Append-only build attempt and repair provenance.", {"builds": [{"build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "toolchain": selected, "fallback": fallback, "repair_class": "none"}]}))
+            revision_result = self.artifacts.put("KAOJU:PAPER-PDF-REVISION-LOG", revision_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_pdf=pdf_ref, paper_build_run=build_id))
             validation_path = temporary / "paper-validation-report.json"
             accepted = publication_approved and pdf_inspected
             verdict = "ready" if accepted else "not-ready"
-            _write_json(validation_path, _structured_payload("kaoju:paper-validation-report", "Paper validation report", "Structural, textual, visual, evidence, and publication assessment.", {"assessment": {"verdict": verdict, "compile": "passed", "pdf_magic": "passed", "textual_inspection": "passed" if pdf_inspected else "required", "visual_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "known_limitations": [] if pdf_inspected else ["Direct textual and visual PDF inspection remains required."]}, "quality_profile": {"audit_ref": audit_ref, "canonical_myst_required": True, "publication_accepted": accepted}}))
-            validation_result = self.artifacts.put("kaoju:paper-validation-report", validation_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if accepted else "blocked", relationships=_relationships(paper_build_run=build_id, paper_pdf=pdf_ref, audit_report=audit_ref))
+            _write_json(validation_path, _structured_payload("KAOJU:PAPER-VALIDATION-REPORT", "Paper validation report", "Structural, textual, visual, evidence, and publication assessment.", {"assessment": {"verdict": verdict, "compile": "passed", "pdf_magic": "passed", "textual_inspection": "passed" if pdf_inspected else "required", "visual_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "known_limitations": [] if pdf_inspected else ["Direct textual and visual PDF inspection remains required."]}, "quality_profile": {"audit_ref": audit_ref, "canonical_myst_required": True, "publication_accepted": accepted}}))
+            validation_result = self.artifacts.put("KAOJU:PAPER-VALIDATION-REPORT", validation_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if accepted else "blocked", relationships=_relationships(paper_build_run=build_id, paper_pdf=pdf_ref, audit_report=audit_ref))
             affected.extend([pdf_ref, _record_id(revision_result), _record_id(validation_result)])
         accepted = publication_approved and pdf_inspected
         return {"ok": True, "mutated": True, "operation": "paper.build-pdf", "terminal_status": "complete", "pdf_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "accepted": accepted, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "revision_log_ref": _record_id(revision_result), "validation_ref": _record_id(validation_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected}
@@ -531,7 +532,7 @@ class KaojuPaperService:
         return self.artifacts.revise(current, content, producer="isomer-kaoju-write", scope_key=scope_key, relationships=relationships)
 
     def _next_export_revision(self, paper_line: str) -> int:
-        payload = self.artifacts.list(semantic_id="kaoju:paper-template-export", scope_key=f"paper:{paper_line}:template-export")
+        payload = self.artifacts.list(semantic_id="KAOJU:PAPER-TEMPLATE-EXPORT", scope_key=f"paper:{paper_line}:template-export")
         records = payload.get("records")
         return len(records) + 1 if isinstance(records, list) else 1
 
@@ -568,7 +569,7 @@ class KaojuPaperService:
                 shutil.rmtree(staged)
 
     def _directory_member_json(self, record_id: str, name: str) -> dict[str, object]:
-        manifest_path, _record = self._record_file(record_id, expected={"kaoju:paper-template-tex"}, allow_directory=True)
+        manifest_path, _record = self._record_file(record_id, expected={"KAOJU:PAPER-TEMPLATE-TEX"}, allow_directory=True)
         member = manifest_path.parent / name
         return _load_json(member)
 
@@ -671,7 +672,7 @@ def _section_names(text: str) -> list[str]:
 
 
 def _structured_payload(semantic_id: str, title: str, summary: str, sections: dict[str, object]) -> dict[str, object]:
-    return {"title": title, "summary": summary, "artifact_family": "kaoju", "semantic_id": semantic_id, "artifact_type": semantic_id.removeprefix("kaoju:"), "sections": sections}
+    return {"title": title, "summary": summary, "artifact_family": "kaoju", "semantic_id": semantic_id, "artifact_type": load_binding_registry()[semantic_id].artifact_type, "sections": sections}
 
 
 def _relationships(**values: str) -> list[dict[str, object]]:

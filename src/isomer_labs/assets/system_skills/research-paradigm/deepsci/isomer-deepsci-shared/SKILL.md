@@ -15,7 +15,7 @@ Shared defines the coordination contract for production DeepSci research skills.
 
 ### Latest Context Preflight
 
-Before a production DeepSci research skill writes or refreshes accepted durable research records, or makes durable route, claim, context, evidence, result, or publication-facing decisions, run `references/latest-context-preflight.md`. The preflight resolves current Effective Topic Context, Workspace Runtime state, relevant durable records, duplicate-record posture, prompt-versus-durable-context conflicts, and the storage-neutral `latest-context-snapshot` verdict before prompt memory, chat memory, prior prose, or remembered research state is trusted.
+Before a production DeepSci research skill writes or refreshes accepted durable research records, or makes durable route, claim, context, evidence, result, or publication-facing decisions, run `references/latest-context-preflight.md`. The preflight resolves current Effective Topic Context, Workspace Runtime state, relevant durable records, duplicate-record posture, prompt-versus-durable-context conflicts, and the storage-neutral `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` verdict before prompt memory, chat memory, prior prose, or remembered research state is trusted.
 
 Standalone source-only reading may skip the latest-context preflight until accepted Isomer records are written or refreshed. Worker Output Policy still governs plain generated files; the preflight applies before those files are promoted or recorded as accepted durable records.
 
@@ -71,7 +71,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Reference Routing
 
-Read `references/latest-context-preflight.md` whenever a production DeepSci skill needs current topic context, runtime state, durable record freshness, duplicate-record handling, prompt-versus-durable-context conflict routing, or the storage-neutral `latest-context-snapshot`. Read `references/artifact-lineage-recording.md` whenever a durable record is produced from, selected from, merged from, revised from, or follows up prior durable records. Read `references/research-idea-recording.md` whenever a durable record creates, selects, rejects, defers, updates, follows up, merges, or subsumes research concepts. Read `references/semantic-placeholders.md` whenever a production DeepSci skill needs shared handoff vocabulary. Read `references/coordination-contract.md` whenever the question is about ownership, routing, unresolved storage binding, post-preparation bootstrap routing, cwd context, or handoff shape.
+Read `references/latest-context-preflight.md` whenever a production DeepSci skill needs current topic context, runtime state, durable record freshness, duplicate-record handling, prompt-versus-durable-context conflict routing, or the storage-neutral `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`. Read `references/artifact-lineage-recording.md` whenever a durable record is produced from, selected from, merged from, revised from, or follows up prior durable records. Read `references/research-idea-recording.md` whenever a durable record creates, selects, rejects, defers, updates, follows up, merges, or subsumes research concepts. Read `references/semantic-placeholders.md` whenever a production DeepSci skill needs shared handoff vocabulary. Read `references/coordination-contract.md` whenever the question is about ownership, routing, unresolved storage binding, post-preparation bootstrap routing, cwd context, or handoff shape.
 
 ## Cross-Step Quality Gates
 

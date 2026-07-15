@@ -12,7 +12,7 @@ When performing this step, execute these substeps in order.
 4. **Translate the idea into code**. Map concrete files or components to planned changes, reasons, and risks before editing.
 5. **Design execution**. Define minimal experiment, smoke or pilot path, full run path, expected outputs, stop condition, abandonment condition, and strongest alternative hypothesis.
 6. **Plan runtime and recovery**. Record command paths, expected budget, log and artifact locations, safe efficiency levers, health signals, kill or relaunch triggers, and fallbacks.
-7. **Link the checklist and revise deliberately**. Keep <EXPERIMENT_CHECKLIST> synchronized with <EXPERIMENT_PLAN>, and log material changes with their effect on comparability or runtime.
+7. **Link the checklist and revise deliberately**. Keep DEEPSCI:EXPERIMENT-CHECKLIST synchronized with DEEPSCI:EXPERIMENT-PLAN, and log material changes with their effect on comparability or runtime.
 
 ## Preferences
 
@@ -27,9 +27,9 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <EXPERIMENT_PLAN> must lead with the selected hypothesis and comparator boundary.
-- <EXPERIMENT_PLAN> must include required metrics, stop condition, abandonment condition, and fallback options for substantial runs.
-- <EXPERIMENT_PLAN> should not hide user constraints, resource limits, or known comparability risks.
+- DEEPSCI:EXPERIMENT-PLAN must lead with the selected hypothesis and comparator boundary.
+- DEEPSCI:EXPERIMENT-PLAN must include required metrics, stop condition, abandonment condition, and fallback options for substantial runs.
+- DEEPSCI:EXPERIMENT-PLAN should not hide user constraints, resource limits, or known comparability risks.
 - Runtime strategy must not broaden resources, datasets, or metric definitions silently.
 
 ## Quality Gates

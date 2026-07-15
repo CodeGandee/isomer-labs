@@ -11,7 +11,7 @@ When performing this step, execute these substeps in order.
 3. **Verify data and metrics**. Check intended dataset, split, metric definitions, metric directions, required metric ids, metric values, and output pointers.
 4. **Record environment and deviations**. Capture environment or hardware facts that affect comparability, plus implementation, data, split, metric, evaluation, source, or package deviations.
 5. **Classify the verdict**. Label verified match, verified close, verified diverged, trusted with caveats, broken, waived, or blocked.
-6. **Block honestly when needed**. If evidence is incomplete, record <BASELINE_BLOCKER_RECORD> instead of accepting.
+6. **Block honestly when needed**. If evidence is incomplete, record DEEPSCI:BASELINE-BLOCKER-RECORD instead of accepting.
 
 ## Preferences
 
@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <BASELINE_VERIFICATION_EVIDENCE> must trace metrics or outputs to real files, logs, service responses, source artifacts, registry records, or package records.
+- DEEPSCI:BASELINE-VERIFICATION-EVIDENCE must trace metrics or outputs to real files, logs, service responses, source artifacts, registry records, or package records.
 - Attach, import, or publish must not count as acceptance without verification.
 - Fabricated, copied, paraphrased, or weak-provenance metrics must not be accepted.
 - A completed local run must not be accepted if it used a materially different protocol without a recorded caveat.

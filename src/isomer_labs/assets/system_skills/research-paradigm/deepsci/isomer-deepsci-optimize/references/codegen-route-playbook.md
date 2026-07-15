@@ -10,7 +10,7 @@ When performing this step, execute these substeps in order.
 2. **Choose stepwise generation for first substantial implementations**. Use it when a new durable line touches multiple subsystems and plan-refine-implement reduces integrated errors.
 3. **Choose diff or patch generation for bounded deltas**. Use it when a strong current implementation exists and the desired change preserves most of the line.
 4. **Choose full rewrite only for structural mismatch**. Use it when the current implementation is too broken or mismatched for safe patching.
-5. **Write <CODEGEN_ROUTE_PLAN>**. Include short plan, bounded implementation surface, keep-unchanged contract, and validation step.
+5. **Write DEEPSCI:CODEGEN-ROUTE-PLAN**. Include short plan, bounded implementation surface, keep-unchanged contract, and validation step.
 
 ## Preferences
 
@@ -25,7 +25,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <CODEGEN_ROUTE_PLAN> must name what stays unchanged for comparability.
+- DEEPSCI:CODEGEN-ROUTE-PLAN must name what stays unchanged for comparability.
 - Large patches should not begin from a vague idea with no implementation surface.
 - Debug route must not use full rewrite unless the existing implementation is structurally broken.
 - Fusion route must preserve the comparison surface unless the route explicitly changes it.

@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer:kaoju/artifact-semantics/v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "extension_id",
+    "authority",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "isomer-kaoju-artifact-semantics.v1"
+    },
+    "extension_id": {
+      "const": "kaoju"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "list_command",
+        "describe_command"
+      ],
+      "properties": {
+        "list_command": {
+          "const": "isomer-cli --print-json ext kaoju bindings list"
+        },
+        "describe_command": {
+          "const": "isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/artifact"
+      }
+    }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantic_id",
+        "category",
+        "meaning",
+        "minimum_content",
+        "producer",
+        "consumers",
+        "update_intent"
+      ],
+      "properties": {
+        "semantic_id": {
+          "type": "string",
+          "pattern": "^KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimum_content": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consumers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "update_intent": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

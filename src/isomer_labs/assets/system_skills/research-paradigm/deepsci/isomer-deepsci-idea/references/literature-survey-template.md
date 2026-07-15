@@ -12,8 +12,8 @@ When performing this step, execute these substeps in order.
 4. **Bucket the papers**. Split evidence into core papers, closest competitors, adjacent inspirations, cross-domain transferable mechanisms, and watchlist items.
 5. **Build the closest-prior-work table**. Compare mechanism, task, dataset, metric, supported claim, weakness, and implication for each serious candidate.
 6. **State novelty and value verdicts**. Label serious candidates as `novel`, `incremental but valuable`, or `not sufficiently differentiated`.
-7. **Translate to code and memory**. Record implementation levers, feasibility blockers, cheapest falsification paths, and <IDEA_MEMORY_RECORD> writes to create or refresh.
-8. **Prepare citation support**. Extract the papers that must support <SELECTED_IDEA_DRAFT> before final selection.
+7. **Translate to code and memory**. Record implementation levers, feasibility blockers, cheapest falsification paths, and DEEPSCI:IDEA-MEMORY-RECORD writes to create or refresh.
+8. **Prepare citation support**. Extract the papers that must support DEEPSCI:SELECTED-IDEA-DRAFT before final selection.
 
 ## Preferences
 
@@ -27,8 +27,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <LITERATURE_SURVEY_REPORT> must separate reused findings, newly retrieved papers, unresolved gaps, and watchlist items.
-- <LITERATURE_SURVEY_REPORT> must include a search ledger for meaningful search passes.
+- DEEPSCI:LITERATURE-SURVEY-REPORT must separate reused findings, newly retrieved papers, unresolved gaps, and watchlist items.
+- DEEPSCI:LITERATURE-SURVEY-REPORT must include a search ledger for meaningful search passes.
 - Paper-ready promotion must not proceed without closest-prior-work comparison and citation-ready support.
 - The selected route must not claim novelty from recall alone.
 
@@ -47,4 +47,4 @@ Read these gates after producing the step output and before handoff or completio
 - Coverage gate: the survey durably covers at least five and usually five to ten usable related papers for paper-ready selection, or explicitly documents why fewer exist.
 - Ledger gate: every new external query closes a named gap rather than restarting broad discovery from zero.
 - Novelty gate: every serious candidate has a closest-prior-work verdict.
-- Citation gate: <SELECTED_IDEA_DRAFT> can cite the papers that shaped the mechanism, motivation, novelty check, or claim boundary.
+- Citation gate: DEEPSCI:SELECTED-IDEA-DRAFT can cite the papers that shaped the mechanism, motivation, novelty check, or claim boundary.

@@ -597,13 +597,13 @@ Resolve and manage typed Kaoju Artifacts through Workspace Runtime. `describe` r
 **Side effects:** `put` and `revise` validate content and relationships, allocate owner-preserved managed storage when applicable, write or register file-backed content, and create a durable record. `archive` changes lifecycle state without deleting external content. Other operations are read-only unless `migrate-scope --apply` performs an unambiguous legacy backfill.
 
 ```bash
-isomer-cli --print-json project artifacts describe kaoju:reading-list --topic my-topic
-isomer-cli --print-json project artifacts put kaoju:reading-list reading-list.json \
+isomer-cli --print-json project artifacts describe KAOJU:READING-LIST --topic my-topic
+isomer-cli --print-json project artifacts put KAOJU:READING-LIST reading-list.json \
   --topic my-topic \
   --producer isomer-kaoju-discover \
   --scope-key direction:memory-offload \
   --relationships-json '[{"role":"direction_set","target_ref":"directions-1"},{"role":"discovery_ledger","target_ref":"discovery-1"}]'
-isomer-cli --print-json project artifacts latest kaoju:reading-list --topic my-topic --scope-key direction:memory-offload
+isomer-cli --print-json project artifacts latest KAOJU:READING-LIST --topic my-topic --scope-key direction:memory-offload
 ```
 
 ### `project runs begin/checkpoint/status/complete`
@@ -630,7 +630,7 @@ isomer-cli --print-json project service-requests create \
   --task-description "Run the task-critical smoke check" \
   --scope-kind run \
   --scope-ref run-env-1 \
-  --expected-output-ref kaoju:smoke-run-result \
+  --expected-output-ref KAOJU:SMOKE-RUN-RESULT \
   --authorization "execute the approved named Pixi environment" \
   --dispatch-form tool_native_subagent \
   --completion-observation "task-critical check passes" \
@@ -889,6 +889,18 @@ isomer-cli --print-json ext kaoju paper apply-template \
   --topic my-topic topic-workspaces/my-topic/exports/kaoju-paper/paper-main/v0001
 ```
 
+### `ext kaoju process show` and `ext kaoju bindings list/describe`
+
+Inspect the installed Kaoju process and shared artifact contracts without resolving a Project or Topic Workspace. `process show` returns versioned process data and logical binding-query metadata. `bindings list` returns canonical-identifier-sorted summaries, and `bindings describe` joins storage-neutral meaning with the checked storage binding.
+
+**Side effects:** none. These commands return `mutated: false` and accept only exact uppercase `KAOJU:WHAT` identifiers. They do not read skill-family paths or apply aliases.
+
+```bash
+isomer-cli --print-json ext kaoju process show
+isomer-cli --print-json ext kaoju bindings list
+isomer-cli --print-json ext kaoju bindings describe KAOJU:SURVEY-CONTRACT
+```
+
 ### `ext kaoju wiki export/deploy/start`
 
 Export accepted state-DB Artifacts to an idempotent Markdown and canonical JSON wiki, deploy the independently implemented package-owned viewer, or launch a recognized deployment. Selection can use explicit Artifact refs or accepted direction and paper scopes. Default targets resolve inside the Topic Workspace; actor paths remain authorized external targets.
@@ -916,7 +928,7 @@ isomer-cli ext deepsci tools artifact
 
 Call one DeepScientist compatibility tool against the selected Topic Workspace.
 
-**Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later production DeepSci skills summarize through normal Isomer placeholder bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
+**Side effects:** depends on the tool. Compatibility calls may write extension-owned records inside the Workspace Runtime database and may return durable references that later production DeepSci skills summarize through canonical `DEEPSCI:WHAT` bindings. Use this surface only for source-shaped compatibility behavior while the native research record APIs are still incomplete.
 
 ```bash
 isomer-cli ext deepsci call artifact.record \
@@ -926,11 +938,11 @@ isomer-cli ext deepsci call artifact.record \
 
 ### `ext research records create/show/list/update/revise/delete`
 
-Create, inspect, query, revise, or archive topic-scoped research records for family-neutral semantic ids and existing DeepSci placeholder bindings.
+Create, inspect, query, revise, or archive topic-scoped research records with canonical extension artifact identifiers.
 
 **Side effects:** `create` and `update` write or update a Workspace Runtime lifecycle record and, when `--body` or `--body-file` is supplied, write a durable body under the resolved semantic label, defaulting to `topic.records.artifacts` except for runs, tasks, and views. `delete` archives the lifecycle record by setting its status to `archived`; it does not remove stored body files. `show` and `list` are read-only.
 
-**Use:** new Kaoju work uses `project artifacts`, which resolves the packaged registry and infers physical fields. Supported historical and family-neutral operations remain available here and delegate to the same record services. DeepSci continues to use exact `--placeholder` values and existing `isomer:deepsci/record-format/*` refs. Structured creation rejects direct `--body` or `--body-file` authoring.
+**Use:** Kaoju work uses `project artifacts`, which resolves the packaged registry and infers physical fields. DeepSci record operations pass exact uppercase `DEEPSCI:WHAT` values through `--semantic-id`. Structured creation uses an explicit format profile and payload file and rejects direct `--body` or `--body-file` authoring.
 
 When a Topic Actor creates or updates an accepted research record, include `--topic-actor <topic-actor-name>` and known actor metadata such as `--actor-kind`, `--runtime-kind`, `--controller-kind`, and `--adapter-ref`. Include formal Agent Team Instance, Agent Instance, or Agent Workspace refs only when the record was actually produced inside that formal context; do not fabricate those refs for Topic Actor work.
 
@@ -938,8 +950,8 @@ When a Topic Actor creates or updates an accepted research record, include `--to
 isomer-cli --print-json ext research records create \
   --topic my-topic \
   --record-kind artifact \
-  --placeholder '<LITERATURE_SCOUTING_REPORT>' \
-  --profile report.literature-scouting-report \
+  --semantic-id DEEPSCI:LITERATURE-SCOUTING-REPORT \
+  --format-profile isomer:deepsci/record-format/profile/report/literature-scouting-report/v2 \
   --skill isomer-deepsci-scout \
   --producer isomer-deepsci-scout \
   --consumer isomer-deepsci-idea \
@@ -947,11 +959,11 @@ isomer-cli --print-json ext research records create \
   --actor-kind manual_worker \
   --runtime-kind claude_code \
   --controller-kind human_user \
-  --body-file scouting-report.md
+  --payload-file scouting-report.json
 
 isomer-cli --print-json ext research records list \
   --topic my-topic \
-  --placeholder '<LITERATURE_SCOUTING_REPORT>'
+  --semantic-id DEEPSCI:LITERATURE-SCOUTING-REPORT
 
 isomer-cli --print-json ext research records show <record-id> \
   --topic my-topic --include-body
@@ -960,8 +972,9 @@ isomer-cli --print-json ext research records update <record-id> \
   --topic my-topic \
   --record-kind artifact \
   --status complete \
-  --placeholder '<LITERATURE_SCOUTING_REPORT>' \
-  --body-file scouting-report-production DeepSci.md
+  --semantic-id DEEPSCI:LITERATURE-SCOUTING-REPORT \
+  --format-profile isomer:deepsci/record-format/profile/report/literature-scouting-report/v2 \
+  --payload-file scouting-report.json
 
 isomer-cli --print-json ext research records delete <record-id> \
   --topic my-topic \
@@ -972,12 +985,12 @@ Neutral list and query filters compose:
 
 ```bash
 isomer-cli --print-json ext research records list \
-  --topic my-topic --semantic-id kaoju:survey-contract
+  --topic my-topic --semantic-id KAOJU:SURVEY-CONTRACT
 
 isomer-cli --print-json ext research records query list \
   --topic my-topic \
   --artifact-family kaoju \
-  --semantic-id kaoju:related-work-catalog \
+  --semantic-id KAOJU:RELATED-WORK-CATALOG \
   --procedure landscape-pass \
   --latest-only
 ```

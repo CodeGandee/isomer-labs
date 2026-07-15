@@ -6,7 +6,7 @@ As a researcher or Topic Actor, I want the agent to generate a PDF version of th
 
 ## Use Case
 
-The system reads the canonical `kaoju:paper-draft-myst` artifact produced by UC-04 (or updated by UC-05) and renders it to PDF through an intermediate LaTeX stage. Because MyST-to-LaTeX conversion is non-trivial, the workflow is staged: first produce a durable `kaoju:paper-template-tex` artifact, then produce a `kaoju:paper-draft-tex`, and finally compile it to `kaoju:paper-pdf`. A scripted conversion may initialize the TeX draft, but the agent is expected to inspect and edit the `.tex` file directly to fix conversion artifacts, adjust floats, tables, citations, and any MyST directives that do not map cleanly. The TeX template and draft are stored as files in the topic workspace and registered in the state database. The human can review the PDF, ask for TeX-level fixes, and request a recompile.
+The system reads the canonical `KAOJU:PAPER-DRAFT-MYST` artifact produced by UC-04 (or updated by UC-05) and renders it to PDF through an intermediate LaTeX stage. Because MyST-to-LaTeX conversion is non-trivial, the workflow is staged: first produce a durable `KAOJU:PAPER-TEMPLATE-TEX` artifact, then produce a `KAOJU:PAPER-DRAFT-TEX`, and finally compile it to `KAOJU:PAPER-PDF`. A scripted conversion may initialize the TeX draft, but the agent is expected to inspect and edit the `.tex` file directly to fix conversion artifacts, adjust floats, tables, citations, and any MyST directives that do not map cleanly. The TeX template and draft are stored as files in the topic workspace and registered in the state database. The human can review the PDF, ask for TeX-level fixes, and request a recompile.
 
 ## Supported Actions
 
@@ -15,7 +15,7 @@ The system reads the canonical `kaoju:paper-draft-myst` artifact produced by UC-
 Create a LaTeX template for the paper and store it as a durable artifact.
 
 - context
-  - Actor **has** an accepted `kaoju:paper-draft-myst` from UC-04/UC-05.
+  - Actor **has** an accepted `KAOJU:PAPER-DRAFT-MYST` from UC-04/UC-05.
   - System **has** the MyST draft, paper structure, and a target LaTeX class/style.
 - intent
   - Actor **wants** the LaTeX preamble, macros, and section layout established before the full draft is generated.
@@ -23,14 +23,14 @@ Create a LaTeX template for the paper and store it as a durable artifact.
 - action
   - Actor then **asks** the system to generate the TeX template.
 - result
-  - Actor **gets** a durable `kaoju:paper-template-tex` artifact with preamble, packages, and placeholder sections.
+  - Actor **gets** a durable `KAOJU:PAPER-TEMPLATE-TEX` artifact with preamble, packages, and placeholder sections.
 
 ### Generate TeX Draft
 
 Convert the MyST draft to LaTeX and refine it by direct inspection and editing.
 
 - context
-  - Actor **has** an approved `kaoju:paper-template-tex`.
+  - Actor **has** an approved `KAOJU:PAPER-TEMPLATE-TEX`.
   - System **has** the MyST draft and the TeX template.
 - intent
   - Actor **wants** the paper content rendered as LaTeX.
@@ -38,14 +38,14 @@ Convert the MyST draft to LaTeX and refine it by direct inspection and editing.
 - action
   - Actor then **asks** the system to generate the TeX draft.
 - result
-  - Actor **gets** a durable `kaoju:paper-draft-tex` artifact. The agent may use an initialization script but is expected to inspect and edit the file directly for MyST directives that do not convert cleanly.
+  - Actor **gets** a durable `KAOJU:PAPER-DRAFT-TEX` artifact. The agent may use an initialization script but is expected to inspect and edit the file directly for MyST directives that do not convert cleanly.
 
 ### Compile PDF
 
 Compile the TeX draft to PDF.
 
 - context
-  - Actor **has** an approved `kaoju:paper-draft-tex`.
+  - Actor **has** an approved `KAOJU:PAPER-DRAFT-TEX`.
   - System **has** the TeX file and a LaTeX compiler available.
 - intent
   - Actor **wants** the final rendered PDF.
@@ -53,7 +53,7 @@ Compile the TeX draft to PDF.
 - action
   - Actor then **asks** the system to compile the PDF.
 - result
-  - Actor **gets** a `kaoju:paper-pdf` artifact and a compile log.
+  - Actor **gets** a `KAOJU:PAPER-PDF` artifact and a compile log.
 
 ### Refine TeX And Recompile
 
@@ -68,24 +68,24 @@ Fix TeX-level issues and recompile.
 - action
   - Actor then **requests** a specific TeX-level fix.
 - result
-  - Actor **gets** an updated `kaoju:paper-draft-tex` and a regenerated `kaoju:paper-pdf`.
+  - Actor **gets** an updated `KAOJU:PAPER-DRAFT-TEX` and a regenerated `KAOJU:PAPER-PDF`.
 
 ## Main Flow
 
 1. Actor asks the system to create the paper PDF.
-2. System reads the canonical `kaoju:paper-draft-myst` and its structure.
-3. System generates or reuses the `kaoju:paper-template-tex` artifact.
+2. System reads the canonical `KAOJU:PAPER-DRAFT-MYST` and its structure.
+3. System generates or reuses the `KAOJU:PAPER-TEMPLATE-TEX` artifact.
 4. System initializes a TeX draft from MyST, either with a conversion script or by direct translation.
 5. System inspects and directly edits the `.tex` file to resolve MyST directives, tables, citations, floats, and any conversion artifacts.
-6. System writes the `kaoju:paper-draft-tex` artifact and registers it in the state database.
+6. System writes the `KAOJU:PAPER-DRAFT-TEX` artifact and registers it in the state database.
 7. System compiles the TeX draft to PDF using a LaTeX compiler (e.g., Tectonic).
-8. System writes the `kaoju:paper-pdf` artifact and a compile log.
+8. System writes the `KAOJU:PAPER-PDF` artifact and a compile log.
 9. Actor reviews the PDF and requests TeX-level fixes or approves the output.
 10. System applies fixes, recompiles, and reports the final result.
 
 ## Alternative And Exception Flows
 
-- **A1. No MyST draft**: If `kaoju:paper-draft-myst` is missing, the system routes to UC-04 and reports a blocker.
+- **A1. No MyST draft**: If `KAOJU:PAPER-DRAFT-MYST` is missing, the system routes to UC-04 and reports a blocker.
 - **A2. TeX template already exists**: If a TeX template exists, the system offers to reuse, replace, or version it.
 - **A3. Compile warning**: If compilation succeeds with warnings, the system reports the warnings and asks whether to fix them or accept the PDF.
 - **A4. Compile failure**: If compilation fails after the actor has authorized the build, the system reports the error log and may automatically apply presentation-only or syntax-only TeX repairs and retry up to the recorded bound. A repair that changes canonical content, evidence meaning, dependencies, toolchain policy, or resource limits requires a revised plan and human Gate before execution.
@@ -99,13 +99,13 @@ flowchart LR
   Actor[Researcher / Topic Actor]
 
   subgraph System[Kaoju PDF Workflow]
-    ReadMyst[Read kaoju:paper-draft-myst]
-    GenTemplate[Generate kaoju:paper-template-tex]
+    ReadMyst[Read KAOJU:PAPER-DRAFT-MYST]
+    GenTemplate[Generate KAOJU:PAPER-TEMPLATE-TEX]
     InitTex[Initialize tex from MyST]
     RefineTex[Inspect & edit tex directly]
-    WriteTex[Write kaoju:paper-draft-tex]
+    WriteTex[Write KAOJU:PAPER-DRAFT-TEX]
     Compile[Compile PDF]
-    WritePdf[Write kaoju:paper-pdf]
+    WritePdf[Write KAOJU:PAPER-PDF]
     Review[Review PDF]
   end
 
@@ -130,14 +130,14 @@ sequenceDiagram
   participant System as "Kaoju PDF Workflow"
 
   Researcher->>System: Create the paper PDF
-  System->>System: Read kaoju:paper-draft-myst
-  System->>System: Generate kaoju:paper-template-tex
+  System->>System: Read KAOJU:PAPER-DRAFT-MYST
+  System->>System: Generate KAOJU:PAPER-TEMPLATE-TEX
   System-->>Researcher: TeX template ready
   System->>System: Initialize .tex from MyST and refine by direct editing
-  System-->>Researcher: kaoju:paper-draft-tex ready
+  System-->>Researcher: KAOJU:PAPER-DRAFT-TEX ready
   Researcher->>System: Compile to PDF
   System->>System: Run Tectonic / LaTeX compiler
-  System-->>Researcher: kaoju:paper-pdf ready + compile log
+  System-->>Researcher: KAOJU:PAPER-PDF ready + compile log
   Researcher->>System: Fix the overflowing table and recompile
   System->>System: Edit .tex directly and recompile
   System-->>Researcher: Updated PDF ready
@@ -147,11 +147,11 @@ sequenceDiagram
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:paper-template-tex` — LaTeX preamble, packages, macros, and placeholder sections.
-- `kaoju:paper-draft-tex` — content-filled LaTeX paper, refined by direct agent editing.
-- `kaoju:paper-pdf` — compiled PDF of the paper.
-- `kaoju:paper-compile-log` — log from the LaTeX compiler, including warnings and errors.
-- `kaoju:paper-pdf-revision-log` — record of TeX fixes and recompile events.
+- `KAOJU:PAPER-TEMPLATE-TEX` — LaTeX preamble, packages, macros, and placeholder sections.
+- `KAOJU:PAPER-DRAFT-TEX` — content-filled LaTeX paper, refined by direct agent editing.
+- `KAOJU:PAPER-PDF` — compiled PDF of the paper.
+- `KAOJU:PAPER-COMPILE-LOG` — log from the LaTeX compiler, including warnings and errors.
+- `KAOJU:PAPER-PDF-REVISION-LOG` — record of TeX fixes and recompile events.
 
 ## TeX Draft Refinement Tasks
 
@@ -178,14 +178,14 @@ User Prompt:
 
 AI:
 
-> I read the canonical MyST draft (`kaoju:paper-draft-myst`) and generated the TeX template (`kaoju:paper-template-tex`).
+> I read the canonical MyST draft (`KAOJU:PAPER-DRAFT-MYST`) and generated the TeX template (`KAOJU:PAPER-TEMPLATE-TEX`).
 >
 > I initialized the `.tex` draft and then edited it directly to fix three MyST directives that did not convert cleanly:
 > - Converted a wide comparison table to `tabularx`.
 > - Replaced an admonition block with a `tcolorbox` note environment.
 > - Fixed citation keys for two sources.
 >
-> `kaoju:paper-draft-tex` is ready. Say "compile to PDF" to render it.
+> `KAOJU:PAPER-DRAFT-TEX` is ready. Say "compile to PDF" to render it.
 
 ### Event 002 - Compile And Refine
 
@@ -197,7 +197,7 @@ User Prompt:
 
 AI:
 
-> Compiled to `kaoju:paper-pdf` with one warning about an overfull hbox in the method-comparison table.
+> Compiled to `KAOJU:PAPER-PDF` with one warning about an overfull hbox in the method-comparison table.
 >
 > I edited the `.tex` file directly, reduced column widths, and enabled `\small` for that table. Recompiled successfully.
 >

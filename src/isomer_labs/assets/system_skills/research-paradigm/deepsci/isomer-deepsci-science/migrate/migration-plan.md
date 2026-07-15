@@ -19,7 +19,7 @@
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Evidence Items, Findings, Gates, Decision Records, Provenance Records, and user-provided Research Topic context. |
 | stage | production DeepSci research skill route or Workflow Stage context inside a Topic Agent Team Profile. |
 | companion skill | production DeepSci companion support skill for scientific evidence discipline. |
-| next stage or next anchor | `<SCIENCE_ROUTE_DECISION>` or `<SCIENCE_BLOCKER_RECORD>`, later bound to production DeepSci skill routing. |
+| next stage or next anchor | `DEEPSCI:SCIENCE-ROUTE-DECISION` or `DEEPSCI:SCIENCE-BLOCKER-RECORD`, later bound to production DeepSci skill routing. |
 | source templates and fixed paths | Semantic placeholders in `migrate/placeholders.md` until Isomer storage bindings are finalized. |
 | source package cards and package index | Isomer routing catalog material copied into `references/` and treated as knowledge pointers, not runtime availability proof. |
 
@@ -36,14 +36,14 @@
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use the local placeholders defined in `migrate/placeholders.md`:
 
-- `<SCIENCE_TASK_BRIEF>`
-- `<SCIENCE_PACKAGE_CHECK>`
-- `<SCIENCE_RUN_RECORD>`
-- `<SCIENCE_VALIDATION_RESULT>`
-- `<SCIENCE_CLAIM_RECORD>`
-- `<SCIENCE_EVIDENCE_GRAPH_UPDATE>`
-- `<SCIENCE_BLOCKER_RECORD>`
-- `<SCIENCE_ROUTE_DECISION>`
+- `DEEPSCI:SCIENCE-TASK-BRIEF`
+- `DEEPSCI:SCIENCE-PACKAGE-CHECK`
+- `DEEPSCI:SCIENCE-RUN-RECORD`
+- `DEEPSCI:SCIENCE-VALIDATION-RESULT`
+- `DEEPSCI:SCIENCE-CLAIM-RECORD`
+- `DEEPSCI:SCIENCE-EVIDENCE-GRAPH-UPDATE`
+- `DEEPSCI:SCIENCE-BLOCKER-RECORD`
+- `DEEPSCI:SCIENCE-ROUTE-DECISION`
 
 ## Unmatched Skill-Route Substitutions
 

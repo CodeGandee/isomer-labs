@@ -54,40 +54,40 @@ Document the chosen surface in `design/public-interfaces.md`. Each command must 
 - Accept a topic or research question.
 - Use `isomer-kaoju-frame` or equivalent framing logic to propose 3–5 concrete survey directions.
 - Present directions to the actor with A/B/C/D choices; allow multi-select or free-form refinement.
-- Persist the selected/refined direction set as `kaoju:next-direction-set` in the state DB.
+- Persist the selected/refined direction set as `KAOJU:NEXT-DIRECTION-SET` in the state DB.
 
 #### uc-02 — Collect Online Info And Build In-Depth Reading List
 
-- Accept a direction id (from `kaoju:next-direction-set`).
+- Accept a direction id (from `KAOJU:NEXT-DIRECTION-SET`).
 - Use `isomer-kaoju-discover` to collect candidate sources, recording query provenance.
-- Compose one direction-owned reading list artifact (`kaoju:reading-list`) with metadata per item: name, URL, source type, one-paragraph summary, priority (primary/secondary), and locator.
+- Compose one direction-owned reading list artifact (`KAOJU:READING-LIST`) with metadata per item: name, URL, source type, one-paragraph summary, priority (primary/secondary), and locator.
 - Default target is 3 primary + 3 secondary items; fewer is a warning, not a blocker.
 - Answer the actor question: "For `<direction>`, what are you going to read?"
 
 #### uc-03 — Ingest Reading Item In Depth
 
-- Accept a reading item id from `kaoju:reading-list`.
+- Accept a reading item id from `KAOJU:READING-LIST`.
 - If the item has an associated paper or repo, acquire it to the topic artifact library using `isomer-kaoju-acquire` or `isomer-kaoju-examine`.
 - For papers and source code, prefer local download/checkout (`git clone --depth 1` for repos); if blocked by provider restrictions, read online and record the access blocker.
 - Index acquired files in the state DB to avoid repeated download.
-- Produce: `kaoju:source-digest`, `kaoju:claim-evidence-ledger` entries, and any contradictions or limitations.
+- Produce: `KAOJU:SOURCE-DIGEST`, `KAOJU:CLAIM-EVIDENCE-LEDGER` entries, and any contradictions or limitations.
 
 #### uc-04 — Write Paper From Digested Materials
 
-- Require an accepted audit report (`kaoju:audit-report`) and synthesis records (`kaoju:field-summary`, `kaoju:related-work-catalog`, `kaoju:claim-status-table`).
-- First produce a MyST paper structure with placeholders (`kaoju:paper-myst-template`).
-- Then fill the structure to produce the MyST paper draft (`kaoju:paper-myst-draft`).
+- Require an accepted audit report (`KAOJU:AUDIT-REPORT`) and synthesis records (`KAOJU:FIELD-SUMMARY`, `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`).
+- First produce a MyST paper structure with placeholders (`KAOJU:PAPER-MYST-TEMPLATE`).
+- Then fill the structure to produce the MyST paper draft (`KAOJU:PAPER-MYST-DRAFT`).
 - Content first; formatting is deferred to Markdown/LaTeX derivation.
 
 #### uc-05 — Paper Template Manual Editing And Apply
 
-- On "get me the md template", extract `kaoju:paper-myst-template` to a user-given directory or a system-defined topic workspace directory, write a manifest, and record the extraction in the state DB.
-- On "apply the template" or "update the paper with new template", read back the manually edited template, update the durable `kaoju:paper-myst-template` artifact, and regenerate the MyST paper draft.
+- On "get me the md template", extract `KAOJU:PAPER-MYST-TEMPLATE` to a user-given directory or a system-defined topic workspace directory, write a manifest, and record the extraction in the state DB.
+- On "apply the template" or "update the paper with new template", read back the manually edited template, update the durable `KAOJU:PAPER-MYST-TEMPLATE` artifact, and regenerate the MyST paper draft.
 
 #### uc-06 — Create Paper PDF
 
-- From the accepted MyST draft, generate a TeX template (`kaoju:paper-tex-template`) and keep it as a durable artifact.
-- Generate the TeX paper (`kaoju:paper-tex-draft`).
+- From the accepted MyST draft, generate a TeX template (`KAOJU:PAPER-TEX-TEMPLATE`) and keep it as a durable artifact.
+- Generate the TeX paper (`KAOJU:PAPER-TEX-DRAFT`).
 - Compile to PDF and record the output path.
 - Conversion from MyST to Markdown must be scriptable; conversion from MyST to LaTeX may be initialized by a script but must be completed by direct file inspection and editing where the script is insufficient.
 
@@ -105,7 +105,7 @@ Document the chosen surface in `design/public-interfaces.md`. Each command must 
 - Accept a URL, repo name, or paper reference.
 - If only a name/paper is given, search online for an associated repository; report a blocker if not found or inaccessible.
 - Clone/checkout the repo with `git clone --depth 1` into the topic workspace artifact library and index it in the state DB.
-- Read the local source code, focusing on the aspects the actor specified, and add the result to the surveyed artifacts (`kaoju:source-digest`, `kaoju:associated-source-code`).
+- Read the local source code, focusing on the aspects the actor specified, and add the result to the surveyed artifacts (`KAOJU:SOURCE-DIGEST`, `KAOJU:ASSOCIATED-SOURCE-CODE`).
 
 #### uc-09 — Prepare Code Run Environment
 
@@ -122,7 +122,7 @@ Document the chosen surface in `design/public-interfaces.md`. Each command must 
 
 - Require a prepared environment from uc-09.
 - Accept a dataset path or request generated data.
-- Plan the trial, run the code on the data, and record the result as `kaoju:code-trial-result`.
+- Plan the trial, run the code on the data, and record the result as `KAOJU:CODE-TRIAL-RESULT`.
 - Capture logs, metrics, and any reproducibility notes.
 
 ### 4. Cross-cutting requirements

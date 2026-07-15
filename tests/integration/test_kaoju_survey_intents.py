@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.kaoju.contracts import load_binding_registry
 
 
 def write(path: Path, content: str) -> None:
@@ -91,7 +92,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
                     "summary": f"Accepted {semantic_id} fixture.",
                     "artifact_family": "kaoju",
                     "semantic_id": semantic_id,
-                    "artifact_type": semantic_id.removeprefix("kaoju:"),
+                    "artifact_type": load_binding_registry()[semantic_id].artifact_type,
                     "sections": sections,
                 },
                 indent=2,
@@ -162,7 +163,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         return items
 
     def test_uc01_and_uc02_multiple_custom_directions_independent_lists_and_shortage(self) -> None:
-        self.put("kaoju:survey-contract", "survey-contract-1", "isomer-kaoju-frame", {"scope": {"question": "How do offload mechanisms work?"}, "status": "active"}, {}, scope="survey:main", status="active")
+        self.put("KAOJU:SURVEY-CONTRACT", "survey-contract-1", "isomer-kaoju-frame", {"scope": {"question": "How do offload mechanisms work?"}, "status": "active"}, {}, scope="survey:main", status="active")
         status, begun = self.run_cli(
             "project",
             "--root",
@@ -179,7 +180,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             "run-directions",
         )
         self.assertEqual(0, status, begun)
-        self.put("kaoju:direction-set", "directions-1", "isomer-kaoju-frame", self.direction_sections(), {"survey_contract": "survey-contract-1"}, scope="survey:main")
+        self.put("KAOJU:DIRECTION-SET", "directions-1", "isomer-kaoju-frame", self.direction_sections(), {"survey_contract": "survey-contract-1"}, scope="survey:main")
         status, checkpoint = self.run_cli(
             "project",
             "--root",
@@ -201,7 +202,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         for direction in ("lineage", "custom-cost"):
             ledger_id = f"discovery-{direction}"
             self.put(
-                "kaoju:discovery-ledger",
+                "KAOJU:DISCOVERY-LEDGER",
                 ledger_id,
                 "isomer-kaoju-discover",
                 {"entries": [{"query": f"{direction} mechanisms", "provider": "configured-literature-provider", "route": "online-search", "searched_through": "2026-07-14", "identity_resolution": "resolved", "version_family": f"{direction}-families", "disposition": "selected", "coverage_limits": ["English-language accessible sources"]}]},
@@ -209,7 +210,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
                 scope=f"direction:{direction}",
             )
             result = self.put(
-                "kaoju:reading-list",
+                "KAOJU:READING-LIST",
                 f"reading-{direction}",
                 "isomer-kaoju-discover",
                 {"direction_id": direction, "items": self.reading_items(direction), "approval": {"status": "approved", "actor_ref": "topic-actor:researcher"}},
@@ -219,7 +220,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             self.assertEqual([], [diagnostic for diagnostic in result["contract_diagnostics"] if diagnostic["severity"] == "warning"])  # type: ignore[index]
 
         short = self.put(
-            "kaoju:reading-list",
+            "KAOJU:READING-LIST",
             "reading-short",
             "isomer-kaoju-discover",
             {"direction_id": "short", "items": self.reading_items("short", count=4), "approval": {"status": "approved", "actor_ref": "topic-actor:researcher", "coverage_waiver": "bounded search found four reachable sources"}},
@@ -234,11 +235,11 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         duplicate_items[1]["version_family"] = duplicate_items[0]["version_family"]
         write(
             duplicate_path,
-            json.dumps({"title": "Duplicate versions", "summary": "Invalid unresolved version family.", "artifact_family": "kaoju", "semantic_id": "kaoju:reading-list", "artifact_type": "reading-list", "sections": {"direction_id": "duplicate", "items": duplicate_items, "approval": {"status": "pending"}}}, indent=2) + "\n",
+            json.dumps({"title": "Duplicate versions", "summary": "Invalid unresolved version family.", "artifact_family": "kaoju", "semantic_id": "KAOJU:READING-LIST", "artifact_type": "reading-list", "sections": {"direction_id": "duplicate", "items": duplicate_items, "approval": {"status": "pending"}}}, indent=2) + "\n",
         )
         status, duplicate = self.artifact(
             "put",
-            "kaoju:reading-list",
+            "KAOJU:READING-LIST",
             str(duplicate_path),
             "--producer",
             "isomer-kaoju-discover",
@@ -252,9 +253,9 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertEqual("artifact_contract_invalid", duplicate["error"]["code"])  # type: ignore[index]
 
-        status, lineage = self.artifact("latest", "kaoju:reading-list", "--scope-key", "direction:lineage")
+        status, lineage = self.artifact("latest", "KAOJU:READING-LIST", "--scope-key", "direction:lineage")
         self.assertEqual(0, status, lineage)
-        status, custom = self.artifact("latest", "kaoju:reading-list", "--scope-key", "direction:custom-cost")
+        status, custom = self.artifact("latest", "KAOJU:READING-LIST", "--scope-key", "direction:custom-cost")
         self.assertEqual(0, status, custom)
         self.assertNotEqual(lineage["records"][0]["record_id"], custom["records"][0]["record_id"])  # type: ignore[index]
 
@@ -262,7 +263,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         local_paper = self.root / "actor-material/paper.pdf"
         write(local_paper, "%PDF-1.4\nfixture\n")
         self.put(
-            "kaoju:material-acquisition-manifest",
+            "KAOJU:MATERIAL-ACQUISITION-MANIFEST",
             "material-acquisition-1",
             "isomer-kaoju-acquire",
             {
@@ -275,7 +276,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             scope="source:ingestion",
         )
         self.put(
-            "kaoju:artifact-library",
+            "KAOJU:ARTIFACT-LIBRARY",
             "artifact-library-ingestion",
             "isomer-kaoju-acquire",
             {
@@ -287,7 +288,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             {"material": "material-acquisition-1"},
         )
         self.put(
-            "kaoju:source-access-blocker",
+            "KAOJU:SOURCE-ACCESS-BLOCKER",
             "source-blocker-1",
             "isomer-kaoju-acquire",
             {"blocker": {"status": "blocked", "source_class": "dataset", "reason": "authentication required", "claim_impact": ["benchmark comparison"], "recovery": ["request actor-authorized credential route"]}},
@@ -313,7 +314,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             "approval": {"status": "pending"},
         }
         self.put(
-            "kaoju:source-digest",
+            "KAOJU:SOURCE-DIGEST",
             "source-digest-pending",
             "isomer-kaoju-examine",
             pending_sections,
@@ -364,7 +365,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         approved_sections["approval"] = {"status": "approved", "actor_ref": "topic-actor:researcher", "requested_revision": "verify figure 2"}
         write(
             approved_path,
-            json.dumps({"title": "Approved local paper digest", "summary": "Refined and actor-approved source digest.", "artifact_family": "kaoju", "semantic_id": "kaoju:source-digest", "artifact_type": "source-digest", "sections": approved_sections}, indent=2) + "\n",
+            json.dumps({"title": "Approved local paper digest", "summary": "Refined and actor-approved source digest.", "artifact_family": "kaoju", "semantic_id": "KAOJU:SOURCE-DIGEST", "artifact_type": "source-digest", "sections": approved_sections}, indent=2) + "\n",
         )
         status, approved = self.artifact(
             "revise",
@@ -381,7 +382,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(0, status, approved)
         self.put(
-            "kaoju:claim-evidence-ledger",
+            "KAOJU:CLAIM-EVIDENCE-LEDGER",
             "claim-ledger-1",
             "isomer-kaoju-examine",
             {"claims": [{"claim_id": "claim-transfer", "statement": "The method reduces transfer volume under the reported workload.", "evidence_refs": ["source-digest-approved"], "verdict": "supported", "contradictions": [], "limitations": ["reported workload only"]}]},
@@ -425,7 +426,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             "claim-ledger-1",
         )
         self.assertEqual(0, status, completed)
-        status, latest = self.artifact("latest", "kaoju:source-digest", "--scope-key", "source:paper-local")
+        status, latest = self.artifact("latest", "KAOJU:SOURCE-DIGEST", "--scope-key", "source:paper-local")
         self.assertEqual(0, status, latest)
         self.assertEqual(["source-digest-approved"], [record["record_id"] for record in latest["records"]])  # type: ignore[index]
 

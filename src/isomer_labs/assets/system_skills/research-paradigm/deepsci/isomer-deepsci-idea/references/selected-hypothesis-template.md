@@ -6,12 +6,12 @@ Use this reference to create the selected route handoff after `references/select
 
 When performing this step, execute these substeps in order.
 
-1. **Name the selected object**. Give <SELECTED_HYPOTHESIS> a stable id, two-sentence pitch, and one falsifiable claim.
+1. **Name the selected object**. Give DEEPSCI:SELECTED-HYPOTHESIS a stable id, two-sentence pitch, and one falsifiable claim.
 2. **Tie the claim to measurement**. Include metric key, expected direction, boundary condition, minimal experiment, and abandonment condition.
 3. **Explain mechanism and alternatives**. State the mechanism sketch, strongest alternative hypothesis, strongest objection, and anti-win condition.
-4. **Bind to evidence**. Reference <LITERATURE_SURVEY_REPORT>, <RELATED_WORK_MAP>, closest prior work, comparator evidence, and <PRE_IDEA_DRAFT>.
-5. **Prepare the draft**. Create <SELECTED_IDEA_DRAFT> with SCQA or pyramid structure, citation markers, standard-format references, code-level plan, and risks.
-6. **Choose next route**. Create <IDEA_ROUTE_DECISION> for experiment, optimize, scout, baseline, decision, branch, reject, or blocker.
+4. **Bind to evidence**. Reference DEEPSCI:LITERATURE-SURVEY-REPORT, DEEPSCI:RELATED-WORK-MAP, closest prior work, comparator evidence, and DEEPSCI:PRE-IDEA-DRAFT.
+5. **Prepare the draft**. Create DEEPSCI:SELECTED-IDEA-DRAFT with SCQA or pyramid structure, citation markers, standard-format references, code-level plan, and risks.
+6. **Choose next route**. Create DEEPSCI:IDEA-ROUTE-DECISION for experiment, optimize, scout, baseline, decision, branch, reject, or blocker.
 
 ## Preferences
 
@@ -25,8 +25,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <SELECTED_HYPOTHESIS> must include id, pitch, hypothesis, mechanism, expected effect, comparator relation, risk, falsification, minimal test, abandonment condition, citations, and next route.
-- <SELECTED_IDEA_DRAFT> must cite papers that shaped the mechanism, motivation, novelty check, or claim boundary.
+- DEEPSCI:SELECTED-HYPOTHESIS must include id, pitch, hypothesis, mechanism, expected effect, comparator relation, risk, falsification, minimal test, abandonment condition, citations, and next route.
+- DEEPSCI:SELECTED-IDEA-DRAFT must cite papers that shaped the mechanism, motivation, novelty check, or claim boundary.
 - The selected route must not omit the strongest alternative hypothesis or strongest likely objection.
 - The selected route must not be submitted before the literature survey and pre-idea draft gates are satisfied.
 
@@ -44,4 +44,4 @@ Read these gates after producing the step output and before handoff or completio
 - Handoff completeness: the next stage can run from the handoff without reconstructing metric, code surface, prior work, falsifier, or abandon rule.
 - Citation quality: references are standard-format and tied to actual route-shaping papers.
 - Claim quality: the claim is falsifiable, scoped, and tied to the accepted comparator basis.
-- Route quality: <IDEA_ROUTE_DECISION> explains why the next stage is experiment, optimize, scout, baseline, decision, branch, reject, or blocked.
+- Route quality: DEEPSCI:IDEA-ROUTE-DECISION explains why the next stage is experiment, optimize, scout, baseline, decision, branch, reject, or blocked.

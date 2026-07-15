@@ -1,0 +1,836 @@
+{
+  "schema_version": "isomer-kaoju-artifact-semantics.v1",
+  "extension_id": "kaoju",
+  "authority": {
+    "list_command": "isomer-cli --print-json ext kaoju bindings list",
+    "describe_command": "isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT"
+  },
+  "artifacts": [
+    {
+      "semantic_id": "KAOJU:WORKSPACE-READINESS",
+      "category": "Workspace and Control",
+      "meaning": "resolved Topic Workspace readiness, limits, blockers, and next allowed stage.",
+      "minimum_content": [
+        "resolved Topic Workspace readiness, limits, blockers, and next allowed stage."
+      ],
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:BINDING-INDEX",
+      "category": "Workspace and Control",
+      "meaning": "validation result for the selected semantic contracts and supporting profiles.",
+      "minimum_content": [
+        "validation result for the selected semantic contracts and supporting profiles."
+      ],
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-CONTRACT",
+      "category": "Workspace and Control",
+      "meaning": "accepted question, boundary, source classes, cutoff, depth, resources, Gates, and stop conditions.",
+      "minimum_content": [
+        "accepted question, boundary, source classes, cutoff, depth, resources, Gates, and stop conditions."
+      ],
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-discover",
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:DIRECTION-SET",
+      "category": "Workspace and Control",
+      "meaning": "actor-reviewed direction proposals, choices, custom entries, feasibility notes, and history.",
+      "minimum_content": [
+        "actor-reviewed direction proposals, choices, custom entries, feasibility notes, and history."
+      ],
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-discover",
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-INTENT",
+      "category": "Workspace and Control",
+      "meaning": "actor-reviewed plan for a source-grounded or empirical comparison.",
+      "minimum_content": [
+        "actor-reviewed plan for a source-grounded or empirical comparison."
+      ],
+      "producer": "isomer-kaoju-frame",
+      "consumers": [
+        "isomer-kaoju-compare"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PROCEED-DECISION",
+      "category": "Workspace and Control",
+      "meaning": "explicit clarify, proceed, pause, reject, or stop decision.",
+      "minimum_content": [
+        "explicit clarify, proceed, pause, reject, or stop decision."
+      ],
+      "producer": "isomer-kaoju-pipeline",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:DISCOVERY-LEDGER",
+      "category": "Discovery and Acquisition",
+      "meaning": "bounded searches, routes, dates, identities, version families, dispositions, gaps, and frontier.",
+      "minimum_content": [
+        "bounded searches, routes, dates, identities, version families, dispositions, gaps, and frontier."
+      ],
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:READING-LIST",
+      "category": "Discovery and Acquisition",
+      "meaning": "one direction-scoped priority and secondary target set with coverage and shortage notes.",
+      "minimum_content": [
+        "one direction-scoped priority and secondary target set with coverage and shortage notes."
+      ],
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-acquire",
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:RELATED-WORK-CATALOG",
+      "category": "Discovery and Acquisition",
+      "meaning": "current identity-resolved catalog of relevant primary works and supporting materials.",
+      "minimum_content": [
+        "current identity-resolved catalog of relevant primary works and supporting materials."
+      ],
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:RELATED-WORK-DELTA",
+      "category": "Discovery and Acquisition",
+      "meaning": "auditable additions, changes, exclusions, and evidence against a catalog revision.",
+      "minimum_content": [
+        "auditable additions, changes, exclusions, and evidence against a catalog revision."
+      ],
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-discover"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:CURATED-INTAKE-DELTA",
+      "category": "Discovery and Acquisition",
+      "meaning": "dispositions and survey effects of actor-nominated materials.",
+      "minimum_content": [
+        "dispositions and survey effects of actor-nominated materials."
+      ],
+      "producer": "isomer-kaoju-discover",
+      "consumers": [
+        "isomer-kaoju-acquire"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:ARTIFACT-LIBRARY",
+      "category": "Discovery and Acquisition",
+      "meaning": "current state of acquired papers, reports, repositories, datasets, models, and related materials.",
+      "minimum_content": [
+        "current state of acquired papers, reports, repositories, datasets, models, and related materials."
+      ],
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:ASSOCIATED-SOURCE-CODE",
+      "category": "Discovery and Acquisition",
+      "meaning": "verified relationship between a work identity and an immutable repository identity.",
+      "minimum_content": [
+        "verified relationship between a work identity and an immutable repository identity."
+      ],
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:MATERIAL-ACQUISITION-MANIFEST",
+      "category": "Discovery and Acquisition",
+      "meaning": "observed identities, availability, checksums or commits, access posture, and provenance.",
+      "minimum_content": [
+        "observed identities, availability, checksums or commits, access posture, and provenance."
+      ],
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-examine"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:TOPIC-DATASET-MANIFEST",
+      "category": "Discovery and Acquisition",
+      "meaning": "actor-authorized inventory of external and managed datasets available to the topic.",
+      "minimum_content": [
+        "actor-authorized inventory of external and managed datasets available to the topic."
+      ],
+      "producer": "isomer-kaoju-workspace-mgr",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-compare"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:GENERATED-DATASET",
+      "category": "Environment and Trials",
+      "meaning": "reproducible generated input definition, outputs, checks, purpose, and limitations.",
+      "minimum_content": [
+        "reproducible generated input definition, outputs, checks, purpose, and limitations."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:SOURCE-DIGEST",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "inspected source identity, exact locators, statements, interpretations, contradictions, and depth.",
+      "minimum_content": [
+        "inspected source identity, exact locators, statements, interpretations, contradictions, and depth."
+      ],
+      "producer": "isomer-kaoju-examine",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SOURCE-ACCESS-BLOCKER",
+      "category": "Discovery and Acquisition",
+      "meaning": "evidence, claim impact, and recovery route for one failed bounded acquisition.",
+      "minimum_content": [
+        "evidence, claim impact, and recovery route for one failed bounded acquisition."
+      ],
+      "producer": "isomer-kaoju-acquire",
+      "consumers": [
+        "isomer-kaoju-pipeline",
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:CLAIM-EVIDENCE-LEDGER",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "current mapping from claim ids to supporting, challenging, provisional, and missing evidence.",
+      "minimum_content": [
+        "current mapping from claim ids to supporting, challenging, provisional, and missing evidence."
+      ],
+      "producer": "isomer-kaoju-examine",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:THEORY-COMPARISON",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "exact-evidence comparison of named works without empirical execution.",
+      "minimum_content": [
+        "exact-evidence comparison of named works without empirical execution."
+      ],
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-MATRIX",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "audited cross-method view with evidence, variability, adaptations, failures, and non-comparability.",
+      "minimum_content": [
+        "audited cross-method view with evidence, variability, adaptations, failures, and non-comparability."
+      ],
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:COMPARISON-RUN",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "immutable first-hand execution evidence for one comparison candidate and attempt.",
+      "minimum_content": [
+        "immutable first-hand execution evidence for one comparison candidate and attempt."
+      ],
+      "producer": "isomer-kaoju-compare",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:AUDIT-REPORT",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "non-mutating readiness assessment, defects, affected claims, repair routes, and decision.",
+      "minimum_content": [
+        "non-mutating readiness assessment, defects, affected claims, repair routes, and decision."
+      ],
+      "producer": "isomer-kaoju-audit",
+      "consumers": [
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:CLAIM-STATUS-TABLE",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "current conclusion status, depth, evidence, contradictions, and limits.",
+      "minimum_content": [
+        "current conclusion status, depth, evidence, contradictions, and limits."
+      ],
+      "producer": "isomer-kaoju-audit",
+      "consumers": [
+        "isomer-kaoju-synthesize",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:FIELD-SUMMARY",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits.",
+      "minimum_content": [
+        "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits."
+      ],
+      "producer": "isomer-kaoju-synthesize",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:KAOJU-DOSSIER",
+      "category": "Examination, Comparison, Audit, and Synthesis",
+      "meaning": "navigable assembly of accepted survey outputs and exact refs.",
+      "minimum_content": [
+        "navigable assembly of accepted survey outputs and exact refs."
+      ],
+      "producer": "isomer-kaoju-synthesize",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-TERMINAL-REPORT",
+      "category": "Workspace and Control",
+      "meaning": "complete, paused, or blocked outcome with accepted refs, limitations, and resume point.",
+      "minimum_content": [
+        "complete, paused, or blocked outcome with accepted refs, limitations, and resume point."
+      ],
+      "producer": "isomer-kaoju-pipeline",
+      "consumers": [
+        "isomer-kaoju-pipeline"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:ENV-PREP-PLAN",
+      "category": "Environment and Trials",
+      "meaning": "dependencies, critical path, candidate environments, risks, authorization, and expected smoke outputs.",
+      "minimum_content": [
+        "dependencies, critical path, candidate environments, risks, authorization, and expected smoke outputs."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-srv-topic-env-setup"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:ENV-GATE-REVISION",
+      "category": "Environment and Trials",
+      "meaning": "before-and-after environment Gate state and authorized change.",
+      "minimum_content": [
+        "before-and-after environment Gate state and authorized change."
+      ],
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PIXI-ENV-REF",
+      "category": "Environment and Trials",
+      "meaning": "exact resolved packages, lock identity, declared flexible intent, and readiness.",
+      "minimum_content": [
+        "exact resolved packages, lock identity, declared flexible intent, and readiness."
+      ],
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SMOKE-RUN-SCRIPT",
+      "category": "Environment and Trials",
+      "meaning": "durable task-critical smoke program.",
+      "minimum_content": [
+        "durable task-critical smoke program."
+      ],
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SMOKE-RUN-RESULT",
+      "category": "Environment and Trials",
+      "meaning": "immutable smoke observation, environment, command request, outputs, and verdict.",
+      "minimum_content": [
+        "immutable smoke observation, environment, command request, outputs, and verdict."
+      ],
+      "producer": "isomer-srv-topic-env-setup",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-PLAN",
+      "category": "Environment and Trials",
+      "meaning": "bounded source, environment, data, wrapper, evaluator, metrics, resources, fidelity, and retry policy.",
+      "minimum_content": [
+        "bounded source, environment, data, wrapper, evaluator, metrics, resources, fidelity, and retry policy."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-WRAPPER",
+      "category": "Environment and Trials",
+      "meaning": "durable minimal wrapper for a compatible upstream command or the smallest recorded adaptation.",
+      "minimum_content": [
+        "durable minimal wrapper for a compatible upstream command or the smallest recorded adaptation."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-trial",
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL",
+      "category": "Environment and Trials",
+      "meaning": "readable compatibility result for a historical reproduction-owned trial.",
+      "minimum_content": [
+        "readable compatibility result for a historical reproduction-owned trial."
+      ],
+      "producer": "isomer-kaoju-reproduce",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-RUN",
+      "category": "Environment and Trials",
+      "meaning": "immutable execution attempt with exact source, environment, data, command, timing, logs, and status.",
+      "minimum_content": [
+        "immutable execution attempt with exact source, environment, data, command, timing, logs, and status."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:METHOD-TRIAL-RESULT",
+      "category": "Environment and Trials",
+      "meaning": "immutable interpreted verdict, checks, depth, fidelity, adaptations, and limitations.",
+      "minimum_content": [
+        "immutable interpreted verdict, checks, depth, fidelity, adaptations, and limitations."
+      ],
+      "producer": "isomer-kaoju-trial",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-synthesize"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-CONTRACT",
+      "category": "MyST-First Paper",
+      "meaning": "accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy.",
+      "minimum_content": [
+        "accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-STRUCTURE-MYST",
+      "category": "MyST-First Paper",
+      "meaning": "canonical typed section jobs and display plan in MyST.",
+      "minimum_content": [
+        "canonical typed section jobs and display plan in MyST."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
+      "category": "MyST-First Paper",
+      "meaning": "canonical actor-editable MyST structure template.",
+      "minimum_content": [
+        "canonical actor-editable MyST structure template."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-MYST",
+      "category": "MyST-First Paper",
+      "meaning": "canonical grounded paper draft in MyST.",
+      "minimum_content": [
+        "canonical grounded paper draft in MyST."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-MD",
+      "category": "MyST-First Paper",
+      "meaning": "deterministic non-canonical Markdown derivation.",
+      "minimum_content": [
+        "deterministic non-canonical Markdown derivation."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DISPLAY",
+      "category": "MyST-First Paper",
+      "meaning": "file-backed figure or table content referenced from MyST by a typed stable ref.",
+      "minimum_content": [
+        "file-backed figure or table content referenced from MyST by a typed stable ref."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:CITATION-MAP",
+      "category": "MyST-First Paper",
+      "meaning": "citation roles, source refs, locators, claim links, display links, and evidence status.",
+      "minimum_content": [
+        "citation roles, source refs, locators, claim links, display links, and evidence status."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-EXPORT",
+      "category": "MyST-First Paper",
+      "meaning": "versioned actor-editable template exchange directory.",
+      "minimum_content": [
+        "versioned actor-editable template exchange directory."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MANIFEST",
+      "category": "MyST-First Paper",
+      "meaning": "source revision, base digest, tied draft, paper line, and export policy.",
+      "minimum_content": [
+        "source revision, base digest, tied draft, paper line, and export policy."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-REVISION-LOG",
+      "category": "MyST-First Paper",
+      "meaning": "append-only canonical paper changes, evidence effects, and actor decisions.",
+      "minimum_content": [
+        "append-only canonical paper changes, evidence effects, and actor decisions."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-TEX",
+      "category": "MyST-First Paper",
+      "meaning": "derived TeX template tree and compatibility fingerprint.",
+      "minimum_content": [
+        "derived TeX template tree and compatibility fingerprint."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-DRAFT-TEX",
+      "category": "MyST-First Paper",
+      "meaning": "derived TeX draft tree, citations, included files, and conversion diagnostics.",
+      "minimum_content": [
+        "derived TeX draft tree, citations, included files, and conversion diagnostics."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-PDF",
+      "category": "MyST-First Paper",
+      "meaning": "immutable built PDF output.",
+      "minimum_content": [
+        "immutable built PDF output."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-COMPILE-LOG",
+      "category": "MyST-First Paper",
+      "meaning": "immutable compiler command, diagnostics, output, and fallback rationale.",
+      "minimum_content": [
+        "immutable compiler command, diagnostics, output, and fallback rationale."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-PDF-REVISION-LOG",
+      "category": "MyST-First Paper",
+      "meaning": "append-only authorized build repairs and material-change Gates.",
+      "minimum_content": [
+        "append-only authorized build repairs and material-change Gates."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-audit",
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-BUILD-RUN",
+      "category": "MyST-First Paper",
+      "meaning": "immutable document build attempt and terminal state.",
+      "minimum_content": [
+        "immutable document build attempt and terminal state."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Create a new immutable record for each attempt or output; never revise an accepted instance."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-VALIDATION-REPORT",
+      "category": "MyST-First Paper",
+      "meaning": "syntax, structure, citation, textual, visual, evidence, and publication assessment.",
+      "minimum_content": [
+        "syntax, structure, citation, textual, visual, evidence, and publication assessment."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Append a new record for each accepted event or change."
+    },
+    {
+      "semantic_id": "KAOJU:PUBLICATION-BUNDLE",
+      "category": "MyST-First Paper",
+      "meaning": "accepted canonical and derived paper refs with audit and provenance.",
+      "minimum_content": [
+        "accepted canonical and derived paper refs with audit and provenance."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:SURVEY-MANUSCRIPT",
+      "category": "MyST-First Paper",
+      "meaning": "readable compatibility record for historical LaTeX-first manuscripts.",
+      "minimum_content": [
+        "readable compatibility record for historical LaTeX-first manuscripts."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:WRITING-TEMPLATE",
+      "category": "MyST-First Paper",
+      "meaning": "readable compatibility record for historical LaTeX-first templates.",
+      "minimum_content": [
+        "readable compatibility record for historical LaTeX-first templates."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-EXPORT",
+      "category": "Wiki Export and Viewer",
+      "meaning": "checksummed managed Markdown and JSON survey export.",
+      "minimum_content": [
+        "checksummed managed Markdown and JSON survey export."
+      ],
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-METADATA",
+      "category": "Wiki Export and Viewer",
+      "meaning": "canonical topic, artifact, revision, checksum, page, relationship, and provenance mapping.",
+      "minimum_content": [
+        "canonical topic, artifact, revision, checksum, page, relationship, and provenance mapping."
+      ],
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-VIEWER",
+      "category": "Wiki Export and Viewer",
+      "meaning": "independently implemented packaged static viewer deployment.",
+      "minimum_content": [
+        "independently implemented packaged static viewer deployment."
+      ],
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    },
+    {
+      "semantic_id": "KAOJU:LLM-WIKI-VIEWER-MANIFEST",
+      "category": "Wiki Export and Viewer",
+      "meaning": "viewer version, file checksums, wiki target, launch metadata, and exposure posture.",
+      "minimum_content": [
+        "viewer version, file checksums, wiki target, launch metadata, and exposure posture."
+      ],
+      "producer": "isomer-kaoju-export",
+      "consumers": [
+        "isomer-kaoju-export"
+      ],
+      "update_intent": "Revise the current scoped record when accepted state changes."
+    }
+  ]
+}

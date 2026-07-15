@@ -26,7 +26,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <RESEARCH_OUTLINE_NOTE> must not replace literature survey or selected-idea handoff records.
+- DEEPSCI:RESEARCH-OUTLINE-NOTE must not replace literature survey or selected-idea handoff records.
 - Direction entries must include both conceptual thrust and repo-grounded translation.
 - Baseline characterization must not ignore the accepted comparator basis.
 - The outline should not force a paper structure when the route is only an algorithm-first optimization brief.

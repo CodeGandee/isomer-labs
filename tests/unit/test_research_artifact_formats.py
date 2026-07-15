@@ -30,7 +30,7 @@ def _survey_contract_payload() -> dict[str, object]:
         "title": "Survey Contract",
         "summary": "Defines a bounded literature and codebase survey.",
         "artifact_family": "kaoju",
-        "semantic_id": "kaoju:survey-contract",
+        "semantic_id": "KAOJU:SURVEY-CONTRACT",
         "artifact_type": "survey-contract",
         "sections": {"scope": {"question": "What works exist?"}},
     }
@@ -56,7 +56,7 @@ class ResearchArtifactFormatProviderTests(TestCase):
         self.assertIsNotNone(profile)
         assert profile is not None
         self.assertEqual("kaoju", profile.metadata["artifact_family"])
-        self.assertEqual("kaoju:survey-contract", profile.metadata["semantic_id"])
+        self.assertEqual("KAOJU:SURVEY-CONTRACT", profile.metadata["semantic_id"])
         self.assertEqual(["artifact"], profile.metadata["compatible_record_kinds"])
         self.assertEqual(["sections.scope"], profile.validation_hints["required_paths"])
 
@@ -73,7 +73,7 @@ class ResearchArtifactFormatProviderTests(TestCase):
         self.assertTrue(any(diagnostic.field == "sections.scope" for diagnostic in invalid.diagnostics))
 
         mismatch = _survey_contract_payload()
-        mismatch["semantic_id"] = "kaoju:field-summary"
+        mismatch["semantic_id"] = "KAOJU:FIELD-SUMMARY"
         invalid = validate_payload(mismatch, registry=registry, format_profile_ref=SURVEY_CONTRACT_REF)
         self.assertFalse(invalid.ok)
         self.assertTrue(any(diagnostic.field == "semantic_id" for diagnostic in invalid.diagnostics))
@@ -98,7 +98,8 @@ class ResearchArtifactFormatProviderTests(TestCase):
                 {
                     "family": "kaoju",
                     "artifact_class": "report",
-                    "semantic_id": "sample",
+                    "profile_slug": "sample",
+                    "semantic_id": "KAOJU:SAMPLE",
                     "artifact_type": "sample",
                     "compatible_record_kinds": ["artifact"],
                     "required_payload_paths": ["sections.sample"],

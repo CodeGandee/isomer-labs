@@ -33,14 +33,14 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<REVIEW_PACKAGE_NORMALIZATION>`
-- `<REVIEWER_ITEM_MATRIX>`
-- `<REBUTTAL_ACTION_PLAN>`
-- `<REVIEWER_LINKED_EVIDENCE_TODO>`
-- `<REBUTTAL_EVIDENCE_UPDATE>`
-- `<MANUSCRIPT_TEXT_DELTA>`
-- `<RESPONSE_LETTER_DRAFT>`
-- `<REVISION_HANDOFF_BUNDLE>`
+- `DEEPSCI:REVIEW-PACKAGE-NORMALIZATION`
+- `DEEPSCI:REVIEWER-ITEM-MATRIX`
+- `DEEPSCI:REBUTTAL-ACTION-PLAN`
+- `DEEPSCI:REVIEWER-LINKED-EVIDENCE-TODO`
+- `DEEPSCI:REBUTTAL-EVIDENCE-UPDATE`
+- `DEEPSCI:MANUSCRIPT-TEXT-DELTA`
+- `DEEPSCI:RESPONSE-LETTER-DRAFT`
+- `DEEPSCI:REVISION-HANDOFF-BUNDLE`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -85,13 +85,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <REVIEW_PACKAGE_NORMALIZATION> and <REVIEWER_ITEM_MATRIX> from reviewer text, keeping source-faithful wording, stable item ids, class, severity, affected claim, evidence anchor, and route.
-- Produce <REBUTTAL_ACTION_PLAN> using references/action-plan-template.
+- Produce DEEPSCI:REVIEW-PACKAGE-NORMALIZATION and DEEPSCI:REVIEWER-ITEM-MATRIX from reviewer text, keeping source-faithful wording, stable item ids, class, severity, affected claim, evidence anchor, and route.
+- Produce DEEPSCI:REBUTTAL-ACTION-PLAN using references/action-plan-template.
 - For novelty or positioning route to scout, for comparator gaps route to baseline, and for reviewer-linked evidence route to analysis.
-- Route structure, claim-scope, and wording changes to write, and record <MANUSCRIPT_TEXT_DELTA> for each changed claim, section, caption, or limitation.
-- After each routed fix, produce <REBUTTAL_EVIDENCE_UPDATE> using references/evidence-update-template.
-- Draft <RESPONSE_LETTER_DRAFT> using references/response-letter-template.
-- Produce <REVISION_HANDOFF_BUNDLE> with response letter, text deltas, evidence updates, unresolved limitations, and route decision for finalization or continued work.
+- Route structure, claim-scope, and wording changes to write, and record DEEPSCI:MANUSCRIPT-TEXT-DELTA for each changed claim, section, caption, or limitation.
+- After each routed fix, produce DEEPSCI:REBUTTAL-EVIDENCE-UPDATE using references/evidence-update-template.
+- Draft DEEPSCI:RESPONSE-LETTER-DRAFT using references/response-letter-template.
+- Produce DEEPSCI:REVISION-HANDOFF-BUNDLE with response letter, text deltas, evidence updates, unresolved limitations, and route decision for finalization or continued work.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

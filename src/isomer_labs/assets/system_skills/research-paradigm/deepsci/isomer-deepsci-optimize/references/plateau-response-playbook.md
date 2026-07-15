@@ -9,7 +9,7 @@ When performing this step, execute these substeps in order.
 1. **Name the plateau**. State repeated non-improving results, repeated small tweaks, same-family collapse, or a candidate queue full of near duplicates.
 2. **Identify root cause**. Explain whether the plateau is mechanism, data, evaluation, implementation, search-family, or resource driven.
 3. **Choose a route change**. Select widen search, promote stronger alternative, fuse, debug a strategically valuable blocked candidate, or stop.
-4. **Record a non-repeat rule**. Create <PLATEAU_RESPONSE> with what the next pass must not retry.
+4. **Record a non-repeat rule**. Create DEEPSCI:PLATEAU-RESPONSE with what the next pass must not retry.
 5. **Apply family-shift trigger**. If recent attempts stay in one mechanism family without improvement, or patience is exhausted, avoid another same-family Tier1 tweak.
 
 ## Preferences
@@ -24,7 +24,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <PLATEAU_RESPONSE> must not hide plateau under one more tiny edit.
+- DEEPSCI:PLATEAU-RESPONSE must not hide plateau under one more tiny edit.
 - Same unchanged candidate must not be rerun.
 - Fusion must not be chosen without complementary strengths.
 - Stop must be allowed when remaining routes are low value.

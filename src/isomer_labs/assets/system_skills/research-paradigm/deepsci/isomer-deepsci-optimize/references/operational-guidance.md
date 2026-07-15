@@ -4,22 +4,22 @@ Use this reference when the optimize route needs the longer execution notes rath
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<OPTIMIZATION_CONTEXT_BRIEF>`, `<OPTIMIZATION_FRONTIER>`, `<CANDIDATE_BOARD>`, or route-bearing optimize records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, frontier and result placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the active line, measured result, route recommendation, or blocker state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:OPTIMIZATION-CONTEXT-BRIEF`, `DEEPSCI:OPTIMIZATION-FRONTIER`, `DEEPSCI:CANDIDATE-BOARD`, or route-bearing optimize records, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, frontier and result placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the active line, measured result, route recommendation, or blocker state no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
 When performing this step, execute these substeps in order.
 
-1. **Recover working surfaces**. Refresh <OPTIMIZATION_FRONTIER>, <OPTIMIZE_CHECKLIST>, <CANDIDATE_BOARD>, active line plan, and immediate next move before creating or promoting anything.
-2. **Recover frontier state and prior lessons**. Inspect candidate briefs, durable lines, implementation attempts, measured results, failures, blockers, route recommendation, and relevant <OPTIMIZATION_MEMORY_CARD> entries.
+1. **Recover working surfaces**. Refresh DEEPSCI:OPTIMIZATION-FRONTIER, DEEPSCI:OPTIMIZE-CHECKLIST, DEEPSCI:CANDIDATE-BOARD, active line plan, and immediate next move before creating or promoting anything.
+2. **Recover frontier state and prior lessons**. Inspect candidate briefs, durable lines, implementation attempts, measured results, failures, blockers, route recommendation, and relevant DEEPSCI:OPTIMIZATION-MEMORY-CARD entries.
 3. **Select exactly one submode**. Choose fusion, debug, rank, brief, seed, loop, or stop based on frontier state; record a route shift if new evidence changes the selected submode.
 4. **Run the candidate protocol**. For brief mode, shape `2-4` serious branchless briefs; for rank mode, compare on one surface and apply promotion caps; for promotion, create one or a few distinct durable lines only when justified.
 5. **Run seed or loop protocol**. For seed mode, create a small differentiated within-line candidate pool; for loop mode, move one candidate through smoke, full evaluation, archive, debug, fusion, stop, or experiment handoff.
 6. **Use validation-cost-aware breadth**. Use broader quick checks when first-pass validation is cheap and differentiated; keep active pools narrow when validation is slow or expensive.
-7. **Record attempts and results**. Keep <OPTIMIZATION_ATTEMPT_RECORD> distinct from <PROMOTED_OPTIMIZATION_LINE> and measured experiment results; update <CANDIDATE_BOARD> and <FRONTIER_REVIEW> after meaningful movement.
-8. **Handle debug, fusion, and plateau deliberately**. Use <DEBUG_RESPONSE>, <FUSION_PLAN>, and <PLATEAU_RESPONSE> when those routes dominate, and stop near-duplicate low-information moves.
-9. **Preserve reusable lessons**. Write <OPTIMIZATION_MEMORY_CARD> only for reusable success patterns, repeated failure patterns, fusion lessons, or non-retry rules.
-10. **Complete with one route**. End only when <OPTIMIZE_ROUTE_DECISION> or <OPTIMIZE_BLOCKER_RECORD> names one next action, stop condition, experiment handoff, route change, or blocker.
+7. **Record attempts and results**. Keep DEEPSCI:OPTIMIZATION-ATTEMPT-RECORD distinct from DEEPSCI:PROMOTED-OPTIMIZATION-LINE and measured experiment results; update DEEPSCI:CANDIDATE-BOARD and DEEPSCI:FRONTIER-REVIEW after meaningful movement.
+8. **Handle debug, fusion, and plateau deliberately**. Use DEEPSCI:DEBUG-RESPONSE, DEEPSCI:FUSION-PLAN, and DEEPSCI:PLATEAU-RESPONSE when those routes dominate, and stop near-duplicate low-information moves.
+9. **Preserve reusable lessons**. Write DEEPSCI:OPTIMIZATION-MEMORY-CARD only for reusable success patterns, repeated failure patterns, fusion lessons, or non-retry rules.
+10. **Complete with one route**. End only when DEEPSCI:OPTIMIZE-ROUTE-DECISION or DEEPSCI:OPTIMIZE-BLOCKER-RECORD names one next action, stop condition, experiment handoff, route change, or blocker.
 
 ## Preferences
 
@@ -36,7 +36,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <OPTIMIZATION_FRONTIER> must be checked before new candidates, promotion, fusion, debug, or stop decisions.
+- DEEPSCI:OPTIMIZATION-FRONTIER must be checked before new candidates, promotion, fusion, debug, or stop decisions.
 - One pass must not bounce among submodes without recording a route shift.
 - Candidate briefs should remain branchless until promotion is justified.
 - Promotion should normally be capped at `1-3` durable lines and at most one per mechanism family unless a candidate clearly dominates.

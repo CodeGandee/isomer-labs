@@ -11,7 +11,7 @@ Accepted durable outputs named by this skill are structured research records. Wh
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
-Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `latest-context-snapshot`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
+Latest-context reminder: before accepted durable record writes, record refreshes, or durable route, claim, context, evidence, result, or publication-facing decisions, follow `isomer-deepsci-shared` Latest Context Preflight. Resolve current Effective Topic Context and Workspace Runtime, inspect relevant durable records, capture or update `DEEPSCI:LATEST-CONTEXT-SNAPSHOT`, and treat prompt memory, chat memory, prior prose, older rendered records, and worker-local files as candidate context until checked. Standalone source-only reading may skip this preflight until accepted Isomer records are written or refreshed.
 
 Worker-output reminder: before writing JSON payload staging files, Markdown drafts, CSVs, figures, paper builds, previews, reports, local summaries, deck assets, or other plain generated files, follow `isomer-deepsci-shared` Worker Output Policy: resolve `project outputs policy`, write under an operation-specific child set of the returned root, preserve durable records on their semantic bindings, and act on `commit_after_operation` as the post-action commit preference.
 
@@ -41,15 +41,15 @@ Do not use this skill when:
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Read paper state**. Build `<PAPER_STATE_SNAPSHOT>` from current outline, paper contract, evidence surfaces, run records, figures, reviewer needs, and user constraints.
+1. **Read paper state**. Build `DEEPSCI:PAPER-STATE-SNAPSHOT` from current outline, paper contract, evidence surfaces, run records, figures, reviewer needs, and user constraints.
 2. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-outline --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
-3. **Name the one-sentence idea**. Produce `<ONE_SENTENCE_PAPER_IDEA>` stating what readers should remember and why the result matters.
-4. **Separate facts from interpretation**. Produce `<CLAIM_EVIDENCE_BOUNDARY>` that distinguishes measured facts, allowed interpretations, limitations, and unsupported claims.
-5. **Build the paper view**. Draft `<PAPER_VIEW>` with thesis, story spine, scoped claims, method abstraction, evaluation plan, analysis plan, and target reader logic. Read `references/outline-patterns.md` when choosing outline structure.
-6. **Build the evidence view**. Draft `<EVIDENCE_VIEW>` with runs, paths, metrics, settings, source data, figures, reproducibility details, and appendix-only support separated from manuscript story.
-7. **Validate the outline**. Produce `<OUTLINE_VALIDATION_REPORT>` using claim support, falsification boundary, method clarity, evaluation coverage, analysis maturity, and reviewer-risk checks.
-8. **Repair until mature or blocked**. If validation fails, revise the paper view, evidence view, or claim boundary. Stop with `<PAPER_OUTLINE_ROUTE_DECISION>` when missing evidence or a strategic decision blocks maturity.
-9. **Compile writing plan**. When validation passes, produce `<SECTION_WRITING_PLAN>` for `isomer-deepsci-write`, including section jobs, required displays, citation needs, and evidence limits.
+3. **Name the one-sentence idea**. Produce `DEEPSCI:ONE-SENTENCE-PAPER-IDEA` stating what readers should remember and why the result matters.
+4. **Separate facts from interpretation**. Produce `DEEPSCI:CLAIM-EVIDENCE-BOUNDARY` that distinguishes measured facts, allowed interpretations, limitations, and unsupported claims.
+5. **Build the paper view**. Draft `DEEPSCI:PAPER-VIEW` with thesis, story spine, scoped claims, method abstraction, evaluation plan, analysis plan, and target reader logic. Read `references/outline-patterns.md` when choosing outline structure.
+6. **Build the evidence view**. Draft `DEEPSCI:EVIDENCE-VIEW` with runs, paths, metrics, settings, source data, figures, reproducibility details, and appendix-only support separated from manuscript story.
+7. **Validate the outline**. Produce `DEEPSCI:OUTLINE-VALIDATION-REPORT` using claim support, falsification boundary, method clarity, evaluation coverage, analysis maturity, and reviewer-risk checks.
+8. **Repair until mature or blocked**. If validation fails, revise the paper view, evidence view, or claim boundary. Stop with `DEEPSCI:PAPER-OUTLINE-ROUTE-DECISION` when missing evidence or a strategic decision blocks maturity.
+9. **Compile writing plan**. When validation passes, produce `DEEPSCI:SECTION-WRITING-PLAN` for `isomer-deepsci-write`, including section jobs, required displays, citation needs, and evidence limits.
 10. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-paper-outline --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this skill, the referenced pages, and the user's request, then execute the plan.
@@ -100,9 +100,9 @@ Read these pages as needed:
 
 This skill can end when all applicable checks are true:
 
-- `<PAPER_VIEW>` and `<EVIDENCE_VIEW>` are both present and separated.
-- `<OUTLINE_VALIDATION_REPORT>` either passes or names a concrete blocker.
-- `<SECTION_WRITING_PLAN>` exists when the outline is ready for writing.
+- `DEEPSCI:PAPER-VIEW` and `DEEPSCI:EVIDENCE-VIEW` are both present and separated.
+- `DEEPSCI:OUTLINE-VALIDATION-REPORT` either passes or names a concrete blocker.
+- `DEEPSCI:SECTION-WRITING-PLAN` exists when the outline is ready for writing.
 
 ## Guardrails
 

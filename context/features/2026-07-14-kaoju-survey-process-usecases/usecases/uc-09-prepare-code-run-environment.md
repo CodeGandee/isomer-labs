@@ -45,8 +45,8 @@ Run the smoke script to confirm the environment can execute the task-critical co
 1. Actor asks the system to prepare a code run for a paper or repository.
 2. System resolves the source code:
    - If a repository URL/name is given, route to UC-08 to acquire it.
-   - If a paper is given, look for an associated source-code ref in `kaoju:associated-source-code` or search for one online.
-   - If source code cannot be found or accessed, record a `kaoju:source-access-blocker` and report a blocker.
+   - If a paper is given, look for an associated source-code ref in `KAOJU:ASSOCIATED-SOURCE-CODE` or search for one online.
+   - If source code cannot be found or accessed, record a `KAOJU:SOURCE-ACCESS-BLOCKER` and report a blocker.
 3. System verifies the source code exists in the topic workspace artifact library.
 4. System inspects the source code for dependency hints: `pixi.toml`, `pyproject.toml`, `requirements.txt`, `setup.py`, `environment.yml`, `Cargo.toml`, `package.json`, README install instructions, import statements, etc.
 5. System updates the topic env gate:
@@ -125,12 +125,12 @@ sequenceDiagram
 
 Each durable output below is registered as an entry in the topic workspace state database. The entry contains the artifact metadata and a link to the actual file stored in the topic workspace filesystem, so the agent can look it up by querying the state DB rather than scanning directories.
 
-- `kaoju:env-prep-plan` — plan describing source code, inferred dependencies, and chosen environment strategy.
-- `kaoju:env-gate-revision` — record of the updated intent gate and derived gate.
-- `kaoju:pixi-env-ref` — reference to the selected Pixi environment (existing or newly created).
-- `kaoju:smoke-run-script` — the smoke-run script created to verify the environment.
-- `kaoju:smoke-run-result` — result of executing the smoke-run script.
-- `kaoju:source-access-blocker` — if source code cannot be found or accessed.
+- `KAOJU:ENV-PREP-PLAN` — plan describing source code, inferred dependencies, and chosen environment strategy.
+- `KAOJU:ENV-GATE-REVISION` — record of the updated intent gate and derived gate.
+- `KAOJU:PIXI-ENV-REF` — reference to the selected Pixi environment (existing or newly created).
+- `KAOJU:SMOKE-RUN-SCRIPT` — the smoke-run script created to verify the environment.
+- `KAOJU:SMOKE-RUN-RESULT` — result of executing the smoke-run script.
+- `KAOJU:SOURCE-ACCESS-BLOCKER` — if source code cannot be found or accessed.
 
 ## Environment Strategy Preference
 
@@ -154,7 +154,7 @@ AI:
 
 > I located the associated repository at `topic.repos.extern.llm-offload` and inspected its dependencies.
 >
-> Env prep plan (`kaoju:env-prep-plan`):
+> Env prep plan (`KAOJU:ENV-PREP-PLAN`):
 > - Source: `topic.repos.extern.llm-offload`
 > - Inferred dependencies: `torch`, `transformers`, `datasets`, `numpy`
 > - Strategy: add to existing `default` Pixi env with `"*"` constraints
@@ -170,5 +170,5 @@ AI:
 - Assumption: The agent can infer environment requirements from standard dependency files, import statements, and README instructions.
 - Assumption: Pixi is available and the topic workspace has at least a `default` Pixi environment.
 - Assumption: Exact dependency versions from the target repository are not required; Pixi can resolve compatible versions when `"*"` or loose constraints are used.
-- Decision: `kaoju:pixi-env-ref` records exact resolved versions and lock identity after resolution while the environment plan retains the actor's flexible intent constraints.
+- Decision: `KAOJU:PIXI-ENV-REF` records exact resolved versions and lock identity after resolution while the environment plan retains the actor's flexible intent constraints.
 - Decision: The canonical smoke-run script is a file-backed Artifact stored under a resolved owner-preserved `topic.records.*` surface. It is not kept beside external source code or canonically under a Local Tmp Surface; the Run may execute a disposable staged copy.

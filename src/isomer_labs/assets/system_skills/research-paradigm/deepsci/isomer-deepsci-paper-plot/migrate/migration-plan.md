@@ -33,13 +33,13 @@
 
 The migrated runtime entrypoint does not bind source artifacts to concrete paths. It uses placeholders defined in `migrate/placeholders.md`:
 
-- `<CHART_QUESTION>`
-- `<PLOT_STYLE_SELECTION>`
-- `<PLOT_TEMPLATE_COPY>`
-- `<PLOT_DATA_SUBSTITUTION_RECORD>`
-- `<FIRST_PASS_FIGURE>`
-- `<PLOT_RENDER_INSPECTION>`
-- `<FIGURE_POLISH_HANDOFF>`
+- `DEEPSCI:CHART-QUESTION`
+- `DEEPSCI:PLOT-STYLE-SELECTION`
+- `DEEPSCI:PLOT-TEMPLATE-COPY`
+- `DEEPSCI:PLOT-DATA-SUBSTITUTION-RECORD`
+- `DEEPSCI:FIRST-PASS-FIGURE`
+- `DEEPSCI:PLOT-RENDER-INSPECTION`
+- `DEEPSCI:FIGURE-POLISH-HANDOFF`
 
 ## Unmatched Skill-Route Substitutions
 
@@ -93,13 +93,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 The rewritten skill must preserve these source behaviors:
 
-- Produce <CHART_QUESTION> with comparison, units, grouping, key message, required labels, and output target.
-- Select <PLOT_STYLE_SELECTION> from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
+- Produce DEEPSCI:CHART-QUESTION with comparison, units, grouping, key message, required labels, and output target.
+- Select DEEPSCI:PLOT-STYLE-SELECTION from the available style table: paired delta bar, grouped hatch bar, confidence-band line, training curve line, loss with inset, t-SNE scatter, broken-axis scatter, or radar dual series.
 - Read the matching references/*.
-- Create <PLOT_TEMPLATE_COPY> by copying the matching scripts/*.
-- Record <PLOT_DATA_SUBSTITUTION_RECORD> for changed data arrays, labels, units, category names, legend text, and output filenames.
-- Generate <FIRST_PASS_FIGURE> through the active execution adapter, then inspect the actual render and record <PLOT_RENDER_INSPECTION>.
-- If the figure is paper-facing, appendix-facing, milestone-facing, or final, create <FIGURE_POLISH_HANDOFF> for isomer-rsch-figure-polish; otherwise stop with the first-pass figure and substitution record.
+- Create DEEPSCI:PLOT-TEMPLATE-COPY by copying the matching scripts/*.
+- Record DEEPSCI:PLOT-DATA-SUBSTITUTION-RECORD for changed data arrays, labels, units, category names, legend text, and output filenames.
+- Generate DEEPSCI:FIRST-PASS-FIGURE through the active execution adapter, then inspect the actual render and record DEEPSCI:PLOT-RENDER-INSPECTION.
+- If the figure is paper-facing, appendix-facing, milestone-facing, or final, create DEEPSCI:FIGURE-POLISH-HANDOFF for isomer-rsch-figure-polish; otherwise stop with the first-pass figure and substitution record.
 - Keep source evidence boundaries, stop conditions, route decisions, and durable outputs visible.
 - Preserve the source distinction between writing/presentation polish and evidence generation.
 - Keep unresolved storage bindings as semantic placeholders rather than concrete paths.

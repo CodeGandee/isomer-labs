@@ -37,6 +37,6 @@ Survey records are currently stored as durable Kaoju artifacts in the topic work
 - Instruction: export survey records into LLM Wiki viewable by `imsight-llm-wiki` viewer, record metadata in JSON/YAML, user says "convert the records into llm wiki in <user given path>", then "deploy a viewer to <user-given-path> targetting that wiki", then "start the viewer" to start at a port.
 - Applied changes:
   - Created UC-07 with convert, deploy-viewer, and start-viewer actions.
-  - Defined durable outputs: `kaoju:llm-wiki-export`, `kaoju:llm-wiki-metadata`, `kaoju:llm-wiki-viewer`, `kaoju:llm-wiki-viewer-manifest`.
+  - Defined durable outputs: `KAOJU:LLM-WIKI-EXPORT`, `KAOJU:LLM-WIKI-METADATA`, `KAOJU:LLM-WIKI-VIEWER`, `KAOJU:LLM-WIKI-VIEWER-MANIFEST`.
   - Added wiki page mapping and metadata schema examples.
   - Added ADR-0007.

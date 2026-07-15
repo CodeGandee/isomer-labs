@@ -9,7 +9,7 @@ description: Use when Kaoju survey work needs Topic Workspace readiness, existin
 
 Prepare a trustworthy starting context for survey work without taking ownership of Topic Workspace mutation. Reuse registered materials before requesting new acquisition.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:binding-index` and `kaoju:workspace-readiness` exactly. An unresolved binding, profile, label, query surface, actor posture, or reset decision is a storage blocker; never invent persistence.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:BINDING-INDEX` and `KAOJU:WORKSPACE-READINESS` exactly. An unresolved binding, profile, label, query surface, actor posture, or reset decision is a storage blocker; never invent persistence.
 
 ## When to Use
 
@@ -22,8 +22,8 @@ Use before a Kaoju procedure when workspace or material readiness is unknown, an
 3. **Validate record surfaces**. Resolve `topic.records.artifacts`, `topic.records.views`, and `topic.records.runs`; validate access to the Workspace Runtime state DB, the binding registry version, every selected profile and semantic label, each content mode, each selected `artifact-bindings.md`, scoped latest selection, lineage, render, and export support.
 4. **Inspect current posture**. Query relevant candidates through `project artifacts latest|list|show` with exact semantic ids and binding-defined scope keys. Inspect legacy unscoped ambiguity, duplicates, supersession, stale or corrupt content links, Topic Dataset Manifest state, repositories, access, licenses, storage, compute, time, actor posture, worker output policy, required Gates, and selected reset checkpoint. Never scan directories as a discovery fallback.
 5. **Classify and route gaps**. Separate missing read-only context from governed mutations, environment work, credentials, private data, large acquisition, builds, accelerator Runs, owner actions, and reset decisions. Retain returned refs.
-6. **Record binding index**. Validate and write `kaoju:binding-index` with selected skills, every semantic id, exact profile and label availability, binding status, owner, blockers, and next allowed stage.
-7. **Record readiness or blocker**. Validate and write `kaoju:workspace-readiness` through typed Artifact operations with reusable inputs, dataset posture, verified identities, content-mode and scope readiness, resource boundaries, query and actor posture, blockers, expected Run outputs, and next allowed stage. Prevent affected accepted writes when support is missing.
+6. **Record binding index**. Validate and write `KAOJU:BINDING-INDEX` with selected skills, every semantic id, exact profile and label availability, binding status, owner, blockers, and next allowed stage.
+7. **Record readiness or blocker**. Validate and write `KAOJU:WORKSPACE-READINESS` through typed Artifact operations with reusable inputs, dataset posture, verified identities, content-mode and scope readiness, resource boundaries, query and actor posture, blockers, expected Run outputs, and next allowed stage. Prevent affected accepted writes when support is missing.
 8. **Apply reset posture**. When bootstrap records or explicitly user-selected survey state should survive reset, call `isomer-cli project topic-reset update-checkpoint --topic <topic> <checkpoint-id>` with exact record ids, structured payload ids and files, export paths, semantic labels, actor refs, and provenance refs. Report all ordinary unpreserved state as subject to the accepted reset plan.
 9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-workspace-mgr --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 10. **Return status**. Report `complete`, `paused`, or `blocked` with binding-index and readiness refs, reset posture, next stage, and a resume point.
@@ -42,7 +42,7 @@ Readiness also proves that each selected content mode has an authoritative link,
 
 ## Artifact Operations
 
-Resolve `kaoju:binding-index` and `kaoju:workspace-readiness` with `isomer-cli --print-json project artifacts describe <semantic-id>`. Persist them only through `project artifacts put` or binding-permitted `revise`; let the service infer physical fields and the managed locator.
+Resolve `KAOJU:BINDING-INDEX` and `KAOJU:WORKSPACE-READINESS` with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Persist them only through `project artifacts put` or binding-permitted `revise`; let the service infer physical fields and the managed locator.
 
 ## Reset Contract
 

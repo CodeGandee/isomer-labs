@@ -16,25 +16,25 @@
 | quest | Research Topic, Research Inquiry, Research Task, or Topic Workspace, depending on the sentence. Runtime pages use the narrowest term that matches the source meaning. |
 | quest files and durable quest state | Workspace Runtime records, Artifacts, Findings, Evidence Items, Decision Records, and user-provided Research Topic context. |
 | scout stage | `isomer-rsch-scout` as a bounded research-framing skill. |
-| baseline next anchor | `isomer-rsch-baseline`, or a baseline route recorded through `<NEXT_ROUTE_DECISION>`. |
-| idea next anchor | `isomer-rsch-idea`, or an idea route recorded through `<NEXT_ROUTE_DECISION>`. |
-| remain in scout | A blocked or continued scout route recorded through `<SCOUT_BLOCKER_RECORD>` or `<NEXT_ROUTE_DECISION>`. |
-| memory cards | Workspace Runtime-backed compatibility memory results, summarized as `<SCOUT_MEMORY_REUSE_NOTE>` and `<SCOUT_CONTINUITY_UPDATE>`. |
-| paper/repo/benchmark neighborhood | Literature Provider Binding results, official repositories, benchmark documentation, and source Artifacts summarized through `<LITERATURE_SCOUTING_REPORT>` or `<SCOUT_DISCOVERY_LEDGER>`. |
-| evaluation contract | `<EVALUATION_CONTRACT>`. |
-| baseline shortlist | `<BASELINE_SHORTLIST>`. |
-| literature scouting report | `<LITERATURE_SCOUTING_REPORT>`. |
+| baseline next anchor | `isomer-rsch-baseline`, or a baseline route recorded through `DEEPSCI:NEXT-ROUTE-DECISION`. |
+| idea next anchor | `isomer-rsch-idea`, or an idea route recorded through `DEEPSCI:NEXT-ROUTE-DECISION`. |
+| remain in scout | A blocked or continued scout route recorded through `DEEPSCI:SCOUT-BLOCKER-RECORD` or `DEEPSCI:NEXT-ROUTE-DECISION`. |
+| memory cards | Workspace Runtime-backed compatibility memory results, summarized as `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE` and `DEEPSCI:SCOUT-CONTINUITY-UPDATE`. |
+| paper/repo/benchmark neighborhood | Literature Provider Binding results, official repositories, benchmark documentation, and source Artifacts summarized through `DEEPSCI:LITERATURE-SCOUTING-REPORT` or `DEEPSCI:SCOUT-DISCOVERY-LEDGER`. |
+| evaluation contract | `DEEPSCI:EVALUATION-CONTRACT`. |
+| baseline shortlist | `DEEPSCI:BASELINE-SHORTLIST`. |
+| literature scouting report | `DEEPSCI:LITERATURE-SCOUTING-REPORT`. |
 
 ## Harness Substitutions
 
 | Source Harness or Tool Rule | Isomer Labs Treatment |
 | --- | --- |
-| `memory.list_recent(...)` | Use the Isomer DeepScientist-compatible extension harness when compatibility is required: `isomer-cli ext deepsci call memory.list_recent --input-json <json-object>`. Summarize the result as `<SCOUT_MEMORY_REUSE_NOTE>`. |
-| `memory.search(...)` | Use `isomer-cli ext deepsci call memory.search --input-json <json-object>` when compatibility is required. Summarize the result as `<SCOUT_MEMORY_REUSE_NOTE>`. |
-| `memory.write(...)` | Use `isomer-cli ext deepsci call memory.write --input-json <json-object>` when a reusable scout conclusion must be preserved before storage binding is finalized. Summarize the write as `<SCOUT_CONTINUITY_UPDATE>`. |
-| `artifact.read_quest_documents(...)` and `artifact.get_quest_state(...)` | Use Isomer Workspace Runtime and Artifact lookup when available; use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` only for compatibility. Summarize consumed context as `<SCOUT_CONTEXT_BRIEF>`. |
-| `artifact.git(...)` | Prefer Isomer repository and Artifact inspection surfaces. When a compatibility call is needed, use `isomer-cli ext deepsci call artifact.git --input-json <json-object>`. Fold relevant evidence into `<SCOUT_DISCOVERY_LEDGER>`. |
-| `artifact.arxiv(paper_id=..., full_text=False)` | Prefer a Literature Provider Binding or Isomer paper-reading extension. When a compatibility call is needed, use `isomer-cli ext deepsci call artifact.arxiv --input-json <json-object>`. Fold retained paper evidence into `<LITERATURE_SCOUTING_REPORT>`. |
+| `memory.list_recent(...)` | Use the Isomer DeepScientist-compatible extension harness when compatibility is required: `isomer-cli ext deepsci call memory.list_recent --input-json <json-object>`. Summarize the result as `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE`. |
+| `memory.search(...)` | Use `isomer-cli ext deepsci call memory.search --input-json <json-object>` when compatibility is required. Summarize the result as `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE`. |
+| `memory.write(...)` | Use `isomer-cli ext deepsci call memory.write --input-json <json-object>` when a reusable scout conclusion must be preserved before storage binding is finalized. Summarize the write as `DEEPSCI:SCOUT-CONTINUITY-UPDATE`. |
+| `artifact.read_quest_documents(...)` and `artifact.get_quest_state(...)` | Use Isomer Workspace Runtime and Artifact lookup when available; use `isomer-cli ext deepsci call artifact.<tool> --input-json <json-object>` only for compatibility. Summarize consumed context as `DEEPSCI:SCOUT-CONTEXT-BRIEF`. |
+| `artifact.git(...)` | Prefer Isomer repository and Artifact inspection surfaces. When a compatibility call is needed, use `isomer-cli ext deepsci call artifact.git --input-json <json-object>`. Fold relevant evidence into `DEEPSCI:SCOUT-DISCOVERY-LEDGER`. |
+| `artifact.arxiv(paper_id=..., full_text=False)` | Prefer a Literature Provider Binding or Isomer paper-reading extension. When a compatibility call is needed, use `isomer-cli ext deepsci call artifact.arxiv --input-json <json-object>`. Fold retained paper evidence into `DEEPSCI:LITERATURE-SCOUTING-REPORT`. |
 | `bash_exec(...)` only for shell, CLI, Python, git, npm, uv, or repo inspection | Runtime pages describe this as an Execution Adapter Command Request or DeepScientist-compatible `bash_exec` extension call when command execution is necessary. The scout skill should prefer Workspace Runtime, Artifact, literature, and repository inspection surfaces before shell execution. |
 | DeepXiv when declared available | Treat as a provider-bound paper discovery route through Literature Provider Binding or Research Operation Extension Point, not as core Isomer terminology. |
 
@@ -42,16 +42,16 @@
 
 The migrated runtime pages do not bind source artifacts to concrete paths. They use placeholders defined in `migrate/placeholders.md`:
 
-- `<SCOUT_CONTEXT_BRIEF>`
-- `<SCOUT_MEMORY_REUSE_NOTE>`
-- `<SCOUT_MINIMUM_UNKNOWNS>`
-- `<SCOUT_DISCOVERY_LEDGER>`
-- `<LITERATURE_SCOUTING_REPORT>`
-- `<EVALUATION_CONTRACT>`
-- `<BASELINE_SHORTLIST>`
-- `<NEXT_ROUTE_DECISION>`
-- `<SCOUT_BLOCKER_RECORD>`
-- `<SCOUT_CONTINUITY_UPDATE>`
+- `DEEPSCI:SCOUT-CONTEXT-BRIEF`
+- `DEEPSCI:SCOUT-MEMORY-REUSE-NOTE`
+- `DEEPSCI:SCOUT-MINIMUM-UNKNOWNS`
+- `DEEPSCI:SCOUT-DISCOVERY-LEDGER`
+- `DEEPSCI:LITERATURE-SCOUTING-REPORT`
+- `DEEPSCI:EVALUATION-CONTRACT`
+- `DEEPSCI:BASELINE-SHORTLIST`
+- `DEEPSCI:NEXT-ROUTE-DECISION`
+- `DEEPSCI:SCOUT-BLOCKER-RECORD`
+- `DEEPSCI:SCOUT-CONTINUITY-UPDATE`
 
 These placeholders cover source mentions of `brief.md`, `plan.md`, `status.md`, `SUMMARY.md`, baseline artifacts, recent paper or knowledge memory cards, search ledgers, reference buckets, evaluation contracts, baseline shortlists, next anchors, blocked scout results, and memory writes.
 
@@ -59,7 +59,7 @@ These placeholders cover source mentions of `brief.md`, `plan.md`, `status.md`, 
 
 - Source `baseline` maps to `isomer-rsch-baseline`.
 - Source `idea` maps to `isomer-rsch-idea`.
-- Source continued `scout` maps to `isomer-rsch-scout` with `<SCOUT_BLOCKER_RECORD>` or `<NEXT_ROUTE_DECISION>`.
+- Source continued `scout` maps to `isomer-rsch-scout` with `DEEPSCI:SCOUT-BLOCKER-RECORD` or `DEEPSCI:NEXT-ROUTE-DECISION`.
 - DeepXiv is treated as a provider-bound literature route rather than a missing skill.
 - No source skill route currently requires a `missing-isomer-skill` placeholder.
 

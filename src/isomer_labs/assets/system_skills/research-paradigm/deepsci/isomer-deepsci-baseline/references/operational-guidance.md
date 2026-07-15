@@ -6,8 +6,8 @@ Use this reference to keep comparator work bounded and evidence-first. Placehold
 
 When performing this step, execute these substeps in order.
 
-1. **Choose the shortest durable route record**. Use <BASELINE_ROUTE_PLAN> and <BASELINE_GATE_CHECKLIST> when the route is non-trivial, code-touching, expensive, unstable, long-running, reuse-facing, or ambiguous; otherwise keep a compact record.
-2. **Preserve provenance for attach or import**. Record <BASELINE_PROVENANCE_RECORD> for package identity, attachment metadata, source identity, outputs, metrics, and caveats.
+1. **Choose the shortest durable route record**. Use DEEPSCI:BASELINE-ROUTE-PLAN and DEEPSCI:BASELINE-GATE-CHECKLIST when the route is non-trivial, code-touching, expensive, unstable, long-running, reuse-facing, or ambiguous; otherwise keep a compact record.
+2. **Preserve provenance for attach or import**. Record DEEPSCI:BASELINE-PROVENANCE-RECORD for package identity, attachment metadata, source identity, outputs, metrics, and caveats.
 3. **Use faithful execution tactics**. Choose the execution route that is most faithful, observable, and efficient while preserving verification gates; use source audit only when needed.
 4. **Handle environment tactically**. Prefer a reproducible isolated environment, but follow the source package or repository's native route when it is more faithful to comparable evidence.
 5. **Use memory selectively**. Check Workspace Runtime memory when resuming blocked or ambiguous routes, repeated failure patterns, or accepted caveats may affect trust; preserve reusable baseline lessons before exit.
@@ -28,8 +28,8 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
 - Durable route records are required in substance, not in fixed filenames.
-- <BASELINE_PROVENANCE_RECORD> is required for attached or imported baselines.
-- <COMPARABILITY_CONTRACT> is required for accepted baselines.
+- DEEPSCI:BASELINE-PROVENANCE-RECORD is required for attached or imported baselines.
+- DEEPSCI:COMPARABILITY-CONTRACT is required for accepted baselines.
 - Reuse or publish must not proceed while verification is incomplete, metrics are untrusted, or provenance is weak.
 - Environment details should record facts that affect trust or comparability, not incidental setup noise.
 - Repeated unchanged checks must not continue without new evidence, code change, environment change, or route change.

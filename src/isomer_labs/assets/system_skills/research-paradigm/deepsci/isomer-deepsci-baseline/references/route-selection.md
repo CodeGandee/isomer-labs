@@ -4,17 +4,17 @@ Use this reference to choose the cheapest route that can make comparator trust r
 
 ## Latest Context Freshness
 
-Before producing or refreshing `<BASELINE_CONTEXT_BRIEF>` or `<COMPARATOR_ROUTE_RECORD>`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, comparator-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the current comparator basis, metric contract, accepted waiver, or baseline target no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
+Before producing or refreshing `DEEPSCI:BASELINE-CONTEXT-BRIEF` or `DEEPSCI:COMPARATOR-ROUTE-RECORD`, use the shared Latest Context Preflight. Include Effective Topic Context source, Workspace Runtime inspection, comparator-relevant placeholder records checked, duplicate-record judgment, prompt-versus-durable-context verdict, and route or blocker when the current comparator basis, metric contract, accepted waiver, or baseline target no longer matches durable topic state. Treat structured payload and record metadata as authoritative; on-demand Markdown views are review material.
 
 ## Guidance
 
 When performing this step, execute these substeps in order.
 
 1. **Name the acceptance target**. Choose comparison-ready, paper-repro-ready, registry-publishable, waived, or blocked before selecting the route.
-2. **List concrete comparator evidence**. Identify requested or confirmed comparator references, packages, local paths, services, source repositories, metric contracts, outputs, and blockers in <BASELINE_CONTEXT_BRIEF>.
+2. **List concrete comparator evidence**. Identify requested or confirmed comparator references, packages, local paths, services, source repositories, metric contracts, outputs, and blockers in DEEPSCI:BASELINE-CONTEXT-BRIEF.
 3. **Try the lightest trustworthy path first**. Prefer attach, import, or verify-local-existing when they can establish trust with less work than reproduction.
 4. **Escalate only for named trust gaps**. Use reproduce when source establishment is needed, repair when a concrete failure point can change, publish only after verification, and waive only with an explicit durable reason.
-5. **Keep one dominant route active**. Record <COMPARATOR_ROUTE_RECORD> and avoid running parallel baseline routes unless they are explicitly needed to resolve comparator trust.
+5. **Keep one dominant route active**. Record DEEPSCI:COMPARATOR-ROUTE-RECORD and avoid running parallel baseline routes unless they are explicitly needed to resolve comparator trust.
 
 ## Preferences
 
@@ -30,7 +30,7 @@ Read these preferences as route-shaping defaults for this step, not as hard requ
 
 Read these constraints as the validity boundary for this step. Treat `must` and `must not` as hard requirements, and treat `should` and `should not` as strong defaults that need an explicit reason to override.
 
-- <COMPARATOR_ROUTE_RECORD> must choose one dominant route and acceptance target.
+- DEEPSCI:COMPARATOR-ROUTE-RECORD must choose one dominant route and acceptance target.
 - A heavier route must name the unresolved comparison risk it removes.
 - Waiver must not be used merely because reproduction is inconvenient.
 - Publish must not occur before local trust and verification are complete.
