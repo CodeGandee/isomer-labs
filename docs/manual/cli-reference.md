@@ -604,6 +604,11 @@ isomer-cli --print-json project artifacts put KAOJU:READING-LIST reading-list.js
   --scope-key direction:memory-offload \
   --relationships-json '[{"role":"direction_set","target_ref":"directions-1"},{"role":"discovery_ledger","target_ref":"discovery-1"}]'
 isomer-cli --print-json project artifacts latest KAOJU:READING-LIST --topic my-topic --scope-key direction:memory-offload
+isomer-cli --print-json project artifacts list --topic my-topic
+isomer-cli --print-json project artifacts show <record-id> --topic my-topic
+isomer-cli --print-json project artifacts revise <record-id> revised-reading-list.json --topic my-topic --producer isomer-kaoju-discover
+isomer-cli --print-json project artifacts archive <record-id> --topic my-topic --reason superseded
+isomer-cli --print-json project artifacts migrate-scope --topic my-topic
 ```
 
 ### `project runs begin/checkpoint/status/complete`
@@ -615,6 +620,7 @@ Record one Kaoju procedure attempt and its resumable stage state. A checkpoint c
 ```bash
 isomer-cli --print-json project runs begin --topic my-topic --procedure-id build-reading-list --stage-id discover --id run-reading-1
 isomer-cli --print-json project runs checkpoint run-reading-1 --topic my-topic --stage-id approve --completed-ref reading-list-1 --pending-gate-ref gate-reading-1
+isomer-cli --print-json project runs status run-reading-1 --topic my-topic
 isomer-cli --print-json project runs complete run-reading-1 --topic my-topic --terminal-status complete --completed-ref reading-list-1
 ```
 
@@ -636,6 +642,9 @@ isomer-cli --print-json project service-requests create \
   --completion-observation "task-critical check passes" \
   --command-request-json '{"extension_point":"smoke_run","argv":["pixi","run","--environment","default","--","sh","smoke.sh"]}' \
   --actor-ref project-operator-session:current
+
+isomer-cli --print-json project service-requests dispatch <request-id> --topic my-topic
+isomer-cli --print-json project service-requests status <request-id> --topic my-topic
 ```
 
 ### `project topic-actors list/show/register/update/archive/materialize/repair/diagnose`
@@ -887,6 +896,10 @@ isomer-cli --print-json ext kaoju paper export-template \
 
 isomer-cli --print-json ext kaoju paper apply-template \
   --topic my-topic topic-workspaces/my-topic/exports/kaoju-paper/paper-main/v0001
+
+isomer-cli --print-json ext kaoju paper derive-markdown --topic my-topic --source-ref paper-draft-3 --paper-line paper:main
+isomer-cli --print-json ext kaoju paper init-tex --topic my-topic --draft-ref paper-draft-3 --template-myst-ref paper-template-2 --paper-line paper:main
+isomer-cli --print-json ext kaoju paper build-pdf --topic my-topic --draft-tex-ref paper-tex-draft-3 --template-tex-ref paper-tex-template-2 --paper-line paper:main --audit-ref paper-audit-4 --inspected --pdf-inspected
 ```
 
 ### `ext kaoju process show` and `ext kaoju bindings list/describe`
@@ -996,6 +1009,34 @@ isomer-cli --print-json ext research records query list \
 ```
 
 `--latest-only` follows explicit revision and supersession links and reports competing current candidates. `show --include-payload` reads canonical JSON, `render` produces an on-demand readable view, and `render --output-file` creates an explicit export without changing latest state.
+
+### `ext research templates create/list/show/refresh/compile/remove`
+
+Inspect and repair legacy non-canonical LaTeX writing templates. New paper state uses `ext kaoju paper`; these commands remain available for historical records that predate the canonical MyST workflow.
+
+**Side effects:** `create`, `refresh`, `compile`, and `remove` can write or archive legacy template records and files. `list` and `show` are read-only.
+
+```bash
+isomer-cli --print-json ext research templates create --name main
+isomer-cli --print-json ext research templates list
+isomer-cli --print-json ext research templates show --name main
+isomer-cli --print-json ext research templates refresh --name main
+isomer-cli --print-json ext research templates compile --name main
+isomer-cli --print-json ext research templates remove --name main
+```
+
+### Structured Error Examples
+
+These intentionally incomplete or invalid invocations exercise the CLI's command-specific structured error guidance:
+
+```bash
+isomer-cli --print-json ext research ideas list --topic my-topic
+isomer-cli --print-json ext research ideas graph --topic my-topic
+isomer-cli --print-json ext research ideas validate --topic my-topic
+isomer-cli --print-json ext research records list --topic my-topic
+isomer-cli --print-json ext research records show <record-id> --topic my-topic
+isomer-cli --print-json ext research records create --topic my-topic --record-kind artifact
+```
 
 ### UC-01 Manual Harness
 

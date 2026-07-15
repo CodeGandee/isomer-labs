@@ -1,5 +1,5 @@
 metadata:
-  version: "0.2.3"
+  version: "0.3.0"
 
 interface:
   display_name: "isomer-deepsci-nature-figure"

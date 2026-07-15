@@ -6,6 +6,40 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-15
+
+This release adds the production Kaoju survey workflow, version-aware system-skill management, and canonical extension artifact contracts.
+
+### Added
+
+- Added the Kaoju research extension for evidence-led literature and codebase surveys, direction selection, reading-list construction, source ingestion, controlled comparisons, and first-hand method trials.
+- Added typed Kaoju Artifact, Run, Service Request, repository-acquisition, MyST paper, PDF build, wiki export, and local viewer operations.
+- Added packaged extension discovery, versioned skill receipts, provider-neutral skill-root inspection, inventory classification, and agent-guided Project extension reconciliation.
+- Added research-template publication profiles and indexed template lookup.
+- Added idea-lineage graph layout, focus, refresh, and selection controls.
+- Added the `isomer-dev-testing` skillset for validating local Isomer CLI and skill changes.
+
+### Changed
+
+- Required an explicit `--scope user|project` for system-skill install, status, upgrade, and uninstall operations, with deterministic host-specific roots.
+- Modernized packaged system skills with explicit planning guidance for complex workflows, negative-only guardrails, troubleshooting references, and stricter routing boundaries.
+- Moved shared Kaoju contracts into package-owned resources exposed through `isomer-cli ext kaoju`, while keeping single-skill resources bundled with their owning skill.
+- Standardized extension Artifact identifiers as uppercase `EXTENSION-NAME:WHAT` values throughout skills, runtime services, schemas, and documentation.
+- Made MyST the canonical Kaoju paper format and added actor-editable template round trips with optimistic concurrency checks.
+- Expanded the Kaoju process into explicit resumable procedures for survey planning, evidence collection, paper production, wiki export, source-code ingestion, environment preparation, and code trials.
+
+### Fixed
+
+- Made research-template examples context-aware and replaced repeated template scans with indexed lookup.
+- Improved Kaoju extension discovery and family-neutral Artifact binding resolution.
+- Tightened system-skill routing so specialization, extension installation, and operational support requests stay within their declared authority.
+
+### Breaking
+
+- Removed target-default and arbitrary-home behavior from public system-skill management commands; callers must now select `--scope user` or `--scope project`.
+- Replaced legacy angle-bracket and lowercase extension placeholders with exact uppercase `EXTENSION-NAME:WHAT` identifiers without aliases or fallback parsing.
+- Routed Kaoju research decisions through the installed `$isomer-kaoju-pipeline` skill; `isomer-cli ext kaoju` now provides deterministic resource and artifact operations.
+
 ## [0.2.3] - 2026-07-09
 
 This bugfix release improves setup guidance for paper-writing workflows.
@@ -130,7 +164,8 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.0...v0.2.1

@@ -2335,14 +2335,18 @@ def _validate_current_workflow(
     workflow_index = workflow_indices[0]
     if require_near_top:
         preceding_h2 = [line.strip() for line in lines[:workflow_index] if line.startswith("## ")]
-        if preceding_h2 != ["## Overview", "## When to Use"]:
+        allowed_prefixes = (
+            ["## Overview", "## When to Use"],
+            ["## Plan First", "## Overview", "## When to Use"],
+        )
+        if preceding_h2 not in allowed_prefixes:
             add(
                 diagnostics,
                 repo_root,
                 path,
                 workflow_index + 1,
                 SYSTEM_SKILL_TEMPLATE_CODE,
-                "SKILL.md must place ## Workflow after ## Overview and ## When to Use and before other top-level sections",
+                "SKILL.md must place ## Workflow after optional ## Plan First, ## Overview, and ## When to Use and before other top-level sections",
             )
     if not has_numbered_step_after(lines, workflow_index):
         add(diagnostics, repo_root, path, workflow_index + 1, SYSTEM_SKILL_TEMPLATE_CODE, "## Workflow must contain numbered steps")

@@ -245,6 +245,23 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertTrue(any("before other top-level sections" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_packaged_template_validator_allows_plan_first_before_overview(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+        skill_path = root / "skillset" / "misc" / "isomer-misc-template-fixture" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "## Overview",
+                "## Plan First\n\nCreate a plan with the internal todo list before executing this complex workflow.\n\n## Overview",
+                1,
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_packaged_skill_template(root)
+
+        self.assertFalse(any("before other top-level sections" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_packaged_template_validator_checks_executable_subpages_and_guardrails(self) -> None:
         root = self.make_root()
         self.write_current_template_fixture(root)
