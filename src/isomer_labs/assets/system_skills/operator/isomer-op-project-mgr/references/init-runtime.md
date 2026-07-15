@@ -11,7 +11,10 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from runtime boundaries, selected topic context, and guardrails, then execute the plan.
 
+## Operational Contract
+
+- Use `project runtime init` as the explicit boundary for `state.sqlite` and default runtime directories.
+
 ## Guardrails
 
-- MUST use `project runtime init` as the explicit boundary for `state.sqlite` and default runtime directories.
 - DO NOT run `project runtime prepare` or team launch work unless the user asks for those later steps.

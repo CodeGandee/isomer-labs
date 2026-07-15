@@ -48,9 +48,12 @@ Carry forward:
 - out-of-scope requests;
 - blockers.
 
+## Operational Contract
+
+- Preserve uncertainty instead of pretending a vague source intent is precise.
+- Require every required command to run from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment before reporting a passing result.
+
 ## Guardrails
 
-- MUST preserve uncertainty instead of pretending a vague source intent is precise.
 - DO NOT choose Agent Names here.
 - DO NOT create or mutate files from this subcommand.
-- MUST require every required command to run from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment before reporting a passing result.

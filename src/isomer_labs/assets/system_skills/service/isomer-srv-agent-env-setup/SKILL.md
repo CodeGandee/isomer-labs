@@ -124,21 +124,30 @@ When requested, include grouped handoff and audit fields:
 - **Operations and resources**: `operation_classification`, `resource_check_status`, `resource_check_evidence`, and `resource_conservative_decisions`, with affected Agent Name or matrix scope.
 - **Execution result**: `commands_run`, `changed_files`, blockers, and `next_action`.
 
+## Operational Contract
+
+- Resolve semantic labels before filesystem mutation. Default paths may appear only as examples from `isomer-default.v1`; semantic labels and path sources remain the contract.
+- Keep the resolved `agent.workspace` path as a worktree of the already-prepared normal non-bare Topic Main Development Repository on `per-agent/<agent-name>/main`.
+- Treat `topic.repos.main.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
+- Allow direct Project Operator Session invocation after the selected Project, Research Topic, Topic Workspace, topic env predecessor evidence, authoritative Agent Name plan, and mutation scope are confirmed. Record optional Service Request, support Artifact, and Provenance refs when available.
+- Treat selected-agent direct verification as partial evidence; do not claim overall readiness unless the complete planned Agent Name matrix has passed.
+- Ask `isomer-misc-bounded-run-tips` to classify each resource-relevant per-agent cwd verification operation before resource-check planning. Treat `heavy` and `unknown-risk` classifications as requiring bounded guidance, lightweight read-only resource probes, and the smallest real command that satisfies the gate. Apply a matching bounded-run tips subcommand when available, or record generic best-effort judgment when no specific recipe applies. Examples include selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases; bounded-run tips owns the classification decision. If no bounded real-path command can safely exercise the required path, record that the resource check is blocked and give the command to retry later instead of claiming readiness.
+
+## Operational Notes
+
+- Report missing or stale Topic Workspace dependency readiness as a repair next action for `isomer-srv-topic-env-setup`.
+- Do not create, initialize, configure, repair, or project external repos into `topic.repos.main`; report missing or stale topic-main or projection evidence as a repair next action for `isomer-srv-topic-env-setup`.
+- Use the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet as the Agent Name authority.
+- A matching explicit operator-provided map is only corroborating evidence; a disagreement is an `agent-plan-conflict` blocker.
+
 ## Guardrails
 
 - DO NOT create per-agent Pixi manifests, per-agent lockfiles, per-agent `.pixi/` directories, or dependency environments by default.
-- DO NOT install or mutate Topic Workspace dependencies. Report missing or stale Topic Workspace dependency readiness as a repair next action for `isomer-srv-topic-env-setup`.
-- DO NOT initialize, repair, or configure the Topic Main Development Repository. Do not create, initialize, configure, repair, or project external repos into `topic.repos.main`; report missing or stale topic-main or projection evidence as a repair next action for `isomer-srv-topic-env-setup`.
+- DO NOT install or mutate Topic Workspace dependencies.
+- DO NOT initialize, repair, or configure the Topic Main Development Repository.
 - DO NOT create Agent Instances, mutate Workspace Runtime records, launch Houmao agents, run Execution Adapters, create Houmao launch material, or make research decisions.
-- DO NOT infer Agent Names from directories, branches, provider ids, or ad hoc maps. Use the Topic Team Instantiation Packet or Topic Agent Team Profile material derived from that packet as the Agent Name authority. A matching explicit operator-provided map is only corroborating evidence; a disagreement is an `agent-plan-conflict` blocker.
+- DO NOT infer Agent Names from directories, branches, provider ids, or ad hoc maps.
 - DO NOT overwrite, delete, clean, reset, reinitialize, reclone, rewrite history, or silently repair existing repositories or Agent Workspace paths.
-- MUST resolve semantic labels before filesystem mutation. Default paths may appear only as examples from `isomer-default.v1`; semantic labels and path sources remain the contract.
-- MUST keep the resolved `agent.workspace` path as a worktree of the already-prepared normal non-bare Topic Main Development Repository on `per-agent/<agent-name>/main`.
-- MUST treat `topic.repos.main.tmp` and `agent.tmp` as local ignored disposable surfaces when available. Do not use tmp contents as durable readiness evidence.
-- MUST allow direct Project Operator Session invocation after the selected Project, Research Topic, Topic Workspace, topic env predecessor evidence, authoritative Agent Name plan, and mutation scope are confirmed. Record optional Service Request, support Artifact, and Provenance refs when available.
-- MUST treat selected-agent direct verification as partial evidence; do not claim overall readiness unless the complete planned Agent Name matrix has passed.
-- MUST ask `isomer-misc-bounded-run-tips` to classify each resource-relevant per-agent cwd verification operation before resource-check planning. Treat `heavy` and `unknown-risk` classifications as requiring bounded guidance, lightweight read-only resource probes, and the smallest real command that satisfies the gate. Apply a matching bounded-run tips subcommand when available, or record generic best-effort judgment when no specific recipe applies. Examples include selected-agent partial checks, fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases; bounded-run tips owns the classification decision. If no bounded real-path command can safely exercise the required path, record that the resource check is blocked and give the command to retry later instead of claiming readiness.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

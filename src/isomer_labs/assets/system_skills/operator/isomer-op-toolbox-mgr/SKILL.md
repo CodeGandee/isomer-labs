@@ -88,27 +88,29 @@ Lead with the Toolbox operation outcome. Name the Toolbox, source path, and sele
 
 Include grouped details for commands run, project and scope selectors, authored paths, manifest entries, callback source refs, Runtime Param declarations and bundle rows, import rows, effective-state inspection, mutation summary, validation diagnostics, skipped work, rollback hints, and blockers.
 
+## Operational Contract
+
+- Warn when Project scope could affect every compatible topic context. Warn again before disable, uninstall, or source replacement when the operation can broadly change callback behavior.
+- Use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent Runtime Param scope explicit.
+- Add `agents/openai.yaml` with `allow_implicit_invocation: false` and route Toolbox skills through prompt-file callbacks or manual invocation.
+- Validate the manifest, target skill, stage, source paths, and scope before install or refresh.
+- Report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output.
+
+## Operational Notes
+
+- Report a blocker or redacted diagnostic instead.
+- Direct `skill_dir` callback sources are supplemental instruction material; use them only when that is the explicit requested shape.
+- Use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles.
+
 ## Guardrails
 
 - DO NOT edit packaged system skill files or the packaged system-skill manifest as part of Toolbox operations.
-
 - DO NOT mutate callback registries, Project Manifests, or Topic Workspace Manifests directly when an `isomer-cli` command owns that behavior.
-
-- DO NOT write credentials, tokens, passwords, private data, or secret-like values into Toolbox manifests, callback material, README notes, prompt files, or Runtime Param bundles. Report a blocker or redacted diagnostic instead.
-
-- DO NOT describe a Toolbox skill as automatically or implicitly invoked by default. Direct `skill_dir` callback sources are supplemental instruction material; use them only when that is the explicit requested shape.
-
-- MUST warn when Project scope could affect every compatible topic context. Warn again before disable, uninstall, or source replacement when the operation can broadly change callback behavior.
-
-- MUST use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent Runtime Param scope explicit.
-
+- DO NOT write credentials, tokens, passwords, private data, or secret-like values into Toolbox manifests, callback material, README notes, prompt files, or Runtime Param bundles.
+- DO NOT describe a Toolbox skill as automatically or implicitly invoked by default.
 - DO NOT split each CRUD operation into a separate helper command; group operations by target resource, such as callback declarations or Runtime Params.
 - DO NOT treat callback ids and local keys as the same thing; author local `key` values and report installed callback ids as `<toolbox_id>:<toolbox-local-key>`.
-- MUST add `agents/openai.yaml` with `allow_implicit_invocation: false` and route Toolbox skills through prompt-file callbacks or manual invocation.
-- DO NOT set Runtime Params by editing TOML from memory; use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles.
-- MUST validate the manifest, target skill, stage, source paths, and scope before install or refresh.
-- MUST report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output.
-
+- DO NOT set Runtime Params by editing TOML from memory.
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

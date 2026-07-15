@@ -29,10 +29,13 @@ isomer-cli --print-json project topic-actors diagnose --topic <topic> --topic-ac
 isomer-cli --print-json project topic-actors archive <topic-actor-name> --topic <topic> --reason <reason>
 ```
 
+## Operational Notes
+
+- Report alternate source repositories as unsupported instead of creating an ad hoc worktree.
+- A Topic Actor binding is human-orchestrated topology, not team membership.
+
 ## Guardrails
 
-- DO NOT accept `--source-repo` values other than the resolved `topic.repos.main` source in this change. Report alternate source repositories as unsupported instead of creating an ad hoc worktree.
-
+- DO NOT accept `--source-repo` values other than the resolved `topic.repos.main` source in this change.
 - DO NOT create Agent Team Instance records, Agent Instance records, formal Agent Workspaces, Houmao launch material, handoffs, or research records from actor management.
-
-- DO NOT treat Topic Actor Workspaces as formal Agent Workspaces. A Topic Actor binding is human-orchestrated topology, not team membership.
+- DO NOT treat Topic Actor Workspaces as formal Agent Workspaces.

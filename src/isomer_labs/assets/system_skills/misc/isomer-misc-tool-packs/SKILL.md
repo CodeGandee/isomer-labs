@@ -57,16 +57,20 @@ Say whether the toolset request was resolved, remains ambiguous or unknown, or i
 
 Group the complete contract by toolset identity and purpose, included packs and dependencies, required and optional tools, package-source and host-tool expectations, verification, blockers, helper routes, setup owner, and notes.
 
+## Operational Notes
+
+- Return a contract to topic environment setup.
+- Use the Topic Workspace Pixi environment.
+
 ## Guardrails
 
-- DO NOT install directly from this misc skill; return a contract to topic environment setup.
+- DO NOT install directly from this misc skill.
 - DO NOT route here automatically from service, operator, or research workflow skills before manual invocation is enabled.
 - DO NOT treat a CLI tool distributed on PyPI as an importable project library.
-- DO NOT install importable Python libraries with `uv tool install` or `pixi global install`; use the Topic Workspace Pixi environment.
+- DO NOT install importable Python libraries with `uv tool install` or `pixi global install`
 - DO NOT include the R figure stack in `paper-writing` by default.
 - DO NOT copy production DeepSci skill paths into this tool-pack catalog.
 - DO NOT treat a successful package install as readiness without running the verification checks from the contract.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

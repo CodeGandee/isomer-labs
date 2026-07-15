@@ -56,25 +56,27 @@ When requested, include:
 - **GUI refresh evidence**: browser refresh posture, event stream posture, recent-errors summary, index validation result, rebuild or cleanup action, and truncation or stale-data diagnostics.
 - **Routing evidence**: owner-boundary decision, handoff route, code-defect note, commands run, and next operator action.
 
+## Operational Contract
+
+- Use `isomer-cli project web serve --root <project-root>` as the canonical start command. Installed operators must invoke the global `isomer-cli` executable directly, not a repo-local Pixi wrapper for Isomer's own CLI.
+- Treat the GUI Backend as a local single-user service for one selected Project root per process. This skill does not provide daemon, supervisor, remote deployment, authentication, or process-manager authority.
+- Use normal cache mode for ordinary launches. Use debug cache mode when frontend or backend changes might be hidden by browser cache, because debug mode applies no-store behavior to the GUI shell, static assets, and API responses.
+- Treat GUI Backend APIs as read surfaces unless a route is explicitly an index maintenance action. Index rebuild and cleanup are explicit user-triggered operations; frontend refresh is not canonical record repair.
+- Route invalid Project configuration to `isomer-op-project-mgr`. Route initialized-topic storage, package/environment, reset checkpoint, or Topic Actor problems to `isomer-op-topic-mgr`. Report record schema defects or GUI code defects as repository development work.
+
+## Operational Notes
+
+- It reads Project, Topic Workspace, Workspace Runtime, query-index, and payload-file state; canonical state stays in those owners.
+- Use `--cache-mode debug` when cache interference is plausible.
+- Use recent-errors and index validation to distinguish stale UI state from non-interpretable records or stale query-index rows.
+
 ## Guardrails
 
-- MUST use `isomer-cli project web serve --root <project-root>` as the canonical start command. Installed operators must invoke the global `isomer-cli` executable directly, not a repo-local Pixi wrapper for Isomer's own CLI.
-
-- MUST treat the GUI Backend as a local single-user service for one selected Project root per process. This skill does not provide daemon, supervisor, remote deployment, authentication, or process-manager authority.
-
-- MUST use normal cache mode for ordinary launches. Use debug cache mode when frontend or backend changes might be hidden by browser cache, because debug mode applies no-store behavior to the GUI shell, static assets, and API responses.
-
-- MUST treat GUI Backend APIs as read surfaces unless a route is explicitly an index maintenance action. Index rebuild and cleanup are explicit user-triggered operations; frontend refresh is not canonical record repair.
-
-- DO NOT claim that the GUI Backend owns canonical research state. It reads Project, Topic Workspace, Workspace Runtime, query-index, and payload-file state; canonical state stays in those owners.
-
-- MUST route invalid Project configuration to `isomer-op-project-mgr`. Route initialized-topic storage, package/environment, reset checkpoint, or Topic Actor problems to `isomer-op-topic-mgr`. Report record schema defects or GUI code defects as repository development work.
-
+- DO NOT claim that the GUI Backend owns canonical research state.
 - DO NOT treat `project web serve` as a daemon lifecycle manager; it starts the local service, while status, stop, restart, and logs are handled by the user's process environment unless this skill inspects `/api/health`.
-- DO NOT restart repeatedly in normal cache mode while debugging frontend assets; use `--cache-mode debug` when cache interference is plausible.
-- DO NOT treat browser refresh as data repair; use recent-errors and index validation to distinguish stale UI state from non-interpretable records or stale query-index rows.
+- DO NOT restart repeatedly in normal cache mode while debugging frontend assets.
+- DO NOT treat browser refresh as data repair.
 - DO NOT list backend API routes as schemas; detailed GUI payload expectations live in `docs/ui/contracts/`.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

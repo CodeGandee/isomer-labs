@@ -30,14 +30,20 @@ Write `topic.workspace.summary` as Markdown with these sections when information
 - **Evidence**: Command evidence, service outputs, runtime refs, and validation refs.
 - **Reset Checkpoint**: Checkpoint id, managed payload file path, explicit Markdown export path when present, checkpoint status, source readiness evidence, and blockers.
 
+## Operational Contract
+
+- Limit `finalize` to Topic Workspace preparation; it does not finalize research findings or replace `isomer-deepsci-finalize`.
+
+## Operational Notes
+
+- Name blockers and evidence, but do not prescribe what to run next.
+- Topic Creator readiness is represented by `topic.workspace.summary`, ready/verified/blocked state, actor onboarding context, and durable evidence refs.
+- The first checkpoint is an operator-owned initialization boundary derived from Workspace Runtime, Workspace Path Resolution, `topic.workspace.summary`, and operator-level readiness evidence.
+- The reset checkpoint is a structured Workspace Runtime and research-record artifact.
+
 ## Guardrails
 
-- MUST limit `finalize` to Topic Workspace preparation; it does not finalize research findings or replace `isomer-deepsci-finalize`.
-
-- DO NOT recommend a next research step, research-stage skill, Houmao launch, formal team specialization, or manual session route. Name blockers and evidence, but do not prescribe what to run next.
-
-- DO NOT create research handoff records. Topic Creator readiness is represented by `topic.workspace.summary`, ready/verified/blocked state, actor onboarding context, and durable evidence refs.
-
-- DO NOT inspect, require, name, or route through research-paradigm skills when creating the first reset checkpoint. The first checkpoint is an operator-owned initialization boundary derived from Workspace Runtime, Workspace Path Resolution, `topic.workspace.summary`, and operator-level readiness evidence.
-
-- DO NOT use Git stash, branch reset, commit creation, tags, refs, or project-root tracking as reset checkpoint material. The reset checkpoint is a structured Workspace Runtime and research-record artifact.
+- DO NOT recommend a next research step, research-stage skill, Houmao launch, formal team specialization, or manual session route.
+- DO NOT create research handoff records.
+- DO NOT inspect, require, name, or route through research-paradigm skills when creating the first reset checkpoint.
+- DO NOT use Git stash, branch reset, commit creation, tags, refs, or project-root tracking as reset checkpoint material.

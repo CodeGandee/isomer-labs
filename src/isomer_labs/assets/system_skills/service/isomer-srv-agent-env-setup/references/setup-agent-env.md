@@ -77,12 +77,22 @@ Successful setup leaves the selected Topic Workspace with:
 
 Readiness means topic env setup has prepared topic-main and required projections, every authoritative planned Agent Name has a valid Agent Workspace worktree, required support paths, semantic path evidence, and every required command from the resolved `topic.env.agent_setup_target_spec` passes from that agent's resolved `agent.workspace` cwd through `pixi run --manifest-path <manifest_path> --environment <pixi_environment> ...`. A generic smoke test can support diagnostics but cannot replace bounded real-path verification of each source-agent required cwd command.
 
+## Operational Contract
+
+- Run the subcommands in the order listed in **Step Order**.
+- Preserve blockers and partial failures in the combined report.
+
+## Operational Notes
+
+- Use selected-agent partial evidence or another bounded real-path command when full verification would overload the host, but the selected command must still exercise the requested cwd path.
+- Use the bounded-run guidance source recorded in the target spec; if no specific bounded-run tips recipe applied, preserve the generic best-effort evidence and limitation.
+- If no bounded real-path command can run safely, report a blocker with resource evidence.
+- Route missing or stale predecessor evidence to `isomer-srv-topic-env-setup`.
+
 ## Guardrails
 
-- MUST run the subcommands in the order listed in **Step Order**.
 - DO NOT skip directly to Git worktree creation or verification.
 - DO NOT create per-agent Pixi environments or mutate dependencies.
-- DO NOT create, initialize, configure, repair, or project external repos into `topic.repos.main`; route missing or stale predecessor evidence to `isomer-srv-topic-env-setup`.
+- DO NOT create, initialize, configure, repair, or project external repos into `topic.repos.main`
 - DO NOT claim runtime launch readiness.
-- DO NOT multiply verification classified as `heavy` or `unknown-risk` across every Agent Workspace unless the resource check shows enough idle capacity and the target spec requires the full matrix. Use selected-agent partial evidence or another bounded real-path command when full verification would overload the host, but the selected command must still exercise the requested cwd path. Use the bounded-run guidance source recorded in the target spec; if no specific bounded-run tips recipe applied, preserve the generic best-effort evidence and limitation. If no bounded real-path command can run safely, report a blocker with resource evidence.
-- MUST preserve blockers and partial failures in the combined report.
+- DO NOT multiply verification classified as `heavy` or `unknown-risk` across every Agent Workspace unless the resource check shows enough idle capacity and the target spec requires the full matrix.

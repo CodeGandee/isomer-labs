@@ -16,6 +16,11 @@ If the user's task does not map cleanly to these steps, validate the labels name
 
 Report the validation outcome and selected Research Topic, then summarize semantic paths, Topic Main Development Repository, local temporary-path posture, projection roots, custom labels, storage-profile evidence, blockers, and the next action.
 
+## Operational Contract
+
+- Use Workspace Path Resolution for storage answers.
+
 ## Guardrails
 
-- MUST use Workspace Path Resolution for storage answers. Do not infer the selected Topic Workspace by scanning sibling directories, and do not edit `topic-workspace.toml` by hand.
+- DO NOT infer the selected Topic Workspace by scanning sibling directories.
+- DO NOT edit `topic-workspace.toml` by hand.

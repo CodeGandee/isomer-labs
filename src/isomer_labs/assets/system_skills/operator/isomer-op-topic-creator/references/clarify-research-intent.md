@@ -91,14 +91,16 @@ Required predecessor artifact:
 
 If `topic.intent.overview` does not exist, refuse to run directly, explain that there is no topic definition to clarify, and offer targeted fast-forward recovery to `create-research-intent`. If the original request lacks enough topic substance for `create-research-intent`, ask for the actual Research Topic and stop before creating files.
 
+## Operational Notes
+
+- Stop after topic intent clarification and route to `define-topic-env` when the intent is ready.
+- The durable result of this subcommand is the revised `topic-overview.md`.
+- Mark corrected assumptions as revised.
+
 ## Guardrails
 
-- DO NOT derive topic env target specs, install dependencies, create Actor Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand. Stop after topic intent clarification and route to `define-topic-env` when the intent is ready.
-
-- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
-
-- DO NOT silently discard earlier assumptions. Mark corrected assumptions as revised.
-
+- DO NOT derive topic env target specs, install dependencies, create Actor Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand.
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers.
+- DO NOT silently discard earlier assumptions.
 - DO NOT promote a provisional topic workspace seed into authoritative Project Manifest state.
-
 - DO NOT invoke `clarify-research-intent` from `fast-forward`, `run-to`, `step-by-step`, or any other automatic workflow.

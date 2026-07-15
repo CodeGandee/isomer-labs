@@ -73,15 +73,18 @@ State whether the operation is light, heavy, of unknown risk, or outside this sk
 
 Group the full explanation by operation, risk classification, resource evidence, bounded limits, command, and result. Include the working directory when known, the expected proof of success, relevant CPU, memory, disk, network, GPU, wall-time, or service pressure, and whether guidance came from a matching subcommand or a generic best-effort judgment.
 
+## Operational Notes
+
+- Report a blocker and the bounded command to retry.
+
 ## Guardrails
 
 - DO NOT treat a generic smoke test as proof of a critical compile, inference, dataset, or benchmark path.
 - DO NOT run default build parallelism without checking memory.
 - DO NOT compile CUDA kernels for broad architecture lists when the task is local to the current host.
 - DO NOT saturate all RAM, CPU, disk, or GPU capacity just to prove environment readiness.
-- DO NOT hide skipped heavy work behind `ready`; report a blocker and the bounded command to retry.
+- DO NOT hide skipped heavy work behind `ready`
 - DO NOT invert Pixi and a wrapper tool by writing `<wrapper-tool> pixi run ...` for profiler, debugger, tracer, or memory-checker work; the usual bounded command shape is `pixi run <wrapper-tool> ... <target-command>`.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -78,9 +78,13 @@ Resolve `kaoju:proceed-decision` and `kaoju:survey-terminal-report` through `pro
 
 `help` lists this checked surface. It performs no durable mutation.
 
+## Operational Notes
+
+- Verify durable refs and restart at the first incomplete stage.
+
 ## Guardrails
 
-- DO NOT treat resume as a fresh procedure. Verify durable refs and restart at the first incomplete stage.
+- DO NOT treat resume as a fresh procedure.
 - DO NOT ask an operational service skill to make a research decision.
 - DO NOT use a directory scan when the state DB query is empty or ambiguous.
 - DO NOT route wiki work to an external skill checkout.

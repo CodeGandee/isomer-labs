@@ -113,14 +113,15 @@ Before heavy or unknown-risk installation or verification, classify the operatio
 
 Lead with whether packages were installed, already present, partially installed, blocked, failed, deferred, or only inspected. Name the selected Research Topic, Topic Workspace, Pixi manifest and environment, and whether mutation ran. Summarize the request, plan, package-specific guidance, commands, changed files, per-package verification, blockers, and next action in natural language.
 
+## Operational Notes
+
+- Use structured content when available, but accept natural-language package requests and copied blockers.
+- If the user manually provides a tool-pack contract, treat it as package request context and still own install planning here.
+
 ## Guardrails
 
 - DO NOT mutate packages until the selected Topic Workspace and Pixi binding are confirmed.
-
-- DO NOT require a formal schema-constrained package request file. Use structured content when available, but accept natural-language package requests and copied blockers.
-
-- DO NOT route to `isomer-misc-tool-packs` automatically. If the user manually provides a tool-pack contract, treat it as package request context and still own install planning here.
-
+- DO NOT require a formal schema-constrained package request file.
+- DO NOT route to `isomer-misc-tool-packs` automatically.
 - DO NOT mutate Project-root, Agent Workspace-specific, ambient, system, or machine-global environments.
-
 - DO NOT claim package readiness from package metadata, install success, or package-card catalog entries without a Pixi-scoped verification check or explicit blocker.

@@ -85,12 +85,19 @@ Every executable stage uses the applicable Research Operation Extension Point an
 - Expensive or private work starts without the required Gate or Proceed Decision.
 - A terminal response omits blockers, failures, or accepted output refs.
 
+## Operational Notes
+
+- Store them separately.
+- Record both the external source locator and the managed-link locator.
+- State `searched_through`, coverage bounds, and the remaining frontier.
+- Return the terminal report and let the caller choose the next procedure.
+
 ## Guardrails
 
-- DO NOT combine verification depth and evidence verdict into one confidence label. Store them separately.
-- DO NOT treat a managed link as dataset identity. Record both the external source locator and the managed-link locator.
-- DO NOT call an inquiry exhaustive because a search converged. State `searched_through`, coverage bounds, and the remaining frontier.
-- DO NOT start another macro procedure after completion. Return the terminal report and let the caller choose the next procedure.
+- DO NOT combine verification depth and evidence verdict into one confidence label.
+- DO NOT treat a managed link as dataset identity.
+- DO NOT call an inquiry exhaustive because a search converged.
+- DO NOT start another macro procedure after completion.
 
 ## Chat Response
 

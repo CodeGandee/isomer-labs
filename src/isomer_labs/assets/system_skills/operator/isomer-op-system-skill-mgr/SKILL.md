@@ -60,16 +60,22 @@ Default to **Essential Output** in chat. Use **Complete Output** when the user a
 
 Lead with whether the requested extension work is ready, detected, reconciled, installed, partial, stale, missing, or blocked. Name the selected Project and extension, summarize declared state and member coverage, explain whether the evidence came from the Project Manifest, a managed receipt, or live inventory, and state compatibility. Mention installed files or declarations only when they changed, explain any host refresh requirement, and end with the next action.
 
+## Operational Contract
+
+- Treat Project declarations and Isomer receipts as trusted bookkeeping, not cryptographic verification. Keep direct `isomer-cli project init`, low-level `system-skills install`, and internal inspectors conservative; this owner skill supplies the agent-host context they lack.
+
+## Operational Notes
+
+- Live inventory evidence means only that the host exposed every package-catalog name.
+- Keep that evidence basis visible.
+- Recommend a new turn, thread, or host-native reload when required.
+- Preserve Project declarations and existing projections when a supported concrete host target cannot be established.
+
 ## Guardrails
 
-- MUST treat Project declarations and Isomer receipts as trusted bookkeeping, not cryptographic verification. Keep direct `isomer-cli project init`, low-level `system-skills install`, and internal inspectors conservative; this owner skill supplies the agent-host context they lack.
-
-- DO NOT claim that an ambient same-name skill is package-authentic. Live inventory evidence means only that the host exposed every package-catalog name. Keep that evidence basis visible.
-
-- DO NOT claim current-session availability after installation unless the host inventory refresh confirms it. Recommend a new turn, thread, or host-native reload when required.
-
-- DO NOT translate a custom destination request into a guessed target or private installer escape hatch. Preserve Project declarations and existing projections when a supported concrete host target cannot be established.
-
+- DO NOT claim that an ambient same-name skill is package-authentic.
+- DO NOT claim current-session availability after installation unless the host inventory refresh confirms it.
+- DO NOT translate a custom destination request into a guessed target or private installer escape hatch.
 ## Local References
 
 - [references/evidence-and-mutation.md](references/evidence-and-mutation.md): shared command contracts, evidence interpretation, and mutation boundary.

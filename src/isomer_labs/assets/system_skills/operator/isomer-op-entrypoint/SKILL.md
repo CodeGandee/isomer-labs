@@ -54,34 +54,37 @@ Group the complete explanation by routing alternatives and rationale, commands a
 
 When this skill proceeds through another owner skill, compose the final answer around the user-visible outcome. Do not concatenate or merge the parent and child skills' field inventories.
 
+## Operational Contract
+
+- Prefer read-only context discovery before ambiguous mutation. Proceed only when the task implies action and the selected owner workflow or CLI command family owns that action.
+- Preserve an explicit user invocation for optional extensions and trust a Project declaration before discovery. If a declared route later cannot load, report stale user-controlled state and delegate repair to `isomer-op-system-skill-mgr`. For undeclared routes, let that owner use host-known explicit roots and live inventory, perform additive registration only in authorized mutation workflows, and return repair, installation, or refresh guidance for missing, partial, unversioned, malformed, receipt drift, obsolete, or newer-than-CLI state.
+- Keep `isomer-op-welcome` read-only. Use it for welcome menus and safe recommendations; use `isomer-op-entrypoint` for informed-user routing and execution.
+- Treat service skills such as `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, and `isomer-srv-topic-service-agent-support` as bounded support routes. Route normal user-facing requests through the owning operator workflow before service delegation unless the user explicitly invokes a service skill.
+- Mention `isomer-misc-tool-packs` only when explicitly requested as a named helper route. Package install, update, or removal requests for a Topic Workspace belong to `isomer-op-topic-mgr` or the relevant environment setup workflow.
+
+## Operational Notes
+
+- It routes to owner skills and CLI families, then follows their workflows and guardrails.
+- If the user did not explicitly invoke specialization, require the prompt or authoritative context to identify a formal Agent Team target and require the requested action to apply to that team.
+- Route ordinary topic preparation to `isomer-op-topic-creator`, initialized-topic operations to `isomer-op-topic-mgr`, and other launch or readiness work to its actual owner.
+- Retired routes include `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, and old `isomer-admin-*` compatibility names.
+- Installed operators should invoke global `isomer-cli` directly.
+- Select the best route, proceed, or report the blocker.
+- Route through the owning operator workflow unless the user explicitly invoked the service skill.
+
 ## Guardrails
 
-- MUST prefer read-only context discovery before ambiguous mutation. Proceed only when the task implies action and the selected owner workflow or CLI command family owns that action.
-
-- MUST preserve an explicit user invocation for optional extensions and trust a Project declaration before discovery. If a declared route later cannot load, report stale user-controlled state and delegate repair to `isomer-op-system-skill-mgr`. For undeclared routes, let that owner use host-known explicit roots and live inventory, perform additive registration only in authorized mutation workflows, and return repair, installation, or refresh guidance for missing, partial, unversioned, malformed, receipt drift, obsolete, or newer-than-CLI state.
-
-- MUST keep `isomer-op-welcome` read-only. Use it for welcome menus and safe recommendations; use `isomer-op-entrypoint` for informed-user routing and execution.
-
-- DO NOT make this skill the authority for lower-level mutation. It routes to owner skills and CLI families, then follows their workflows and guardrails.
-
-- DO NOT infer Topic Team Specialization from a Research Topic name, Topic Workspace, generic `prepare`, generic launch-facing language, missing readiness, missing `isomer-topic-summary.md`, or missing Agent Workspace evidence. If the user did not explicitly invoke specialization, require the prompt or authoritative context to identify a formal Agent Team target and require the requested action to apply to that team. Route ordinary topic preparation to `isomer-op-topic-creator`, initialized-topic operations to `isomer-op-topic-mgr`, and other launch or readiness work to its actual owner.
-
-- MUST treat service skills such as `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, and `isomer-srv-topic-service-agent-support` as bounded support routes. Route normal user-facing requests through the owning operator workflow before service delegation unless the user explicitly invokes a service skill.
-
-- MUST mention `isomer-misc-tool-packs` only when explicitly requested as a named helper route. Package install, update, or removal requests for a Topic Workspace belong to `isomer-op-topic-mgr` or the relevant environment setup workflow.
-
-- DO NOT present retired or stale operator routes as active invokable skills. This includes `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, and old `isomer-admin-*` compatibility names.
-
-- DO NOT use repo-local Pixi wrapper command guidance for Isomer CLI in operator skills. Installed operators should invoke global `isomer-cli` directly.
-
-- DO NOT list several possible routes and stop when the user gave a concrete task; select the best route, proceed, or report the blocker.
-- DO NOT treat service skills as normal first-click owner routes; route through the owning operator workflow unless the user explicitly invoked the service skill.
+- DO NOT make this skill the authority for lower-level mutation.
+- DO NOT infer Topic Team Specialization from a Research Topic name, Topic Workspace, generic `prepare`, generic launch-facing language, missing readiness, missing `isomer-topic-summary.md`, or missing Agent Workspace evidence.
+- DO NOT present retired or stale operator routes as active invokable skills.
+- DO NOT use repo-local Pixi wrapper command guidance for Isomer CLI in operator skills.
+- DO NOT list several possible routes and stop when the user gave a concrete task.
+- DO NOT treat service skills as normal first-click owner routes.
 - DO NOT start an ordinary DeepSci research-stage skill before Topic Workspace, actor or agent workspace, and DeepSci bootstrap readiness are proven or routed for setup.
 - DO NOT route generic topic preparation, readiness, or launch-facing work to Topic Team Specialization without explicit or contextual formal Agent Team intent.
 - DO NOT skip the latest-context preflight or worker-output policy checks required by the selected research route.
 - DO NOT repeat the full CLI help text inside this skill; name the command family and inspect CLI help or owner skill guidance when details are needed.
 - DO NOT treat generated links, worker-local files, chat memory, or old rendered Markdown as durable research truth before the selected DeepSci skill's latest-context and recording rules accept them.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

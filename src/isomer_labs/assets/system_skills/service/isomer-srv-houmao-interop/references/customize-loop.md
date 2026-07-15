@@ -92,9 +92,13 @@ Passive API server: `houmao-passive-server serve --host ... --port ...`.
 4. If the skill should be available as a standalone specialist, add a specialist entry pointing to the preset.
 5. Validate with `houmao-mgr system-skills validate` or equivalent project validator before launch.
 
+## Operational Notes
+
+- Prefer project-local `.houmao/` overrides.
+
 ## Guardrails
 
-- DO NOT edit `extern/orphan/houmao/src/...` to change Isomer project behavior; prefer project-local `.houmao/` overrides.
+- DO NOT edit `extern/orphan/houmao/src/...` to change Isomer project behavior.
 - DO NOT create one Houmao agent per stage skill for a DeepScientist-like template; DeepScientist is a single PI agent that switches stage skills, so map it to one Houmao-managed agent.
 - DO NOT confuse a Houmao "role" (preset ingredient) with a DeepScientist "stage skill" (prompt contract); a stage skill is closer to a Houmao agent-facing skill loaded by a preset.
 - DO NOT skip catalog registration; a preset file alone is not launchable until the project catalog or launch profile points to it.

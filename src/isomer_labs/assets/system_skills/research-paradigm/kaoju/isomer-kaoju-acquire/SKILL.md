@@ -62,10 +62,15 @@ Acquisition is not evidence acceptance. Pin and verify the acquired material bef
 - A large or restricted download begins without its required Gate.
 - An external dataset is modified during registration.
 
+## Operational Notes
+
+- Keep the canonical external locator and immutable identity.
+- Record requested versus observed materials and their effect on fidelity.
+
 ## Guardrails
 
-- DO NOT record only a local checkout path. Keep the canonical external locator and immutable identity.
-- DO NOT hide substitutions. Record requested versus observed materials and their effect on fidelity.
+- DO NOT record only a local checkout path.
+- DO NOT hide substitutions.
 
 ## Troubleshooting Guide
 

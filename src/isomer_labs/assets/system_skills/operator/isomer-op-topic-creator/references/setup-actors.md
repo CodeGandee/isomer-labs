@@ -18,14 +18,20 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, ask for actor names, runtime kinds, role kinds, controller kinds, source env gate requirements, or explicit default-operator opt-out.
 
+## Operational Contract
+
+- Keep `topic.repos.main` as the Git anchor and integration surface for those worktrees while each Topic Actor works from its resolved Topic Actor Workspace.
+
+## Operational Notes
+
+- Each worker that needs independent work receives its own `topic.actors.workspace` cwd, materialized as a worktree of `topic.repos.main`; controller provenance, not Git workspace topology, distinguishes a manually controlled Topic Actor from a formal Agent Workspace.
+- Require delegated worktree evidence for the expected actor branch, `topic.intent.actor_definitions`, derived `topic.env.actor_env_gates`, gate verification evidence from actor cwd, and enough actor onboarding context for the selected actors.
+- If delegated worktree evidence is missing or blocked, stop before actor env gate verification for that actor.
+
 ## Guardrails
 
-- DO NOT make every manually controlled worker share `topic.repos.main` as cwd. Each worker that needs independent work receives its own `topic.actors.workspace` cwd, materialized as a worktree of `topic.repos.main`; controller provenance, not Git workspace topology, distinguishes a manually controlled Topic Actor from a formal Agent Workspace.
-
-- MUST keep `topic.repos.main` as the Git anchor and integration surface for those worktrees while each Topic Actor works from its resolved Topic Actor Workspace.
-
-- DO NOT claim actor readiness from a materialized workspace alone. Require delegated worktree evidence for the expected actor branch, `topic.intent.actor_definitions`, derived `topic.env.actor_env_gates`, gate verification evidence from actor cwd, and enough actor onboarding context for the selected actors. If delegated worktree evidence is missing or blocked, stop before actor env gate verification for that actor.
-
+- DO NOT make every manually controlled worker share `topic.repos.main` as cwd.
+- DO NOT claim actor readiness from a materialized workspace alone.
 ## Actor Onboarding Shape
 
 Actor onboarding context is startup convenience for the selected Topic Actors, not accepted research truth. Describe each actor's identity and controller posture, resolved workspace and worktree, branch, Topic Main Development Repository integration surface, support paths, boundary posture, verification evidence, and blockers in readable prose or a Markdown list. Exact semantic labels and branch names remain evidence, not response keys.

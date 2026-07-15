@@ -60,11 +60,17 @@ Synthesis organizes accepted evidence; it does not manufacture missing evidence 
 - Audited limitations disappear from the summary.
 - A generated-data capability probe is presented as benchmark reproduction.
 
+## Operational Notes
+
+- Build every section from the audited evidence set.
+- Preserve the state and source basis.
+- State the bounded search and remaining frontier.
+
 ## Guardrails
 
-- DO NOT write from memory instead of accepted refs. Build every section from the audited evidence set.
-- DO NOT turn `unclear` or `disputed` into a neutral score. Preserve the state and source basis.
-- DO NOT claim the field is complete. State the bounded search and remaining frontier.
+- DO NOT write from memory instead of accepted refs.
+- DO NOT turn `unclear` or `disputed` into a neutral score.
+- DO NOT claim the field is complete.
 
 ## Chat Response
 

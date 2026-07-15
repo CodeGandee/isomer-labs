@@ -19,6 +19,10 @@ If the user's task does not map cleanly to these steps, materialize only the nam
 
 Report the materialization outcome and selected Research Topic, then summarize Topic Actor bindings, workspace paths, branch plan, worktree evidence by actor, support labels, runtime audit refs when available, blockers, and the next action.
 
+## Operational Contract
+
+- Keep Topic Actor names separate from Agent Names and Agent Instance ids. Topic Actor Workspace materialization is actor topology, not Agent Team Instance membership or research-paradigm bootstrap.
+
 ## Guardrails
 
-- MUST keep Topic Actor names separate from Agent Names and Agent Instance ids. Topic Actor Workspace materialization is actor topology, not Agent Team Instance membership or research-paradigm bootstrap.
+- DO NOT conflate Topic Actor names with Agent Names or Agent Instance ids.

@@ -86,12 +86,15 @@ Required predecessor artifact:
 
 If `topic.intent.overview` does not exist, refuse to run directly, explain that there is no topic definition to clarify, and offer targeted fast-forward recovery to `clarify-topic`. Use `python scripts/query_step_dependencies.py path --target clarify-topic --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target clarify-topic --exclude-target` for the exclusive path. If the original request lacks enough topic substance for `resolve-topic-intent`, ask for the actual Research Topic and stop before creating files.
 
+## Operational Notes
+
+- Stop after topic clarification and route to `ensure-topic-registration` when the topic is ready but not registered, then to `adapt-team-template` after registration blockers are resolved.
+- The durable result of this subcommand is the revised `topic-overview.md`.
+- Mark corrected assumptions as revised.
+
 ## Guardrails
 
-- DO NOT specialize the team from this subcommand. Stop after topic clarification and route to `ensure-topic-registration` when the topic is ready but not registered, then to `adapt-team-template` after registration blockers are resolved.
-
-- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
-
-- DO NOT silently discard earlier assumptions. Mark corrected assumptions as revised.
-
+- DO NOT specialize the team from this subcommand.
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers.
+- DO NOT silently discard earlier assumptions.
 - DO NOT promote a provisional topic workspace seed into authoritative Project Manifest state.

@@ -38,10 +38,16 @@ If `topic.intent.overview` does not exist during an explicit `adapt-team-templat
 
 If registration assurance is missing during an explicit `adapt-team-template` request, refuse to run directly, explain that template adaptation needs authoritative Project Manifest-backed topic refs, and offer targeted fast-forward recovery through `ensure-topic-registration` to `adapt-team-template`. If registration assurance reports `topic_registration_status: blocked`, report the blocker and ask for the specific missing registration input instead of inventing it.
 
+## Operational Contract
+
+- Adapt exactly one Research Topic and one Domain Agent Team Template at a time.
+
+## Operational Notes
+
+- Adapt only copied material under the selected Topic Workspace.
+- Route static setup and profile-material boundaries to `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, or `materialize-profile`.
+
 ## Guardrails
 
-- MUST adapt exactly one Research Topic and one Domain Agent Team Template at a time.
-
-- DO NOT edit the source Domain Agent Team Template. Adapt only copied material under the selected Topic Workspace.
-
-- DO NOT claim approval, materialization, setup readiness, or live operation from this subcommand. Route static setup and profile-material boundaries to `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, or `materialize-profile`.
+- DO NOT edit the source Domain Agent Team Template.
+- DO NOT claim approval, materialization, setup readiness, or live operation from this subcommand.

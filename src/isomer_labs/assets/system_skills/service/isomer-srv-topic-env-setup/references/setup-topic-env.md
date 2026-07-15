@@ -123,12 +123,15 @@ If the caller needs every Agent Workspace cwd verified, state naturally that per
 
 The Topic Workspace `.gitignore` may include a default `tmp/` entry as the `isomer-default.v1` binding for the resolved `topic.tmp` label. Report `topic.tmp` when Workspace Path Resolution can resolve it, and preserve the literal `tmp/` ignore entry for default Topic Workspace posture. `tmp/` material is local, ignored, disposable, not shared, and not durable evidence unless another accepted contract promotes it. Add `.pixi/` and `.git/`, add `.isomer-user-env/` only when topic-local fallback is used, and do not add an `extern/orphan` ignore rule from this skill.
 
+## Operational Contract
+
+- Run the subcommands in the order listed in **Step Order**; do not skip directly to dependency installation.
+- Stop and report a blocker when any step reports a missing predecessor artifact.
+- Keep all direct mutation scoped to the selected Topic Workspace Pixi environment, the resolved Topic Main Development Repository Isomer-managed namespace, missing required canonical external repos at resolved non-main `topic.repos.*` paths, and external projections under `isomer-managed/topic-owned/{readonly,writable}/extern/`.
+- Carry resource check status, enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
+
 ## Guardrails
 
-- MUST run the subcommands in the order listed in **Step Order**; do not skip directly to dependency installation.
-- MUST stop and report a blocker when any step reports a missing predecessor artifact.
 - DO NOT require `team-profile/`, Topic Agent Team Profile material, Topic Team Instantiation Packets, Agent Team Instances, Agent Workspace plans, roles, or agent count before running this setup chain.
-- MUST keep all direct mutation scoped to the selected Topic Workspace Pixi environment, the resolved Topic Main Development Repository Isomer-managed namespace, missing required canonical external repos at resolved non-main `topic.repos.*` paths, and external projections under `isomer-managed/topic-owned/{readonly,writable}/extern/`.
-- MUST carry resource check status, enclosure strategy, external runtime wiring, topic-local fallback warnings, and enclosure blockers from `derive-env-gate`, `install-topic-deps`, and `verify-env-gate` into the combined result.
 - DO NOT mutate an existing repo during `ensure-topic-repos`; later setup or verification steps may only run commands against existing repos when the derived gate explicitly requires those commands.
 - DO NOT read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, create Agent Workspace worktrees, or claim per-agent cwd readiness from this topic-scoped flow.

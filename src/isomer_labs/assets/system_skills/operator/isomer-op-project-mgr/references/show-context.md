@@ -14,7 +14,10 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Effective Topic Context selectors and guardrails, then execute the plan.
 
+## Operational Contract
+
+- Keep this subcommand read-only.
+
 ## Guardrails
 
-- MUST keep this subcommand read-only.
 - DO NOT create missing topics, workspaces, runtime state, or profile material from context inspection alone.

@@ -75,6 +75,23 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
         self.assertNotIn("excluded by default", combined)
         self.assertNotIn("explicit inclusive", combined)
 
+    def test_topic_creator_defaults_unspecified_workspace_under_topic_workspace_base(self) -> None:
+        resolve_topic_input = read_repo_file("skillset/operator/isomer-op-topic-creator/references/resolve-topic-input.md")
+        register_topic = read_repo_file("skillset/operator/isomer-op-topic-creator/references/register-topic.md")
+        combined = "\n".join((resolve_topic_input, register_topic))
+
+        self.assertContainsAll(
+            combined,
+            (
+                "`topic_workspace_base_dir`",
+                "`isomer-content/topic-ws/<topic-id>`",
+                "`isomer-cli project topics create <topic-id> --statement \"<research topic>\"` without `--workspace-dir`",
+                "explicitly supplied a custom Topic Workspace directory",
+                "`--workspace-dir <topic-workspace-dir>`",
+                "DO NOT substitute a bare `<topic-id>` for `<topic-workspace-dir>`",
+            ),
+        )
+
     def test_topic_manager_owns_reset_plan_inspect_and_apply_guidance(self) -> None:
         skill = read_repo_file("skillset/operator/isomer-op-topic-mgr/SKILL.md")
         help_page = read_repo_file("skillset/operator/isomer-op-topic-mgr/references/help.md")

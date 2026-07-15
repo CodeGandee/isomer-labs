@@ -229,7 +229,7 @@ The operator/admin skillset SHALL include `isomer-op-welcome` as the user-facing
 #### Scenario: Operator docs list welcome entrypoint
 - **WHEN** a developer reads `skillset/operator/README.md`
 - **THEN** it lists `isomer-op-welcome`
-- **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do, shows typical usage paths such as `start-research-manually` and `start-research-by-agent-team`, and names which owner skill to invoke directly
+- **AND** it describes the skill as the action-oriented menu and path chooser that tells users what Isomer Labs can do, shows manual and formal Agent Team execution paths plus DeepSci and Kaoju research-paradigm paths, exposes read-only system-skill extension discovery, names which owner skill to invoke directly, and routes concrete tasks to `isomer-op-entrypoint`
 
 #### Scenario: Manifest includes welcome and excludes retired compatibility entries
 - **WHEN** `skillset/manifest.toml` is inspected
@@ -318,4 +318,3 @@ The operator skillset documentation SHALL list `isomer-op-toolbox-mgr` as an act
 - **WHEN** active operator guidance is inspected
 - **THEN** `isomer-op-welcome` can recommend `isomer-op-toolbox-mgr` as an active owner workflow
 - **AND** `isomer-op-entrypoint` can select `isomer-op-toolbox-mgr` as the route-and-proceed owner for concrete Toolbox tasks
-

@@ -61,9 +61,13 @@ The canonical guidance body is rendered by `isomer-cli project topic-main-guidan
 
 Use `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>` for read-only posture checks and `isomer-cli --print-json project topic-main-guidance ensure --topic <topic> --yes` for authorized mutation. The rendered block remains topic-independent by design. Do not substitute resolved Research Topic ids, topic statements, Topic Workspace paths, Topic Actor names, Agent Names, runtime file paths, credentials, external repository paths, `manifest_path`, or `pixi_environment` into skill instructions.
 
+## Operational Notes
+
+- Root-level `AGENTS.md` and `CLAUDE.md` are the only standard top-level Isomer-injected worker-facing rule files.
+
 ## Guardrails
 
 - DO NOT delete, reset, clean, rewrite history, reinitialize, reclone, pull, or silently repair existing repositories.
-- DO NOT create top-level `extern/`, `shared/`, `tasks/`, `runs/`, `views/`, `logs/`, or `tools/` directories inside topic-main as standard Isomer material. Root-level `AGENTS.md` and `CLAUDE.md` are the only standard top-level Isomer-injected worker-facing rule files.
+- DO NOT create top-level `extern/`, `shared/`, `tasks/`, `runs/`, `views/`, `logs/`, or `tools/` directories inside topic-main as standard Isomer material.
 - DO NOT create Agent Workspace worktrees here; that belongs to `isomer-srv-agent-env-setup`.
 - DO NOT claim per-agent readiness from a prepared Topic Main Development Repository alone.

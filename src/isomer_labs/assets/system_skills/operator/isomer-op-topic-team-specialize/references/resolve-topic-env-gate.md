@@ -66,12 +66,15 @@ State whether the Topic environment source intent is ready, revised, blocked, or
 
 Group the complete explanation by source-intent status, semantic label and path, storage profile, source and diagnostics, and next operator action.
 
+## Operational Notes
+
+- The topic env service owns operational target-spec generation, dependency plans, Pixi commands, repo acquisition decisions, expected outputs, and execution logs.
+- Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise the topic env service should default to a shallow clone with `--depth=1`.
+- If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
+
 ## Guardrails
 
-- DO NOT derive `topic.env.topic_setup_target_spec` here. The topic env service owns operational target-spec generation, dependency plans, Pixi commands, repo acquisition decisions, expected outputs, and execution logs.
-
-- DO NOT request full Git history by default. Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise the topic env service should default to a shallow clone with `--depth=1`.
-
-- DO NOT write canonical source intent to `<topic-workspace>/user-intent/src/env-gate.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.topic_env_requirements` plus its resolved default-layout path.
-
+- DO NOT derive `topic.env.topic_setup_target_spec` here.
+- DO NOT request full Git history by default.
+- DO NOT write canonical source intent to `<topic-workspace>/user-intent/src/env-gate.md`.
 - DO NOT require Topic Agent Team Profile material, Agent Names, Agent Workspaces, or per-agent cwd readiness before resolving topic-level environment source intent.

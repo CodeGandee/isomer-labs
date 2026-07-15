@@ -69,10 +69,15 @@ Discovery proves that a candidate was found under a recorded route. It does not 
 - “Exhaustive” or “all works” appears without a defensible bounded universe.
 - A mutable release label is treated as immutable identity.
 
+## Operational Notes
+
+- Build the work family first.
+- Retain their reasons so later passes can audit coverage.
+
 ## Guardrails
 
-- DO NOT deduplicate different versions before deciding their relationship. Build the work family first.
-- DO NOT omit excluded items. Retain their reasons so later passes can audit coverage.
+- DO NOT deduplicate different versions before deciding their relationship.
+- DO NOT omit excluded items.
 - DO NOT mix linked repositories, datasets, and models into the primary paper list without type-aware relationships.
 
 ## Chat Response

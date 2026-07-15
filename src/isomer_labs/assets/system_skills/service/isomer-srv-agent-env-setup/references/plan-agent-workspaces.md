@@ -43,9 +43,16 @@ An Agent Name is a topic-local Git and path namespace such as `analyst` or `expe
 
 The planned Agent Workspace path must resolve under the selected Topic Workspace unless a later accepted external-root policy explicitly permits the label. Under `isomer-default.v1`, `agent.workspace` normally binds to `<topic-workspace-dir>/agents/<agent-name>`, but a safe Topic Workspace Manifest may bind it differently.
 
+## Operational Contract
+
+- Limit selected-agent direct subcommands to one authoritative Agent Name and report their output as partial evidence.
+
+## Operational Notes
+
+- Report the needed Topic Team Specialization repair route.
+
 ## Guardrails
 
 - DO NOT infer Agent Names from existing directories, branches, provider ids, or ad hoc maps.
 - DO NOT create files or Git refs from this subcommand.
-- DO NOT edit packet/profile material here; report the needed Topic Team Specialization repair route.
-- MUST limit selected-agent direct subcommands to one authoritative Agent Name and report their output as partial evidence.
+- DO NOT edit packet/profile material here.

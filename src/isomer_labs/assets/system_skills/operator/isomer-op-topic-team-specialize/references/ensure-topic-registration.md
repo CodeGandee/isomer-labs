@@ -79,14 +79,14 @@ blocker: Pixi could not resolve the registered Topic Workspace directory as a co
 next_operator_action: run the environment setup or project-management command that creates a valid Topic Workspace Pixi manifest, or add an explicit manifest_path_or_dir binding through a supported surface when the target is not the Topic Workspace root.
 ```
 
+## Operational Notes
+
+- Only verify or report the Topic Workspace Pixi binding that service setup needs.
+
 ## Guardrails
 
 - DO NOT hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files.
-
 - DO NOT create a duplicate Research Topic or Topic Workspace when an existing Project Manifest-backed registration already matches the selected topic.
-
 - DO NOT register a topic from vague text, generic default topic statements, directory names, or unrelated workspace names.
-
 - DO NOT treat a provisional topic workspace seed as authoritative registration until the Project Manifest proves the Research Topic and Topic Workspace refs.
-
-- DO NOT call `isomer-srv-topic-env-setup` from this subcommand. Only verify or report the Topic Workspace Pixi binding that service setup needs.
+- DO NOT call `isomer-srv-topic-env-setup` from this subcommand.

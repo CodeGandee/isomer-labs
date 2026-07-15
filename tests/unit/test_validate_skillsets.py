@@ -119,7 +119,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 ## Guardrails
 
                 - DO NOT treat excluded fixture files as active instructions.
-                - MUST preserve the current-template structure.
+                - DO NOT discard the current-template structure.
                 """,
             )
             write(
@@ -136,7 +136,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 ## Guardrails
 
-                - MUST keep the fixture deterministic.
+                - DO NOT make the fixture nondeterministic.
 
                 ## Troubleshooting Guide
 
@@ -260,7 +260,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            - Never guess the fixture input.
+            - MUST keep the fixture deterministic.
             """,
         )
 
@@ -268,7 +268,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         rendered = messages(diagnostics)
 
         self.assertTrue(any("freeform planning fallback" in message and "commands/run.md" in message for message in rendered), rendered)
-        self.assertTrue(any("must start with DO NOT or MUST" in message and "commands/run.md" in message for message in rendered), rendered)
+        self.assertTrue(any("must start with DO NOT" in message and "commands/run.md" in message for message in rendered), rendered)
         self.assertFalse(any("references/explanation.md" in message for message in rendered), rendered)
 
     def test_packaged_template_validator_rejects_malformed_optional_troubleshooting(self) -> None:
@@ -833,31 +833,29 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Workflow
 
-            1. **Default option mode**: Select `show-options`.
-            2. **Visible usage path mode**: Select `start-research-manually` or `start-research-by-agent-team`.
-            3. **Routing and support mode**: Select `help`, `choose-path`, `show-skill-map`, or `next-step`.
-            4. **Read-only context mode**: Use read-only context checks only.
+            1. **Handle the default**. Select `show-options`.
+            2. **Select one subcommand** from the table.
+            3. **Load the selected reference** and follow its workflow.
+            4. **Preserve the read-only boundary** and route mutation to the owner.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
-            ## Usage Path Subcommands
+            ## Subcommands
 
-            These typical use cases are visible. Do not hide them inside `choose-path`.
+            These routines are peers. Manual or Agent Team is execution topology; DeepSci or Kaoju is research paradigm.
 
-            | Subcommand | Intent | Owner Skill | Safe First Command | Detail |
+            | Subcommand | Kind | Use For | Owner or Safe Next Route | Detail |
             | --- | --- | --- | --- | --- |
-            | `start-research-manually` | Manual research. | `isomer-op-topic-creator` | `Use $isomer-op-topic-creator fast-forward`. | [references/start-research-manually.md](references/start-research-manually.md) |
-            | `start-research-by-agent-team` | Team research. | `isomer-op-topic-team-specialize` | `Use $isomer-op-topic-team-specialize fast-forward`. | [references/start-research-by-agent-team.md](references/start-research-by-agent-team.md) |
-
-            ## Routing and Support Subcommands
-
-            | Subcommand | Use For | Detail |
-            | --- | --- | --- |
-            | `help` | Help. | [references/help.md](references/help.md) |
-            | `show-options` | Options. | [references/show-options.md](references/show-options.md) |
-            | `choose-path` | Path choice. | [references/choose-path.md](references/choose-path.md) |
-            | `show-skill-map` | Skill map. | [references/show-skill-map.md](references/show-skill-map.md) |
-            | `next-step` | Read-only next step. | [references/next-step.md](references/next-step.md) |
+            | `start-research-manually` | Topology | Manual research. | `Use $isomer-op-topic-creator fast-forward`. | [references/start-research-manually.md](references/start-research-manually.md) |
+            | `start-research-by-agent-team` | Topology | Team research. | `Use $isomer-op-topic-team-specialize fast-forward`. | [references/start-research-by-agent-team.md](references/start-research-by-agent-team.md) |
+            | `start-deepsci-research` | Paradigm | Hypothesis research. | `Use $isomer-op-entrypoint` with the goal. | [references/start-deepsci-research.md](references/start-deepsci-research.md) |
+            | `start-kaoju-survey` | Paradigm | Evidence-led survey. | `Use $isomer-op-entrypoint` with the goal. | [references/start-kaoju-survey.md](references/start-kaoju-survey.md) |
+            | `show-options` | Discovery | Options. | Read-only. | [references/show-options.md](references/show-options.md) |
+            | `show-extensions` | Discovery | Extension options. | `Use $isomer-op-system-skill-mgr`. | [references/show-extensions.md](references/show-extensions.md) |
+            | `choose-path` | Routing | Path choice. | Read-only. | [references/choose-path.md](references/choose-path.md) |
+            | `show-skill-map` | Discovery | Skill map. | Read-only. | [references/show-skill-map.md](references/show-skill-map.md) |
+            | `next-step` | Routing | Read-only next step. | Read-only. | [references/next-step.md](references/next-step.md) |
+            | `help` | Support | Help. | Read-only. | [references/help.md](references/help.md) |
 
             ## Output Contract
 
@@ -873,8 +871,9 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            The skill is read-only and uses `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show` only for inspection.
-            Route Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+            The skill is read-only and uses `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, `isomer-cli system-skills extensions list`, and `isomer-cli project system-extensions list` only for inspection.
+            Route concrete tasks to `isomer-op-entrypoint`, extension work to `isomer-op-system-skill-mgr`, Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, identity work to `isomer-op-switch-identity`, Toolbox work to `isomer-op-toolbox-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+            DeepSci uses `isomer-deepsci-pipeline`; Kaoju uses `isomer-kaoju-pipeline`. Distinguish `catalog-known`, Project-declared, and host-usable extension evidence. Manual versus Agent Team is execution topology; DeepSci versus Kaoju is research paradigm. The `isomer-cli ext` namespace does not install system-skill extensions.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
             Route Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
@@ -911,8 +910,13 @@ class SkillsetValidatorTests(unittest.TestCase):
                 | --- | --- | --- |
                 | `start-research-manually` | Manual research. | Owner route. |
                 | `start-research-by-agent-team` | Agent Team research. | Owner route. |
+                | `start-deepsci-research` | Hypothesis research. | `isomer-deepsci-pipeline`. |
+                | `start-kaoju-survey` | Evidence-led survey. | `isomer-kaoju-pipeline`. |
+                | `isomer-op-entrypoint` | Concrete route and proceed. | Owner route. |
+                | `isomer-op-system-skill-mgr` | Extension lifecycle. | Owner route. |
                 | `isomer-op-gui-mgr` | Project Web GUI lifecycle and backend API reference. | Owner route. |
                 | `show-options` | Options. | Menu. |
+                | `show-extensions` | Extensions. | Read-only extension state. |
                 | `choose-path` | Choose. | Recommendation. |
                 | `show-skill-map` | Map. | Map. |
                 | `next-step` | Next step. | Read-only recommendation. |
@@ -926,18 +930,31 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
+                `start-deepsci-research` uses `isomer-deepsci-pipeline`; `start-kaoju-survey` uses `isomer-kaoju-pipeline`. Use `isomer-op-system-skill-mgr` for extension lifecycle and Use $isomer-op-entrypoint for a concrete task. Manual or Agent Team is execution topology; DeepSci or Kaoju is research paradigm.
+
                 Project setup or checks, Project Web GUI work with `isomer-op-gui-mgr`, Research Topic setup, Topic Team work, and Houmao support all name owner workflows.
+            """,
+            "show-extensions.md": """
+                # Show Extensions
+
+                ## Workflow
+
+                1. Run `isomer-cli --print-json system-skills extensions list`, `isomer-cli --print-json system-skills extensions show <extension-id>`, and `isomer-cli --print-json project system-extensions list` when useful.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Distinguish `catalog-known`, Project-declared, and Host-usable evidence. Route lifecycle work to `isomer-op-system-skill-mgr`; Use $isomer-op-entrypoint for concrete work. DeepSci uses `isomer-deepsci-pipeline`, Kaoju uses `isomer-kaoju-pipeline`, and `isomer-cli ext` is a runtime namespace.
             """,
             "choose-path.md": """
                 # Choose Path
 
                 ## Workflow
 
-                1. Interpret manual research or Domain Agent Team Template intent.
+                1. Interpret manual research or Domain Agent Team Template intent, then compare `start-deepsci-research` and `start-kaoju-survey` when a research paradigm applies.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                It recommends visible paths. Use this command to recommend the visible workflow, route GUI questions to `isomer-op-gui-mgr`, explain how it understood the goal, name the owner skill and safe first invocation, report blockers, and state the next action.
+                It recommends visible paths. Use this command to recommend the visible workflow, route extensions to `isomer-op-system-skill-mgr`, concrete tasks to `isomer-op-entrypoint`, and GUI questions to `isomer-op-gui-mgr`, explain how it understood the goal, distinguish execution topology from research paradigm, name the owner skill and safe first invocation, report blockers, and state the next action.
             """,
             "show-skill-map.md": """
                 # Show Skill Map
@@ -948,7 +965,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-project-mgr, Use $isomer-op-gui-mgr, Use $isomer-op-topic-creator, Use $isomer-op-topic-mgr, and Use $isomer-op-topic-team-specialize. Route bounded support to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
+                Use $isomer-op-entrypoint, Use $isomer-op-project-mgr, Use $isomer-op-system-skill-mgr, Use $isomer-op-gui-mgr, Use $isomer-op-switch-identity, Use $isomer-op-toolbox-mgr, Use $isomer-op-topic-creator, Use $isomer-op-topic-mgr, and Use $isomer-op-topic-team-specialize. Route bounded support to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
             """,
             "next-step.md": """
                 # Next Step
@@ -959,7 +976,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Do not run mutating commands.
+                Use `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, `isomer-cli project self show`, `isomer-cli project outputs policy`, `isomer-cli system-skills extensions list`, and `isomer-cli project system-extensions list`. Route extension evidence to `isomer-op-system-skill-mgr`; Use $isomer-op-entrypoint for a concrete task. Do not run mutating commands.
             """,
             "start-research-manually.md": """
                 # Start Research Manually
@@ -970,7 +987,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-topic-creator fast-forward or Use $isomer-op-topic-creator step-by-step. Report the mutation boundary.
+                Use $isomer-op-topic-creator fast-forward or Use $isomer-op-topic-creator step-by-step. Treat research paradigm as a separate choice. Report the mutation boundary.
             """,
             "start-research-by-agent-team.md": """
                 # Start Research by Agent Team
@@ -981,7 +998,37 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-topic-team-specialize fast-forward. Report the mutation boundary and route Houmao questions to bounded service support through `isomer-srv-houmao-interop`.
+                Use $isomer-op-topic-team-specialize fast-forward. Treat research paradigm as a separate choice. Report the mutation boundary and route Houmao questions to bounded service support through `isomer-srv-houmao-interop`.
+            """,
+            "start-deepsci-research.md": """
+                # Start DeepSci Research
+
+                ## Workflow
+
+                1. Recommend hypothesis-driven production research through `isomer-deepsci-pipeline` while preserving execution topology as a separate choice.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and bootstrap to `isomer-deepsci-workspace-mgr`.
+
+                ## Mutation Boundary
+
+                This path does not run research or mutate state.
+            """,
+            "start-kaoju-survey.md": """
+                # Start Kaoju Survey
+
+                ## Workflow
+
+                1. Recommend an evidence-led survey through `isomer-kaoju-pipeline` while preserving execution topology as a separate choice.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
+
+                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and readiness to `isomer-kaoju-workspace-mgr`.
+
+                ## Mutation Boundary
+
+                This path does not run research or mutate state.
             """,
         }
         for reference_name, reference_text in reference_texts.items():
@@ -1224,7 +1271,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         command_terms = {
             "switch.md": "target kind target name one-task persistent isomer-cli --print-json project paths get topic.actors.workspace isomer-cli --print-json project paths get agent.workspace resolved `topic.actors.workspace` or `agent.workspace`. DO NOT infer the target by scanning workspace directories.",
-            "act-as.md": "following prompt. Save the previous Project Operator identity posture. Restore the previous Project Operator identity posture. temporary one-time execution. Do not leave a switched posture active. resolved `topic.actors.workspace` or `agent.workspace`.",
+            "act-as.md": "following prompt. Save the previous Project Operator identity posture. Restore the previous Project Operator identity posture. temporary one-time execution. DO NOT leave a switched posture active. resolved `topic.actors.workspace` or `agent.workspace`.",
             "status.md": "persistent temporary unknown re-resolve before running commands target workspace cwd normal Project Operator cwd.",
             "reset.md": "Clear the active switched posture. normal Project Operator identity. future commands no longer default. does not delete workspace files.",
             "help.md": "| Command | Purpose | Produces |; | --- | --- | --- |; `switch` `act-as` `status` `reset` one-prompt restore cwd discipline.",
@@ -1305,7 +1352,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Commands include `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, `pixi add --manifest-path <manifest_path>`, and `pixi install --manifest-path <manifest_path> --environment <pixi_environment>`.
             Use `.isomer-user-env/` only as fallback and block sudo.
-            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence, Topic Main Development Repository Git state, external repo projection evidence, and `per_agent_readiness_status` when per-agent readiness is not checked. Also resolve the appropriate topic repository label before creating repos.
+            Report `semantic_paths` for `topic.workspace`, `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records`, `topic.runtime`, `topic.intent.topic_env_requirements`, and `topic.env.topic_setup_target_spec`; accept an explicit manual target spec; produce Topic Workspace predecessor evidence, Topic Main Development Repository Git state, external repo projection evidence, and `per_agent_readiness_status` when per-agent readiness is not checked. Resolve the appropriate topic repository label before creating repos.
             Use bounded real-path verification for source-intent paths classified as `heavy` or `unknown-risk`. Consult `isomer-misc-bounded-run-tips`, record `operation_classification`, classification source, classification result, and generic best-effort judgment only when no recipe applies. A generic smoke test is allowed only as supporting evidence.
 
             {OUTPUT_CONTRACT_FIXTURE}
@@ -1793,6 +1840,24 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS011", codes(diagnostics))
         self.assertTrue(any("start-research-by-agent-team" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_welcome_extension_paths_in_skill_md(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, omit_skill_term="start-kaoju-survey")
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("start-kaoju-survey" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_welcome_extension_evidence_labels(self) -> None:
+        root = self.make_root()
+        self.write_welcome_skill(root, omit_reference_term="Host-usable")
+
+        diagnostics = validator.validate_welcome_module(root)
+
+        self.assertIn("OPS011", codes(diagnostics))
+        self.assertTrue(any("Host-usable" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_requires_welcome_manual_invocation_policy(self) -> None:
         root = self.make_root()

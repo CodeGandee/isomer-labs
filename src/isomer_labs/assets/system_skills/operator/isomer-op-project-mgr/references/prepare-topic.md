@@ -11,9 +11,13 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from Project context, topic preparation boundaries, and guardrails, then execute the plan.
 
+## Operational Notes
+
+- Route normal setup through `isomer-op-topic-creator` and let it delegate Topic Actor work to `isomer-op-topic-mgr`.
+
 ## Guardrails
 
 - DO NOT duplicate topic creation or common topic preparation logic in this skill.
 - DO NOT imply Topic Team Specialization from a manual research or human-orchestrated request.
-- DO NOT create Topic Actor bindings here; route normal setup through `isomer-op-topic-creator` and let it delegate Topic Actor work to `isomer-op-topic-mgr`.
+- DO NOT create Topic Actor bindings here.
 - DO NOT create `topic.repos.main` or repair topic environment readiness from this subcommand.

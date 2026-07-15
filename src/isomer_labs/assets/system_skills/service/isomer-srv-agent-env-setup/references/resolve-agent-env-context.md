@@ -52,10 +52,13 @@ Carry these values to later subcommands:
 | `support_artifact_refs` | Optional support Artifact refs when available. |
 | `provenance_refs` | Optional Provenance refs when available. |
 
+## Operational Contract
+
+- Record missing Service Request, support Artifact, or Provenance refs without blocking direct Project Operator Session setup.
+
 ## Guardrails
 
 - DO NOT create files from this subcommand.
 - DO NOT infer Pixi bindings from names.
 - DO NOT treat Project-root Pixi as the Topic Workspace execution environment.
 - DO NOT proceed to mutating subcommands when required context values are missing.
-- MUST record missing Service Request, support Artifact, or Provenance refs without blocking direct Project Operator Session setup.

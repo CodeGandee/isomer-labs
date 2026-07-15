@@ -12,8 +12,11 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from readiness boundaries, selected topic context, and guardrails, then execute the plan.
 
+## Operational Contract
+
+- Treat failed or blocked readiness as an operator-visible blocker.
+
 ## Guardrails
 
 - DO NOT install Pixi environments or repair dependencies implicitly.
 - DO NOT launch teams from readiness preparation alone.
-- MUST treat failed or blocked readiness as an operator-visible blocker.

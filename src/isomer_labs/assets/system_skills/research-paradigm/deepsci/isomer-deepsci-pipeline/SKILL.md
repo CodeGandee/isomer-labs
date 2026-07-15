@@ -82,9 +82,13 @@ This skill can end only when one of the following is durably true:
 - A stage blocked the pipeline and `pipeline-terminal-report` has `status: blocked` with a `resume_point` and blocker record.
 - The requested pass is unknown and a help or `list-passes` response was returned.
 
+## Operational Notes
+
+- Looping is external control.
+
 ## Guardrails
 
-- DO NOT treat the pipeline skill as a loop manager. Looping is external control.
+- DO NOT treat the pipeline skill as a loop manager.
 - DO NOT silently continue after a stage blocker or unexpected route decision.
 - DO NOT skip a wrapped skill's callbacks or quality gates.
 - DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.

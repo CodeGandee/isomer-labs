@@ -19,8 +19,12 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, explain whether the blocker is missing concrete topic material, missing Topic Workspace resolution, or conflicting existing overview material.
 
+## Operational Notes
+
+- Route topic env source gates to `define-topic-env`, actor definitions to `define-actors`, topic environment setup to `setup-topic-env`, and actor materialization plus actor env verification to `setup-actors`.
+- Record uncertainty as assumptions or open questions.
+
 ## Guardrails
 
-- DO NOT write `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates` here. Route topic env source gates to `define-topic-env`, actor definitions to `define-actors`, topic environment setup to `setup-topic-env`, and actor materialization plus actor env verification to `setup-actors`.
-
-- DO NOT infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context or searched online evidence explicitly supports them. Record uncertainty as assumptions or open questions.
+- DO NOT write `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates` here.
+- DO NOT infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context or searched online evidence explicitly supports them.

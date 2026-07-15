@@ -19,8 +19,14 @@ If the user's task does not map cleanly to these steps, produce an inspect-only 
 
 Report the removal outcome and selected Research Topic, then summarize Pixi context, the request and plan, package-specific guidance, commands, verification, changed paths, blockers, and the next action.
 
+## Operational Contract
+
+- Make dependency risks and verification checks explicit before removing packages from the selected Topic Workspace Pixi environment because package removal can break topic readiness.
+
+## Operational Notes
+
+- Treat package-specific runtime, accelerator, or companion-package caveats as removal blockers or post-removal verification requirements when they apply.
+
 ## Guardrails
 
-- MUST make dependency risks and verification checks explicit before removing packages from the selected Topic Workspace Pixi environment because package removal can break topic readiness.
-
-- DO NOT choose a generic removal route before checking package-specific guidance for a named package. Treat package-specific runtime, accelerator, or companion-package caveats as removal blockers or post-removal verification requirements when they apply.
+- DO NOT choose a generic removal route before checking package-specific guidance for a named package.

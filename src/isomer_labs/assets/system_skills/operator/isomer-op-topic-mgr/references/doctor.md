@@ -17,6 +17,10 @@ If the user's task does not map cleanly to these steps, run the read-only checks
 
 Report the diagnostic outcome and selected Research Topic, then summarize semantic paths, storage diagnostics, actor, team, and environment diagnostics, retired-skill routing findings, blockers, and the next action.
 
+## Operational Contract
+
+- Keep this subcommand diagnostic by default.
+
 ## Guardrails
 
-- MUST keep this subcommand diagnostic by default. Do not mutate storage bindings, repositories, actors, worktrees, package environments, or service evidence unless the user explicitly asks for a follow-up repair command.
+- DO NOT mutate storage bindings, repositories, actors, worktrees, package environments, or service evidence unless the user explicitly asks for a follow-up repair command.

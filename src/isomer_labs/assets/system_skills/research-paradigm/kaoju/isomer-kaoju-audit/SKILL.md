@@ -61,10 +61,15 @@ An audit that changes its evidence while checking it destroys the distinction be
 - A defect disappears without a new lineage-linked Artifact.
 - Readiness is accepted while claim-bearing identity or metric traceability is unresolved.
 
+## Operational Notes
+
+- Audit both.
+- Report the gap.
+
 ## Guardrails
 
-- DO NOT audit prose without freezing its evidence refs. Audit both.
-- DO NOT treat blocked access as exclusion from the coverage denominator. Report the gap.
+- DO NOT audit prose without freezing its evidence refs.
+- DO NOT treat blocked access as exclusion from the coverage denominator.
 - DO NOT return a repair plan without a readiness decision and affected claims.
 
 ## Chat Response

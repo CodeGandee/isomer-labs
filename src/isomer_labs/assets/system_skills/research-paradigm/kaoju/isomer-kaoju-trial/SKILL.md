@@ -38,9 +38,13 @@ Resolve each contract with `isomer-cli --print-json project artifacts describe <
 
 Use `$isomer-kaoju-shared` for evidence, Artifact, Gate, Service Request, execution request, lineage, and terminal contracts. Use `$isomer-kaoju-reproduce` only for a genuine reproduction claim.
 
+## Operational Notes
+
+- Record `purpose: capability-probe` and no stronger than executed verification depth.
+
 ## Guardrails
 
-- DO NOT call random-data output a reproduction. Record `purpose: capability-probe` and no stronger than executed verification depth.
+- DO NOT call random-data output a reproduction.
 - DO NOT edit dependencies during an approved trial without revising the plan and Gate.
 - DO NOT replace a failed faithful attempt with a repaired result.
 - DO NOT treat smoke success as the code-trial verdict.

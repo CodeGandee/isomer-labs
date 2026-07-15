@@ -31,11 +31,14 @@ If the user's task does not map cleanly to these steps, use your native planning
 - `runtime`: `state.sqlite`, runtime-owned directories, and adapter runtime material under selected Topic Workspaces.
 - `content-root`: the selected generated content root, only with `--purge-content-root`.
 
+## Operational Contract
+
+- Default to `isomer-cli project cleanup --part <part> --dry-run` unless the user has already reviewed a cleanup plan and explicitly asks to apply it.
+- Preserve unknown files by default.
+
 ## Guardrails
 
-- MUST default to `isomer-cli project cleanup --part <part> --dry-run` unless the user has already reviewed a cleanup plan and explicitly asks to apply it.
 - DO NOT use `--yes` for destructive cleanup without user confirmation.
 - DO NOT use `--purge-content-root` unless the user explicitly requests whole generated content root removal.
 - DO NOT infer Research Topics or Topic Workspaces from unregistered directories when the Project Manifest is missing or malformed.
 - DO NOT stop live Houmao agents, inspect gateways, delete external worktrees, remove root `.houmao/`, or treat Project cleanup as live Houmao cleanup.
-- MUST preserve unknown files by default.

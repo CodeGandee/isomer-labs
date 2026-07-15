@@ -187,6 +187,17 @@ The Topic Creator skill SHALL separate lower-level topic input resolution from t
 - **THEN** it uses a lower-level helper stage to resolve topic source material, derive or confirm a path-safe topic id, and identify the Topic Workspace candidate
 - **AND** that helper does not write `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates
 
+#### Scenario: Unspecified Topic Workspace uses the configured base
+- **WHEN** Topic Creator resolves a new `<topic-id>` and the user did not explicitly supply a custom Topic Workspace directory
+- **THEN** the Topic Workspace candidate is `<topic_workspace_base_dir>/<topic-id>` when the Project Manifest defines `topic_workspace_base_dir`
+- **AND** it is `isomer-content/topic-ws/<topic-id>` when the built-in Topic Workspace base applies
+- **AND** registration uses `isomer-cli project topics create <topic-id> --statement "<research topic>"` without `--workspace-dir`
+
+#### Scenario: Custom Topic Workspace requires explicit input
+- **WHEN** Topic Creator considers `--workspace-dir <topic-workspace-dir>` for a new Research Topic
+- **THEN** it requires an explicitly supplied custom Topic Workspace directory plus path-safety and collision checks
+- **AND** it does not substitute a bare `<topic-id>` for `<topic-workspace-dir>`
+
 #### Scenario: Create research intent writes topic overview only
 - **WHEN** `create-research-intent` runs with concrete topic source material and a registered or candidate Topic Workspace
 - **THEN** it creates or updates `topic.intent.overview`

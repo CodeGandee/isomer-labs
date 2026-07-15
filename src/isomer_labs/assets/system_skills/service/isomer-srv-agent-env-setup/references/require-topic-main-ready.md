@@ -50,10 +50,13 @@ Report a blocker for:
 - ambiguous gate requirements;
 - any repair that requires topic-main creation, configuration, or projection materialization.
 
+## Operational Contract
+
+- Route missing or stale topic-main and projection evidence to `isomer-srv-topic-env-setup`.
+
 ## Guardrails
 
 - DO NOT create, initialize, configure, repair, delete, reset, clean, rewrite history, reclone, pull, or silently repair `topic.repos.main`.
 - DO NOT create external repo projections.
 - DO NOT mutate topic dependencies.
 - DO NOT create Agent Workspaces here; that belongs to `create-agent-worktrees`.
-- MUST route missing or stale topic-main and projection evidence to `isomer-srv-topic-env-setup`.

@@ -12,8 +12,12 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, ask what the topic environment must be able to run and stop before setup or installation.
 
+## Operational Notes
+
+- Those belong to `setup-topic-env` and `isomer-srv-topic-env-setup` after the topic env source gate is verified or fast-forward accepted.
+- Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise let service setup default to a shallow clone with `--depth=1`.
+
 ## Guardrails
 
-- DO NOT derive `topic.env.topic_setup_target_spec`, install dependencies, configure Pixi, create repositories, or claim topic environment readiness here. Those belong to `setup-topic-env` and `isomer-srv-topic-env-setup` after the topic env source gate is verified or fast-forward accepted.
-
-- DO NOT ask for full Git history by default. Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise let service setup default to a shallow clone with `--depth=1`.
+- DO NOT derive `topic.env.topic_setup_target_spec`, install dependencies, configure Pixi, create repositories, or claim topic environment readiness here.
+- DO NOT ask for full Git history by default.

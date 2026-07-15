@@ -10,6 +10,10 @@
 
 If the user's task does not map cleanly to these steps, use your native planning tool to produce the shortest accurate status and mark unknown fields as uncertain rather than inventing state.
 
+## Operational Contract
+
+- Keep status read-only.
+
 ## Guardrails
 
-- MUST keep status read-only. Do not switch, reset, or run worker task commands from this command unless the user separately asks for `switch`, `act-as`, or `reset`.
+- DO NOT switch, reset, or run worker task commands from this command unless the user separately asks for `switch`, `act-as`, or `reset`.

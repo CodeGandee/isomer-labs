@@ -69,10 +69,15 @@ A complete-looking matrix is weaker than an honest sparse one if its cells hide 
 - Theory cells receive `compared` verification depth.
 - A single number has no variability statement or reason it is unavailable.
 
+## Operational Notes
+
+- Start from the domain question and accepted source basis.
+- Preserve their state.
+
 ## Guardrails
 
-- DO NOT let source availability determine the dimensions. Start from the domain question and accepted source basis.
-- DO NOT rank unclear or disputed cells. Preserve their state.
+- DO NOT let source availability determine the dimensions.
+- DO NOT rank unclear or disputed cells.
 - DO NOT reuse old Runs without verifying their identities and Comparison Contract compatibility.
 
 ## Chat Response

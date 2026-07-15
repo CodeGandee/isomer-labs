@@ -16,6 +16,10 @@ If the user's task does not map cleanly to these steps, verify only the named to
 
 Report the Topic environment verification outcome and selected Research Topic, then summarize semantic paths, the target specification, commands and verification, service evidence, blockers, and the next action.
 
+## Operational Contract
+
+- Limit this subcommand's readiness claim to the Topic Workspace environment; it does not prove per-Topic Actor cwd readiness, formal Agent Workspace cwd readiness, Agent Instance creation, or runtime launch readiness.
+
 ## Guardrails
 
-- MUST limit this subcommand's readiness claim to the Topic Workspace environment; it does not prove per-Topic Actor cwd readiness, formal Agent Workspace cwd readiness, Agent Instance creation, or runtime launch readiness.
+- DO NOT claim per-Topic Actor cwd readiness, formal Agent Workspace cwd readiness, Agent Instance creation, or runtime launch readiness from this Topic Workspace environment check.

@@ -33,9 +33,13 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project root, CLI command boundaries, Houmao bootstrap boundary, and guardrails, then execute the plan.
 
+## Operational Notes
+
+- Those are separate operator-skill actions.
+
 ## Guardrails
 
 - DO NOT create `.isomer-labs/` by hand when `isomer-cli project init` can run.
 - DO NOT treat a failed Houmao bootstrap as a successful Project init.
 - DO NOT run `project runtime init`, `project runtime prepare`, or team launch commands from this subcommand unless the user explicitly asks for a later step.
-- DO NOT imply that direct `isomer-cli project init` performs agent-host discovery or extension registration. Those are separate operator-skill actions.
+- DO NOT imply that direct `isomer-cli project init` performs agent-host discovery or extension registration.

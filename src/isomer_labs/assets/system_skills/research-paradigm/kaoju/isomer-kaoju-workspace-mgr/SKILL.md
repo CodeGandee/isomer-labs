@@ -70,10 +70,15 @@ Workspace visibility is not mutation authority. Missing owner evidence is a bloc
 - A local path is used without Workspace Path Resolution or a manifest identity.
 - A readiness result omits resource or Gate posture.
 
+## Operational Notes
+
+- Register a managed link through its owner.
+- Validate identity, audit state, and staleness before reuse.
+
 ## Guardrails
 
-- DO NOT copy external datasets into the Topic Workspace. Register a managed link through its owner.
-- DO NOT treat old survey refs as current. Validate identity, audit state, and staleness before reuse.
+- DO NOT copy external datasets into the Topic Workspace.
+- DO NOT treat old survey refs as current.
 
 ## Troubleshooting Guide
 

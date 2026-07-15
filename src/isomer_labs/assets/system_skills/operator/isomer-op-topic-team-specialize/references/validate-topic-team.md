@@ -57,12 +57,15 @@ If specialization, environment status, or Agent Workspace paths are missing, ref
 
 If `topic_environment_status` claims ready without Topic Workspace predecessor evidence, required `## Gate Checklist` completion evidence, or a named validation ref, report the missing `isomer-srv-topic-env-setup` evidence as a blocker. If per-Agent Workspace cwd verification was requested and `agent_environment_service_output` is missing, report that missing `isomer-srv-agent-env-setup` evidence as a blocker.
 
+## Operational Notes
+
+- Agent environment readiness can satisfy static setup readiness only when `isomer-srv-agent-env-setup` reports all planned Agent Names ready; it does not prove runtime readiness.
+- Preserve the user downgrade, weaker evidence, affected checklist item, and limitation in validation blockers or deferrals.
+- Mark whether each deferral blocks static setup, validation, profile materialization, or later runtime operation.
+
 ## Guardrails
 
-- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from this validation. Agent environment readiness can satisfy static setup readiness only when `isomer-srv-agent-env-setup` reports all planned Agent Names ready; it does not prove runtime readiness.
-
-- DO NOT describe a weaker smoke-test downgrade as proof that the original critical path passed. Preserve the user downgrade, weaker evidence, affected checklist item, and limitation in validation blockers or deferrals.
-
-- DO NOT treat deferrals as harmless. Mark whether each deferral blocks static setup, validation, profile materialization, or later runtime operation.
-
+- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from this validation.
+- DO NOT describe a weaker smoke-test downgrade as proof that the original critical path passed.
+- DO NOT treat deferrals as harmless.
 - DO NOT run materialization or live operation from validation.

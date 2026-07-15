@@ -60,11 +60,17 @@ Numbers carry the identity of the code, inputs, evaluator, environment, and exec
 - An ordinary or generated-data trial is labeled reproduction.
 - A failure disappears after a repaired Run succeeds.
 
+## Operational Notes
+
+- Query and validate the Topic Dataset Manifest first.
+- Route them and retain logs.
+- Record the actual Run purpose and achieved depth.
+
 ## Guardrails
 
-- DO NOT ask for a dataset before checking registered data. Query and validate the Topic Dataset Manifest first.
-- DO NOT run setup commands outside the owner or resource boundary. Route them and retain logs.
-- DO NOT call a smoke test a benchmark. Record the actual Run purpose and achieved depth.
+- DO NOT ask for a dataset before checking registered data.
+- DO NOT run setup commands outside the owner or resource boundary.
+- DO NOT call a smoke test a benchmark.
 
 ## Chat Response
 

@@ -10,6 +10,6 @@
 
 If the user's task does not map cleanly to these steps, use your native planning tool to clear any known persistent posture and report unknown fields as unknown.
 
-## Guardrails
+## Operational Contract
 
-- MUST reset does not delete workspace files, change branches, stop runtime agents, mutate Workspace Runtime records, or undo task edits. It only clears the Project Operator's remembered identity posture.
+- Reset does not delete workspace files, change branches, stop runtime agents, mutate Workspace Runtime records, or undo task edits. It only clears the Project Operator's remembered identity posture.

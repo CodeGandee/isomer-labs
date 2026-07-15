@@ -64,15 +64,18 @@ State whether identity was switched, used for one action, made persistent, reset
 
 Group the complete explanation by target-resolution evidence, workspace and worktree readiness, previous and active identity scope, restoration behavior, and provenance wording used to avoid unsupported runtime claims.
 
+## Operational Notes
+
+- Ask or use Project Manifest-backed Isomer context.
+
 ## Guardrails
 
-- DO NOT infer a target by scanning workspace directories; ask or use Project Manifest-backed Isomer context.
+- DO NOT infer a target by scanning workspace directories.
 - DO NOT use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
 - DO NOT persist a switch unless the user explicitly asks for persistence.
 - DO NOT leave `act-as` active after the following prompt completes.
 - DO NOT claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution without verified runtime evidence.
 - DO NOT overwrite another worker's uncommitted work without explicit user instruction.
-
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

@@ -29,6 +29,7 @@ PROJECT_MANAGER_SKILL = "isomer-op-project-mgr"
 SYSTEM_SKILL_MANAGER_SKILL = "isomer-op-system-skill-mgr"
 GUI_MANAGER_SKILL = "isomer-op-gui-mgr"
 SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
+TOOLBOX_MANAGER_SKILL = "isomer-op-toolbox-mgr"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
 WELCOME_SKILL = "isomer-op-welcome"
@@ -678,11 +679,17 @@ TOPIC_MANAGER_REFERENCE_REQUIRED_TERMS = (
 WELCOME_USAGE_PATHS = (
     "start-research-manually",
     "start-research-by-agent-team",
+    "start-deepsci-research",
+    "start-kaoju-survey",
 )
 
 WELCOME_ACTIVE_OWNER_SKILLS = (
+    ENTRYPOINT_SKILL,
     PROJECT_MANAGER_SKILL,
+    SYSTEM_SKILL_MANAGER_SKILL,
     GUI_MANAGER_SKILL,
+    SWITCH_IDENTITY_SKILL,
+    TOOLBOX_MANAGER_SKILL,
     TOPIC_CREATOR_SKILL,
     TOPIC_MANAGER_SKILL,
     TOPIC_TEAM_SPECIALIZATION_SKILL,
@@ -698,23 +705,27 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "## Overview",
     "## When to Use",
     "Manual invocation only",
-    "Default option mode",
-    "Visible usage path mode",
-    "Routing and support mode",
-    "Read-only context mode",
-    "## Usage Path Subcommands",
-    "## Routing and Support Subcommands",
-    "Do not hide them inside `choose-path`",
+    "Handle the default",
+    "Select one subcommand",
+    "Load the selected reference",
+    "Preserve the read-only boundary",
+    "## Subcommands",
+    "These routines are peers",
     "references/show-options.md",
+    "references/show-extensions.md",
     "references/choose-path.md",
     "references/show-skill-map.md",
     "references/next-step.md",
     "references/start-research-manually.md",
     "references/start-research-by-agent-team.md",
+    "references/start-deepsci-research.md",
+    "references/start-kaoju-survey.md",
     "isomer-cli project validate",
     "isomer-cli doctor",
     "isomer-cli project topics list",
     "isomer-cli project context show",
+    "isomer-cli system-skills extensions list",
+    "isomer-cli project system-extensions list",
     "Default to **Essential Output** in chat.",
     "Complete Output",
     "understood the user's goal",
@@ -724,6 +735,16 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "blocks progress",
     "next action",
     "isomer-misc-tool-packs",
+    "isomer-op-entrypoint",
+    "isomer-op-system-skill-mgr",
+    "isomer-deepsci-pipeline",
+    "isomer-kaoju-pipeline",
+    "catalog-known",
+    "Project-declared",
+    "host-usable",
+    "execution topology",
+    "research paradigm",
+    "isomer-cli ext",
     "formal Agent Team target",
     "generic topic preparation",
     "missing Agent Workspaces",
@@ -732,11 +753,14 @@ WELCOME_REQUIRED_SKILL_TERMS = (
 WELCOME_SUBCOMMANDS = (
     "help.md",
     "show-options.md",
+    "show-extensions.md",
     "choose-path.md",
     "show-skill-map.md",
     "next-step.md",
     "start-research-manually.md",
     "start-research-by-agent-team.md",
+    "start-deepsci-research.md",
+    "start-kaoju-survey.md",
 )
 
 WELCOME_REFERENCE_REQUIRED_TERMS = {
@@ -744,14 +768,27 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "| Subcommand | Purpose | Produces |",
         "start-research-manually",
         "start-research-by-agent-team",
+        "start-deepsci-research",
+        "start-kaoju-survey",
+        "isomer-op-entrypoint",
+        "isomer-op-system-skill-mgr",
         "isomer-op-gui-mgr",
         "show-options",
+        "show-extensions",
         "choose-path",
         "show-skill-map",
         "next-step",
     ),
     "show-options.md": (
         "visible usage paths first",
+        "start-deepsci-research",
+        "start-kaoju-survey",
+        "isomer-deepsci-pipeline",
+        "isomer-kaoju-pipeline",
+        "isomer-op-system-skill-mgr",
+        "Use $isomer-op-entrypoint",
+        "execution topology",
+        "research paradigm",
         "Project setup or checks",
         "Project Web GUI",
         "isomer-op-gui-mgr",
@@ -760,10 +797,29 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "Houmao",
         "invoke the named owner skill directly",
     ),
+    "show-extensions.md": (
+        "isomer-cli --print-json system-skills extensions list",
+        "isomer-cli --print-json system-skills extensions show <extension-id>",
+        "isomer-cli --print-json project system-extensions list",
+        "catalog-known",
+        "Project-declared",
+        "Host-usable",
+        "isomer-op-system-skill-mgr",
+        "Use $isomer-op-entrypoint",
+        "isomer-deepsci-pipeline",
+        "isomer-kaoju-pipeline",
+        "isomer-cli ext",
+    ),
     "choose-path.md": (
         "recommends visible paths",
         "manual research",
         "Domain Agent Team Template",
+        "start-deepsci-research",
+        "start-kaoju-survey",
+        "isomer-op-system-skill-mgr",
+        "isomer-op-entrypoint",
+        "execution topology",
+        "research paradigm",
         "isomer-op-gui-mgr",
         "GUI",
         "understood the goal",
@@ -776,7 +832,11 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     "show-skill-map.md": (
         "Direct Invocation",
         "Use $isomer-op-project-mgr",
+        "Use $isomer-op-entrypoint",
+        "Use $isomer-op-system-skill-mgr",
         "Use $isomer-op-gui-mgr",
+        "Use $isomer-op-switch-identity",
+        "Use $isomer-op-toolbox-mgr",
         "Use $isomer-op-topic-creator",
         "Use $isomer-op-topic-mgr",
         "Use $isomer-op-topic-team-specialize",
@@ -789,6 +849,12 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "isomer-cli doctor",
         "isomer-cli project topics list",
         "isomer-cli project context show",
+        "isomer-cli project self show",
+        "isomer-cli project outputs policy",
+        "isomer-cli system-skills extensions list",
+        "isomer-cli project system-extensions list",
+        "isomer-op-system-skill-mgr",
+        "Use $isomer-op-entrypoint",
         "Do not run",
     ),
     "start-research-manually.md": (
@@ -796,14 +862,34 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "isomer-op-topic-creator",
         "Use $isomer-op-topic-creator fast-forward",
         "Use $isomer-op-topic-creator step-by-step",
+        "research paradigm",
         "mutation boundary",
     ),
     "start-research-by-agent-team.md": (
         "Domain Agent Team Template",
         "isomer-op-topic-team-specialize",
         "Use $isomer-op-topic-team-specialize fast-forward",
+        "research paradigm",
         "mutation boundary",
         "isomer-srv-houmao-interop",
+    ),
+    "start-deepsci-research.md": (
+        "hypothesis-driven production research",
+        "isomer-deepsci-pipeline",
+        "Use $isomer-op-entrypoint",
+        "isomer-op-system-skill-mgr",
+        "isomer-deepsci-workspace-mgr",
+        "execution topology",
+        "Mutation Boundary",
+    ),
+    "start-kaoju-survey.md": (
+        "evidence-led survey",
+        "isomer-kaoju-pipeline",
+        "Use $isomer-op-entrypoint",
+        "isomer-op-system-skill-mgr",
+        "isomer-kaoju-workspace-mgr",
+        "execution topology",
+        "Mutation Boundary",
     ),
 }
 
@@ -858,7 +944,7 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "Save the previous Project Operator identity posture",
         "Restore the previous Project Operator identity posture",
         "temporary one-time execution",
-        "Do not leave a switched posture active",
+        "DO NOT leave a switched posture active",
         "resolved `topic.actors.workspace` or `agent.workspace`",
     ),
     "status.md": (
@@ -1344,7 +1430,7 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "Topic Main Development Repository Git state",
     "external repo projection",
     "per_agent_readiness_status",
-    "resolve the appropriate topic repository label",
+    "Resolve the appropriate topic repository label",
     "bounded real-path verification",
     "isomer-misc-bounded-run-tips",
     "operation_classification",
@@ -2285,14 +2371,14 @@ def _validate_guardrails(
                 continue
             if line.startswith("- "):
                 bullet_count += 1
-                if not re.match(r"^- (?:DO NOT|MUST)(?:\s|$)", line):
+                if not re.match(r"^- DO NOT(?:\s|$)", line):
                     add(
                         diagnostics,
                         repo_root,
                         path,
                         offset,
                         SYSTEM_SKILL_TEMPLATE_CODE,
-                        "top-level Guardrails bullets must start with DO NOT or MUST",
+                        "top-level Guardrails bullets must start with DO NOT",
                     )
                 continue
             add(
@@ -3318,7 +3404,7 @@ def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
                 diagnostics,
                 repo_root,
                 skill_md,
-                first_line_containing(lines, "## Usage Path Subcommands"),
+                first_line_containing(lines, "## Subcommands"),
                 "OPS011",
                 f"{WELCOME_SKILL} must expose visible usage path '{usage_path}' in SKILL.md",
             )
@@ -3381,7 +3467,7 @@ def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
                 diagnostics,
                 repo_root,
                 skill_md,
-                first_line_containing(lines, "## Usage Path Subcommands"),
+                first_line_containing(lines, "## Subcommands"),
                 "OPS011",
                 f"{WELCOME_SKILL} must include direct invocation language for ${owner_skill}",
             )

@@ -64,15 +64,25 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 When `ready` depends on Pixi-mediated external runtime wiring or `.isomer-user-env/` fallback, include a warning in the final output naming the paths, scripts, variables, or fallback prefix and explaining that those pieces may need repair or reinstall if the Topic Workspace moves or the host runtime changes.
 
+## Operational Notes
+
+- Use the relevant package-specific checks from `isomer-misc-pkg-specifics` when the target spec names them, or require explicit `no package-specific rule` evidence before falling back to generic verification.
+- If every `agent.workspace` cwd must prove a gate, report that per-agent readiness is not checked and name the Topic Workspace predecessor evidence produced by this verification.
+- If a command only passes because of an already activated environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script, report `blocked` or `failed` and name the missing enclosure record.
+- When a bounded real-path command is enough and it exercises the critical path named by the checklist item, run that.
+- When the required source-intent path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked.
+- A simple smoke test that misses the essential code path is not enough to claim readiness.
+- If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.
+
 ## Guardrails
 
 - DO NOT claim readiness merely because `pixi install` succeeded.
-- DO NOT claim package-specific runtime readiness from generic install success, solver success, package metadata, or generic import success. Use the relevant package-specific checks from `isomer-misc-pkg-specifics` when the target spec names them, or require explicit `no package-specific rule` evidence before falling back to generic verification.
-- DO NOT claim per-agent cwd readiness from a topic-root command. If every `agent.workspace` cwd must prove a gate, report that per-agent readiness is not checked and name the Topic Workspace predecessor evidence produced by this verification.
-- DO NOT claim readiness from ambient shell success. If a command only passes because of an already activated environment, global package, unrecorded PATH entry, unrecorded library path, or unrecorded sourced script, report `blocked` or `failed` and name the missing enclosure record.
+- DO NOT claim package-specific runtime readiness from generic install success, solver success, package metadata, or generic import success.
+- DO NOT claim per-agent cwd readiness from a topic-root command.
+- DO NOT claim readiness from ambient shell success.
 - DO NOT require or verify `team-profile/`, Topic Agent Team Profile material, Agent Team Instance records, roles, or agent count before reporting environment readiness.
 - DO NOT run live agent launch, Agent Instance creation, Topic Agent Team Profile materialization, GUI operation, or research decision commands as environment verification.
 - DO NOT suppress warnings about inferred repo sources.
 - DO NOT suppress warnings about external runtime wiring or topic-local user-space fallback.
-- DO NOT run verification classified as `heavy` or `unknown-risk` at full scale merely to make readiness look stronger or because the generated bounded-run plan is incomplete. When a bounded real-path command is enough and it exercises the critical path named by the checklist item, run that. When the required source-intent path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential code path is not enough to claim readiness.
-- DO NOT mark a required checklist item complete with an unrelated weaker smoke test. If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.
+- DO NOT run verification classified as `heavy` or `unknown-risk` at full scale merely to make readiness look stronger or because the generated bounded-run plan is incomplete.
+- DO NOT mark a required checklist item complete with an unrelated weaker smoke test.

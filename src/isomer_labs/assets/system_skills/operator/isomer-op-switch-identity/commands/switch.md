@@ -11,6 +11,11 @@
 
 If the user's task does not map cleanly to these steps, use your native planning tool to isolate the switch target, choose one-task mode unless persistence is explicit, and ask only for unresolved target identity information.
 
+## Operational Notes
+
+- Do not use Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
+- Do not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution.
+
 ## Guardrails
 
-- DO NOT infer the target by scanning workspace directories. Do not use Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd. Do not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution.
+- DO NOT infer the target by scanning workspace directories.

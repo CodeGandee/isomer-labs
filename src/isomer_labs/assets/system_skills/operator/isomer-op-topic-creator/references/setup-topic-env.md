@@ -13,8 +13,12 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, report whether the missing evidence is topic overview, verified topic env requirements, target spec, service setup output, or topic-main readiness.
 
+## Operational Notes
+
+- The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
+- Route missing or stale source gates to `define-topic-env`.
+
 ## Guardrails
 
-- DO NOT create or repair `topic.repos.main` directly in this skill. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
-
-- DO NOT invent `topic.intent.topic_env_requirements` here. Route missing or stale source gates to `define-topic-env`.
+- DO NOT create or repair `topic.repos.main` directly in this skill.
+- DO NOT invent `topic.intent.topic_env_requirements` here.

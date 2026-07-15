@@ -17,10 +17,16 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, report the valid target list and ask for one procedural target.
 
+## Operational Contract
+
+- Treat `run-to` as automatic like `fast-forward`, not interactive like `step-by-step`; stop before mutation that lacks required inputs, selected context, semantic path resolution, or operator approval.
+
+## Operational Notes
+
+- They are internal ladder stages used to reach procedural targets.
+- Exclude the target only when the user explicitly asks to stop before it.
+
 ## Guardrails
 
-- MUST treat `run-to` as automatic like `fast-forward`, not interactive like `step-by-step`; stop before mutation that lacks required inputs, selected context, semantic path resolution, or operator approval.
-
-- DO NOT accept helper commands such as `ensure-project`, `resolve-topic-input`, `register-topic`, or `init-runtime` as `run-to` targets. They are internal ladder stages used to reach procedural targets.
-
-- DO NOT stop before the target by default. Exclude the target only when the user explicitly asks to stop before it.
+- DO NOT accept helper commands such as `ensure-project`, `resolve-topic-input`, `register-topic`, or `init-runtime` as `run-to` targets.
+- DO NOT stop before the target by default.

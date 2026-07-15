@@ -21,11 +21,14 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project root, content-root destination, CLI command boundaries, and guardrails, then execute the plan.
 
+## Operational Contract
+
+- Default to `isomer-cli project content-root move --to <content-dir> --dry-run` unless the user has already reviewed a relocation plan and explicitly asks to apply it.
+- Treat destination path refusals, destination conflicts, missing Project Manifest, malformed Project Manifest, and symlink content roots as blockers.
+
 ## Guardrails
 
-- MUST default to `isomer-cli project content-root move --to <content-dir> --dry-run` unless the user has already reviewed a relocation plan and explicitly asks to apply it.
 - DO NOT use `--yes` without user confirmation.
 - DO NOT hand-edit `.isomer-labs/manifest.toml` for supported generated content-root relocation workflows.
 - DO NOT rename the whole old content root as an opaque directory; supported relocation preserves unmanaged leftovers.
 - DO NOT rewrite `state.sqlite`, stored path plans, Pixi environments, installed package metadata, adapter runtime records, logs, or generated runtime internals.
-- MUST treat destination path refusals, destination conflicts, missing Project Manifest, malformed Project Manifest, and symlink content roots as blockers.

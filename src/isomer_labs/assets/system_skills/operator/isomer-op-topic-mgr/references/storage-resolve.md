@@ -21,8 +21,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Report the Research Topic, Topic Workspace and its path, then summarize resolved semantic paths with their labels, sources, readiness and diagnostics, candidate packet or profile files, blockers, and the next operator action.
 
+## Operational Notes
+
+- Directory inspection can confirm material after Project Manifest-backed selection, but it must not choose the topic.
+- It is a read-only context and semantic path planning stage.
+- Do not create or rewrite `topic-workspace.toml`; use explicit default materialization or binding lifecycle commands only when the operator asks for creation or registration.
+
 ## Guardrails
 
-- DO NOT infer the selected Topic Workspace by scanning directories. Directory inspection can confirm material after Project Manifest-backed selection, but it must not choose the topic.
-
-- DO NOT create files from this subcommand. It is a read-only context and semantic path planning stage. Do not create or rewrite `topic-workspace.toml`; use explicit default materialization or binding lifecycle commands only when the operator asks for creation or registration.
+- DO NOT infer the selected Topic Workspace by scanning directories.
+- DO NOT create files from this subcommand.

@@ -13,6 +13,10 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, ask for actor names or confirm that the default `operator` actor is enough.
 
+## Operational Notes
+
+- Those belong to `setup-actors`.
+
 ## Guardrails
 
-- DO NOT register Topic Actors, materialize Topic Actor Workspaces, generate derived actor env gates, or claim actor cwd readiness here. Those belong to `setup-actors`.
+- DO NOT register Topic Actors, materialize Topic Actor Workspaces, generate derived actor env gates, or claim actor cwd readiness here.

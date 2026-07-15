@@ -69,12 +69,19 @@ Writing communicates accepted evidence; format conversion, compilation, and visu
 - A material repair runs without a revised plan and Gate.
 - A PDF is described as ready despite failed or unavailable required validation.
 
+## Operational Notes
+
+- Build every section from the audited evidence set.
+- Register them separately and use placeholders.
+- It is a derived assembly.
+- Report denominators, exclusions, unknowns, and unresolved cases.
+
 ## Guardrails
 
-- DO NOT write from memory instead of accepted refs. Build every section from the audited evidence set.
-- DO NOT embed figures or tables without typed display and source refs. Register them separately and use placeholders.
-- DO NOT treat a generated PDF as evidence. It is a derived assembly.
-- DO NOT hide gaps behind aggregate counts. Report denominators, exclusions, unknowns, and unresolved cases.
+- DO NOT write from memory instead of accepted refs.
+- DO NOT embed figures or tables without typed display and source refs.
+- DO NOT treat a generated PDF as evidence.
+- DO NOT hide gaps behind aggregate counts.
 
 ## Chat Response
 

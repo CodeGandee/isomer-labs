@@ -62,11 +62,17 @@ An exact locator makes an observation auditable; a plausible paraphrase does not
 - An abstract-only observation is described as full-text inspection.
 - Paper and code identities are merged without relationship evidence.
 
+## Operational Notes
+
+- Record whether evidence supports, challenges, or leaves the claim inconclusive.
+- Preserve both evidence paths and their identities.
+- Record a Source Access Blocker so the audit can distinguish coverage from access.
+
 ## Guardrails
 
-- DO NOT copy source claims into the ledger without a verdict. Record whether evidence supports, challenges, or leaves the claim inconclusive.
-- DO NOT omit contradictions. Preserve both evidence paths and their identities.
-- DO NOT treat inaccessible material as excluded. Record a Source Access Blocker so the audit can distinguish coverage from access.
+- DO NOT copy source claims into the ledger without a verdict.
+- DO NOT omit contradictions.
+- DO NOT treat inaccessible material as excluded.
 
 ## Chat Response
 

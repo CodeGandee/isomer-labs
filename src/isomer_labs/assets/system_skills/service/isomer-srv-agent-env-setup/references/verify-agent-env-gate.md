@@ -70,15 +70,27 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 Selected-agent direct verification updates that agent's evidence but does not make the overall result ready unless the complete matrix has already passed.
 
+## Operational Contract
+
+- Treat Topic Workspace readiness as prerequisite evidence only; every requested Agent Workspace cwd must be verified by this subcommand before reporting per-agent readiness.
+- Report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
+
+## Operational Notes
+
+- Missing, stale, blocked, or inconsistent projection evidence routes repair to `isomer-srv-topic-env-setup`.
+- When selected-agent partial coverage or another bounded real-path command is enough and it exercises the critical path named by the checklist item, use it and label the evidence correctly.
+- When the required command path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked.
+- A simple smoke test that misses the essential cwd command path is not enough to claim readiness.
+- If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, affected Agent Name or matrix scope, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.
+- Readiness by agent and blockers must remain visible.
+
 ## Guardrails
 
 - DO NOT claim readiness from topic-root-only success.
-- MUST treat Topic Workspace readiness as prerequisite evidence only; every requested Agent Workspace cwd must be verified by this subcommand before reporting per-agent readiness.
 - DO NOT claim package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.
 - DO NOT write or run independent PyPI, Pixi, Conda, or runtime-wiring package install commands for dependencies that belong to topic env setup.
-- DO NOT create external repo projections or Agent Workspace-local substitute projections. Missing, stale, blocked, or inconsistent projection evidence routes repair to `isomer-srv-topic-env-setup`.
-- MUST report `gate-cwd-incompatible` or equivalent when a topic env command cannot run from Agent Workspace cwd.
+- DO NOT create external repo projections or Agent Workspace-local substitute projections.
 - DO NOT create Agent Instances, Workspace Runtime records, Houmao launch material, or Execution Adapter material.
-- DO NOT suppress partial failures; readiness by agent and blockers must remain visible.
-- DO NOT run verification classified as `heavy` or `unknown-risk` at full scale merely to make the all-agent matrix look stronger or because the generated bounded-run plan is incomplete. When selected-agent partial coverage or another bounded real-path command is enough and it exercises the critical path named by the checklist item, use it and label the evidence correctly. When the required command path cannot be exercised safely even in bounded form, block with resource evidence and leave the checklist item unchecked. A simple smoke test that misses the essential cwd command path is not enough to claim readiness.
-- DO NOT mark a required checklist item complete with an unrelated weaker smoke test. If the user explicitly accepts a weaker check, record the user downgrade, original checklist item, affected Agent Name or matrix scope, weaker evidence, and limitation instead of presenting it as proof that the original critical path passed.
+- DO NOT suppress partial failures.
+- DO NOT run verification classified as `heavy` or `unknown-risk` at full scale merely to make the all-agent matrix look stronger or because the generated bounded-run plan is incomplete.
+- DO NOT mark a required checklist item complete with an unrelated weaker smoke test.

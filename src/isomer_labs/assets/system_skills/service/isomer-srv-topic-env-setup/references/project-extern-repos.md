@@ -46,12 +46,16 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to inspect the canonical repo evidence and target spec first, then materialize only projections whose access intent is clear.
 
+## Operational Notes
+
+- Projection metadata should keep semantic labels and project- or topic-relative paths; absolute symlink targets are local materialization details that may need repair after relocation.
+
 ## Guardrails
 
 - DO NOT create `extern/` at the topic-main repository root.
 - DO NOT treat projections as canonical source repositories; the canonical source remains the resolved non-main `topic.repos.*` path.
 - DO NOT report a symlink projection as ready until `readlink -f <projection-path>` equals `realpath -e <canonical-source-path>`.
-- DO NOT store absolute symlink targets as durable metadata. Projection metadata should keep semantic labels and project- or topic-relative paths; absolute symlink targets are local materialization details that may need repair after relocation.
+- DO NOT store absolute symlink targets as durable metadata.
 - DO NOT mutate an existing canonical external repository unless the target spec explicitly authorizes source mutation.
 - DO NOT create a full-history dedicated clone for a writable projection unless the target spec, prompt, or projection intent explains why a shallow snapshot is insufficient.
 - DO NOT hide projection blockers behind generic readiness language.

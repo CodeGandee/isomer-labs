@@ -72,12 +72,15 @@ Include cwd-friendly guidance: an agent running inside its own Agent Workspace c
 
 Do not status stale workspace setup evidence as ready when it names legacy support roots, top-level Topic Main Development Repository collaboration directories, or hard-coded default-only paths without semantic label and path-source evidence.
 
+## Operational Notes
+
+- Agent environment readiness is static setup evidence from `isomer-srv-agent-env-setup`, not runtime evidence.
+- Put them in `## Blockers and Deferrals`.
+- Name the affected checklist item, weaker evidence, limitation, and next repair action.
+
 ## Guardrails
 
-- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from the summary. Agent environment readiness is static setup evidence from `isomer-srv-agent-env-setup`, not runtime evidence.
-
-- DO NOT hide blockers in prose. Put them in `## Blockers and Deferrals`.
-
-- DO NOT status incomplete required checklist items or weaker smoke-test downgrades as full environment readiness. Name the affected checklist item, weaker evidence, limitation, and next repair action.
-
+- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from the summary.
+- DO NOT hide blockers in prose.
+- DO NOT status incomplete required checklist items or weaker smoke-test downgrades as full environment readiness.
 - DO NOT include secrets, raw command payloads, live provider state, or transient adapter state in `isomer-topic-summary.md`.

@@ -19,6 +19,10 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a support-material repair plan from the failed readiness evidence, current binding, drift diagnostics, and projected Houmao route, then execute the plan.
 
+## Operational Contract
+
+- Repair support material only.
+
 ## Guardrails
 
-- MUST repair support material only. Do not change research decisions, Topic Team membership, or accepted research Artifacts.
+- DO NOT change research decisions, Topic Team membership, or accepted research Artifacts.

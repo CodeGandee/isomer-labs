@@ -55,6 +55,6 @@ Essential Output naturally summarizes the outcome, Project root, Research Topic 
 
 Complete Output adds commands run, semantic labels, path sources, delegated owner evidence, `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.actor_env_gates`, topic environment setup evidence, actor binding JSON, actor onboarding evidence, summary evidence, skipped stages, and blockers.
 
-## Guardrails
+## Operational Contract
 
-- MUST orchestrate existing owners rather than replace them. Project lifecycle belongs to `isomer-op-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-op-topic-mgr`, and formal team specialization belongs to `isomer-op-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.
+- Orchestrate existing owners rather than replace them. Project lifecycle belongs to `isomer-op-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-op-topic-mgr`, and formal team specialization belongs to `isomer-op-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.

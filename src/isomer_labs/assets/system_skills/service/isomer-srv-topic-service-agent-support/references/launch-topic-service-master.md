@@ -18,8 +18,11 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a launch plan from the prepared binding, projected Houmao route, authorization, and runtime boundaries, then execute the plan.
 
+## Operational Notes
+
+- Launch is an explicit lifecycle operation.
+
 ## Guardrails
 
-- DO NOT launch from Topic Creator setup. Launch is an explicit lifecycle operation.
-
+- DO NOT launch from Topic Creator setup.
 - DO NOT store credentials or live process secrets in support Artifacts.

@@ -17,8 +17,11 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project Manifest-backed topic and workspace listing commands, then execute the plan.
 
+## Operational Contract
+
+- Use Project Manifest-backed CLI output as authority.
+- Start Research Topic deletion with `isomer-cli project topics delete <topic-id> --dry-run`; use `--yes` only after the user reviews the plan.
+
 ## Guardrails
 
-- MUST use Project Manifest-backed CLI output as authority.
-- MUST start Research Topic deletion with `isomer-cli project topics delete <topic-id> --dry-run`; use `--yes` only after the user reviews the plan.
 - DO NOT treat unregistered files under `.isomer-labs/research-topics/` or directories under a Topic Workspace base such as `isomer-content/topic-ws/` as managed topics.

@@ -17,6 +17,6 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a read-only inspection plan from the selected binding, projected Houmao route, and requested evidence, then execute the plan.
 
-## Guardrails
+## Operational Contract
 
-- MUST prefer read-only inspection. Route prompt, stop, repair, or launch actions to their explicit lifecycle subcommands.
+- Prefer read-only inspection. Route prompt, stop, repair, or launch actions to their explicit lifecycle subcommands.

@@ -67,10 +67,14 @@ State whether the Agent environment source intent is ready, revised, blocked, or
 
 Group the complete explanation by source-intent status, semantic label and path, storage profile, source and diagnostics, Agent scope, and next operator action.
 
+## Operational Notes
+
+- The `setup-agent-workspace` operator flow creates or validates the operational target spec before service delegation, while direct service invocation may accept an explicit target spec.
+- This subcommand only writes high-level source intent.
+- If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.agent_env_requirements` plus its resolved default-layout path.
+
 ## Guardrails
 
-- DO NOT derive `topic.env.agent_setup_target_spec` here. The `setup-agent-workspace` operator flow creates or validates the operational target spec before service delegation, while direct service invocation may accept an explicit target spec. This subcommand only writes high-level source intent.
-
-- DO NOT write canonical source intent to `<topic-workspace>/user-intent/src/agent-env-gate.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.agent_env_requirements` plus its resolved default-layout path.
-
+- DO NOT derive `topic.env.agent_setup_target_spec` here.
+- DO NOT write canonical source intent to `<topic-workspace>/user-intent/src/agent-env-gate.md`.
 - DO NOT create Agent Workspace worktrees, mutate Topic Main Development Repository configuration, run per-agent commands, mutate Workspace Runtime, launch Houmao, or create live Agent Instances from this subcommand.

@@ -62,11 +62,16 @@ A vague request is not an execution contract. Do not spend material resources or
 - Empirical candidates start preparation before a Proceed Decision.
 - “Latest” appears without a `searched_through` boundary.
 
+## Operational Notes
+
+- Ask one material A/B/C/D choice at a time.
+- It is an interaction mode inside the chosen procedure.
+
 ## Guardrails
 
 - DO NOT treat repositories as primary related works when no paper or report relationship is established.
-- DO NOT ask many unstructured questions. Ask one material A/B/C/D choice at a time.
-- DO NOT use clarification-first as a procedure. It is an interaction mode inside the chosen procedure.
+- DO NOT ask many unstructured questions.
+- DO NOT use clarification-first as a procedure.
 
 ## Chat Response
 

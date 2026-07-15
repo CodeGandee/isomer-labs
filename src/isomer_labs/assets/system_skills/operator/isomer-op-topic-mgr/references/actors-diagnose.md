@@ -17,6 +17,10 @@ If the user's task does not map cleanly to these steps, diagnose the named actor
 
 Report the diagnostic outcome and selected Research Topic, then summarize Topic Actor bindings, cwd and worktree evidence by actor, support labels, branch posture, audit refs, blockers, and the next action.
 
+## Operational Notes
+
+- Do not claim actor readiness from a materialized workspace alone; report missing env gate or actor onboarding evidence as a blocker.
+
 ## Guardrails
 
-- DO NOT archive, delete, or repurpose Topic Actor bindings during diagnostics. Do not claim actor readiness from a materialized workspace alone; report missing env gate or actor onboarding evidence as a blocker.
+- DO NOT archive, delete, or repurpose Topic Actor bindings during diagnostics.

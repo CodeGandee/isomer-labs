@@ -41,9 +41,12 @@ If the user's task does not map cleanly to these steps, use your native planning
 - `missing`: required predecessor files are absent.
 - `stale`: predecessor evidence exists but no longer matches the selected Topic Workspace Pixi binding.
 
+## Operational Contract
+
+- Report next action as `isomer-srv-topic-env-setup` when dependency, topic-main, or projection readiness is missing or stale; this is a repair route for predecessor evidence, not downstream readiness ownership by topic env setup.
+
 ## Guardrails
 
 - DO NOT install dependencies or repair Pixi state here.
 - DO NOT claim per-agent cwd readiness from topic-root verification.
 - DO NOT duplicate or reinterpret dependency installation policy as a separate per-agent dependency plan.
-- MUST report next action as `isomer-srv-topic-env-setup` when dependency, topic-main, or projection readiness is missing or stale; this is a repair route for predecessor evidence, not downstream readiness ownership by topic env setup.

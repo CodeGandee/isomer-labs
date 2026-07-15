@@ -17,6 +17,10 @@ If the user's task does not map cleanly to these steps, verify only the named ac
 
 Report the verification outcome and selected Research Topic, then summarize selected actors, their cwd paths, the derived actor environment gate, commands and evidence, support labels, blockers, and the next action.
 
+## Operational Notes
+
+- Actor readiness requires actor definitions, matching `topic.repos.main` worktree evidence for the actor cwd, derived actor env gates, actor cwd verification evidence, and actor onboarding context.
+
 ## Guardrails
 
-- DO NOT claim actor readiness from workspace materialization alone. Actor readiness requires actor definitions, matching `topic.repos.main` worktree evidence for the actor cwd, derived actor env gates, actor cwd verification evidence, and actor onboarding context.
+- DO NOT claim actor readiness from workspace materialization alone.

@@ -95,20 +95,23 @@ Use `auto` when this subcommand is reached from `fast-forward` or a direct concr
 | `inferred_source_warnings` | setup warnings and later validation notes |
 | `blockers` | operator blockers and `next_operator_action` |
 
+## Operational Contract
+
+- Treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable Topic Workspace predecessor preparation. Topic Team material may consume this evidence later, but it is not a prerequisite for this subcommand.
+
+## Operational Notes
+
+- Delegate that work to `isomer-srv-topic-env-setup` and record its output.
+- Use `resolve-agent-env-gate` and `setup-agent-workspace` when the caller requested per-Agent Workspace proof.
+- Topic Workspace readiness does not satisfy Agent Workspace cwd readiness.
+- If the service records a user downgrade from a critical-path checklist item, preserve that limitation in operator output and validation notes.
+
 ## Guardrails
 
-- MUST treat installed packages, environment files, setup commands, validation records, skipped actions, and blockers as durable Topic Workspace predecessor preparation. Topic Team material may consume this evidence later, but it is not a prerequisite for this subcommand.
-
 - DO NOT hide mutating setup work inside topic clarification or team specialization.
-
-- DO NOT infer packages, choose repo sources, install dependencies, repair Pixi files, create topic-main, project external repos, or run verification commands directly from this operator subcommand. Delegate that work to `isomer-srv-topic-env-setup` and record its output.
-
-- DO NOT read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, or claim Agent Workspace cwd readiness from this operator subcommand. Use `resolve-agent-env-gate` and `setup-agent-workspace` when the caller requested per-Agent Workspace proof.
-
+- DO NOT infer packages, choose repo sources, install dependencies, repair Pixi files, create topic-main, project external repos, or run verification commands directly from this operator subcommand.
+- DO NOT read `topic.intent.agent_env_requirements`, write `topic.env.agent_setup_target_spec`, or claim Agent Workspace cwd readiness from this operator subcommand.
 - DO NOT start live team execution, launch execution adapters, or create runtime service state from this subcommand.
-
 - DO NOT store credentials, API keys, command payloads, live provider state, or adapter state in topic profile material.
-
-- DO NOT claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness and every required `## Gate Checklist` item is checked with supporting evidence, or unless incomplete checklist items are explicitly reported as blocked, failed, or not checked with named evidence. Topic Workspace readiness does not satisfy Agent Workspace cwd readiness.
-
-- DO NOT treat a weaker smoke-test substitution as normal readiness. If the service records a user downgrade from a critical-path checklist item, preserve that limitation in operator output and validation notes.
+- DO NOT claim Topic Workspace environment readiness unless `isomer-srv-topic-env-setup` reports readiness and every required `## Gate Checklist` item is checked with supporting evidence, or unless incomplete checklist items are explicitly reported as blocked, failed, or not checked with named evidence.
+- DO NOT treat a weaker smoke-test substitution as normal readiness.

@@ -2,32 +2,58 @@
 
 ## Workflow
 
-1. Interpret the user's goal into one of the visible usage paths or active owner workflows.
-2. Prefer `start-research-manually` when the user wants manual research, human-orchestrated work, multiple manually controlled coding agents, Topic Actors, or a prepared Topic Workspace without a formal Domain Agent Team Template.
-3. Prefer `start-research-by-agent-team` when the user explicitly asks for a Domain Agent Team Template, formal Topic Team Specialization, or a team derived from a template.
-4. Prefer `isomer-op-project-mgr` for Project setup, Project checks, topic listing, context inspection, runtime initialization, or Project-level routing.
-5. Prefer `isomer-op-gui-mgr` for GUI Backend lifecycle, Project Web cache/debug, backend API reference, recent-errors inspection, GUI refresh, and GUI troubleshooting questions.
-6. Prefer `isomer-op-toolbox-mgr` for project-local Toolbox creation, conversion, install, inspection, update, disable, uninstall, callback insertion, callback insertion-point discovery, Runtime Params, and effective Toolbox state.
-7. Prefer `isomer-op-topic-mgr` for initialized-topic storage, Topic Actors after handoff, package mutation, environment verification, reset checkpoints, and diagnostics.
-8. For Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping explanation, choose the owning operator workflow first: `isomer-op-project-mgr` for Project bootstrap or checks, and `isomer-op-topic-team-specialize` only for Topic Team Specialization or launch-facing support whose prompt or authoritative context establishes a formal Agent Team target. Route other launch-facing work to its runtime, Topic Service Master, GUI, topic, or service owner. Mention that the owner workflow may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
-9. Without mutating state, explain how you understood the goal, recommend the visible workflow and owner skill, provide the safe first invocation, name any blockers, and state the next action.
+1. Decide whether the user wants read-only route explanation or has supplied a concrete task that should proceed.
+2. Separate execution topology from research paradigm: manual versus formal Agent Team selects who works, while DeepSci versus Kaoju selects how research proceeds.
+3. Prefer `start-research-manually` for human-orchestrated Topic Actor work without a formal Agent Team target.
+4. Prefer `start-research-by-agent-team` only for explicit specialization or a prompt or authoritative context that establishes a formal Agent Team target.
+5. Prefer `start-deepsci-research` for hypothesis development, experiments, analysis, evidence-backed decisions, production writing, review, rebuttal, revision, or submission.
+6. Prefer `start-kaoju-survey` for evidence-led literature, codebase, dataset, or model surveys; bounded source-code trials; comparisons; paper production; or wiki export.
+7. Route extension availability, installation, registration, compatibility, refresh, or repair to `isomer-op-system-skill-mgr`.
+8. Route Project, GUI, identity, Toolbox, Topic, and formal-team operations to the matching active owner skill.
+9. When the user supplied a concrete task rather than asking only for orientation, recommend `isomer-op-entrypoint` so the selected route can proceed.
+10. Explain how the goal was understood, recommend one visible workflow or owner route, provide the safe first invocation, name blockers, and state the next action without mutating state.
 
-If the user's task does not map cleanly to these steps, use your native planning tool to compare the active owner routes, then ask for the missing distinction instead of guessing between manual research and Topic Team Specialization.
+If the user's task does not map cleanly to these steps, use your native planning tool to compare the active owner, extension, and entrypoint routes, then ask for the smallest missing distinction instead of guessing.
 
-## Routing Notes
+This routine recommends visible paths for orientation. Use it to recommend the visible workflow or owner route, explain how it understood the goal, distinguish manual research from formal-team and optional-paradigm work, name the owner skill and safe first invocation, report blockers, and state the next action.
 
-`choose-path` recommends visible paths; it does not hide or replace them. When a visible path fits, recommend `start-research-manually` or `start-research-by-agent-team` by name.
+## Research Choice Dimensions
 
-Manual, human-orchestrated, or multiple manually controlled coding-agent research requests route to `isomer-op-topic-creator`, not to `isomer-op-topic-team-specialize`, unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
+| Question | Choices | Meaning |
+| --- | --- | --- |
+| Who or what topology will conduct the work? | Manual Topic Actors or a formal Agent Team | Execution topology and workspace preparation. |
+| Which optional research paradigm fits the goal? | DeepSci or Kaoju | Research process, evidence contract, and extension entry skill. |
 
-Generic topic preparation, readiness gaps, missing summaries, missing Agent Workspaces, and generic launch-facing language do not establish formal Agent Team intent. A specialization recommendation requires an explicit specialization invocation or a formal Agent Team target in the prompt or authoritative context, and the recommendation names that evidence.
+The choices are independent. A DeepSci or Kaoju workflow may run through manual Topic Actors or an established formal Agent Team. A manual or Agent Team setup does not imply either research paradigm.
 
-When the prompt has missing Project context and asks for a context-aware recommendation, route to `next-step` rather than scanning directories or mutating state.
+## Extension Routing
 
-Project Web GUI lifecycle, cache-mode debugging, backend API reference, recent-errors, GUI refresh, and GUI troubleshooting requests route to `isomer-op-gui-mgr`. Project setup still routes to `isomer-op-project-mgr`, and initialized-topic storage or environment repair still routes to `isomer-op-topic-mgr`.
+DeepSci fits production hypothesis-driven work that develops or evaluates a route through experiments, analysis, decisions, writing, review, rebuttal, or submission. Its entry skill is `isomer-deepsci-pipeline`.
 
-Do not present `isomer-srv-houmao-interop` as a direct first-click owner skill from this welcome surface. It is bounded service support routed by the owning operator workflow.
+Kaoju fits evidence-led surveys of literature, codebases, datasets, and models, including source ingestion, bounded trials, comparisons, MyST-first paper production, and self-contained wiki export. Its entry skill is `isomer-kaoju-pipeline`.
 
-Do not route project-local Toolbox callback, insertion-point, or Runtime Param work to `isomer-misc-tool-packs`. Tool packs are an explicit misc helper for installable toolset contracts; Toolbox management belongs to `isomer-op-toolbox-mgr`.
+Treat extension state as an evidence ladder:
 
-Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`.
+1. `catalog-known`: the installed Isomer package describes the capability.
+2. Project-declared: the Project Manifest records user-controlled routing intent.
+3. Host-usable: compatible managed-receipt or live-inventory evidence establishes that the current host can load the complete family.
+
+Use `show-extensions` for read-only catalog and Project declaration information. Use `Use $isomer-op-system-skill-mgr detect-extensions` or `status` for host-aware read-only evidence. Use `install-extension`, `reconcile-extensions`, or `repair` only through that owner and only with the required mutation authority.
+
+If a declared extension later fails to load, preserve the declaration and recommend `Use $isomer-op-system-skill-mgr repair`. Do not remove user-controlled state automatically.
+
+## Active Operator Routing
+
+- Prefer `isomer-op-project-mgr` for Project setup, checks, topic listing, context inspection, runtime initialization, or Project-level routing.
+- Prefer `isomer-op-gui-mgr` for GUI Backend lifecycle, Project Web cache or debug work, backend API reference, recent-errors inspection, GUI refresh, or troubleshooting.
+- Prefer `isomer-op-switch-identity` for persistent or one-time work from a selected Topic Actor or Agent workspace cwd.
+- Prefer `isomer-op-toolbox-mgr` for project-local Toolbox creation, conversion, installation, inspection, update, disable, uninstall, callback insertion, insertion-point discovery, Runtime Params, or effective state.
+- Prefer `isomer-op-topic-mgr` for initialized-topic storage, Topic Actors after handoff, package mutation, environment verification, reset checkpoints, or diagnostics.
+- Prefer `isomer-op-topic-team-specialize` only when formal Agent Team intent is established.
+- Prefer `isomer-op-entrypoint` when a concrete task should be routed and performed instead of merely explained.
+
+Manual, human-orchestrated, or multiple manually controlled coding-agent research routes to `isomer-op-topic-creator`, not to Topic Team Specialization, unless the user explicitly invokes specialization or formal-team evidence applies to the requested action.
+
+Generic topic preparation, readiness gaps, missing summaries, missing Agent Workspaces, and launch-facing language do not establish formal Agent Team intent. When a formal-team route is valid, name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence.
+
+Do not present `isomer-srv-houmao-interop` as a direct first-click owner skill. Do not route Toolbox callback, insertion-point, or Runtime Param work to `isomer-misc-tool-packs`, which remains an explicitly requested helper. Do not ask users or agents to invoke retired compatibility skills.

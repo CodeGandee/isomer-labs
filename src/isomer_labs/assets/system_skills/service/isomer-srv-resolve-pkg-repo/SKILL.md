@@ -52,13 +52,18 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 The skill currently covers pixi, uv, conda, pip, npm, and bun. Other package managers may be added later. For an unsupported manager, apply the same pattern: test the official upstream, inspect local user configuration for mirrors, test each candidate, prefer vendor channels for vendor packages, and stop with a blocker when nothing is reachable.
 
+## Operational Contract
+
+- Test reachability before depending on the official source; many environments block or rate-limit upstream sources.
+- Treat local `~/.condarc`, `~/.pip/pip.conf`, `~/.npmrc`, and `bunfig.toml` as authoritative evidence of intended mirrors.
+- Prefer the `nvidia` channel over `conda-forge` for NVIDIA packages on Conda/Pixi when both are reachable.
+- Record every candidate tested, why it was rejected, and the source of the chosen mirror so the decision remains auditable.
+- Resolve repositories before mutating manifests.
+
 ## Guardrails
 
-- MUST test reachability before depending on the official source; many environments block or rate-limit upstream sources.
-- MUST treat local `~/.condarc`, `~/.pip/pip.conf`, `~/.npmrc`, and `bunfig.toml` as authoritative evidence of intended mirrors.
-- MUST prefer the `nvidia` channel over `conda-forge` for NVIDIA packages on Conda/Pixi when both are reachable.
-- MUST record every candidate tested, why it was rejected, and the source of the chosen mirror so the decision remains auditable.
-- MUST resolve repositories before mutating manifests; do not run install commands against a source that has not been tested.
+- DO NOT depend on an official or mirror source before testing reachability.
+- DO NOT run install commands against a source that has not been tested.
 
 ## Chat Response
 

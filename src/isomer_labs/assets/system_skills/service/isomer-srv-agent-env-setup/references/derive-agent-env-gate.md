@@ -191,10 +191,14 @@ Example for per-agent CUDA cwd verification:
 - Preserve resource check evidence, bounded real-path execution decisions, changed files, commands run, verification results, partial scope, and blockers.
 - Do not claim verification has run before `verify-agent-env-gate`.
 
+## Operational Notes
+
+- Missing or stale package dependency planning routes back to `isomer-srv-topic-env-setup`.
+
 ## Guardrails
 
 - DO NOT create per-agent dependency plans, reinterpret Topic Workspace dependency policy, or ask this service to repair topic-main/projection predecessors.
-- DO NOT duplicate topic-level package source routing. Missing or stale package dependency planning routes back to `isomer-srv-topic-env-setup`.
+- DO NOT duplicate topic-level package source routing.
 - DO NOT use tmp paths as durable readiness evidence.
 - DO NOT claim verification has run before `verify-agent-env-gate`.
 - DO NOT create Workspace Runtime records or Agent Team Instance records.

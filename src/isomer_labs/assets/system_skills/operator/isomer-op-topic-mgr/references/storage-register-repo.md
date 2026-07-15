@@ -17,6 +17,10 @@ If the user's task does not map cleanly to these steps, ask for the missing repo
 
 Report the registration outcome and selected Research Topic, then name the registered label and path, storage profile and path source, commands run, blockers, and the next action.
 
+## Operational Contract
+
+- Treat additional topic repositories as support surfaces.
+
 ## Guardrails
 
-- MUST treat additional topic repositories as support surfaces. Do not describe non-main repositories as Topic Actor Workspace or Agent Workspace worktree sources.
+- DO NOT describe non-main repositories as Topic Actor Workspace or Agent Workspace worktree sources.

@@ -20,8 +20,11 @@ If the user's task does not map cleanly to these steps, build an inspect-only up
 
 Report the update outcome and selected Research Topic, then summarize Pixi context, the request and plan, package-specific guidance, commands, verification, changed paths, blockers, and the next action.
 
+## Operational Notes
+
+- Do not report package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.
+
 ## Guardrails
 
 - DO NOT create local `venv`, `.venv`, or `virtualenv` environments, run ambient `pip`, mutate system package managers, run `sudo`, edit global shell profiles, or perform machine-global package setup.
-
-- DO NOT choose a generic update route before checking package-specific guidance for a named package. Do not report package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.
+- DO NOT choose a generic update route before checking package-specific guidance for a named package.

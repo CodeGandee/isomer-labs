@@ -103,24 +103,28 @@ Use the full `setup-agent-env` flow for overall readiness. Use direct selected-a
 
 Accept delegated overall readiness only when every required per-agent `## Gate Checklist` item is checked with cwd evidence for every planned Agent Name. If the service output contains unchecked, failed, blocked, partial, or not-checked checklist items, record those exact items, Agent Names, reasons, and next actions instead of summarizing the agent environment as ready.
 
+## Operational Contract
+
+- Use **Topic Workspace** for the topic-level work area and **Agent Workspace** for per-agent work areas.
+
+## Operational Notes
+
+- Use `isomer-srv-agent-env-setup` for per-agent worktree creation and cwd verification.
+- Use `isomer-op-topic-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics.
+- Use `isomer-srv-agent-env-setup` for source intent reading, `topic.env.agent_setup_target_spec`, worktree creation, per-agent cwd verification, selected-agent partial evidence, and no-runtime-mutation guardrails.
+- If the service records a user downgrade from a critical-path checklist item, preserve that limitation in the setup evidence, validation refs, and later summaries.
+- Route to `resolve-agent-env-gate` only when commands, expected results, and cwd assumptions are clear enough for the service to derive a per-agent verification matrix.
+- Ask for delegated `isomer-srv-agent-env-setup` verification when worktree or cwd readiness is missing, or for optional `isomer-op-topic-mgr` inspection when the user only needs topology diagnostics.
+- `topic.repos.main.tmp` and `agent.tmp` evidence is limited to resolved paths, ignored local disposable posture, and tracked-content diagnostics.
+
 ## Guardrails
 
-- MUST use **Topic Workspace** for the topic-level work area and **Agent Workspace** for per-agent work areas.
-
 - DO NOT create Agent Workspaces before team specialization defines expected Agent Roles.
-
-- DO NOT hand-roll Git worktree or `isomer-managed/` setup inside this subcommand. Use `isomer-srv-agent-env-setup` for per-agent worktree creation and cwd verification. Use `isomer-op-topic-mgr` only for optional topology inspection, branch helpers, boundary summaries, or legacy compatibility diagnostics.
-
-- DO NOT hand-roll per-Agent Workspace environment verification inside this subcommand. Use `isomer-srv-agent-env-setup` for source intent reading, `topic.env.agent_setup_target_spec`, worktree creation, per-agent cwd verification, selected-agent partial evidence, and no-runtime-mutation guardrails.
-
-- DO NOT accept a weaker smoke-test substitution as normal Agent Workspace readiness. If the service records a user downgrade from a critical-path checklist item, preserve that limitation in the setup evidence, validation refs, and later summaries.
-
-- DO NOT call `isomer-srv-agent-env-setup` before `topic.intent.agent_env_requirements` exists, unless the caller supplied an explicit manual agent env target spec. Route to `resolve-agent-env-gate` only when commands, expected results, and cwd assumptions are clear enough for the service to derive a per-agent verification matrix.
-
-- DO NOT accept stale workspace setup evidence that names legacy support roots, top-level Topic Main Development Repository collaboration directories, or default-looking directories without semantic labels and path sources as current readiness. Ask for delegated `isomer-srv-agent-env-setup` verification when worktree or cwd readiness is missing, or for optional `isomer-op-topic-mgr` inspection when the user only needs topology diagnostics.
-
-- DO NOT accept tmp contents as readiness evidence. `topic.repos.main.tmp` and `agent.tmp` evidence is limited to resolved paths, ignored local disposable posture, and tracked-content diagnostics.
-
+- DO NOT hand-roll Git worktree or `isomer-managed/` setup inside this subcommand.
+- DO NOT hand-roll per-Agent Workspace environment verification inside this subcommand.
+- DO NOT accept a weaker smoke-test substitution as normal Agent Workspace readiness.
+- DO NOT call `isomer-srv-agent-env-setup` before `topic.intent.agent_env_requirements` exists, unless the caller supplied an explicit manual agent env target spec.
+- DO NOT accept stale workspace setup evidence that names legacy support roots, top-level Topic Main Development Repository collaboration directories, or default-looking directories without semantic labels and path sources as current readiness.
+- DO NOT accept tmp contents as readiness evidence.
 - DO NOT create Agent Instances, start processes, register Workspace Runtime state, or launch agents from this subcommand.
-
 - DO NOT use Agent Workspace setup as a substitute for later runtime registration when runtime records are required by a different workflow.

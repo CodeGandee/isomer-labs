@@ -89,12 +89,14 @@ Required predecessor artifacts from `adapt-team-template`:
 
 If any required specialization output is missing, refuse to run directly, explain which artifact is missing, and offer targeted fast-forward recovery to `clarify-topic-team`. Use `python scripts/query_step_dependencies.py path --target clarify-topic-team --include-target` for the inclusive default path and `python scripts/query_step_dependencies.py path --target clarify-topic-team --exclude-target` for the exclusive path.
 
+## Operational Notes
+
+- The durable result of this subcommand is the revised copied topic-team material, specialization plan, `Final Report`, placeholder resolutions, deferrals, and draft packet/profile inputs.
+- Keep deferrals explicit.
+
 ## Guardrails
 
 - DO NOT approve, materialize, or run the team from this subcommand.
-
-- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised copied topic-team material, specialization plan, `Final Report`, placeholder resolutions, deferrals, and draft packet/profile inputs.
-
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers.
 - DO NOT change the source Domain Agent Team Template.
-
-- DO NOT hide unresolved static-material blockers or later-operation blockers. Keep deferrals explicit.
+- DO NOT hide unresolved static-material blockers or later-operation blockers.

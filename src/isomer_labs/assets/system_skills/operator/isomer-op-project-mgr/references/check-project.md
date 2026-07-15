@@ -14,8 +14,11 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the Project root, read-only command boundaries, Houmao status checks, and guardrails, then execute the plan.
 
+## Operational Contract
+
+- Keep this subcommand read-only.
+
 ## Guardrails
 
-- MUST keep this subcommand read-only.
 - DO NOT repair config, initialize runtime, or launch agents unless the user explicitly requests that next operation.
 - DO NOT infer Research Topics or Topic Workspaces from unregistered directories.

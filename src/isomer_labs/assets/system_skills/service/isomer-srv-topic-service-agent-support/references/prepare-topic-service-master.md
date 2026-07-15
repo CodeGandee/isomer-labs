@@ -17,10 +17,16 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a preparation-only plan from the integration status, suggested names, projected Houmao route, and allowed service surfaces, then execute the plan.
 
+## Operational Contract
+
+- Prepare only.
+
+## Operational Notes
+
+- Disabled, not-configured, blocked, or failed preparation stays in readiness output and diagnostics.
+
 ## Guardrails
 
-- MUST prepare only. Do not launch a live Topic Service Master from Topic Workspace creation or actor setup.
-
-- DO NOT write a planned Topic Service Master binding before Houmao-owned preparation succeeds. Disabled, not-configured, blocked, or failed preparation stays in readiness output and diagnostics.
-
+- DO NOT launch a live Topic Service Master from Topic Workspace creation or actor setup.
+- DO NOT write a planned Topic Service Master binding before Houmao-owned preparation succeeds.
 - DO NOT ask the user to install Houmao-owned system skills into their ordinary operator skill home.

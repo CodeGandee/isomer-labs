@@ -264,6 +264,38 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("Project Web GUI", welcome_skill)
         self.assertIn("isomer-op-gui-mgr", welcome_skill)
 
+    def test_extensions_and_entrypoint_are_discoverable_from_welcome(self) -> None:
+        welcome = resolve_system_skill("operator/isomer-op-welcome")
+        skill_text = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
+        for term in (
+            "start-deepsci-research",
+            "start-kaoju-survey",
+            "show-extensions",
+            "isomer-op-entrypoint",
+            "isomer-op-system-skill-mgr",
+            "isomer-deepsci-pipeline",
+            "isomer-kaoju-pipeline",
+        ):
+            self.assertIn(term, skill_text)
+
+        extension_reference = welcome.joinpath("references", "show-extensions.md").read_text(encoding="utf-8")
+        for term in (
+            "system-skills extensions list",
+            "project system-extensions list",
+            "catalog-known",
+            "Project-declared",
+            "Host-usable",
+            "isomer-op-system-skill-mgr",
+        ):
+            self.assertIn(term, extension_reference)
+
+        deepsci_path = welcome.joinpath("references", "start-deepsci-research.md").read_text(encoding="utf-8")
+        kaoju_path = welcome.joinpath("references", "start-kaoju-survey.md").read_text(encoding="utf-8")
+        self.assertIn("isomer-deepsci-pipeline", deepsci_path)
+        self.assertIn("isomer-kaoju-pipeline", kaoju_path)
+        self.assertIn("execution topology", deepsci_path)
+        self.assertIn("execution topology", kaoju_path)
+
     def test_kaoju_is_discoverable_from_operator_entrypoint(self) -> None:
         entrypoint = resolve_system_skill("operator/isomer-op-entrypoint")
         skill_text = entrypoint.joinpath("SKILL.md").read_text(encoding="utf-8")

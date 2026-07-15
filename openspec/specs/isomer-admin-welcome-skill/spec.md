@@ -8,9 +8,10 @@ The `isomer-op-welcome` skill SHALL present an action-oriented menu of supported
 
 #### Scenario: Default invocation prints option menu
 - **WHEN** the welcome skill is invoked without a specific subcommand or with a broad onboarding request
-- **THEN** it lists visible usage paths such as `start-research-manually` and `start-research-by-agent-team`
-- **AND** it lists supported actions such as Project setup or checks, Research Topic creation or preparation, initialized-topic management, Topic Team Specialization, and Houmao interop
+- **THEN** it lists visible usage paths including `start-research-manually`, `start-research-by-agent-team`, `start-deepsci-research`, and `start-kaoju-survey`
+- **AND** it lists supported actions such as Project setup or checks, Research Topic creation or preparation, initialized-topic management, system-skill extension management, Project Web GUI management, identity posture, Toolbox management, Topic Team Specialization, and Houmao interop
 - **AND** each listed action names the direct owner skill to invoke
+- **AND** it offers `isomer-op-entrypoint` when the user has a concrete task that should be routed and performed
 - **AND** it asks the user to choose an option, describe their goal, or invoke the named skill directly
 
 #### Scenario: Menu avoids tutorial-first behavior
@@ -24,6 +25,8 @@ The `isomer-op-welcome` skill SHALL route users only to active owner skills and 
 #### Scenario: Supported paths name active skills
 - **WHEN** the welcome skill presents direct invocation guidance
 - **THEN** Project lifecycle work routes to `isomer-op-project-mgr`
+- **AND** concrete route-and-proceed tasks route to `isomer-op-entrypoint`
+- **AND** system-skill extension detection, reconciliation, installation, status, compatibility diagnosis, host refresh guidance, and repair route to `isomer-op-system-skill-mgr`
 - **AND** blank or partial Research Topic creation and manual-research-ready topic preparation route to `isomer-op-topic-creator`
 - **AND** initialized-topic storage, Topic Actors, environment package mutation, environment verification, reset checkpoints, and diagnostics route to `isomer-op-topic-mgr`
 - **AND** Topic Team Specialization routes to `isomer-op-topic-team-specialize`
@@ -41,7 +44,7 @@ The `isomer-op-welcome` skill SHALL be read-only by default and SHALL NOT perfor
 #### Scenario: Welcome option selection does not mutate state
 - **WHEN** a user asks the welcome skill what path to choose
 - **THEN** the skill may recommend an owner skill and safe first command
-- **AND** it does not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages, specialize teams, launch agents, or bootstrap research-paradigm v2 artifacts
+- **AND** it does not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages or system-skill extensions, register Project extension declarations, specialize teams, launch agents, or bootstrap research-paradigm artifacts
 
 #### Scenario: Context-aware next step uses read-only inspection
 - **WHEN** the user asks for a context-aware next step and a Project context is available
@@ -53,14 +56,67 @@ The `isomer-op-welcome` skill SHALL expose focused public subcommands for visibl
 
 #### Scenario: Typical usage paths are first-class
 - **WHEN** the welcome skill `SKILL.md` is inspected
-- **THEN** it documents typical usage-path subcommands including `start-research-manually` and `start-research-by-agent-team`
+- **THEN** it documents typical usage-path subcommands including `start-research-manually`, `start-research-by-agent-team`, `start-deepsci-research`, and `start-kaoju-survey`
 - **AND** those paths are visible in `SKILL.md` rather than existing only as hidden branches inside `choose-path`
 - **AND** each usage path names the owner skill, intent, safe first command, mutation boundary, and next action
 
 #### Scenario: Public subcommands are documented
 - **WHEN** the welcome skill help is inspected
-- **THEN** it documents `start-research-manually`, `start-research-by-agent-team`, `help`, `show-options`, `choose-path`, `show-skill-map`, and `next-step`
+- **THEN** it documents `start-research-manually`, `start-research-by-agent-team`, `start-deepsci-research`, `start-kaoju-survey`, `help`, `show-options`, `show-extensions`, `choose-path`, `show-skill-map`, and `next-step`
 - **AND** each subcommand has a bounded purpose and a local reference page
+
+### Requirement: Welcome Skill Exposes Optional Research Paradigms
+The `isomer-op-welcome` skill SHALL expose DeepSci and Kaoju as optional package-catalog research paradigms without conflating research paradigm with execution topology.
+
+#### Scenario: DeepSci path is discoverable
+- **WHEN** the welcome skill prints its default options, visible usage paths, or skill map
+- **THEN** it describes DeepSci as a hypothesis-driven production-research paradigm for experiments, analysis, decisions, writing, review, rebuttal, revision, or submission
+- **AND** it identifies `isomer-deepsci-pipeline` as the extension entry skill
+- **AND** it exposes `start-deepsci-research` as a visible usage path
+
+#### Scenario: Kaoju path is discoverable
+- **WHEN** the welcome skill prints its default options, visible usage paths, or skill map
+- **THEN** it describes Kaoju as an evidence-led literature, codebase, dataset, and model survey paradigm with bounded trials, comparisons, paper production, or wiki export
+- **AND** it identifies `isomer-kaoju-pipeline` as the extension entry skill
+- **AND** it exposes `start-kaoju-survey` as a visible usage path
+
+#### Scenario: Paradigm choice stays independent of execution topology
+- **WHEN** the welcome skill explains manual, Agent Team, DeepSci, or Kaoju paths
+- **THEN** it states that manual versus formal Agent Team selects execution topology
+- **AND** it states that DeepSci versus Kaoju selects an optional research paradigm
+- **AND** it does not infer a formal Agent Team from the selected extension paradigm
+
+### Requirement: Welcome Skill Provides Read-Only Extension Discovery
+The `isomer-op-welcome` skill SHALL expose `show-extensions` as a read-only discovery routine grounded in package-catalog metadata and Project declarations.
+
+#### Scenario: Extension catalog is discovered dynamically
+- **WHEN** the user invokes `show-extensions`
+- **THEN** the skill uses `isomer-cli system-skills extensions list` or `show <extension-id>` to obtain package-owned descriptions, entry skills, public commands, and member skills
+- **AND** it does not maintain an exhaustive duplicate extension inventory as the discovery authority
+
+#### Scenario: Extension evidence levels remain distinct
+- **WHEN** the welcome skill reports extension state
+- **THEN** it distinguishes catalog-known capability, Project-declared routing intent, and host-usable receipt or live-inventory evidence
+- **AND** it does not claim that catalog or Project declaration evidence proves current-host installation
+
+#### Scenario: Extension lifecycle routes to owner
+- **WHEN** the user needs host usability, compatibility, installation, registration, refresh, or repair
+- **THEN** the welcome skill recommends `isomer-op-system-skill-mgr`
+- **AND** the welcome skill does not install files, mutate Project declarations, inspect guessed host roots, or invent live inventory evidence
+
+### Requirement: Welcome Skill Bridges Discovery to Execution
+The `isomer-op-welcome` skill SHALL expose `isomer-op-entrypoint` as the route from read-only orientation to concrete task execution.
+
+#### Scenario: Concrete task recommends informed entrypoint
+- **WHEN** the user supplies a concrete Isomer task instead of asking only for orientation
+- **THEN** the welcome skill recommends `Use $isomer-op-entrypoint` with the task
+- **AND** it explains that the entrypoint selects one owner skill, extension skill, or CLI family and proceeds under that route's guardrails
+- **AND** the welcome skill itself remains read-only
+
+#### Scenario: Extension terms remain distinct
+- **WHEN** the welcome skill explains extension or customization capabilities
+- **THEN** it distinguishes optional system-skill extensions from project-local Toolboxes and from the `isomer-cli ext` runtime and compatibility namespace
+- **AND** it routes system-skill extensions to `isomer-op-system-skill-mgr` and Toolboxes to `isomer-op-toolbox-mgr`
 
 ### Requirement: Welcome Skill Output Contract
 The `isomer-op-welcome` skill SHALL report concise default output and provide complete output only when requested.

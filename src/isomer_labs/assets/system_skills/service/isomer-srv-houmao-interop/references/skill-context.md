@@ -16,10 +16,14 @@ When this subcommand is selected, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded context-resolution plan from the requested route, integration status, and returned Isomer paths, then execute the plan.
 
+## Operational Notes
+
+- Unknown routes must come from the CLI diagnostic.
+- Use `topic_service_master.suggested_names` before preparation and `topic_service_master.binding` after a binding exists.
+- Use Project-local `.isomer-labs/houmao-skills/` context returned by Isomer CLI.
+
 ## Guardrails
 
-- DO NOT fabricate projected skill paths from a requested route name. Unknown routes must come from the CLI diagnostic.
-
-- DO NOT fabricate Topic Service Master specialist, launch profile, or managed-agent names. Use `topic_service_master.suggested_names` before preparation and `topic_service_master.binding` after a binding exists.
-
-- DO NOT route to Houmao-owned skills from the user's ordinary skill home as the primary Isomer path. Use Project-local `.isomer-labs/houmao-skills/` context returned by Isomer CLI.
+- DO NOT fabricate projected skill paths from a requested route name.
+- DO NOT fabricate Topic Service Master specialist, launch profile, or managed-agent names.
+- DO NOT route to Houmao-owned skills from the user's ordinary skill home as the primary Isomer path.

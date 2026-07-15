@@ -66,19 +66,23 @@ Lead with the interop, customization, or help outcome and name the selected mode
 
 Group the complete explanation by selected mode, Houmao and Domain Agent Team Template roots, key files, concept mapping, customization points, commands, blockers, and next action.
 
+## Operational Notes
+
+- Keep Houmao as the adapter/implementation layer.
+- If a Houmao bug blocks Isomer work, fix it in the Houmao checkout as separate local work and validate it with Houmao's own commands before depending on it.
+- Route through the approved Topic Agent Team Profile Bundle and Workspace Runtime flow owned by `isomer-op-topic-team-specialize`.
+- One DeepScientist quest normally maps to one Houmao-managed agent that loads stage skills through prompts and state, not to one Houmao agent per stage.
+- Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
+- Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.
+
 ## Guardrails
 
-- DO NOT treat Houmao terms as Isomer core domain language unless the Isomer schema or UI explicitly uses them. Keep Houmao as the adapter/implementation layer.
-
-- DO NOT edit the Houmao source checkout (`extern/orphan/houmao`) to fix Isomer project behavior. If a Houmao bug blocks Isomer work, fix it in the Houmao checkout as separate local work and validate it with Houmao's own commands before depending on it.
-
-- DO NOT launch Houmao-managed agents from Domain Agent Team Template source directly. Route through the approved Topic Agent Team Profile Bundle and Workspace Runtime flow owned by `isomer-op-topic-team-specialize`.
-
-- DO NOT conflate DeepScientist's single-agent stage-skill model with Houmao's multi-agent role/recipe model. One DeepScientist quest normally maps to one Houmao-managed agent that loads stage skills through prompts and state, not to one Houmao agent per stage.
-
-- DO NOT own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing. Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
-
-- DO NOT tell users that direct Houmao system-skill installation is required for ordinary Isomer operation. Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.
+- DO NOT treat Houmao terms as Isomer core domain language unless the Isomer schema or UI explicitly uses them.
+- DO NOT edit the Houmao source checkout (`extern/orphan/houmao`) to fix Isomer project behavior.
+- DO NOT launch Houmao-managed agents from Domain Agent Team Template source directly.
+- DO NOT conflate DeepScientist's single-agent stage-skill model with Houmao's multi-agent role/recipe model.
+- DO NOT own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing.
+- DO NOT tell users that direct Houmao system-skill installation is required for ordinary Isomer operation.
 
 ## Chat Response
 

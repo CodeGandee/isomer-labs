@@ -225,42 +225,46 @@ When requested, include grouped handoff and audit fields:
 - **Workspace paths**: `semantic_paths`, semantic labels, path sources, `agent_workspace_paths`, `isomer-managed/` path status, and `local_tmp_path_status`.
 - **Validation and finalization**: `topic_team_validation_status`, `isomer_topic_summary_path`, `deferrals`, `packet_profile_inputs`, `validation_status`, blockers, and `next_operator_action`.
 
+## Operational Contract
+
+- Require delegated env setup output to include `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected scope.
+- Require bounded-run guidance, resource check evidence, a bounded real-path command, an expected result, and a blocker condition for operations classified as `heavy` or `unknown-risk`.
+- Require a no-plan reason for operations classified as `light` or `not-applicable` and blocker evidence when no bounded real-path command can safely exercise the required source-intent path.
+- Treat fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases as examples only; bounded-run tips owns the classification decision. Do not use a generic smoke test that misses the requested build, inference, dataset, or benchmark path to claim readiness.
+
+## Operational Notes
+
+- The source template remains topic-neutral.
+- Stop at the registration boundary or route through `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files.
+- Require `ensure-topic-registration` evidence first.
+- Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default when Pixi resolves it as confined to the Topic Workspace; otherwise report the Pixi binding blocker instead of editing Project Config by hand.
+- Refuse the direct run, name the missing artifacts, offer targeted fast-forward recovery, and stop before mutation until the user confirms inclusive mode, chooses exclusive mode, or has already given clear permission to proceed automatically.
+- That operator subcommand needs manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `topic.intent.topic_env_requirements` surface or an explicit manual topic env target spec.
+- Prepare the operator handoff and route Topic Workspace environment setup through `isomer-srv-topic-env-setup`.
+- Prepare the operator handoff and route that work through `isomer-srv-agent-env-setup` only after source `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names exist.
+- Preserve them unless the user explicitly asks for Topic Actor archive or repair through `isomer-op-topic-mgr actors-manage`.
+- If the user did not create source intent and the task clearly states what every planned Agent Workspace cwd must be able to run, route to `resolve-agent-env-gate`; otherwise ask for the per-agent cwd readiness target and stop before service delegation.
+- Store topic-specific copied material inside `<topic-workspace>/team-profile/`, and keep only discovery refs in the Project Manifest.
+- They are copied-root explanations that need review before reuse.
+- Live operation belongs to a later runtime workflow.
+
 ## Guardrails
 
-- DO NOT edit the Domain Agent Team Template source while specializing a topic. The source template remains topic-neutral.
-
-- DO NOT treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration. Stop at the registration boundary or route through `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` and related supported Isomer CLI/API surfaces instead of hand-editing `.isomer-labs/manifest.toml` or Research Topic Config files.
-
-- DO NOT call `isomer-srv-topic-env-setup` from a provisional Topic Workspace or from a registered topic whose effective Topic Workspace Pixi binding cannot be resolved. Require `ensure-topic-registration` evidence first. Accept an explicit `topic_standalone_pixi_bindings.manifest_path_or_dir` target or the implicit registered Topic Workspace directory default when Pixi resolves it as confined to the Topic Workspace; otherwise report the Pixi binding blocker instead of editing Project Config by hand.
-
-- DO NOT run a procedural subcommand directly when required predecessor artifacts are missing. Refuse the direct run, name the missing artifacts, offer targeted fast-forward recovery, and stop before mutation until the user confirms inclusive mode, chooses exclusive mode, or has already given clear permission to proceed automatically.
-
+- DO NOT edit the Domain Agent Team Template source while specializing a topic.
+- DO NOT treat a provisional topic workspace seed as an authoritative Isomer Research Topic or Topic Workspace registration.
+- DO NOT call `isomer-srv-topic-env-setup` from a provisional Topic Workspace or from a registered topic whose effective Topic Workspace Pixi binding cannot be resolved.
+- DO NOT run a procedural subcommand directly when required predecessor artifacts are missing.
 - DO NOT hide environment installation, Agent Workspace creation, static-material validation, profile approval, or profile materialization behind earlier topic clarification or specialization commands.
-
-- DO NOT require Topic Agent Team Profile material, `team-profile/`, Agent Team Instance records, Agent Workspace plans, roles, or agent count before `setup-topic-env`. That operator subcommand needs manifest-backed topic registration, Topic Workspace Pixi binding evidence, and a usable `topic.intent.topic_env_requirements` surface or an explicit manual topic env target spec.
-
-- DO NOT perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`. Prepare the operator handoff and route Topic Workspace environment setup through `isomer-srv-topic-env-setup`.
-
-- DO NOT perform `topic.intent.agent_env_requirements` translation, Agent Workspace worktree creation, per-agent cwd command verification, or selected-agent repair directly inside `setup-agent-workspace`. Prepare the operator handoff and route that work through `isomer-srv-agent-env-setup` only after source `topic.intent.agent_env_requirements`, `topic.env.agent_setup_target_spec`, Topic Workspace predecessor evidence, Topic Main Development Repository predecessor evidence, required projection predecessor evidence, and authoritative Agent Names exist.
-
-- DO NOT delete, archive, or repurpose active Topic Actor bindings or Topic Actor Workspaces during Topic Team Specialization. Preserve them unless the user explicitly asks for Topic Actor archive or repair through `isomer-op-topic-mgr actors-manage`.
-
+- DO NOT require Topic Agent Team Profile material, `team-profile/`, Agent Team Instance records, Agent Workspace plans, roles, or agent count before `setup-topic-env`.
+- DO NOT perform dependency inference, repo acquisition, Pixi installation, package repair, or environment verification directly inside `setup-topic-env`.
+- DO NOT perform `topic.intent.agent_env_requirements` translation, Agent Workspace worktree creation, per-agent cwd command verification, or selected-agent repair directly inside `setup-agent-workspace`.
+- DO NOT delete, archive, or repurpose active Topic Actor bindings or Topic Actor Workspaces during Topic Team Specialization.
 - DO NOT ask service skills to prove readiness by overloading the host or allow them to skip essential source-intent code paths.
-- MUST require delegated env setup output to include `operation_classification` from `isomer-misc-bounded-run-tips`, including classification source, result, reason, resource dimensions, and affected scope.
-- MUST require bounded-run guidance, resource check evidence, a bounded real-path command, an expected result, and a blocker condition for operations classified as `heavy` or `unknown-risk`.
-- MUST require a no-plan reason for operations classified as `light` or `not-applicable` and blocker evidence when no bounded real-path command can safely exercise the required source-intent path.
-- MUST treat fewer build jobs, selected build targets, tiny model or tensor shapes, sample data, reduced iterations, reduced batch size, selected tests, and short benchmark cases as examples only; bounded-run tips owns the classification decision. Do not use a generic smoke test that misses the requested build, inference, dataset, or benchmark path to claim readiness.
-
-- DO NOT call `isomer-srv-agent-env-setup` without a usable `topic.intent.agent_env_requirements` surface or an explicit manual agent env target spec. If the user did not create source intent and the task clearly states what every planned Agent Workspace cwd must be able to run, route to `resolve-agent-env-gate`; otherwise ask for the per-agent cwd readiness target and stop before service delegation.
-
-- DO NOT create a directory named `teams` under a Topic Workspace for topic-specific profiles. Store topic-specific copied material inside `<topic-workspace>/team-profile/`, and keep only discovery refs in the Project Manifest.
-
+- DO NOT call `isomer-srv-agent-env-setup` without a usable `topic.intent.agent_env_requirements` surface or an explicit manual agent env target spec.
+- DO NOT create a directory named `teams` under a Topic Workspace for topic-specific profiles.
 - DO NOT bypass Topic Team Instantiation Packet validation, Topic Agent Team Profile validation, user or deterministic approval provenance, or profile materialization checks.
-
-- DO NOT treat generated guides as authoritative template source. They are copied-root explanations that need review before reuse.
-
-- DO NOT run live teams, create Agent Instances, mutate Workspace Runtime, or launch execution adapters from this skill. Live operation belongs to a later runtime workflow.
-
+- DO NOT treat generated guides as authoritative template source.
+- DO NOT run live teams, create Agent Instances, mutate Workspace Runtime, or launch execution adapters from this skill.
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
