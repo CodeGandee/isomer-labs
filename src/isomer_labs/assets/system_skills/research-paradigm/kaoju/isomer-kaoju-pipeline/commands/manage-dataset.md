@@ -24,8 +24,8 @@ If the request does not map cleanly to these actions, use the native planning to
 
 Method trials and empirical comparisons query this manifest before asking the user for data or proposing acquisition. Reuse requires availability, fingerprint, access, task, schema, split, evaluator, and license compatibility; a matching name or path is insufficient.
 
-## Common Mistakes
+## Guardrails
 
-- Copying or moving the external dataset during registration.
-- Refreshing a mutable path without preserving the previous fingerprint.
-- Removing the external target rather than the managed link and registration.
+- DO NOT copy or move the external dataset during registration.
+- DO NOT refresh a mutable path without preserving the previous fingerprint.
+- DO NOT remove the external target rather than the managed link and registration.

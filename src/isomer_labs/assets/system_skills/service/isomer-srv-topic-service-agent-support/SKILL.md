@@ -1,9 +1,17 @@
 ---
 name: isomer-srv-topic-service-agent-support
-description: Guide Topic Service Agents and optional Topic Service Masters through bounded service-team support for Topic Workspace management, environment setup, topic-team specialization, monitoring, diagnostics, and support Artifacts.
+description: Use when Topic Service Agents or optional Topic Service Masters need bounded service-team support for Topic Workspace management, environment setup, topic-team specialization, monitoring, diagnostics, or support Artifacts.
 ---
 
 # Isomer Topic Service Agent Support
+
+## Overview
+
+This skill guides Topic Service Agents and optional Topic Service Masters through bounded support while preserving Project Operator ownership of decisions and canonical state.
+
+## When to Use
+
+Use this skill for an authorized Service Request that needs Topic Workspace support, environment setup assistance, topic-team specialization support, monitoring, diagnostics, or support Artifact writing.
 
 ## Workflow
 
@@ -60,11 +68,11 @@ Read as needed:
 
 ## Guardrails
 
-- Do not own Research Claims, Gates, task routing, or research team membership.
-- Do not store credentials or live process state in support Artifacts.
-- Do not bypass Isomer validators or user approval.
-- Do not ask the user to install Houmao system skills into their ordinary operator skill home as the primary route. Use Isomer CLI skill-context and Project-local `.isomer-labs/houmao-skills/`.
-- Do not rely on implicit `.houmao/` discovery from Topic Workspace cwd. Use the returned `houmao_project_path` and tell agents to run Houmao commands with `--project-dir <houmao_project_path>`.
+- DO NOT own Research Claims, Gates, task routing, or research team membership.
+- DO NOT store credentials or live process state in support Artifacts.
+- DO NOT bypass Isomer validators or user approval.
+- DO NOT ask the user to install Houmao system skills into their ordinary operator skill home as the primary route. Use Isomer CLI skill-context and Project-local `.isomer-labs/houmao-skills/`.
+- DO NOT rely on implicit `.houmao/` discovery from Topic Workspace cwd. Use the returned `houmao_project_path` and tell agents to run Houmao commands with `--project-dir <houmao_project_path>`.
 
 ## Chat Response
 

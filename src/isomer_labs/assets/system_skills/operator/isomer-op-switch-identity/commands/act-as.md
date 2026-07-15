@@ -13,4 +13,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-`act-as` is temporary one-time execution, not a persistent switch. Do not leave a switched posture active after the following prompt completes unless the user separately requests `switch` with persistent mode. Do not claim a launched Agent Instance, Houmao agent, independent Topic Actor process, or Execution Adapter produced the work.
+- MUST treat `act-as` as temporary one-time execution, not a persistent switch. Do not leave a switched posture active after the following prompt completes unless the user separately requests `switch` with persistent mode. Do not claim a launched Agent Instance, Houmao agent, independent Topic Actor process, or Execution Adapter produced the work.

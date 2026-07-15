@@ -31,8 +31,8 @@ Require candidate identities or resolvable locators, comparison question, accept
 
 Stop when every candidate and applicable dimension has evidence or an explicit missing state. Source-only cells remain at source-inspected depth and never receive empirical `compared` depth.
 
-## Common Mistakes
+## Guardrails
 
-- Copying a familiar comparison taxonomy without checking domain relevance.
-- Filling unstated details through inference.
-- Ranking works whose cells are unclear, disputed, or not applicable.
+- DO NOT copy a familiar comparison taxonomy without checking domain relevance.
+- DO NOT fill unstated details through inference.
+- DO NOT rank works whose cells are unclear, disputed, or not applicable.

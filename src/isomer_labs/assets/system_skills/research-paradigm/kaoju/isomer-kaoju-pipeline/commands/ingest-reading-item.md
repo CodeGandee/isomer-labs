@@ -9,6 +9,8 @@
 5. Keep source statements, interpretation, provisional visual evidence, code findings, and executed behavior distinct. Verify provisional figure or table evidence before promotion.
 6. Persist or revise `kaoju:artifact-library`, `kaoju:associated-source-code`, `kaoju:source-digest`, and `kaoju:claim-evidence-ledger` as applicable, then present them for approval or refinement.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owners: `$isomer-kaoju-acquire` and `$isomer-kaoju-examine`. Inputs: Reading List ref and item id. Outputs: acquired-material, Source Digest, Claim-Evidence Ledger, associated-code, blocker, and provenance refs.

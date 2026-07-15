@@ -21,6 +21,6 @@ If the user's task does not map cleanly to these steps, explain whether the bloc
 
 ## Guardrails
 
-Do not write `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates` here. Route topic env source gates to `define-topic-env`, actor definitions to `define-actors`, topic environment setup to `setup-topic-env`, and actor materialization plus actor env verification to `setup-actors`.
+- DO NOT write `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates` here. Route topic env source gates to `define-topic-env`, actor definitions to `define-actors`, topic environment setup to `setup-topic-env`, and actor materialization plus actor env verification to `setup-actors`.
 
-Do not infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context or searched online evidence explicitly supports them. Record uncertainty as assumptions or open questions.
+- DO NOT infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context or searched online evidence explicitly supports them. Record uncertainty as assumptions or open questions.

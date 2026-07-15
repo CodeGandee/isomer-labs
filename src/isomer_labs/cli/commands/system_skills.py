@@ -12,8 +12,10 @@ from isomer_labs.cli.output import output_format
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.core.rendering import render_json
 from isomer_labs.skills.installer import (
+    SUPPORTED_SCOPES,
     SUPPORTED_TARGETS,
     SystemSkillInstallError,
+    SystemSkillScope,
     inspect_system_skills,
     install_system_skills,
     list_packaged_system_skills,
@@ -94,6 +96,7 @@ def register_system_skill_commands(app: click.Group) -> None:
             ],
             "skills": [skill.to_json() for skill in skills],
             "supported_targets": list(SUPPORTED_TARGETS),
+            "supported_scopes": list(SUPPORTED_SCOPES),
         }
         return _emit("system-skills list", options, payload, _render_list(payload))
 
@@ -104,7 +107,7 @@ def register_system_skill_commands(app: click.Group) -> None:
     def system_skills_status_command(
         ctx: click.Context,
         target: str,
-        home: Path | None,
+        scope: SystemSkillScope,
         groups: tuple[str, ...],
         extensions: tuple[str, ...],
         all_extensions: bool,
@@ -118,7 +121,7 @@ def register_system_skill_commands(app: click.Group) -> None:
                 all_extensions=all_extensions,
                 skills=skills,
             )
-            targets = resolve_targets(target, home=home)
+            targets = resolve_targets(target, scope=scope)
             results = [inspect_system_skills(item, selection) for item in targets]
         except SystemSkillInstallError as exc:
             raise click.ClickException(str(exc)) from exc
@@ -149,7 +152,7 @@ def register_system_skill_commands(app: click.Group) -> None:
     def system_skills_install_command(
         ctx: click.Context,
         target: str,
-        home: Path | None,
+        scope: SystemSkillScope,
         groups: tuple[str, ...],
         extensions: tuple[str, ...],
         all_extensions: bool,
@@ -166,7 +169,7 @@ def register_system_skill_commands(app: click.Group) -> None:
                 skills=skills,
                 default_core=True,
             )
-            targets = resolve_targets(target, home=home)
+            targets = resolve_targets(target, scope=scope)
             results = [
                 install_system_skills(item, selection, projection_mode=projection_mode, force=force)  # type: ignore[arg-type]
                 for item in targets
@@ -199,7 +202,7 @@ def register_system_skill_commands(app: click.Group) -> None:
     def system_skills_upgrade_command(
         ctx: click.Context,
         target: str,
-        home: Path | None,
+        scope: SystemSkillScope,
         groups: tuple[str, ...],
         extensions: tuple[str, ...],
         all_extensions: bool,
@@ -215,7 +218,7 @@ def register_system_skill_commands(app: click.Group) -> None:
                 skills=skills,
                 default_core=True,
             )
-            targets = resolve_targets(target, home=home)
+            targets = resolve_targets(target, scope=scope)
             results = [
                 upgrade_system_skills(item, selection, projection_mode=projection_mode)  # type: ignore[arg-type]
                 for item in targets
@@ -240,7 +243,7 @@ def register_system_skill_commands(app: click.Group) -> None:
     def system_skills_uninstall_command(
         ctx: click.Context,
         target: str,
-        home: Path | None,
+        scope: SystemSkillScope,
         groups: tuple[str, ...],
         extensions: tuple[str, ...],
         all_extensions: bool,
@@ -254,7 +257,7 @@ def register_system_skill_commands(app: click.Group) -> None:
                 all_extensions=all_extensions,
                 skills=skills,
             )
-            targets = resolve_targets(target, home=home)
+            targets = resolve_targets(target, scope=scope)
             results = [uninstall_system_skills(item, selection) for item in targets]
         except SystemSkillInstallError as exc:
             raise click.ClickException(str(exc)) from exc
@@ -272,9 +275,10 @@ def register_system_skill_commands(app: click.Group) -> None:
 
 def _target_options(func: Any) -> Any:
     func = click.option(
-        "--home",
-        type=click.Path(path_type=Path, file_okay=False, dir_okay=True),
-        help="Optional skill root override for one concrete target.",
+        "--scope",
+        required=True,
+        type=click.Choice(SUPPORTED_SCOPES),
+        help="Installation scope: current user or current working directory project.",
     )(func)
     func = click.option(
         "--target",
@@ -357,6 +361,7 @@ def _render_list(payload: dict[str, object]) -> list[str]:
         for skill in _string_list(group.get("skills")):
             lines.append(f"  - {skill}")
     lines.append(f"Targets: {', '.join(_string_list(payload.get('supported_targets')))}")
+    lines.append(f"Scopes: {', '.join(_string_list(payload.get('supported_scopes')))}")
     return lines
 
 
@@ -370,8 +375,12 @@ def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
         "entry_skill": entry_skill,
         "commands": list(extension.commands),
         "skills": [Path(skill_path).name for skill_path in extension.skills],
-        "install_command": f"isomer-cli system-skills install --target <target> --extension {extension_id}",
-        "status_command": f"isomer-cli system-skills status --target <target> --extension {extension_id}",
+        "install_command": (
+            f"isomer-cli system-skills install --target <target> --scope <scope> --extension {extension_id}"
+        ),
+        "status_command": (
+            f"isomer-cli system-skills status --target <target> --scope <scope> --extension {extension_id}"
+        ),
         "invocation": f"${entry_skill}",
     }
 
@@ -411,7 +420,7 @@ def _render_extension_show(extension: dict[str, object]) -> list[str]:
 def _render_statuses(statuses: list[dict[str, object]]) -> list[str]:
     lines = ["Isomer system skill status:"]
     for status in statuses:
-        lines.append(f"- {status.get('target')}: {status.get('skill_root')}")
+        lines.append(_render_destination_heading(status))
         lines.append(f"  installed: {', '.join(_string_list(status.get('installed_skills'))) or '(none)'}")
         lines.append(f"  missing: {', '.join(_string_list(status.get('missing_skills'))) or '(none)'}")
         invalid = _mapping_list(status.get("invalid_projections"))
@@ -429,7 +438,7 @@ def _render_statuses(statuses: list[dict[str, object]]) -> list[str]:
 def _render_installs(results: list[dict[str, object]]) -> list[str]:
     lines = ["Installed Isomer system skills:"]
     for result in results:
-        lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
+        lines.append(_render_destination_heading(result))
         installed = _string_list(result.get("installed_skills"))
         lines.append(f"  installed: {', '.join(installed) or '(none)'}")
         replaced = _string_list(result.get("replaced_skills"))
@@ -449,7 +458,7 @@ def _render_installs(results: list[dict[str, object]]) -> list[str]:
 def _render_upgrades(results: list[dict[str, object]]) -> list[str]:
     lines = ["Upgraded Isomer system skills:"]
     for result in results:
-        lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
+        lines.append(_render_destination_heading(result))
         lines.append(f"  refreshed: {', '.join(_string_list(result.get('refreshed_skills'))) or '(none)'}")
         lines.append(f"  stale removed: {', '.join(_string_list(result.get('stale_removed_skills'))) or '(none)'}")
         stale_absent = _string_list(result.get("stale_absent_skills"))
@@ -464,7 +473,7 @@ def _render_upgrades(results: list[dict[str, object]]) -> list[str]:
 def _render_uninstalls(results: list[dict[str, object]]) -> list[str]:
     lines = ["Removed Isomer system skills:"]
     for result in results:
-        lines.append(f"- {result.get('target')}: {result.get('skill_root')}")
+        lines.append(_render_destination_heading(result))
         lines.append(f"  removed: {', '.join(_string_list(result.get('removed_skills'))) or '(none)'}")
         lines.append(f"  absent: {', '.join(_string_list(result.get('absent_skills'))) or '(none)'}")
         manifest = result.get("manifest")
@@ -477,6 +486,13 @@ def _mapping_list(value: object) -> list[dict[str, object]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def _render_destination_heading(payload: dict[str, object]) -> str:
+    bindings = _mapping_list(payload.get("bindings"))
+    labels = [f"{binding.get('target')}/{binding.get('scope')}" for binding in bindings]
+    label = ", ".join(labels) or f"{payload.get('target')}/{payload.get('scope') or 'unknown'}"
+    return f"- {label}: {payload.get('skill_root')}"
 
 
 def _string_list(value: object) -> list[str]:

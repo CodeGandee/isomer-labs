@@ -26,7 +26,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
             self.assertRegex(skill_text, r"(?m)^description: Use when")
             self.assertIn("## Workflow", "\n".join(skill_text.splitlines()[:40]), name)
             self.assertIn("## When to Use", skill_text, name)
-            self.assertIn("## Common Mistakes", skill_text, name)
+            self.assertIn("## Guardrails", skill_text, name)
             self.assertIn(f'display_name: "{name}"', agent_text)
             self.assertIn(f"${name}", agent_text)
 

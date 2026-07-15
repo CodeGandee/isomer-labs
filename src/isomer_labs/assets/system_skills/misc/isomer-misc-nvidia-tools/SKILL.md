@@ -11,6 +11,10 @@ description: Use when Codex is setting up or repairing a Pixi CUDA/C++ build env
 - **Boundary**: do not use this skill for `nvcc` architecture or compile-parallelism policy.
 - **Routing**: send bounded CUDA compile decisions to `isomer-misc-bounded-run-tips`.
 
+## When to Use
+
+Use this skill for NVIDIA or CUDA tooling decisions inside an Isomer Labs Pixi environment, including CUDA/C++ build setup and Pixi-mediated profiler or debugger command shapes.
+
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
@@ -37,6 +41,11 @@ Do not use inverted commands such as `ncu pixi run ...`, `nsys profile pixi run 
 ## Boundary
 
 For CUDA compile bounding, host GPU architecture selection, `TORCH_CUDA_ARCH_LIST`, `CMAKE_CUDA_ARCHITECTURES`, `-gencode`, `MAX_JOBS`, `ninja -j`, `cmake --build ... -j`, or RAM-aware worker counts, use `isomer-misc-bounded-run-tips` subcommand `cuda-compile`.
+
+## Guardrails
+
+- DO NOT use this skill for CUDA compile bounding, host GPU architecture selection, or RAM-aware worker counts; route those decisions to `isomer-misc-bounded-run-tips`.
+- MUST run NVIDIA profiler and debugger wrappers through Pixi unless local evidence proves that Pixi itself is deliberately the measured process.
 
 ## Chat Response
 

@@ -13,4 +13,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-Do not infer the target by scanning workspace directories. Do not use Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd. Do not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution.
+- DO NOT infer the target by scanning workspace directories. Do not use Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd. Do not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution.

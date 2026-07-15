@@ -15,8 +15,8 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not duplicate Topic Team Specialization logic in this skill.
-- Do not hand off direct specialization requests to `adapt-team-template`; that is an internal stage owned by `isomer-op-topic-team-specialize`.
-- Do not route manual research, human-orchestrated Topic Actor setup, or Topic Actor Workspace materialization here unless the user also asked for formal Topic Team Specialization.
-- Do not edit Domain Agent Team Template source material from this subcommand.
-- Do not launch a team from Project context alone.
+- DO NOT duplicate Topic Team Specialization logic in this skill.
+- DO NOT hand off direct specialization requests to `adapt-team-template`; that is an internal stage owned by `isomer-op-topic-team-specialize`.
+- DO NOT route manual research, human-orchestrated Topic Actor setup, or Topic Actor Workspace materialization here unless the user also asked for formal Topic Team Specialization.
+- DO NOT edit Domain Agent Team Template source material from this subcommand.
+- DO NOT launch a team from Project context alone.

@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import json
-import os
 import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
-from unittest.mock import patch
 
 from isomer_labs.skills.installer import (
     SKILL_MANIFEST_FILENAME,
@@ -28,19 +26,87 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.addCleanup(tmp.cleanup)
         return Path(tmp.name)
 
-    def test_target_defaults_are_deterministic(self) -> None:
+    def test_project_target_roots_are_deterministic(self) -> None:
         root = self.make_root()
-        codex_home = root / "codex-home"
-        with patch.dict(os.environ, {"CODEX_HOME": str(codex_home)}, clear=True):
-            self.assertEqual(root / ".claude" / "skills", resolve_targets("claude-code", cwd=root)[0].skill_root)
-            self.assertEqual(codex_home / "skills", resolve_targets("codex", cwd=root)[0].skill_root)
-            self.assertEqual(root / ".kimi-code" / "skills", resolve_targets("kimi-code", cwd=root)[0].skill_root)
-            self.assertEqual(root / ".agents" / "skills", resolve_targets("generic", cwd=root)[0].skill_root)
+        self.assertEqual(
+            root / ".claude" / "skills",
+            resolve_targets("claude-code", scope="project", cwd=root)[0].skill_root,
+        )
+        self.assertEqual(root / ".agents" / "skills", resolve_targets("codex", scope="project", cwd=root)[0].skill_root)
+        self.assertEqual(
+            root / ".kimi-code" / "skills",
+            resolve_targets("kimi-code", scope="project", cwd=root)[0].skill_root,
+        )
+        self.assertEqual(
+            root / ".agents" / "skills",
+            resolve_targets("generic", scope="project", cwd=root)[0].skill_root,
+        )
 
-    def test_target_all_rejects_home_override(self) -> None:
+    def test_user_target_roots_honor_environment_overrides_and_fallbacks(self) -> None:
         root = self.make_root()
-        with self.assertRaisesRegex(RuntimeError, "--home"):
-            resolve_targets("all", home=root / "skills", cwd=root)
+        user_home = root / "user-home"
+        claude_home = root / "claude-home"
+        codex_home = root / "codex-home"
+        kimi_home = user_home / "kimi-home"
+        env = {
+            "HOME": str(user_home),
+            "CLAUDE_CONFIG_DIR": str(claude_home),
+            "CODEX_HOME": str(codex_home),
+            "KIMI_CODE_HOME": "~/kimi-home",
+        }
+
+        self.assertEqual(
+            claude_home / "skills",
+            resolve_targets("claude-code", scope="user", cwd=root, env=env)[0].skill_root,
+        )
+        self.assertEqual(
+            codex_home / "skills",
+            resolve_targets("codex", scope="user", cwd=root, env=env)[0].skill_root,
+        )
+        self.assertEqual(
+            kimi_home / "skills",
+            resolve_targets("kimi-code", scope="user", cwd=root, env=env)[0].skill_root,
+        )
+        self.assertEqual(
+            user_home / ".agents" / "skills",
+            resolve_targets("generic", scope="user", cwd=root, env=env)[0].skill_root,
+        )
+
+        fallback_env = {"HOME": str(user_home), "CLAUDE_CONFIG_DIR": "", "CODEX_HOME": "", "KIMI_CODE_HOME": ""}
+        self.assertEqual(
+            user_home / ".claude" / "skills",
+            resolve_targets("claude-code", scope="user", env=fallback_env)[0].skill_root,
+        )
+        self.assertEqual(
+            user_home / ".codex" / "skills",
+            resolve_targets("codex", scope="user", env=fallback_env)[0].skill_root,
+        )
+        self.assertEqual(
+            user_home / ".kimi-code" / "skills",
+            resolve_targets("kimi-code", scope="user", env=fallback_env)[0].skill_root,
+        )
+
+    def test_target_all_deduplicates_shared_project_root(self) -> None:
+        root = self.make_root()
+        targets = resolve_targets("all", scope="project", cwd=root)
+
+        self.assertEqual(
+            [root / ".claude" / "skills", root / ".agents" / "skills", root / ".kimi-code" / "skills"],
+            [target.skill_root for target in targets],
+        )
+        shared = targets[1]
+        self.assertEqual("all", shared.target)
+        self.assertEqual("project", shared.scope)
+        self.assertEqual(["codex", "generic"], [binding.target for binding in shared.bindings])
+
+    def test_project_scope_uses_exact_nested_cwd(self) -> None:
+        root = self.make_root()
+        nested = root / "packages" / "service"
+        nested.mkdir(parents=True)
+
+        target = resolve_targets("kimi-code", scope="project", cwd=nested)[0]
+
+        self.assertEqual(nested / ".kimi-code" / "skills", target.skill_root)
 
     def test_selection_defaults_to_core_and_extension_adds_core(self) -> None:
         core = resolve_system_skill_selection()
@@ -64,7 +130,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_kaoju_extension_install_status_upgrade_and_uninstall(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(extensions=("kaoju",))
 
         installed = install_system_skills(target, selection)
@@ -91,7 +157,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_copy_projection_is_flat_and_manifest_tracked(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
 
         result = install_system_skills(target, selection)
@@ -103,7 +169,9 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertFalse((skill_dir / OLD_MARKER_FILENAME).exists())
         self.assertFalse((target.skill_root / "operator" / "isomer-op-entrypoint").exists())
         manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
-        self.assertEqual("isomer-labs-skill-manifest.v2", manifest["schema_version"])
+        self.assertEqual("isomer-labs-skill-manifest.v3", manifest["schema_version"])
+        self.assertNotIn("target", manifest)
+        self.assertEqual([{"scope": "project", "target": "generic"}], manifest["bindings"])
         self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in manifest["skills"]])
         self.assertEqual("operator/isomer-op-entrypoint", manifest["skills"][0]["source_path"])
         self.assertEqual(selection.skills[0].skill_version, manifest["skills"][0]["skill_version"])
@@ -114,10 +182,68 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertIsNotNone(status.manifest)
         self.assertEqual("current", status.installed[0].compatibility_status)
         self.assertTrue(status.installed[0].installation_verified)
+        self.assertEqual("project", result.to_json()["scope"])
+        self.assertEqual([{"target": "generic", "scope": "project"}], result.to_json()["bindings"])
+
+    def test_shared_root_is_projected_once_and_records_all_bindings(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("all", scope="project", cwd=root)[1]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+
+        result = install_system_skills(target, selection)
+
+        self.assertEqual(["isomer-op-entrypoint"], [item.name for item in result.installed])
+        manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual(
+            [{"scope": "project", "target": "codex"}, {"scope": "project", "target": "generic"}],
+            manifest["bindings"],
+        )
+
+    def test_later_mutation_merges_binding_for_same_root(self) -> None:
+        root = self.make_root()
+        codex = resolve_targets("codex", scope="project", cwd=root)[0]
+        generic = resolve_targets("generic", scope="project", cwd=root)[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(codex, selection)
+
+        upgrade_system_skills(generic, selection)
+
+        manifest = json.loads((generic.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
+        self.assertEqual(
+            [{"scope": "project", "target": "codex"}, {"scope": "project", "target": "generic"}],
+            manifest["bindings"],
+        )
+
+    def test_v2_receipt_has_unknown_scope_until_mutation_migrates_it(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
+        install_system_skills(target, selection)
+        receipt_path = target.skill_root / SKILL_MANIFEST_FILENAME
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["schema_version"] = "isomer-labs-skill-manifest.v2"
+        receipt["target"] = "generic"
+        receipt.pop("bindings")
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+        status = inspect_system_skills(target, selection)
+
+        self.assertIsNotNone(status.manifest)
+        assert status.manifest is not None
+        self.assertEqual("isomer-labs-skill-manifest.v2", status.manifest.schema_version)
+        self.assertEqual((), status.manifest.bindings)
+        self.assertEqual("generic", status.manifest.legacy_target)
+
+        upgrade_system_skills(target, selection)
+
+        migrated = json.loads(receipt_path.read_text(encoding="utf-8"))
+        self.assertEqual("isomer-labs-skill-manifest.v3", migrated["schema_version"])
+        self.assertNotIn("target", migrated)
+        self.assertEqual([{"scope": "project", "target": "generic"}], migrated["bindings"])
 
     def test_legacy_receipt_is_read_and_classified_unversioned(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         install_system_skills(target, selection)
         receipt_path = target.skill_root / SKILL_MANIFEST_FILENAME
@@ -133,7 +259,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_status_reports_receipt_drift_obsolete_and_compatible_older(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         install_system_skills(target, selection)
         record = selection.skills[0]
@@ -160,7 +286,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_symlink_projection_does_not_write_per_skill_marker(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
 
         result = install_system_skills(target, selection, projection_mode="symlink")
@@ -174,7 +300,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_install_preserves_existing_path_without_force_and_force_replaces_it(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         existing = target.skill_root / "isomer-op-entrypoint"
         existing.mkdir(parents=True)
@@ -197,7 +323,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_force_switches_copy_and_symlink_projection_modes(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         install_system_skills(target, selection)
 
@@ -215,7 +341,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_uninstall_removes_named_projection_and_updates_manifest(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         install_system_skills(target, selection)
 
@@ -228,7 +354,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_status_reports_invalid_path_and_unreadable_manifest(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         target.skill_root.mkdir(parents=True)
         (target.skill_root / "isomer-op-entrypoint").write_text("not a directory\n", encoding="utf-8")
@@ -241,7 +367,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_upgrade_refreshes_selected_and_removes_manifest_tracked_stale_paths(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         both = resolve_system_skill_selection(
             skills=("isomer-op-entrypoint", "isomer-op-gui-mgr"),
             default_core=False,
@@ -263,7 +389,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
 
     def test_upgrade_preserves_recorded_mode_and_honors_override(self) -> None:
         root = self.make_root()
-        target = resolve_targets("generic", home=root / "skills")[0]
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
         selection = resolve_system_skill_selection(skills=("isomer-op-entrypoint",), default_core=False)
         install_system_skills(target, selection, projection_mode="symlink")
 

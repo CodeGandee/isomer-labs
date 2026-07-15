@@ -50,7 +50,7 @@ Carry forward:
 
 ## Guardrails
 
-- Preserve uncertainty instead of pretending a vague source intent is precise.
-- Do not choose Agent Names here.
-- Do not create or mutate files from this subcommand.
-- Passing means every required command must be runnable from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment.
+- MUST preserve uncertainty instead of pretending a vague source intent is precise.
+- DO NOT choose Agent Names here.
+- DO NOT create or mutate files from this subcommand.
+- MUST require every required command to run from each planned `agent.workspace` cwd through the resolved Topic Workspace Pixi environment before reporting a passing result.

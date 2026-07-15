@@ -15,6 +15,8 @@ When this subcommand is selected, execute the following steps in order.
 9. Run Houmao commands with `--project-dir <houmao_project_path>` and do not rely on implicit `.houmao/` discovery from cwd.
 10. Report stopped, skipped, blocked, or not configured status with binding evidence and remaining runtime refs.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a stop or pause plan from the recorded binding, projected Houmao route, and cleanup boundary, then execute the plan.
+
 ## Guardrails
 
-Do not delete Project-local Houmao overlay state, projected skills, Topic Workspace files, or runtime records unless a separate owner workflow explicitly authorizes cleanup.
+- DO NOT delete Project-local Houmao overlay state, projected skills, Topic Workspace files, or runtime records unless a separate owner workflow explicitly authorizes cleanup.

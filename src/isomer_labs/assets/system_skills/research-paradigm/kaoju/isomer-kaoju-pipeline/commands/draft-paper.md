@@ -9,6 +9,8 @@
 5. Validate MyST structure, required sections, directives, roles, citations, placeholders, displays, source refs, and evidence boundaries with file-location diagnostics.
 6. Optionally derive `kaoju:paper-draft-md`. It is a deterministic review view and never editable canonical state.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-write`. Inputs: accepted audit and synthesis refs plus paper line. Outputs: canonical MyST structure, template, draft, citation map, revision log, and optional derived Markdown refs.

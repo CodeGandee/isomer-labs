@@ -69,8 +69,8 @@ Group the complete explanation by topic identity, overview label and path, stora
 
 ## Guardrails
 
-Do not create files until the user has supplied a concrete Research Topic and the topic workspace directory is clear. A clear user-supplied Research Topic without an explicit directory may use the derived `isomer-content/topic-ws/<topic-slug>/` default; missing topics, generic default topic registrations, unclear topics, collisions, and unsafe paths still require user confirmation.
+- DO NOT create files until the user has supplied a concrete Research Topic and the topic workspace directory is clear. A clear user-supplied Research Topic without an explicit directory may use the derived `isomer-content/topic-ws/<topic-slug>/` default; missing topics, generic default topic registrations, unclear topics, collisions, and unsafe paths still require user confirmation.
 
-Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files. If the topic must become authoritative Project Manifest state, route to `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` or another supported Isomer CLI/API path when available and otherwise report a blocker.
+- DO NOT hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files. If the topic must become authoritative Project Manifest state, route to `ensure-topic-registration`, which may use `isomer-cli project topics create <topic-id> --statement "<research topic>" --workspace-dir <topic-workspace-dir>` or another supported Isomer CLI/API path when available and otherwise report a blocker.
 
-Do not claim the created directory is a registered Research Topic or Topic Workspace unless the Project Manifest already proves that registration.
+- DO NOT claim the created directory is a registered Research Topic or Topic Workspace unless the Project Manifest already proves that registration.

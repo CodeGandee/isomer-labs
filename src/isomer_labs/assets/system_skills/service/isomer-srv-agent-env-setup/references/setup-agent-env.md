@@ -79,10 +79,10 @@ Readiness means topic env setup has prepared topic-main and required projections
 
 ## Guardrails
 
-- Run the subcommands in the order listed in **Step Order**.
-- Do not skip directly to Git worktree creation or verification.
-- Do not create per-agent Pixi environments or mutate dependencies.
-- Do not create, initialize, configure, repair, or project external repos into `topic.repos.main`; route missing or stale predecessor evidence to `isomer-srv-topic-env-setup`.
-- Do not claim runtime launch readiness.
-- Do not multiply verification classified as `heavy` or `unknown-risk` across every Agent Workspace unless the resource check shows enough idle capacity and the target spec requires the full matrix. Use selected-agent partial evidence or another bounded real-path command when full verification would overload the host, but the selected command must still exercise the requested cwd path. Use the bounded-run guidance source recorded in the target spec; if no specific bounded-run tips recipe applied, preserve the generic best-effort evidence and limitation. If no bounded real-path command can run safely, report a blocker with resource evidence.
-- Preserve blockers and partial failures in the combined report.
+- MUST run the subcommands in the order listed in **Step Order**.
+- DO NOT skip directly to Git worktree creation or verification.
+- DO NOT create per-agent Pixi environments or mutate dependencies.
+- DO NOT create, initialize, configure, repair, or project external repos into `topic.repos.main`; route missing or stale predecessor evidence to `isomer-srv-topic-env-setup`.
+- DO NOT claim runtime launch readiness.
+- DO NOT multiply verification classified as `heavy` or `unknown-risk` across every Agent Workspace unless the resource check shows enough idle capacity and the target spec requires the full matrix. Use selected-agent partial evidence or another bounded real-path command when full verification would overload the host, but the selected command must still exercise the requested cwd path. Use the bounded-run guidance source recorded in the target spec; if no specific bounded-run tips recipe applied, preserve the generic best-effort evidence and limitation. If no bounded real-path command can run safely, report a blocker with resource evidence.
+- MUST preserve blockers and partial failures in the combined report.

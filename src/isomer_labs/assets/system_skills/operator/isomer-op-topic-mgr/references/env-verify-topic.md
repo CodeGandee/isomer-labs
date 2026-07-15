@@ -18,4 +18,4 @@ Report the Topic environment verification outcome and selected Research Topic, t
 
 ## Guardrails
 
-This subcommand verifies Topic Workspace environment readiness. It does not prove per-Topic Actor cwd readiness, formal Agent Workspace cwd readiness, Agent Instance creation, or runtime launch readiness.
+- MUST limit this subcommand's readiness claim to the Topic Workspace environment; it does not prove per-Topic Actor cwd readiness, formal Agent Workspace cwd readiness, Agent Instance creation, or runtime launch readiness.

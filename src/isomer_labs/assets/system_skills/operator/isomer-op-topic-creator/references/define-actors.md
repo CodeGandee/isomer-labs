@@ -15,4 +15,4 @@ If the user's task does not map cleanly to these steps, ask for actor names or c
 
 ## Guardrails
 
-Do not register Topic Actors, materialize Topic Actor Workspaces, generate derived actor env gates, or claim actor cwd readiness here. Those belong to `setup-actors`.
+- DO NOT register Topic Actors, materialize Topic Actor Workspaces, generate derived actor env gates, or claim actor cwd readiness here. Those belong to `setup-actors`.

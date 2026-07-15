@@ -11,6 +11,10 @@ Inspect accepted materials at exact, repeatable locators and separate what the s
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:source-digest`, `kaoju:source-access-blocker`, and `kaoju:claim-evidence-ledger` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
+## When to Use
+
+Use after discovery or acquisition when survey claims require direct paper, report, repository, dataset, or model inspection. Do not use this skill to infer execution success, repair code, perform a Run, or write final survey conclusions.
+
 ## Workflow
 
 1. **Accept pinned materials**. Require Source Identities, material refs, target questions or claims, and desired verification depth.
@@ -23,10 +27,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 8. **Return status**. Report achieved depth, unresolved claims, exact refs, blockers, and the next compare, reproduce, audit, or synthesis handoff.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use after discovery or acquisition when survey claims require direct paper, report, repository, dataset, or model inspection. Do not use this skill to infer execution success, repair code, perform a Run, or write final survey conclusions.
 
 ## Source Digest Contract
 
@@ -62,11 +62,11 @@ An exact locator makes an observation auditable; a plausible paraphrase does not
 - An abstract-only observation is described as full-text inspection.
 - Paper and code identities are merged without relationship evidence.
 
-## Common Mistakes
+## Guardrails
 
-- Copying source claims into the ledger without a verdict. Record whether evidence supports, challenges, or leaves the claim inconclusive.
-- Omitting contradictions. Preserve both evidence paths and their identities.
-- Treating inaccessible material as excluded. Record a Source Access Blocker so the audit can distinguish coverage from access.
+- DO NOT copy source claims into the ledger without a verdict. Record whether evidence supports, challenges, or leaves the claim inconclusive.
+- DO NOT omit contradictions. Preserve both evidence paths and their identities.
+- DO NOT treat inaccessible material as excluded. Record a Source Access Blocker so the audit can distinguish coverage from access.
 
 ## Chat Response
 

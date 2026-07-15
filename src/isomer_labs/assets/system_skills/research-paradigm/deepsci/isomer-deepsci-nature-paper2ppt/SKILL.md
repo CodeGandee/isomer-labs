@@ -105,13 +105,13 @@ This skill can end when all applicable checks are true:
 - `<PRESENTATION_ASSET_MANIFEST>` records figure provenance.
 - `<PPTX_QA_REPORT>` records package checks and any render limitations.
 
-## Common Mistakes
+## Guardrails
 
-- Stopping at an outline instead of building the PPTX.
-- Inventing missing numbers, mechanisms, datasets, or figure details.
-- Using figures as decoration instead of evidence.
-- Cramming too many panels into unreadable slides.
-- Running full OCR or full supplement extraction without a reason.
+- DO NOT stop at an outline instead of building the PPTX.
+- DO NOT invent missing numbers, mechanisms, datasets, or figure details.
+- DO NOT use figures as decoration instead of evidence.
+- DO NOT cram too many panels into unreadable slides.
+- DO NOT run full OCR or full supplement extraction without a reason.
 
 ## Chat Response
 

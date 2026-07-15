@@ -9,6 +9,8 @@
 5. When PDF output is requested, compose `build-paper-pdf`. Initialize and inspect derived TeX, obtain build authorization, execute through `document_build`, inspect the PDF, and apply the publication Gate.
 6. Return `complete`, `paused`, or `blocked` with canonical MyST refs, derived refs, Run and Gate posture, diagnostics, and the first incomplete stage.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Compatibility Mapping
 
 `paper-pass` is a retained compatibility composition. It maps to `draft-paper` and optionally `build-paper-pdf`; it does not restore LaTeX-first authorship. A draft-only request stops after accepted MyST state. A build request continues from the same paper line and exact MyST revision.

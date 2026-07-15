@@ -15,6 +15,8 @@ Require one canonical Service Request ref in `dispatched` state, a supported Top
 7. On bounded repair, preserve the failed smoke Run and Gate revision. A material dependency, source, script-semantics, resource, or interpretation change requires a revised plan and human Gate.
 8. Complete the Service Request with environment, Gate revision, smoke script, smoke result, support Artifact, command request, Run, blocker, and Provenance Record refs. On timeout or interruption, return the stable request ref and first incomplete stage.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to restate the authorized Service Request as a staged environment-preparation plan, then execute only the supported service-safe portion.
+
 ## Output Boundary
 
 The Service Request is operational coordination, not a Research Task or Workflow Stage. The Service Team observes and returns support state; the Kaoju trial owner retains research interpretation and trial-plan authority. Houmao, gateway, mailbox, and provider payloads remain adapter details outside canonical records.

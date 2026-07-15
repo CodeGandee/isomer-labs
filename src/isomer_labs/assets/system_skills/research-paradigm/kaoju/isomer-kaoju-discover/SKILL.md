@@ -11,6 +11,10 @@ Find relevant work through recorded routes and preserve the difference between a
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:discovery-ledger`, `kaoju:related-work-delta`, and `kaoju:curated-intake-delta` exactly. Return a storage blocker instead of inventing a path, profile, direct Markdown state, or untracked JSON.
 
+## When to Use
+
+Use for broad landscape discovery, priority handling of user-nominated sources, or expansion from named seed works. Do not use this skill to claim full-text inspection, execute code, download large materials, or synthesize final conclusions.
+
 ## Workflow
 
 1. **Accept the contract**. Require a Survey Contract, seeds or curated items, desired source classes, coverage bounds, and output purpose.
@@ -26,10 +30,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 11. **Return status**. Report accepted output refs, shortage warnings, blockers, approval posture, and the acquire or examine handoff.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use for broad landscape discovery, priority handling of user-nominated sources, or expansion from named seed works. Do not use this skill to claim full-text inspection, execute code, download large materials, or synthesize final conclusions.
 
 ## Discovery Modes
 
@@ -69,11 +69,11 @@ Discovery proves that a candidate was found under a recorded route. It does not 
 - “Exhaustive” or “all works” appears without a defensible bounded universe.
 - A mutable release label is treated as immutable identity.
 
-## Common Mistakes
+## Guardrails
 
-- Deduplicating different versions before deciding their relationship. Build the work family first.
-- Omitting excluded items. Retain their reasons so later passes can audit coverage.
-- Mixing linked repositories, datasets, and models into the primary paper list without type-aware relationships.
+- DO NOT deduplicate different versions before deciding their relationship. Build the work family first.
+- DO NOT omit excluded items. Retain their reasons so later passes can audit coverage.
+- DO NOT mix linked repositories, datasets, and models into the primary paper list without type-aware relationships.
 
 ## Chat Response
 

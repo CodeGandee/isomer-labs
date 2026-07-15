@@ -124,14 +124,14 @@ This skill can end only when one of these states is durable:
 
 Do not treat one candidate creation or one smoke pass as completion.
 
-## Common Mistakes
+## Guardrails
 
-- Do not continue after the route, gate, or blocker is already clear.
-- Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
-- Do not ask the user routine technical questions before checking durable local evidence.
-- Do not hide blocked states behind vague progress language.
-- Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
+- DO NOT continue after the route, gate, or blocker is already clear.
+- DO NOT replace evidence requirements with optimistic prose.
+- DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
+- DO NOT ask the user routine technical questions before checking durable local evidence.
+- DO NOT hide blocked states behind vague progress language.
+- DO NOT skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
 
 ## Chat Response
 

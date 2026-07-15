@@ -19,8 +19,8 @@ If the user's task does not map cleanly to these steps, report the valid target 
 
 ## Guardrails
 
-`run-to` is automatic like `fast-forward`, not interactive like `step-by-step`. It still must stop before mutation that lacks required inputs, selected context, semantic path resolution, or operator approval.
+- MUST treat `run-to` as automatic like `fast-forward`, not interactive like `step-by-step`; stop before mutation that lacks required inputs, selected context, semantic path resolution, or operator approval.
 
-Do not accept helper commands such as `ensure-project`, `resolve-topic-input`, `register-topic`, or `init-runtime` as `run-to` targets. They are internal ladder stages used to reach procedural targets.
+- DO NOT accept helper commands such as `ensure-project`, `resolve-topic-input`, `register-topic`, or `init-runtime` as `run-to` targets. They are internal ladder stages used to reach procedural targets.
 
-Do not stop before the target by default. Exclude the target only when the user explicitly asks to stop before it.
+- DO NOT stop before the target by default. Exclude the target only when the user explicitly asks to stop before it.

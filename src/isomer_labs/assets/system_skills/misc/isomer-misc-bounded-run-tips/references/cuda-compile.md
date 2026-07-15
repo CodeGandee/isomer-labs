@@ -113,10 +113,10 @@ export TORCH_CUDA_ARCH_LIST="8.9;9.0"
 cmake -S . -B build -DCMAKE_CUDA_ARCHITECTURES="89;90"
 ```
 
-## Common Mistakes
+## Guardrails
 
-- Using all CPU cores as CUDA build workers without considering RAM.
-- Compiling many architectures for a local benchmark or local env gate.
-- Setting `TORCH_CUDA_ARCH_LIST` wider than the host GPUs because it feels safer.
-- Treating `import torch` or `torch.cuda.is_available()` as proof that `nvcc` can compile the required extension.
-- Continuing to increase parallelism after out-of-memory, compiler crashes, or system pressure.
+- DO NOT use all CPU cores as CUDA build workers without considering RAM.
+- DO NOT compile many architectures for a local benchmark or local env gate.
+- DO NOT set `TORCH_CUDA_ARCH_LIST` wider than the host GPUs because it feels safer.
+- DO NOT treat `import torch` or `torch.cuda.is_available()` as proof that `nvcc` can compile the required extension.
+- DO NOT continue to increase parallelism after out-of-memory errors, compiler crashes, or system pressure.

@@ -57,4 +57,4 @@ Complete Output adds commands run, semantic labels, path sources, delegated owne
 
 ## Guardrails
 
-This skill orchestrates existing owners rather than replacing them. Project lifecycle belongs to `isomer-op-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-op-topic-mgr`, and formal team specialization belongs to `isomer-op-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.
+- MUST orchestrate existing owners rather than replace them. Project lifecycle belongs to `isomer-op-project-mgr`, topic environment setup belongs to `isomer-srv-topic-env-setup`, Topic Actor topology belongs to `isomer-op-topic-mgr`, and formal team specialization belongs to `isomer-op-topic-team-specialize`. Terminal Topic Creator output reports readiness and blockers without routing to a next research command.

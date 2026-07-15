@@ -89,28 +89,37 @@ isomer-cli system-skills extensions show kaoju
 ```
 
 ```bash
-isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --scope user
 ```
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. `codex` installs to `$CODEX_HOME/skills` or `~/.codex/skills`; `generic` installs to `.agents/skills`; `claude-code` installs to `.claude/skills`; `kimi-code` installs to `.kimi-code/skills`.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Every target-resolving command requires `--scope user|project`. Project scope uses the exact current working directory; user scope installs for the current OS user.
+
+| Target | Project Scope | User Scope |
+| --- | --- | --- |
+| `claude-code` | `<cwd>/.claude/skills` | `${CLAUDE_CONFIG_DIR:-~/.claude}/skills` |
+| `codex` | `<cwd>/.agents/skills` | `${CODEX_HOME:-~/.codex}/skills` |
+| `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
+| `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
+
+Use project scope for skills confined to the current working directory. Choose user scope intentionally when the skills should be available to the selected host across Projects.
 
 Install the DeepSci extension when a project needs the research pipeline skills:
 
 ```bash
-isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
 Install Kaoju when a project needs evidence-led literature and codebase surveys, first-hand method trials, or controlled comparisons. After installation, enter the extension through `$isomer-kaoju-pipeline` rather than `isomer-cli ext kaoju`.
 
 ```bash
-isomer-cli system-skills install --target codex --extension kaoju
+isomer-cli system-skills install --target codex --scope user --extension kaoju
 ```
 
 Inspect or remove Isomer-owned projections with:
 
 ```bash
-isomer-cli system-skills status --target codex
-isomer-cli system-skills uninstall --target codex
+isomer-cli system-skills status --target codex --scope user
+isomer-cli system-skills uninstall --target codex --scope user
 ```
 
 Direct CLI detection is read-only and inspects only roots supplied by the caller. With no root, it reports declarations and catalog state without scanning provider directories:

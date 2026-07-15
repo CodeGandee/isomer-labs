@@ -789,7 +789,7 @@ def validate_skill_layout(
         add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must include fallback guidance")
 
     if family.key == "kaoju":
-        for heading in ("Overview", "When to Use", "Common Mistakes"):
+        for heading in ("Overview", "When to Use", "Guardrails"):
             if find_h2(lines, heading) is None:
                 add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju SKILL.md must contain ## {heading}")
 

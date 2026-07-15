@@ -18,9 +18,10 @@ from isomer_labs.skills.inspection import (
 )
 from isomer_labs.skills.installer import (
     SKILL_MANIFEST_FILENAME,
+    SystemSkillTarget,
+    SystemSkillTargetBinding,
     install_system_skills,
     resolve_system_skill_selection,
-    resolve_targets,
 )
 
 
@@ -34,9 +35,13 @@ class SystemSkillInspectionTests(unittest.TestCase):
         return Path(tmp.name)
 
     def install_extension(self, root: Path, extension_id: str = "kaoju") -> None:
-        target = resolve_targets("generic", home=root)[0]
+        target = self.make_target(root)
         selection = resolve_system_skill_selection(extensions=(extension_id,))
         install_system_skills(target, selection)
+
+    def make_target(self, root: Path) -> SystemSkillTarget:
+        binding = SystemSkillTargetBinding(target="generic", scope="project")
+        return SystemSkillTarget(target="generic", scope="project", skill_root=root, bindings=(binding,))
 
     def test_explicit_root_reports_managed_complete_extension(self) -> None:
         root = self.make_root() / "skills"
@@ -91,7 +96,7 @@ class SystemSkillInspectionTests(unittest.TestCase):
 
     def test_projection_diagnostics_cover_broken_symlink_file_and_unmanaged_directory(self) -> None:
         root = self.make_root() / "skills"
-        target = resolve_targets("generic", home=root)[0]
+        target = self.make_target(root)
         selection = resolve_system_skill_selection(
             skills=("isomer-kaoju-pipeline", "isomer-kaoju-shared", "isomer-kaoju-audit"),
             default_core=False,

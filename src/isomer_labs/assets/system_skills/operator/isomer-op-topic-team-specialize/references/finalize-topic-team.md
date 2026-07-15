@@ -74,10 +74,10 @@ Do not status stale workspace setup evidence as ready when it names legacy suppo
 
 ## Guardrails
 
-Do not claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from the summary. Agent environment readiness is static setup evidence from `isomer-srv-agent-env-setup`, not runtime evidence.
+- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from the summary. Agent environment readiness is static setup evidence from `isomer-srv-agent-env-setup`, not runtime evidence.
 
-Do not hide blockers in prose. Put them in `## Blockers and Deferrals`.
+- DO NOT hide blockers in prose. Put them in `## Blockers and Deferrals`.
 
-Do not status incomplete required checklist items or weaker smoke-test downgrades as full environment readiness. Name the affected checklist item, weaker evidence, limitation, and next repair action.
+- DO NOT status incomplete required checklist items or weaker smoke-test downgrades as full environment readiness. Name the affected checklist item, weaker evidence, limitation, and next repair action.
 
-Do not include secrets, raw command payloads, live provider state, or transient adapter state in `isomer-topic-summary.md`.
+- DO NOT include secrets, raw command payloads, live provider state, or transient adapter state in `isomer-topic-summary.md`.

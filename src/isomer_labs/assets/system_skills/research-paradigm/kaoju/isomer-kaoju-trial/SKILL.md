@@ -9,6 +9,10 @@ description: Use when a Kaoju source-code method needs governed environment prep
 
 Prepare a governed Pixi environment and run one approved bounded code trial while preserving exact source, environment, data, command, Gate, and attempt evidence.
 
+## When to Use
+
+Use for `prepare-code-run`, `run-code-trial`, bounded capability probes, and approved method trials. Use `$isomer-kaoju-reproduce` only when the claim is genuine reproduction and the stronger fidelity contract can be met.
+
 ## Workflow
 
 1. **Resolve prerequisites**. Query Workspace Runtime by semantic id and scope for the canonical repository commit, associated paper, accepted source digest, data posture, and current environment evidence. Never scan directories to guess durable state.
@@ -26,10 +30,6 @@ Prepare a governed Pixi environment and run one approved bounded code trial whil
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
-## When to Use
-
-Use for `prepare-code-run`, `run-code-trial`, bounded capability probes, and approved method trials. Use `$isomer-kaoju-reproduce` only when the claim is genuine reproduction and the stronger fidelity contract can be met.
-
 ## Artifact Operations
 
 Resolve each contract with `isomer-cli --print-json project artifacts describe <semantic-id>`. Persist accepted output only through `project artifacts put` or `revise`; the service infers record kind, profile, semantic label, content mode, scope policy, and managed locator. Read `artifact-bindings.md`, `references/trial-contract.md`, `references/retry-and-repair.md`, and `$isomer-kaoju-shared` before mutation.
@@ -38,13 +38,13 @@ Resolve each contract with `isomer-cli --print-json project artifacts describe <
 
 Use `$isomer-kaoju-shared` for evidence, Artifact, Gate, Service Request, execution request, lineage, and terminal contracts. Use `$isomer-kaoju-reproduce` only for a genuine reproduction claim.
 
-## Common Mistakes
+## Guardrails
 
-- Calling random-data output a reproduction. Record `purpose: capability-probe` and no stronger than executed verification depth.
-- Editing dependencies during an approved trial without revising the plan and Gate.
-- Replacing a failed faithful attempt with a repaired result.
-- Treating smoke success as the code-trial verdict.
+- DO NOT call random-data output a reproduction. Record `purpose: capability-probe` and no stronger than executed verification depth.
+- DO NOT edit dependencies during an approved trial without revising the plan and Gate.
+- DO NOT replace a failed faithful attempt with a repaired result.
+- DO NOT treat smoke success as the code-trial verdict.
 
 ## Chat Response
 
-Present normal chat responses in natural-language Markdown. Lead with the outcome and keep exact schemas in durable Artifacts. Name every Run, Gate, Service Request, blocker, and resume ref that affects the result.
+Present normal chat responses in natural-language Markdown. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat. Lead with the outcome. Name every Run, Gate, Service Request, blocker, and resume ref that affects the result.

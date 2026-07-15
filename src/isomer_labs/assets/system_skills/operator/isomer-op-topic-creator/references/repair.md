@@ -13,4 +13,4 @@ If the user's task does not map cleanly to these steps, name the blocker and sug
 
 ## Guardrails
 
-Do not delete, overwrite, reset, pull, reinitialize, or recreate existing repositories, Topic Actor Workspaces, runtime records, or summary evidence without explicit user instruction.
+- DO NOT delete, overwrite, reset, pull, reinitialize, or recreate existing repositories, Topic Actor Workspaces, runtime records, or summary evidence without explicit user instruction.

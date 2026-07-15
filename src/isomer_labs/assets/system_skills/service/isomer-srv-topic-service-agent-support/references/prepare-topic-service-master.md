@@ -15,10 +15,12 @@ When this subcommand is selected, execute the following steps in order.
 9. After Houmao-owned preparation reports created or updated entities, record the binding with `isomer-cli --print-json project integrations houmao topic-service-master binding record --topic <research-topic-id> --status prepared --specialist-name <specialist_name> --launch-profile-name <launch_profile_name> --managed-agent-name <managed_agent_name> --updated-by isomer-srv-topic-service-agent-support`.
 10. Report preparation readiness, suggested names, recorded binding status, projected route path, Houmao Project path, Topic Workspace path, blockers, and support Artifact refs.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a preparation-only plan from the integration status, suggested names, projected Houmao route, and allowed service surfaces, then execute the plan.
+
 ## Guardrails
 
-Prepare only. Do not launch a live Topic Service Master from Topic Workspace creation or actor setup.
+- MUST prepare only. Do not launch a live Topic Service Master from Topic Workspace creation or actor setup.
 
-Do not write a planned Topic Service Master binding before Houmao-owned preparation succeeds. Disabled, not-configured, blocked, or failed preparation stays in readiness output and diagnostics.
+- DO NOT write a planned Topic Service Master binding before Houmao-owned preparation succeeds. Disabled, not-configured, blocked, or failed preparation stays in readiness output and diagnostics.
 
-Do not ask the user to install Houmao-owned system skills into their ordinary operator skill home.
+- DO NOT ask the user to install Houmao-owned system skills into their ordinary operator skill home.

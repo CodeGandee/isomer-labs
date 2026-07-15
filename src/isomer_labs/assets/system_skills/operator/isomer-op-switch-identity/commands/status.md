@@ -12,4 +12,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-Status is read-only. Do not switch, reset, or run worker task commands from this command unless the user separately asks for `switch`, `act-as`, or `reset`.
+- MUST keep status read-only. Do not switch, reset, or run worker task commands from this command unless the user separately asks for `switch`, `act-as`, or `reset`.

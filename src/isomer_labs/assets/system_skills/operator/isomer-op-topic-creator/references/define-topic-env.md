@@ -14,6 +14,6 @@ If the user's task does not map cleanly to these steps, ask what the topic envir
 
 ## Guardrails
 
-Do not derive `topic.env.topic_setup_target_spec`, install dependencies, configure Pixi, create repositories, or claim topic environment readiness here. Those belong to `setup-topic-env` and `isomer-srv-topic-env-setup` after the topic env source gate is verified or fast-forward accepted.
+- DO NOT derive `topic.env.topic_setup_target_spec`, install dependencies, configure Pixi, create repositories, or claim topic environment readiness here. Those belong to `setup-topic-env` and `isomer-srv-topic-env-setup` after the topic env source gate is verified or fast-forward accepted.
 
-Do not ask for full Git history by default. Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise let service setup default to a shallow clone with `--depth=1`.
+- DO NOT ask for full Git history by default. Mention full history only when the prompt, Research Topic, benchmark protocol, provenance need, bisect or debugging task, changelog analysis, branch comparison, tag traversal, or version-history requirement implies it; otherwise let service setup default to a shallow clone with `--depth=1`.

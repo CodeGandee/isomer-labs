@@ -115,12 +115,12 @@ Lead with whether packages were installed, already present, partially installed,
 
 ## Guardrails
 
-Do not mutate packages until the selected Topic Workspace and Pixi binding are confirmed.
+- DO NOT mutate packages until the selected Topic Workspace and Pixi binding are confirmed.
 
-Do not require a formal schema-constrained package request file. Use structured content when available, but accept natural-language package requests and copied blockers.
+- DO NOT require a formal schema-constrained package request file. Use structured content when available, but accept natural-language package requests and copied blockers.
 
-Do not route to `isomer-misc-tool-packs` automatically. If the user manually provides a tool-pack contract, treat it as package request context and still own install planning here.
+- DO NOT route to `isomer-misc-tool-packs` automatically. If the user manually provides a tool-pack contract, treat it as package request context and still own install planning here.
 
-Do not mutate Project-root, Agent Workspace-specific, ambient, system, or machine-global environments.
+- DO NOT mutate Project-root, Agent Workspace-specific, ambient, system, or machine-global environments.
 
-Do not claim package readiness from package metadata, install success, or package-card catalog entries without a Pixi-scoped verification check or explicit blocker.
+- DO NOT claim package readiness from package metadata, install success, or package-card catalog entries without a Pixi-scoped verification check or explicit blocker.

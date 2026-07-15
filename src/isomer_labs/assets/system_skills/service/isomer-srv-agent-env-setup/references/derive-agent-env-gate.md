@@ -193,8 +193,8 @@ Example for per-agent CUDA cwd verification:
 
 ## Guardrails
 
-- Do not create per-agent dependency plans, reinterpret Topic Workspace dependency policy, or ask this service to repair topic-main/projection predecessors.
-- Do not duplicate topic-level package source routing. Missing or stale package dependency planning routes back to `isomer-srv-topic-env-setup`.
-- Do not use tmp paths as durable readiness evidence.
-- Do not claim verification has run before `verify-agent-env-gate`.
-- Do not create Workspace Runtime records or Agent Team Instance records.
+- DO NOT create per-agent dependency plans, reinterpret Topic Workspace dependency policy, or ask this service to repair topic-main/projection predecessors.
+- DO NOT duplicate topic-level package source routing. Missing or stale package dependency planning routes back to `isomer-srv-topic-env-setup`.
+- DO NOT use tmp paths as durable readiness evidence.
+- DO NOT claim verification has run before `verify-agent-env-gate`.
+- DO NOT create Workspace Runtime records or Agent Team Instance records.

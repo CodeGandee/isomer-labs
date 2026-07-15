@@ -4,6 +4,15 @@
 
 Map Domain Agent Team Templates such as DeepScientist onto Houmao by understanding that the two systems have different shapes. DeepScientist is a **single-agent, prompt-driven research runtime** where one PI agent switches stage skills. Houmao is a **multi-agent gateway-managed runtime** where each managed agent has its own request queue, lifecycle kernel, and mailbox.
 
+## Workflow
+
+1. Identify the selected Domain Agent Team Template and the specific Houmao mapping question.
+2. Inspect the template's agent, stage, state, runner, and handoff model before selecting Houmao equivalents.
+3. Map each concept through the table below while preserving single-agent or multi-agent semantics.
+4. Report the mapping, project-local configuration surfaces, unsupported assumptions, and operator-owned next action.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a mapping plan from the template architecture and concept table on this page, then execute the plan.
+
 ## DeepScientist Architecture Recap
 
 Key directories in `extern/orphan/DeepScientist`:
@@ -76,9 +85,9 @@ Stage handoffs happen by updating durable state (`quest.yaml`, `plan.md`, artifa
 | `src/deepscientist/runners/*.py` | `.houmao/agents/presets/<preset>.yaml` + tool adapter | Launch mechanism. |
 | `quest.yaml` | `.houmao/memory/` or agent workspace | Durable quest state. |
 
-## Common Mistakes
+## Guardrails
 
-- Mapping each DeepScientist stage to a separate Houmao agent. This breaks the DeepScientist single-PI design and complicates shared quest state.
-- Treating DeepScientist `skill_role=stage` as a Houmao "role". A Houmao role is a preset ingredient; a DeepScientist stage is a prompt skill.
-- Forgetting to translate runner-specific agent files (`agents/openai.yaml`, `agents/claude.md`) into the equivalent Houmao tool adapter or preset fields.
-- Launching from template source instead of an approved Topic Agent Team Profile Bundle.
+- DO NOT map each DeepScientist stage to a separate Houmao agent; this breaks the DeepScientist single-PI design and complicates shared quest state.
+- DO NOT treat DeepScientist `skill_role=stage` as a Houmao "role"; a Houmao role is a preset ingredient, while a DeepScientist stage is a prompt skill.
+- DO NOT forget to translate runner-specific agent files (`agents/openai.yaml`, `agents/claude.md`) into the equivalent Houmao tool adapter or preset fields.
+- DO NOT launch from template source instead of an approved Topic Agent Team Profile Bundle.

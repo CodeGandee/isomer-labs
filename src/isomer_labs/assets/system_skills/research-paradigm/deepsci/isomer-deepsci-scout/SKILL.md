@@ -127,16 +127,16 @@ Scout can end when all applicable checks are true:
 - `<LITERATURE_SCOUTING_REPORT>` exists when external discovery materially changed the route.
 - `<SCOUT_BLOCKER_RECORD>` exists when the frame cannot responsibly be completed.
 
-## Common Mistakes
+## Guardrails
 
-- Turning scout into an exhaustive survey instead of a route-setting stage.
-- Asking the user routine technical questions before checking local durable evidence.
-- Guessing the metric, split, or comparator identity when local evidence is ambiguous.
-- Repeating wide discovery when prior Artifacts, Findings, Decision Records, or memory already narrow the space.
-- Writing long paper summaries that do not change `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<NEXT_ROUTE_DECISION>`.
-- Inflating novelty when the apparent gap is already closed by standard engineering, straightforward scaling, or a strong recent result.
-- Routing to idea work before comparator trust is durable enough.
-- Hiding a blocked scout state behind generic literature commentary.
+- DO NOT turn scout into an exhaustive survey instead of a route-setting stage.
+- DO NOT ask the user routine technical questions before checking local durable evidence.
+- DO NOT guess the metric, split, or comparator identity when local evidence is ambiguous.
+- DO NOT repeat wide discovery when prior Artifacts, Findings, Decision Records, or memory already narrow the space.
+- DO NOT write long paper summaries that do not change `<EVALUATION_CONTRACT>`, `<BASELINE_SHORTLIST>`, or `<NEXT_ROUTE_DECISION>`.
+- DO NOT inflate novelty when the apparent gap is already closed by standard engineering, straightforward scaling, or a strong recent result.
+- DO NOT route to idea work before comparator trust is durable enough.
+- DO NOT hide a blocked scout state behind generic literature commentary.
 
 ## Chat Response
 

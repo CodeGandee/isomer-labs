@@ -1,11 +1,17 @@
 ---
 name: isomer-op-project-mgr
-description: Initialize, inspect, validate, clean up, move generated content, and manage Project lifecycle from a Project Operator Session. Use this skill for Project bootstrap, health, topic listing, context inspection, runtime lifecycle, cleanup, relocation, and routing; route blank-state topic creation or manual-research setup to isomer-op-topic-creator.
+description: Use when a Project Operator Session needs to initialize, inspect, validate, clean up, move generated content, or manage Project lifecycle, including Project bootstrap, health, topic listing, context inspection, runtime lifecycle, cleanup, relocation, and routing; route blank-state topic creation or manual-research setup to isomer-op-topic-creator.
 ---
 
 # Isomer Admin Project Mgr
 
+## Overview
+
 Use this as the operator workflow for Isomer Project lifecycle management. It helps an operator create, check, clean up, and move generated content for the Isomer Project config, Isomer-managed Houmao overlay, Research Topic and Topic Workspace registrations, Effective Topic Context, explicit Workspace Runtime readiness steps, and routing before topic work. Use `isomer-op-topic-creator` as the front door for blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
+
+## When to Use
+
+Use this skill for Project bootstrap, validation, cleanup, generated-content relocation, topic listing, context inspection, runtime lifecycle operations, and Project-level routing from a Project Operator Session.
 
 ## Workflow
 
@@ -69,29 +75,29 @@ When requested, include grouped handoff and audit fields:
 
 ## Guardrails
 
-Use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), generated content-root policy files, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create a Research Topic, Topic Workspace, Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
+- MUST use `isomer-cli project init` for fresh Project bootstrap. A successful init creates `.isomer-labs/`, the selected generated content root (`isomer-content/` by default or `--content-dir <content-dir>` when supplied), generated content-root policy files, and the Isomer-managed Houmao overlay at `.isomer-labs/.houmao/`, but it must not create a Research Topic, Topic Workspace, Workspace Runtime state, Agent Workspaces, adapter launch material, mailboxes, gateways, managed agents, sessions, or launch dossiers. Root `.houmao/` is external user-owned Houmao state if present, not Isomer-managed Project bootstrap state.
 
-Direct `isomer-cli project init` does not know the active agent inventory and does not register extensions. During operator-controlled `init-project`, delegate the separate post-init reconciliation to `isomer-op-system-skill-mgr`; skip mutation when the user explicitly opts out.
+- MUST delegate post-init extension reconciliation to `isomer-op-system-skill-mgr` during operator-controlled `init-project`, because direct `isomer-cli project init` does not know the active agent inventory or register extensions; skip mutation when the user explicitly opts out.
 
-Use `isomer-cli project topics create <topic-id> --statement "<research topic>"` as the authoritative Research Topic creation path. It normally creates `isomer-content/topic-ws/<topic-id>/`; when init selected `--content-dir <content-dir>`, it normally creates `<content-dir>/topic-ws/<topic-id>/`. Use `project topics show`, `project topics update`, and plan-first `project topics delete <topic-id> --dry-run` before `project topics delete <topic-id> --yes` for topic lifecycle changes.
+- MUST use `isomer-cli project topics create <topic-id> --statement "<research topic>"` as the authoritative Research Topic creation path. It normally creates `isomer-content/topic-ws/<topic-id>/`; when init selected `--content-dir <content-dir>`, it normally creates `<content-dir>/topic-ws/<topic-id>/`. Use `project topics show`, `project topics update`, and plan-first `project topics delete <topic-id> --dry-run` before `project topics delete <topic-id> --yes` for topic lifecycle changes.
 
-Use `isomer-cli project cleanup --part <part> --dry-run` before destructive cleanup, and use `isomer-cli project cleanup --part <part> --yes` only after the user has reviewed the plan. Preserve unknown files by default; whole content-root removal requires `--purge-content-root`.
+- MUST use `isomer-cli project cleanup --part <part> --dry-run` before destructive cleanup, and use `isomer-cli project cleanup --part <part> --yes` only after the user has reviewed the plan. Preserve unknown files by default; whole content-root removal requires `--purge-content-root`.
 
-Use `isomer-cli project content-root move --to <content-dir> --dry-run` before moving generated content, and use `isomer-cli project content-root move --to <content-dir> --yes` only after the user has reviewed the plan. Relocation updates Project Manifest paths and moves Isomer-managed content containers only. It preserves unmanaged leftovers and does not rewrite Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, stored path plans, or generated runtime internals. Warn the user that moved runtimes may need reinstall or reinitialization.
+- MUST use `isomer-cli project content-root move --to <content-dir> --dry-run` before moving generated content, and use `isomer-cli project content-root move --to <content-dir> --yes` only after the user has reviewed the plan. Relocation updates Project Manifest paths and moves Isomer-managed content containers only. It preserves unmanaged leftovers and does not rewrite Workspace Runtime records, Pixi environments, installed packages, adapter runtime material, logs, stored path plans, or generated runtime internals. Warn the user that moved runtimes may need reinstall or reinitialization.
 
-Use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
+- MUST use read-only commands for checks unless the user explicitly requests initialization or preparation. `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project workspaces list`, `isomer-cli project context show`, `isomer-cli project paths preview`, and Houmao project status checks must not mutate Project config, Workspace Runtime, or live Houmao agents.
 
-Route Houmao loop explanation, adapter customization guidance, template mapping, mailbox or gateway support, and runtime inspection to `isomer-srv-houmao-interop` only as bounded service support. Keep Project bootstrap and Project status checks in this operator workflow.
+- MUST route Houmao loop explanation, adapter customization guidance, template mapping, mailbox or gateway support, and runtime inspection to `isomer-srv-houmao-interop` only as bounded service support. Keep Project bootstrap and Project status checks in this operator workflow.
 
-Keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
+- MUST keep Workspace Runtime creation explicit through `isomer-cli project runtime init`, and keep launch-facing readiness explicit through `isomer-cli project runtime prepare` and `isomer-cli project runtime validate --require-ready-readiness`. When explaining runtime initialization, distinguish worker-facing `repos/topic-main` and `agents/<agent-name>` from owner-preserved `records/*`, runtime-internal `runtime/*`, and `state.sqlite`.
 
-Hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-op-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-op-topic-mgr` for initialized-topic storage inspection, optional topology inspection, branch helper operations, boundary summaries, package mutation, environment verification routing, diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
+- MUST hand off blank-state topic creation, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation to `isomer-op-topic-creator`. Hand off per-agent worktree setup and cwd proof to `isomer-srv-agent-env-setup` after topic env predecessor evidence exists. Use `isomer-op-topic-mgr` for initialized-topic storage inspection, optional topology inspection, branch helper operations, boundary summaries, package mutation, environment verification routing, diagnostics, and Topic Actor CRUD or Topic Actor Workspace materialization.
 
-Do not scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
+- DO NOT scan unregistered directories as authority for Research Topics or Topic Workspaces. Use Project Manifest-backed CLI surfaces.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team. Use `isomer-op-topic-creator`, with Topic Manager actor management underneath, for other manual-research requests.
+- DO NOT route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team. Use `isomer-op-topic-creator`, with Topic Manager actor management underneath, for other manual-research requests.
 
-Do not duplicate Topic Team Specialization. When the user explicitly invokes specialization or asks to adapt, deploy, specialize, instantiate, materialize, validate, repair, launch, or use a formal Agent Team established by a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence, use `specialize-team` to hand off to `isomer-op-topic-team-specialize fast-forward`. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish that intent.
+- DO NOT duplicate Topic Team Specialization. When the user explicitly invokes specialization or asks to adapt, deploy, specialize, instantiate, materialize, validate, repair, launch, or use a formal Agent Team established by a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence, use `specialize-team` to hand off to `isomer-op-topic-team-specialize fast-forward`. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish that intent.
 
 ## Local References
 

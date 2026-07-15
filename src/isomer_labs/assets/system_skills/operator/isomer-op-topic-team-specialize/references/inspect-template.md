@@ -32,6 +32,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not edit Domain Agent Team Template source while specializing a topic.
-- Do not convert template placeholders into concrete values inside template material.
-- Do not use execution adapter mechanics as a replacement for Topic Team Specialization.
+- DO NOT edit Domain Agent Team Template source while specializing a topic.
+- DO NOT convert template placeholders into concrete values inside template material.
+- DO NOT use execution adapter mechanics as a replacement for Topic Team Specialization.

@@ -21,4 +21,4 @@ Report the materialization outcome and selected Research Topic, then summarize T
 
 ## Guardrails
 
-Keep Topic Actor names separate from Agent Names and Agent Instance ids. Topic Actor Workspace materialization is actor topology, not Agent Team Instance membership or research-paradigm bootstrap.
+- MUST keep Topic Actor names separate from Agent Names and Agent Instance ids. Topic Actor Workspace materialization is actor topology, not Agent Team Instance membership or research-paradigm bootstrap.

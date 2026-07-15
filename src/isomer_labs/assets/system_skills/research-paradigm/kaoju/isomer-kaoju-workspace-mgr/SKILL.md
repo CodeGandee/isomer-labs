@@ -11,6 +11,10 @@ Prepare a trustworthy starting context for survey work without taking ownership 
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:binding-index` and `kaoju:workspace-readiness` exactly. An unresolved binding, profile, label, query surface, actor posture, or reset decision is a storage blocker; never invent persistence.
 
+## When to Use
+
+Use before a Kaoju procedure when workspace or material readiness is unknown, and for read-only dataset-registry posture checks. Do not use this skill to create a Research Topic, mutate a Topic Workspace directly, install environments, or execute research Runs.
+
 ## Workflow
 
 1. **Resolve scope**. Resolve Effective Topic Context, fresh Workspace Runtime state, the Research Topic, Research Inquiry, Topic Workspace, selected procedure and skills, accepted prior refs, selected actors, and worker output policy.
@@ -25,10 +29,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 10. **Return status**. Report `complete`, `paused`, or `blocked` with binding-index and readiness refs, reset posture, next stage, and a resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use before a Kaoju procedure when workspace or material readiness is unknown, and for read-only dataset-registry posture checks. Do not use this skill to create a Research Topic, mutate a Topic Workspace directly, install environments, or execute research Runs.
 
 ## Readiness Contract
 
@@ -70,11 +70,15 @@ Workspace visibility is not mutation authority. Missing owner evidence is a bloc
 - A local path is used without Workspace Path Resolution or a manifest identity.
 - A readiness result omits resource or Gate posture.
 
-## Common Mistakes
+## Guardrails
 
-- Copying external datasets into the Topic Workspace. Register a managed link through its owner.
-- Treating old survey refs as current. Validate identity, audit state, and staleness before reuse.
-- Hiding unavailable resources. Return a bounded blocker and resume condition.
+- DO NOT copy external datasets into the Topic Workspace. Register a managed link through its owner.
+- DO NOT treat old survey refs as current. Validate identity, audit state, and staleness before reuse.
+
+## Troubleshooting Guide
+
+- A required resource is unavailable.
+  - If a required resource is unavailable, then return a bounded blocker and resume condition.
 
 ## Chat Response
 

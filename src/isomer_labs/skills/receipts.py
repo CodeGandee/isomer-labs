@@ -13,9 +13,21 @@ from isomer_labs.core.diagnostics import Diagnostic
 
 
 SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
-SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v2"
-LEGACY_SKILL_MANIFEST_SCHEMAS = ("isomer-labs-skill-manifest.v1",)
+SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v3"
+LEGACY_SKILL_MANIFEST_SCHEMAS = ("isomer-labs-skill-manifest.v1", "isomer-labs-skill-manifest.v2")
 ProjectionMode = Literal["copy", "symlink"]
+SystemSkillScope = Literal["user", "project"]
+
+
+@dataclass(frozen=True, order=True)
+class SystemSkillManifestBinding:
+    """One target and scope that resolves to a receipt-owned skill root."""
+
+    target: str
+    scope: SystemSkillScope
+
+    def to_json(self) -> dict[str, str]:
+        return {"target": self.target, "scope": self.scope}
 
 
 @dataclass(frozen=True)
@@ -41,13 +53,26 @@ class SystemSkillRootManifest:
     """Target-root receipt for Isomer-managed system-skill projections."""
 
     schema_version: str
-    target: str
     skill_root: Path
     package_name: str
     package_version: str | None
     installed_by: str
     updated_at: str
     skills: tuple[SystemSkillManifestRecord, ...]
+    bindings: tuple[SystemSkillManifestBinding, ...] = ()
+    legacy_target: str | None = None
+
+    @property
+    def target(self) -> str | None:
+        """Return the legacy or unambiguous target label for compatibility output."""
+
+        if self.legacy_target is not None:
+            return self.legacy_target
+        if len(self.bindings) == 1:
+            return self.bindings[0].target
+        if self.bindings:
+            return "all"
+        return None
 
     @property
     def path(self) -> Path:
@@ -60,6 +85,7 @@ class SystemSkillRootManifest:
         return {
             "schema_version": self.schema_version,
             "target": self.target,
+            "bindings": [binding.to_json() for binding in self.bindings],
             "skill_root": str(self.skill_root),
             "package_name": self.package_name,
             "package_version": self.package_version,
@@ -120,13 +146,13 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
         skill_version = item.get("skill_version")
         if not isinstance(name, str) or not isinstance(source_path, str) or projection_mode not in {"copy", "symlink"}:
             return _malformed(manifest_path, f"Isomer skill manifest skill record {index} is invalid.")
-        if schema_version == SKILL_MANIFEST_SCHEMA:
+        if schema_version in {SKILL_MANIFEST_SCHEMA, "isomer-labs-skill-manifest.v2"}:
             if skill_version is not None and (not isinstance(skill_version, str) or not _is_pep440_version(skill_version)):
                 return _malformed(
                     manifest_path,
                     f"Isomer skill manifest skill record {index} has an invalid skill_version.",
                 )
-        else:
+        if schema_version == "isomer-labs-skill-manifest.v1":
             skill_version = None
         skills.append(
             SystemSkillManifestRecord(
@@ -137,20 +163,39 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
             )
         )
 
+    bindings: list[SystemSkillManifestBinding] = []
     manifest_target = raw.get("target")
+    if schema_version == SKILL_MANIFEST_SCHEMA:
+        raw_bindings = raw.get("bindings")
+        if not isinstance(raw_bindings, list) or not raw_bindings:
+            return _malformed(manifest_path, "Isomer skill manifest `bindings` field must be a non-empty list.")
+        for index, item in enumerate(raw_bindings):
+            if not isinstance(item, dict):
+                return _malformed(manifest_path, f"Isomer skill manifest binding {index} must be an object.")
+            binding_target = item.get("target")
+            binding_scope = item.get("scope")
+            if not isinstance(binding_target, str) or not binding_target or binding_scope not in {"user", "project"}:
+                return _malformed(manifest_path, f"Isomer skill manifest binding {index} is invalid.")
+            bindings.append(SystemSkillManifestBinding(target=binding_target, scope=binding_scope))
+        if len(set(bindings)) != len(bindings):
+            return _malformed(manifest_path, "Isomer skill manifest bindings must be unique.")
+
     package_name = raw.get("package_name")
     package_version = raw.get("package_version")
     installed_by = raw.get("installed_by")
     updated_at = raw.get("updated_at")
     manifest = SystemSkillRootManifest(
         schema_version=str(schema_version),
-        target=manifest_target if isinstance(manifest_target, str) else target_name,
         skill_root=skill_root,
         package_name=package_name if isinstance(package_name, str) else "isomer-labs",
         package_version=package_version if isinstance(package_version, str) else None,
         installed_by=installed_by if isinstance(installed_by, str) else "isomer-cli",
         updated_at=updated_at if isinstance(updated_at, str) else "",
         skills=tuple(skills),
+        bindings=tuple(sorted(bindings)),
+        legacy_target=(manifest_target if isinstance(manifest_target, str) else target_name)
+        if schema_version in LEGACY_SKILL_MANIFEST_SCHEMAS
+        else None,
     )
     status: Literal["current", "legacy"] = "current" if schema_version == SKILL_MANIFEST_SCHEMA else "legacy"
     return SystemSkillManifestInspection(status, manifest_path, manifest, ())

@@ -9,6 +9,8 @@
 5. Create a durable file-backed `kaoju:smoke-run-script` under the Artifact owner surface. A Run-tied staged copy may execute, but neither source-tree nor Local Tmp Surface copies become canonical.
 6. Execute through `smoke_run` and record `kaoju:smoke-run-result`. Environment readiness requires a successful task-critical observation, not only environment creation.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Research owner: `$isomer-kaoju-trial`; operational owner: the environment Service Request handled by the Service Team. Outputs: plan, Service Request, Gate revision, Pixi environment, smoke script, smoke result, command request, blocker, and provenance refs.

@@ -4,6 +4,15 @@
 
 Houmao's agent loop is not a single `while True` inside the agent process. It is a **gateway-driven request queue** plus a **TUI-tracking lifecycle kernel** that lives next to each managed agent. The gateway serializes work, handles reminders, and reacts to mailbox traffic; the lifecycle kernel decides when the agent is ready to accept input and when a turn has truly completed.
 
+## Workflow
+
+1. Identify which loop behavior or lifecycle question the support request asks about.
+2. Trace that behavior through the relevant core component, daemon loop, and turn lifecycle phase documented below.
+3. Map the Houmao behavior back to the Isomer support boundary without promoting adapter terms into Isomer domain language.
+4. Report the component, state transition, relevant file, and any operator-owned next action.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded explanation plan from the components and lifecycle phases on this page, then execute the plan.
+
 ## Core Components
 
 | Component | File | Responsibility |

@@ -19,4 +19,4 @@ Report the verification outcome and selected Research Topic, then summarize sele
 
 ## Guardrails
 
-Do not claim actor readiness from workspace materialization alone. Actor readiness requires actor definitions, matching `topic.repos.main` worktree evidence for the actor cwd, derived actor env gates, actor cwd verification evidence, and actor onboarding context.
+- DO NOT claim actor readiness from workspace materialization alone. Actor readiness requires actor definitions, matching `topic.repos.main` worktree evidence for the actor cwd, derived actor env gates, actor cwd verification evidence, and actor onboarding context.

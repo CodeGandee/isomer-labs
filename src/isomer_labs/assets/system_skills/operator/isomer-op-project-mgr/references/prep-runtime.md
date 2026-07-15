@@ -14,6 +14,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not install Pixi environments or repair dependencies implicitly.
-- Do not launch teams from readiness preparation alone.
-- Treat failed or blocked readiness as an operator-visible blocker.
+- DO NOT install Pixi environments or repair dependencies implicitly.
+- DO NOT launch teams from readiness preparation alone.
+- MUST treat failed or blocked readiness as an operator-visible blocker.

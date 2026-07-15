@@ -105,13 +105,13 @@ This skill can end when all applicable checks are true:
 - `<FINAL_FIGURE_EXPORT>` matches the surface class.
 - `<FIGURE_PROVENANCE_RECORD>` links the figure to evidence and downstream use.
 
-## Common Mistakes
+## Guardrails
 
-- Treating an uninspected render as final.
-- Overloading one figure with unrelated claims.
-- Using dashboard-like, glossy, rainbow, or decorative styling for paper figures.
-- Polishing debug plots without a durable use.
-- Exporting only a raster when the paper surface needs vector output.
+- DO NOT treat an uninspected render as final.
+- DO NOT overload one figure with unrelated claims.
+- DO NOT use dashboard-like, glossy, rainbow, or decorative styling for paper figures.
+- DO NOT polish debug plots without a durable use.
+- DO NOT export only a raster when the paper surface needs vector output.
 
 ## Chat Response
 

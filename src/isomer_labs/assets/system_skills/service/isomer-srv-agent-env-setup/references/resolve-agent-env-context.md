@@ -54,8 +54,8 @@ Carry these values to later subcommands:
 
 ## Guardrails
 
-- Do not create files from this subcommand.
-- Do not infer Pixi bindings from names.
-- Do not treat Project-root Pixi as the Topic Workspace execution environment.
-- Do not proceed to mutating subcommands when required context values are missing.
-- Missing Service Request, support Artifact, or Provenance refs do not block direct Project Operator Session setup, but the absence must be recorded.
+- DO NOT create files from this subcommand.
+- DO NOT infer Pixi bindings from names.
+- DO NOT treat Project-root Pixi as the Topic Workspace execution environment.
+- DO NOT proceed to mutating subcommands when required context values are missing.
+- MUST record missing Service Request, support Artifact, or Provenance refs without blocking direct Project Operator Session setup.

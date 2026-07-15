@@ -19,4 +19,4 @@ Report the diagnostic outcome and selected Research Topic, then summarize Topic 
 
 ## Guardrails
 
-Do not archive, delete, or repurpose Topic Actor bindings during diagnostics. Do not claim actor readiness from a materialized workspace alone; report missing env gate or actor onboarding evidence as a blocker.
+- DO NOT archive, delete, or repurpose Topic Actor bindings during diagnostics. Do not claim actor readiness from a materialized workspace alone; report missing env gate or actor onboarding evidence as a blocker.

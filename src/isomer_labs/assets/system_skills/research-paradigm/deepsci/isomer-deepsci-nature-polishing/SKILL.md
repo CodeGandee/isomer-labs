@@ -107,13 +107,13 @@ This skill can end when all applicable checks are true:
 - `<POLISHED_MANUSCRIPT_TEXT>` preserves evidence limits and author meaning.
 - `<POLISHING_STYLE_QA>` or `<POLISHING_EVIDENCE_BLOCKER>` records residual risks.
 
-## Common Mistakes
+## Guardrails
 
-- Inventing data, mechanisms, novelty, references, or claims.
-- Using polished language to hide missing support.
-- Letting AI author the core scientific argument from scratch.
-- Skipping paper-type diagnosis before restructuring.
-- Polishing Chinese or rough drafts sentence-by-sentence before rebuilding logic.
+- DO NOT invent data, mechanisms, novelty, references, or claims.
+- DO NOT use polished language to hide missing support.
+- DO NOT let AI author the core scientific argument from scratch.
+- DO NOT skip paper-type diagnosis before restructuring.
+- DO NOT polish Chinese or rough drafts sentence-by-sentence before rebuilding logic.
 
 ## Chat Response
 

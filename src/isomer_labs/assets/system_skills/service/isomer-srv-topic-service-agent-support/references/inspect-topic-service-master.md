@@ -15,6 +15,8 @@ When this subcommand is selected, execute the following steps in order.
 9. Run Houmao commands with `--project-dir <houmao_project_path>` and do not rely on implicit `.houmao/` discovery from cwd.
 10. Report readiness as ready, skipped, blocked, not configured, or stale, with binding status, drift diagnostics, exact evidence, and blockers.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a read-only inspection plan from the selected binding, projected Houmao route, and requested evidence, then execute the plan.
+
 ## Guardrails
 
-Prefer read-only inspection. Route prompt, stop, repair, or launch actions to their explicit lifecycle subcommands.
+- MUST prefer read-only inspection. Route prompt, stop, repair, or launch actions to their explicit lifecycle subcommands.

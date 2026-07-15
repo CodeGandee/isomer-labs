@@ -10,6 +10,8 @@
 6. Classify failures. Retry an identical transient request only within the attempt bound. Any material dependency, source, data, wrapper, evaluator, metric, resource, fidelity, or interpretation change requires a revised plan and another Gate.
 7. For random-data trials, reuse `kaoju:generated-dataset`, set `purpose: capability-probe`, and claim no stronger than executed verification depth.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-trial`. Outputs: plan, Gate, wrapper, Run, result, generated dataset when applicable, log, blocker, and provenance refs.

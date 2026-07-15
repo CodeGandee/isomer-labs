@@ -18,4 +18,4 @@ Report the Agent environment verification outcome and selected Research Topic, t
 
 ## Guardrails
 
-Do not hand-roll formal Agent Workspace cwd proof in this skill. The env-gate-aware service owner is `isomer-srv-agent-env-setup`.
+- DO NOT hand-roll formal Agent Workspace cwd proof in this skill. The env-gate-aware service owner is `isomer-srv-agent-env-setup`.

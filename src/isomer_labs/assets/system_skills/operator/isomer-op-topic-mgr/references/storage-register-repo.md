@@ -19,4 +19,4 @@ Report the registration outcome and selected Research Topic, then name the regis
 
 ## Guardrails
 
-Additional topic repositories are support surfaces. Do not describe non-main repositories as Topic Actor Workspace or Agent Workspace worktree sources.
+- MUST treat additional topic repositories as support surfaces. Do not describe non-main repositories as Topic Actor Workspace or Agent Workspace worktree sources.

@@ -11,6 +11,10 @@ Audit diagnoses whether the requested survey conclusions are supported by accept
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:audit-report` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
+## When to Use
+
+Use before synthesis, when a Survey Delta is proposed, or when evidence drift or comparability is questioned. Do not use this skill to discover missing works, repair code, rerun experiments, relabel evidence, or write final conclusions.
+
 ## Workflow
 
 1. **Freeze the audit target**. Record the Survey Contract, target Artifact refs, accepted evidence, intended claims, and audit boundary.
@@ -24,10 +28,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 9. **Return status**. Report the Audit Report ref, readiness decision, blockers, and resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use before synthesis, when a Survey Delta is proposed, or when evidence drift or comparability is questioned. Do not use this skill to discover missing works, repair code, rerun experiments, relabel evidence, or write final conclusions.
 
 ## Audit Report Contract
 
@@ -61,11 +61,11 @@ An audit that changes its evidence while checking it destroys the distinction be
 - A defect disappears without a new lineage-linked Artifact.
 - Readiness is accepted while claim-bearing identity or metric traceability is unresolved.
 
-## Common Mistakes
+## Guardrails
 
-- Auditing prose without freezing its evidence refs. Audit both.
-- Treating blocked access as exclusion from the coverage denominator. Report the gap.
-- Returning a repair plan without a readiness decision and affected claims.
+- DO NOT audit prose without freezing its evidence refs. Audit both.
+- DO NOT treat blocked access as exclusion from the coverage denominator. Report the gap.
+- DO NOT return a repair plan without a readiness decision and affected claims.
 
 ## Chat Response
 

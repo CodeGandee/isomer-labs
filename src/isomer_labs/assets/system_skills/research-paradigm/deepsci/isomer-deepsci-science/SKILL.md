@@ -108,14 +108,14 @@ Read these pages as needed:
 
 This skill can end only when package availability is checked or blocked, scientific runs and validations have evidence records when applicable, claims are typed conservatively, and the next route or blocker is explicit.
 
-## Common Mistakes
+## Guardrails
 
-- Do not treat this skill as a solver installation or package manager.
-- Do not run direct package installation from this skill; route desired Topic Workspace package setup to `$isomer-op-topic-mgr env-install-packages`.
-- Do not call a result computed from a plot redraw, paper figure reading, or guess.
-- Do not create science evidence only in chat.
-- Do not let package-card metadata override task-specific evidence.
-- Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
+- DO NOT treat this skill as a solver installation or package manager.
+- DO NOT run direct package installation from this skill; route desired Topic Workspace package setup to `$isomer-op-topic-mgr env-install-packages`.
+- DO NOT call a result computed from a plot redraw, paper figure reading, or guess.
+- DO NOT create science evidence only in chat.
+- DO NOT let package-card metadata override task-specific evidence.
+- DO NOT skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
 
 ## Chat Response
 

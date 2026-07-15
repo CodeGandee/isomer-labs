@@ -59,10 +59,10 @@ If `topic_environment_status` claims ready without Topic Workspace predecessor e
 
 ## Guardrails
 
-Do not claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from this validation. Agent environment readiness can satisfy static setup readiness only when `isomer-srv-agent-env-setup` reports all planned Agent Names ready; it does not prove runtime readiness.
+- DO NOT claim live team readiness, Workspace Runtime readiness, Agent Team Instance creation, adapter preflight, or launch readiness from this validation. Agent environment readiness can satisfy static setup readiness only when `isomer-srv-agent-env-setup` reports all planned Agent Names ready; it does not prove runtime readiness.
 
-Do not describe a weaker smoke-test downgrade as proof that the original critical path passed. Preserve the user downgrade, weaker evidence, affected checklist item, and limitation in validation blockers or deferrals.
+- DO NOT describe a weaker smoke-test downgrade as proof that the original critical path passed. Preserve the user downgrade, weaker evidence, affected checklist item, and limitation in validation blockers or deferrals.
 
-Do not treat deferrals as harmless. Mark whether each deferral blocks static setup, validation, profile materialization, or later runtime operation.
+- DO NOT treat deferrals as harmless. Mark whether each deferral blocks static setup, validation, profile materialization, or later runtime operation.
 
-Do not run materialization or live operation from validation.
+- DO NOT run materialization or live operation from validation.

@@ -86,13 +86,13 @@ Read these gates before claiming the skill output is ready for handoff. Use `Met
 
 This skill can end only when the relevant placeholders are explicit enough for the next route, a blocker is recorded, and later production DeepSci skills do not need to guess what changed or why.
 
-## Common Mistakes
+## Guardrails
 
-- Do not continue after the route, gate, or blocker is already clear.
-- Do not replace evidence requirements with optimistic prose.
-- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
-- Do not ask the user routine technical questions before checking durable local evidence.
-- Do not hide blocked states behind vague progress language.
+- DO NOT continue after the route, gate, or blocker is already clear.
+- DO NOT replace evidence requirements with optimistic prose.
+- DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
+- DO NOT ask the user routine technical questions before checking durable local evidence.
+- DO NOT hide blocked states behind vague progress language.
 
 ## Chat Response
 

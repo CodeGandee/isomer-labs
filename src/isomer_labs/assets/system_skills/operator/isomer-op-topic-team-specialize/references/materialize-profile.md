@@ -48,6 +48,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not write outside the selected Topic Workspace.
-- Do not create a second active profile bundle for the same Research Topic.
-- Do not attach the profile to an Agent Team Instance, register Workspace Runtime state, or run execution adapter preflight from this subcommand.
+- DO NOT write outside the selected Topic Workspace.
+- DO NOT create a second active profile bundle for the same Research Topic.
+- DO NOT attach the profile to an Agent Team Instance, register Workspace Runtime state, or run execution adapter preflight from this subcommand.

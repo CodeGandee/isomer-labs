@@ -32,8 +32,8 @@ Require the paper or method identity, desired route, target claim or behavior, m
 
 Stop after the accepted trial contract succeeds, fails, or reaches its resource bound. Generated-data results use `run_purpose: capability-probe`, no stronger than `executed` depth, and are never labeled paper reproduction or benchmark evidence.
 
-## Common Mistakes
+## Guardrails
 
-- Repairing before preserving the faithful failure.
-- Reporting a generated-input number beside paper results without a route label.
-- Letting environment setup consume an unbounded resource budget.
+- DO NOT repair before preserving the faithful failure.
+- DO NOT report a generated-input number beside paper results without a route label.
+- DO NOT let environment setup consume an unbounded resource budget.

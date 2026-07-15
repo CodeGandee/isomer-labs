@@ -11,6 +11,10 @@ Own the transformation of audited survey knowledge into a publication-facing pap
 
 Before accepting durable output, read `$isomer-kaoju-shared`, this skill's `artifact-bindings.md`, and the applicable references. Resolve each semantic id through the binding registry and typed Artifact service. Return a storage blocker instead of inventing a profile, semantic label, state-DB entry, path, or untracked file.
 
+## When to Use
+
+Use only after audit accepts the requested synthesis. Use for canonical MyST drafting and revision, actor template exchange, derived Markdown or TeX, PDF builds, validation, and publication bundling. Do not use this skill to discover sources, repair evidence, run scientific trials, change accepted verdicts, or bypass a missing audit.
+
 ## Workflow
 
 1. **Accept audited inputs**. Require an accepted `kaoju:audit-report`, the exact accepted synthesis refs, source and display refs, a paper-line scope, target reader or venue, and publication Gate policy. A missing or not-ready audit blocks drafting.
@@ -28,10 +32,6 @@ Before accepting durable output, read `$isomer-kaoju-shared`, this skill's `arti
 13. **Return terminal state**. Report `complete`, `paused`, or `blocked` with canonical and derived refs, diagnostics, validation and Gate posture, Run checkpoint, blockers, and the first incomplete stage as the resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan without weakening the accepted evidence boundary or MyST authority.
-
-## When to Use
-
-Use only after audit accepts the requested synthesis. Use for canonical MyST drafting and revision, actor template exchange, derived Markdown or TeX, PDF builds, validation, and publication bundling. Do not use this skill to discover sources, repair evidence, run scientific trials, change accepted verdicts, or bypass a missing audit.
 
 ## MyST Paper Graph
 
@@ -69,13 +69,13 @@ Writing communicates accepted evidence; format conversion, compilation, and visu
 - A material repair runs without a revised plan and Gate.
 - A PDF is described as ready despite failed or unavailable required validation.
 
-## Common Mistakes
+## Guardrails
 
-- Writing from memory instead of accepted refs. Build every section from the audited evidence set.
-- Embedding figures or tables without typed display and source refs. Register them separately and use placeholders.
-- Treating a generated PDF as evidence. It is a derived assembly.
-- Hiding gaps behind aggregate counts. Report denominators, exclusions, unknowns, and unresolved cases.
+- DO NOT write from memory instead of accepted refs. Build every section from the audited evidence set.
+- DO NOT embed figures or tables without typed display and source refs. Register them separately and use placeholders.
+- DO NOT treat a generated PDF as evidence. It is a derived assembly.
+- DO NOT hide gaps behind aggregate counts. Report denominators, exclusions, unknowns, and unresolved cases.
 
 ## Chat Response
 
-Present normal chat responses in natural-language Markdown. Lead with the outcome and keep exact schemas in durable Artifacts. Name canonical MyST refs separately from derived Markdown, TeX, build, and PDF refs. Include every pending Gate, blocker, Run checkpoint, and resume point that affects completion.
+Present normal chat responses in natural-language Markdown. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat. Lead with the outcome. Name canonical MyST refs separately from derived Markdown, TeX, build, and PDF refs. Include every pending Gate, blocker, Run checkpoint, and resume point that affects completion.

@@ -32,12 +32,12 @@ Write `topic.workspace.summary` as Markdown with these sections when information
 
 ## Guardrails
 
-`finalize` finalizes Topic Workspace preparation only. It does not finalize research findings and does not replace `isomer-deepsci-finalize`.
+- MUST limit `finalize` to Topic Workspace preparation; it does not finalize research findings or replace `isomer-deepsci-finalize`.
 
-Do not recommend a next research step, research-stage skill, Houmao launch, formal team specialization, or manual session route. Name blockers and evidence, but do not prescribe what to run next.
+- DO NOT recommend a next research step, research-stage skill, Houmao launch, formal team specialization, or manual session route. Name blockers and evidence, but do not prescribe what to run next.
 
-Do not create research handoff records. Topic Creator readiness is represented by `topic.workspace.summary`, ready/verified/blocked state, actor onboarding context, and durable evidence refs.
+- DO NOT create research handoff records. Topic Creator readiness is represented by `topic.workspace.summary`, ready/verified/blocked state, actor onboarding context, and durable evidence refs.
 
-Do not inspect, require, name, or route through research-paradigm skills when creating the first reset checkpoint. The first checkpoint is an operator-owned initialization boundary derived from Workspace Runtime, Workspace Path Resolution, `topic.workspace.summary`, and operator-level readiness evidence.
+- DO NOT inspect, require, name, or route through research-paradigm skills when creating the first reset checkpoint. The first checkpoint is an operator-owned initialization boundary derived from Workspace Runtime, Workspace Path Resolution, `topic.workspace.summary`, and operator-level readiness evidence.
 
-Do not use Git stash, branch reset, commit creation, tags, refs, or project-root tracking as reset checkpoint material. The reset checkpoint is a structured Workspace Runtime and research-record artifact.
+- DO NOT use Git stash, branch reset, commit creation, tags, refs, or project-root tracking as reset checkpoint material. The reset checkpoint is a structured Workspace Runtime and research-record artifact.

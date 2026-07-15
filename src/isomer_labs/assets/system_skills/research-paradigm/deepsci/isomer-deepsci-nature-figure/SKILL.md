@@ -115,13 +115,13 @@ This skill can end when all applicable checks are true:
 - `<NATURE_FIGURE_CONTRACT>` and `<NATURE_PANEL_EVIDENCE_MAP>` support every panel.
 - `<NATURE_FIGURE_EXPORT_BUNDLE>` and `<NATURE_FIGURE_QA_REPORT>` exist, or `<NATURE_FIGURE_BLOCKER>` states the missing runtime/evidence.
 
-## Common Mistakes
+## Guardrails
 
-- Choosing Python or R by default when the user has not chosen.
-- Cross-rendering with the unselected backend.
-- Creating mock data or invented statistics.
-- Hiding private local paths or internal reference filenames in figure text or user-facing prose.
-- Treating template aesthetics as more important than the evidence chain.
+- DO NOT choose Python or R by default when the user has not chosen.
+- DO NOT cross-render with the unselected backend.
+- DO NOT create mock data or invented statistics.
+- DO NOT hide private local paths or internal reference filenames in figure text or user-facing prose.
+- DO NOT treat template aesthetics as more important than the evidence chain.
 
 ## Chat Response
 

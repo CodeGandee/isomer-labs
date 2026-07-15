@@ -1,11 +1,15 @@
 ---
 name: isomer-op-topic-creator
-description: Create or resume an Isomer Research Topic from empty or partial Project state to a prepared Topic Workspace, coordinating Project setup, topic registration, runtime readiness, topic environment setup, Topic Actor workspaces, actor onboarding, and final readiness summary.
+description: Use when an operator needs to create or resume an Isomer Research Topic from empty or partial Project state to a prepared Topic Workspace, coordinating Project setup, topic registration, runtime readiness, topic environment setup, Topic Actor workspaces, actor onboarding, and final readiness summary.
 ---
 
 # Isomer Admin Topic Creator
 
+## Overview
+
 Use this command-style operator skill when the user wants one front door for creating, initializing, preparing, or repairing a Research Topic for manual or human-orchestrated research. This skill owns the user-facing ladder from blank or partial Project state to prepared Topic Workspace, while delegating lower-level mutation to `isomer-op-project-mgr`, `isomer-srv-topic-env-setup`, and `isomer-op-topic-mgr`. Its `create-research-intent` boundary writes `topic.intent.overview` from a canonical template, and `clarify-research-intent` offers an interactive human-in-the-loop refinement path. Its `finalize` boundary writes `topic.workspace.summary` and creates or refreshes the first structured reset checkpoint from operator-level readiness evidence.
+
+## When to Use
 
 Concrete Research Topic substance is a hard gate. The topic can come from the prompt, a Markdown brief, selected context, or a registered concrete topic statement, but missing or generic topic material such as `default` must block before deriving a topic id, choosing or creating a Topic Workspace, registering a topic, or writing `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, or derived env gates.
 
@@ -104,17 +108,17 @@ Include commands run, semantic labels, path sources, Project lifecycle evidence,
 
 ## Guardrails
 
-Do not make this skill the authority for lower-level mutation. Delegate Project lifecycle work to `isomer-op-project-mgr` or supported `isomer-cli project ...` commands, topic environment setup to `isomer-srv-topic-env-setup`, and Topic Actor topology to `isomer-op-topic-mgr` or `project topic-actors ...`.
+- DO NOT make this skill the authority for lower-level mutation. Delegate Project lifecycle work to `isomer-op-project-mgr` or supported `isomer-cli project ...` commands, topic environment setup to `isomer-srv-topic-env-setup`, and Topic Actor topology to `isomer-op-topic-mgr` or `project topic-actors ...`.
 
-Do not infer Research Topics or Topic Workspaces by scanning sibling directories. Use Project Manifest-backed CLI/API surfaces and semantic path resolution.
+- DO NOT infer Research Topics or Topic Workspaces by scanning sibling directories. Use Project Manifest-backed CLI/API surfaces and semantic path resolution.
 
-Do not treat `topic.repos.main`, Topic Actor Workspaces, Agent Workspaces, or tmp surfaces as accepted research truth.
+- DO NOT treat `topic.repos.main`, Topic Actor Workspaces, Agent Workspaces, or tmp surfaces as accepted research truth.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target. A Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence can establish that target when the requested action applies to the team. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces cannot. Hand off valid formal team work to `isomer-op-topic-team-specialize`.
+- DO NOT route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target. A Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence can establish that target when the requested action applies to the team. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces cannot. Hand off valid formal team work to `isomer-op-topic-team-specialize`.
 
-Do not silently recreate the default `operator` Topic Actor after an explicit opt-out. Report a blocker if a later step requires it.
+- DO NOT silently recreate the default `operator` Topic Actor after an explicit opt-out. Report a blocker if a later step requires it.
 
-Do not prescribe a next research command, research-stage route, Houmao launch, or formal team specialization route in terminal Topic Creator output. Report what is ready, verified, skipped, blocked, and where `topic.workspace.summary` was written.
+- DO NOT prescribe a next research command, research-stage route, Houmao launch, or formal team specialization route in terminal Topic Creator output. Report what is ready, verified, skipped, blocked, and where `topic.workspace.summary` was written.
 
 ## Chat Response
 

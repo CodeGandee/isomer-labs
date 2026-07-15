@@ -88,10 +88,10 @@ If `topic.intent.overview` does not exist, refuse to run directly, explain that 
 
 ## Guardrails
 
-Do not specialize the team from this subcommand. Stop after topic clarification and route to `ensure-topic-registration` when the topic is ready but not registered, then to `adapt-team-template` after registration blockers are resolved.
+- DO NOT specialize the team from this subcommand. Stop after topic clarification and route to `ensure-topic-registration` when the topic is ready but not registered, then to `adapt-team-template` after registration blockers are resolved.
 
-Do not create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
 
-Do not silently discard earlier assumptions. Mark corrected assumptions as revised.
+- DO NOT silently discard earlier assumptions. Mark corrected assumptions as revised.
 
-Do not promote a provisional topic workspace seed into authoritative Project Manifest state.
+- DO NOT promote a provisional topic workspace seed into authoritative Project Manifest state.

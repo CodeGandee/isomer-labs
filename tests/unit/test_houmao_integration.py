@@ -344,7 +344,7 @@ class HoumaoIntegrationTests(unittest.TestCase):
         self.assertIn("topic_service_master.suggested_names", prepare)
         self.assertIn("binding record", prepare)
         self.assertIn("topic-service-master binding show", launch)
-        self.assertIn("Do not fabricate Topic Service Master specialist", interop)
+        self.assertIn("DO NOT fabricate Topic Service Master specialist", interop)
         self.assertIn("record the Topic Workspace Manifest binding", setup)
 
     def test_disabled_policy_skips_prepare_and_skill_context(self) -> None:

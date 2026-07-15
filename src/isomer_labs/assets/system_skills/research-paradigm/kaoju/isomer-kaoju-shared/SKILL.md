@@ -9,6 +9,10 @@ description: Use when any Kaoju survey stage needs common evidence semantics, so
 
 Kaoju preserves what was inspected, what was executed, and how strongly each claim is supported. A later or stronger result adds evidence; it never rewrites the meaning of an earlier observation or Run.
 
+## When to Use
+
+Use this skill with every Kaoju procedure or direct Kaoju stage invocation. Do not use it as a replacement for a stage skill, an owner skill, a provider binding, or an execution adapter.
+
 ## Workflow
 
 1. **Resolve current context**. Identify the Research Topic, Research Inquiry, Effective Topic Context, fresh Workspace Runtime state, active procedure, accepted input refs, intended evidence use, latest candidates, and duplicate or supersession posture.
@@ -22,10 +26,6 @@ Kaoju preserves what was inspected, what was executed, and how strongly each cla
 9. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs, Run checkpoint, pending Gate, blocker and Service Request refs, and the first incomplete stage as the resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from these contracts without weakening them.
-
-## When to Use
-
-Use this skill with every Kaoju procedure or direct Kaoju stage invocation. Do not use it as a replacement for a stage skill, an owner skill, a provider binding, or an execution adapter.
 
 ## Foundational Principle
 
@@ -85,12 +85,12 @@ Every executable stage uses the applicable Research Operation Extension Point an
 - Expensive or private work starts without the required Gate or Proceed Decision.
 - A terminal response omits blockers, failures, or accepted output refs.
 
-## Common Mistakes
+## Guardrails
 
-- Combining verification depth and evidence verdict into one confidence label. Store them separately.
-- Treating a managed link as dataset identity. Record both the external source locator and the managed-link locator.
-- Calling an inquiry exhaustive because a search converged. State `searched_through`, coverage bounds, and the remaining frontier.
-- Starting another macro procedure after completion. Return the terminal report and let the caller choose the next procedure.
+- DO NOT combine verification depth and evidence verdict into one confidence label. Store them separately.
+- DO NOT treat a managed link as dataset identity. Record both the external source locator and the managed-link locator.
+- DO NOT call an inquiry exhaustive because a search converged. State `searched_through`, coverage bounds, and the remaining frontier.
+- DO NOT start another macro procedure after completion. Return the terminal report and let the caller choose the next procedure.
 
 ## Chat Response
 

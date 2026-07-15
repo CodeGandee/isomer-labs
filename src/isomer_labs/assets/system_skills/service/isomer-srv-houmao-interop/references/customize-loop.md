@@ -4,6 +4,15 @@
 
 Customize the Houmao agent loop by editing the agent-definition directory, the project overlay, loop packages, gateway config, and runtime/mailbox bindings. Avoid changing Houmao source files unless you are fixing a Houmao bug.
 
+## Workflow
+
+1. Identify the requested customization surface and the selected Isomer Project or Houmao project overlay.
+2. Select the matching customization layer below and inspect its project-local configuration before proposing changes.
+3. Keep Isomer behavior changes in the Project overlay; treat Houmao source changes as separate Houmao work.
+4. Report the selected layer, files, validation command, blockers, and next action.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded customization plan from the layers and boundaries on this page, then execute the plan.
+
 ## Customization Layers
 
 ### 1. Agent Definition Directory
@@ -83,9 +92,9 @@ Passive API server: `houmao-passive-server serve --host ... --port ...`.
 4. If the skill should be available as a standalone specialist, add a specialist entry pointing to the preset.
 5. Validate with `houmao-mgr system-skills validate` or equivalent project validator before launch.
 
-## Common Mistakes
+## Guardrails
 
-- Editing `extern/orphan/houmao/src/...` to change Isomer project behavior. Prefer project-local `.houmao/` overrides.
-- Creating one Houmao agent per stage skill for a DeepScientist-like template. DeepScientist is a single PI agent that switches stage skills; map it to one Houmao-managed agent, not many.
-- Confusing a Houmao "role" (preset ingredient) with a DeepScientist "stage skill" (prompt contract). A stage skill is closer to a Houmao agent-facing skill loaded by a preset.
-- Skipping catalog registration. A preset file alone is not launchable until the project catalog or launch profile points to it.
+- DO NOT edit `extern/orphan/houmao/src/...` to change Isomer project behavior; prefer project-local `.houmao/` overrides.
+- DO NOT create one Houmao agent per stage skill for a DeepScientist-like template; DeepScientist is a single PI agent that switches stage skills, so map it to one Houmao-managed agent.
+- DO NOT confuse a Houmao "role" (preset ingredient) with a DeepScientist "stage skill" (prompt contract); a stage skill is closer to a Houmao agent-facing skill loaded by a preset.
+- DO NOT skip catalog registration; a preset file alone is not launchable until the project catalog or launch profile points to it.

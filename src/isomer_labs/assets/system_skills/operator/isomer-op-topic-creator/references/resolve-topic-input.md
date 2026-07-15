@@ -13,4 +13,4 @@ If the user's task does not map cleanly to these steps, ask for the actual Resea
 
 ## Guardrails
 
-This helper does not write `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates`. Use Project Manifest-backed context and semantic path resolution once a Topic Workspace exists.
+- DO NOT use this helper to write `topic.intent.overview`, `topic.intent.topic_env_requirements`, `topic.intent.actor_definitions`, `topic.env.topic_setup_target_spec`, or `topic.env.actor_env_gates`. Use Project Manifest-backed context and semantic path resolution once a Topic Workspace exists.

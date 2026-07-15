@@ -16,6 +16,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Keep this subcommand read-only.
-- Do not repair config, initialize runtime, or launch agents unless the user explicitly requests that next operation.
-- Do not infer Research Topics or Topic Workspaces from unregistered directories.
+- MUST keep this subcommand read-only.
+- DO NOT repair config, initialize runtime, or launch agents unless the user explicitly requests that next operation.
+- DO NOT infer Research Topics or Topic Workspaces from unregistered directories.

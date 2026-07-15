@@ -33,8 +33,8 @@ Require candidate identities, user comparison intent, target task and data, metr
 
 No candidate preparation or research Run starts before the Proceed Decision. Stop when the accepted candidates have eligible results or explicit blockers under the resource boundary; do not hide missing candidates or normalize away task semantics.
 
-## Common Mistakes
+## Guardrails
 
-- Treating the plan as internal scratch work instead of a user-reviewed survey Artifact.
-- Reusing old Runs without contract compatibility checks.
-- Reporting only successful candidates.
+- DO NOT treat the plan as internal scratch work instead of a user-reviewed survey Artifact.
+- DO NOT reuse old Runs without contract compatibility checks.
+- DO NOT report only successful candidates.

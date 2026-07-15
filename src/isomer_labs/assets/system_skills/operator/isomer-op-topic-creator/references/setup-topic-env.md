@@ -15,6 +15,6 @@ If the user's task does not map cleanly to these steps, report whether the missi
 
 ## Guardrails
 
-Do not create or repair `topic.repos.main` directly in this skill. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
+- DO NOT create or repair `topic.repos.main` directly in this skill. The canonical Topic Main Development Repository setup belongs to `isomer-srv-topic-env-setup`.
 
-Do not invent `topic.intent.topic_env_requirements` here. Route missing or stale source gates to `define-topic-env`.
+- DO NOT invent `topic.intent.topic_env_requirements` here. Route missing or stale source gates to `define-topic-env`.

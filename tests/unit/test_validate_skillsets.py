@@ -65,6 +65,235 @@ class SkillsetValidatorTests(unittest.TestCase):
         write(root / "skillset" / "service" / "README.md", "# Service Skills\n")
         return root
 
+    def write_current_template_fixture(self, root: Path) -> None:
+        write(
+            root / "skillset" / "manifest.toml",
+            """
+            [groups.core]
+            skills = ["misc/isomer-misc-template-fixture"]
+
+            [groups.deepsci]
+            skills = ["research-paradigm/deepsci/isomer-deepsci-template-fixture"]
+
+            [groups.kaoju]
+            skills = ["research-paradigm/kaoju/isomer-kaoju-template-fixture"]
+            """,
+        )
+        for relative_skill in (
+            "misc/isomer-misc-template-fixture",
+            "research-paradigm/deepsci/isomer-deepsci-template-fixture",
+            "research-paradigm/kaoju/isomer-kaoju-template-fixture",
+        ):
+            skill_name = Path(relative_skill).name
+            write(
+                root / "skillset" / relative_skill / "SKILL.md",
+                f"""
+                ---
+                name: {skill_name}
+                description: Use when validating the packaged system-skill template fixture.
+                ---
+
+                # {skill_name}
+
+                ## Overview
+
+                This fixture exercises current packaged system-skill structure.
+
+                ## When to Use
+
+                Use it only in validator tests; do not use it as a production skill.
+
+                ## Workflow
+
+                1. Read the fixture input.
+                2. Report the fixture result.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan, then execute the plan.
+
+                ## Subcommands
+
+                | Subcommand | Use For | Detail |
+                | --- | --- | --- |
+                | `run` | Execute the fixture. | [commands/run.md](commands/run.md) |
+
+                ## Guardrails
+
+                - DO NOT treat excluded fixture files as active instructions.
+                - MUST preserve the current-template structure.
+                """,
+            )
+            write(
+                root / "skillset" / relative_skill / "commands" / "run.md",
+                """
+                # Run Fixture
+
+                ## Workflow
+
+                1. Read the input.
+                2. Report the output.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan, then execute the plan.
+
+                ## Guardrails
+
+                - MUST keep the fixture deterministic.
+
+                ## Troubleshooting Guide
+
+                - The fixture input is missing.
+                  - If the fixture input is missing, then report the missing input.
+                """,
+            )
+            write(
+                root / "skillset" / relative_skill / "references" / "explanation.md",
+                """
+                # Explanation
+
+                This page explains the fixture and is not an executable procedure.
+                """,
+            )
+            write(
+                root / "skillset" / relative_skill / "org" / "src" / "SKILL.md",
+                """
+                # Historical Source
+
+                ## Common Mistakes
+
+                Do not rewrite this provenance copy.
+                """,
+            )
+            write(root / "skillset" / relative_skill / "migrate" / "notes.md", "## Common Mistakes\n")
+            write(root / "skillset" / relative_skill / "templates" / "output.md", "## Common Mistakes\n")
+
+    def test_packaged_template_validator_discovers_all_groups_and_excludes_passive_roles(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+
+        manifest_diagnostics: list[object] = []
+        skill_dirs = validator.packaged_skill_dirs(root, manifest_diagnostics)
+        diagnostics = validator.validate_packaged_skill_template(root)
+
+        self.assertEqual(3, len(skill_dirs))
+        self.assertEqual([], messages(manifest_diagnostics))
+        self.assertEqual([], messages(diagnostics))
+        active_paths = {
+            path.relative_to(skill_dirs[0]).as_posix()
+            for path in validator.active_skill_markdown_pages(skill_dirs[0])
+        }
+        self.assertNotIn("org/src/SKILL.md", active_paths)
+        self.assertNotIn("migrate/notes.md", active_paths)
+        self.assertNotIn("templates/output.md", active_paths)
+
+    def test_packaged_template_validator_rejects_entrypoint_template_gaps(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+        skill_path = root / "skillset" / "misc" / "isomer-misc-template-fixture" / "SKILL.md"
+        write(
+            skill_path,
+            """
+            ---
+            name: isomer-misc-template-fixture
+            description: Validate a fixture by running its workflow.
+            ---
+
+            # Broken Fixture
+
+            ## Workflow
+
+            Run the fixture.
+
+            ## Guardrails
+
+            - Do not skip the fixture.
+
+            ## Guardrails
+
+            - MUST report the fixture.
+
+            ## Common Mistakes
+
+            Do not omit output.
+            """,
+        )
+
+        diagnostics = validator.validate_packaged_skill_template(root)
+        rendered = messages(diagnostics)
+
+        self.assertIn(validator.SYSTEM_SKILL_TEMPLATE_CODE, codes(diagnostics))
+        self.assertTrue(any("description must start with 'Use when'" in message for message in rendered), rendered)
+        self.assertTrue(any("## Overview" in message for message in rendered), rendered)
+        self.assertTrue(any("## When to Use" in message for message in rendered), rendered)
+        self.assertTrue(any("numbered steps" in message for message in rendered), rendered)
+        self.assertTrue(any("freeform planning fallback" in message for message in rendered), rendered)
+        self.assertTrue(any("exactly one ## Guardrails" in message for message in rendered), rendered)
+        self.assertTrue(any("must not contain ## Common Mistakes" in message for message in rendered), rendered)
+
+    def test_packaged_template_validator_requires_workflow_before_other_top_level_sections(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+        skill_path = root / "skillset" / "misc" / "isomer-misc-template-fixture" / "SKILL.md"
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8").replace(
+                "## Workflow",
+                "## Background\n\nSupporting detail.\n\n## Workflow",
+                1,
+            ),
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_packaged_skill_template(root)
+
+        self.assertTrue(any("before other top-level sections" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_packaged_template_validator_checks_executable_subpages_and_guardrails(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+        command_path = root / "skillset" / "misc" / "isomer-misc-template-fixture" / "commands" / "run.md"
+        write(
+            command_path,
+            """
+            # Broken Command
+
+            ## Workflow
+
+            1. Run the command.
+
+            ## Guardrails
+
+            - Never guess the fixture input.
+            """,
+        )
+
+        diagnostics = validator.validate_packaged_skill_template(root)
+        rendered = messages(diagnostics)
+
+        self.assertTrue(any("freeform planning fallback" in message and "commands/run.md" in message for message in rendered), rendered)
+        self.assertTrue(any("must start with DO NOT or MUST" in message and "commands/run.md" in message for message in rendered), rendered)
+        self.assertFalse(any("references/explanation.md" in message for message in rendered), rendered)
+
+    def test_packaged_template_validator_rejects_malformed_optional_troubleshooting(self) -> None:
+        root = self.make_root()
+        self.write_current_template_fixture(root)
+        reference_path = root / "skillset" / "misc" / "isomer-misc-template-fixture" / "references" / "explanation.md"
+        write(
+            reference_path,
+            """
+            # Explanation
+
+            ## Troubleshooting Guide
+
+            - A fixture problem occurs.
+              - Retry the operation.
+              - If the fixture problem occurs, then inspect the input.
+            """,
+        )
+
+        diagnostics = validator.validate_packaged_skill_template(root)
+        rendered = messages(diagnostics)
+
+        self.assertTrue(any("exactly one nested solution" in message for message in rendered), rendered)
+        self.assertTrue(any("If <problem>, then <action>." in message for message in rendered), rendered)
+
     def write_topic_team_specialization_skill(
         self,
         root: Path,
@@ -82,7 +311,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         skill_text = f"""
             ---
             name: isomer-op-topic-team-specialize
-            description: Use only when the user explicitly invokes Topic Team Specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
+            description: Use when the user explicitly invokes Topic Team Specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
             ---
 
             # Isomer Admin Topic Team Specialize
@@ -423,14 +652,14 @@ class SkillsetValidatorTests(unittest.TestCase):
             extra_terms = {
                 "help.md": "Subcommand Functionalities. Procedural Subcommands. Helper Subcommands. Misc Subcommands. Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.",
                 "fast-forward.md": "`fast-forward` stops at the first blocker, routes through `define-topic-env` and `define-actors`, and ends at `finalize`.",
-                "resolve-topic-input.md": "Resolve a concrete Research Topic and does not write `topic.intent.overview`.",
+                "resolve-topic-input.md": "Resolve a concrete Research Topic. DO NOT use this helper to write `topic.intent.overview`.",
                 "create-research-intent.md": "Write only `topic.intent.overview` from `templates/topic-overview.md`; Strip `>` example blocks; populate `Research Topic`, `Motivation`, `Topic Breakdown` with `Do's` and `Don'ts`, `Expected Outcome`, and `Related Links`; do not write `topic.intent.topic_env_requirements`.",
                 "clarify-research-intent.md": "Refine `topic.intent.overview` interactively through Coverage and Clarity Scan, Question Format, Sequential Clarification Loop, Direct Topic Overview Integration, Prerequisite Artifacts, and Guardrails. Check `Research Topic`, `Motivation`, `Topic Breakdown`, `Do's`, `Don'ts`, `Expected Outcome`, and `Related Links`.",
                 "define-topic-env.md": "Create `topic.intent.topic_env_requirements`, wait for user verification, and report `fast-forward` assumptions.",
                 "setup-topic-env.md": "Delegate to `isomer-srv-topic-env-setup`, read `topic.intent.topic_env_requirements`, derive `topic.env.topic_setup_target_spec`, and report `topic.repos.main` readiness.",
                 "define-actors.md": "Create `topic.intent.actor_definitions` for the default `operator` and each actor source env gate.",
                 "setup-actors.md": "Delegate to `isomer-op-topic-mgr`, consume `topic.intent.actor_definitions`, report `topic.actors.workspace`, and verify `topic.env.actor_env_gates`.",
-                "finalize.md": "Resolve `topic.workspace.summary`, run `isomer-cli project topic-reset checkpoint`, create a structured reset checkpoint from operator-level readiness evidence, report ready, verified, blocked, and skipped state. Do not recommend a next research step.",
+                "finalize.md": "Resolve `topic.workspace.summary`, run `isomer-cli project topic-reset checkpoint`, create a structured reset checkpoint from operator-level readiness evidence, report ready, verified, blocked, and skipped state. DO NOT recommend a next research step.",
                 "step-by-step.md": "Follow the same main workflow order as `fast-forward`, show an option table with Recommended choices, and require acknowledgement.",
                 "run-to.md": "Valid targets are procedural. The target is included by default, explicit exclusion stops before it, and the command stops on missing user input.",
                 "status.md": "Report ready, blocked, skipped, and `topic.workspace.summary` state.",
@@ -825,12 +1054,9 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            Route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-system-skill-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
-            Select Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
-
-            ## Common Mistakes
-
-            Do not stop after only listing routes when the task is concrete.
+            - MUST route through `isomer-op-welcome`, `isomer-op-project-mgr`, `isomer-op-system-skill-mgr`, `isomer-op-gui-mgr`, `isomer-op-switch-identity`, `isomer-op-topic-creator`, `isomer-op-topic-mgr`, and `isomer-op-topic-team-specialize`. Service skills are only bounded support unless explicitly invoked. `isomer-misc-tool-packs` is used explicitly, not automatically.
+            - MUST select Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
+            - DO NOT stop after only listing routes when the task is concrete.
 
             ## Chat Response
 
@@ -979,7 +1205,8 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            Do not infer a target by scanning workspace directories. Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
+            - DO NOT infer a target by scanning workspace directories.
+            - DO NOT use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
 
             {OUTPUT_CONTRACT_FIXTURE}
             """
@@ -996,7 +1223,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         command_terms = {
-            "switch.md": "target kind target name one-task persistent isomer-cli --print-json project paths get topic.actors.workspace isomer-cli --print-json project paths get agent.workspace resolved `topic.actors.workspace` or `agent.workspace`. Do not infer the target by scanning workspace directories.",
+            "switch.md": "target kind target name one-task persistent isomer-cli --print-json project paths get topic.actors.workspace isomer-cli --print-json project paths get agent.workspace resolved `topic.actors.workspace` or `agent.workspace`. DO NOT infer the target by scanning workspace directories.",
             "act-as.md": "following prompt. Save the previous Project Operator identity posture. Restore the previous Project Operator identity posture. temporary one-time execution. Do not leave a switched posture active. resolved `topic.actors.workspace` or `agent.workspace`.",
             "status.md": "persistent temporary unknown re-resolve before running commands target workspace cwd normal Project Operator cwd.",
             "reset.md": "Clear the active switched posture. normal Project Operator identity. future commands no longer default. does not delete workspace files.",
@@ -1062,7 +1289,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             Topic environment setup is independent of Topic Agent Team structure.
             A single capable agent or operator uses this skill to prepare the Topic Workspace environment.
-            Do not require or inspect Topic Agent Team Profile material, team-profile material, roles, or agent count.
+            DO NOT require or inspect Topic Agent Team Profile material, team-profile material, roles, or agent count.
 
             ## Workflow
 
@@ -1103,8 +1330,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             "read-env-gate.md": "Resolve and read `topic.intent.topic_env_requirements`. Interpret the runnable target as what one agent or operator must run.",
             "derive-env-gate.md": "Write `topic.env.topic_setup_target_spec` or validate an explicit manual target spec. Include `## Gate Checklist`, `- [ ]`, and `- [x]`. Define the required readiness work contract with a pass condition, evidence source, optional diagnostics outside the checklist, and blocker condition. Preserve every source-intent runnable target and use bounded real-path verification; consult `isomer-misc-bounded-run-tips`, record `classification_source`, `classification_result`, `classification_reason`, `resource_dimensions`, `unknown-risk`, the bounded-run guidance source, and use generic best-effort judgment only when no recipe applies. A simple smoke test that misses the source path is insufficient unless the user explicitly records a downgrade. Consult `isomer-misc-pkg-specifics` before generic package routing and record `no package-specific rule` when no page exists.",
             "install-topic-deps.md": "Read `topic.env.topic_setup_target_spec` and require enclosure strategy plus classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, and bounded real setup path decisions. Use `isomer-misc-pkg-specifics` evidence or `no package-specific rule` from the target spec before package mutation.",
-            "setup-topic-env.md": "Do not require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `AGENTS.md`, `CLAUDE.md`, agent guidance posture, guidance block version, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. State naturally that per-Agent readiness was not checked and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
-            "verify-env-gate.md": "Do not require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, any user downgrade, `isomer-misc-pkg-specifics`, and `no package-specific rule`.",
+            "setup-topic-env.md": "DO NOT require `team-profile/` before running this setup chain. Require `semantic_paths`, `topic.repos.main`, `ensure-topic-main-repository`, `project-extern-repos`, `AGENTS.md`, `CLAUDE.md`, agent guidance posture, guidance block version, `topic.tmp`, and resolved `topic.tmp`; tmp material is local, ignored, disposable, not shared, and not durable evidence. State naturally that per-Agent readiness was not checked and Do not read `topic.intent.agent_env_requirements`. Use bounded real-path verification; a generic smoke test is not enough.",
+            "verify-env-gate.md": "DO NOT require or verify `team-profile/` before reporting environment readiness. per-Agent Workspace cwd verification is not checked here. Report Topic Workspace predecessor evidence, Topic Main Development Repository evidence, projection evidence, bounded real-path coverage, operation classification evidence, `unknown-risk`, bounded-run guidance source, generic best-effort fallback evidence when used, source-intent runnable target coverage, every required `## Gate Checklist` item checked with supporting evidence, the exact checklist item when blocked, failed, or not checked, any weaker smoke test limitation, any user downgrade, `isomer-misc-pkg-specifics`, and `no package-specific rule`.",
         }
         for subcommand_name in validator.TOPIC_ENV_SETUP_SUBCOMMANDS:
             term = reference_terms.get(subcommand_name, "Topic Workspace environment setup reference.")
@@ -1218,7 +1445,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             This fixture reads `topic.intent.agent_env_requirements`, writes or validates `topic.env.agent_setup_target_spec`, accepts an explicit manual target spec, consumes `topic.env.topic_setup_target_spec`, requires prepared Topic Main Development Repository and projection predecessor evidence at `topic.repos.main`, uses authoritative Agent Names, resolves `agent.workspace`, runs `pixi run --manifest-path <manifest_path> --environment <pixi_environment>`, records selected-agent partial evidence, Service Request refs, Provenance refs, and `overall_readiness_status`.
             Use bounded real-path verification for cwd commands classified as `heavy` or `unknown-risk`. Consult `isomer-misc-bounded-run-tips`, record `operation_classification`, classification source, classification result, and generic best-effort judgment only when no recipe applies. A generic smoke test is only supporting evidence.
 
-            Do not initialize, repair, or configure the Topic Main Development Repository. Do not create per-agent Pixi manifests. Do not install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
+            DO NOT initialize, repair, or configure the Topic Main Development Repository. DO NOT create per-agent Pixi manifests. DO NOT install or mutate Topic Workspace dependencies. Do not create Agent Instances or mutate Workspace Runtime records.
 
             {OUTPUT_CONTRACT_FIXTURE}
             """
@@ -1303,7 +1530,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Guardrails
 
-            Do not own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing.
+            DO NOT own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing.
             """
         if omit_skill_term is not None:
             skill_text = skill_text.replace(omit_skill_term, "")
@@ -1668,6 +1895,23 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS014", codes(diagnostics))
         self.assertTrue(any("declaration, managed-root receipt, then live-inventory order" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_rejects_system_skill_manager_home_override(self) -> None:
+        root = self.make_root()
+        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        shutil.copytree(source, target)
+        install_reference = target / "references" / "install-extension.md"
+        install_reference.write_text(
+            install_reference.read_text(encoding="utf-8")
+            + "\nRun `isomer-cli system-skills install --target generic --home /tmp/skills`.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_system_skill_manager_module(root)
+
+        self.assertIn("OPS014", codes(diagnostics))
+        self.assertTrue(any("must use scoped installation guidance" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_entrypoint_deepsci_extension_coverage(self) -> None:
         root = self.make_root()
         self.write_entrypoint_skill(root, omit_reference_term="isomer-deepsci-scout")
@@ -1784,7 +2028,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_requires_switch_identity_cwd_discipline(self) -> None:
         root = self.make_root()
-        self.write_switch_identity_skill(root, omit_skill_term="Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd")
+        self.write_switch_identity_skill(root, omit_skill_term="DO NOT use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd")
 
         diagnostics = validator.validate_switch_identity_module(root)
 
@@ -2704,7 +2948,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_service_validator_requires_team_independent_env_setup_terms(self) -> None:
         root = self.make_root()
-        self.write_topic_env_setup_service(root, omit_reference_term="Do not require `team-profile/`")
+        self.write_topic_env_setup_service(root, omit_reference_term="DO NOT require `team-profile/`")
         self.write_agent_env_setup_service(root)
 
         diagnostics = validator.validate_service_skillset(root)

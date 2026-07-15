@@ -11,6 +11,10 @@ Test one bounded paper reproduction claim while preserving upstream-faithful, ad
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use the legacy-compatible `kaoju:method-trial` result only for a genuine reproduction summary. `$isomer-kaoju-trial` owns trial plans, generated datasets, execution attempts, and trial results. Return a storage blocker rather than inventing persistence; keep material and raw-output bytes behind recorded refs.
 
+## When to Use
+
+Use only when the requested conclusion is genuine reproduction of a source claim and the intended evidence contract can be stated. Do not use for a source-only assessment, smoke test, ordinary code trial, generated-data probe, multi-method empirical comparison, silent environment repair, or unbounded optimization.
+
 ## Workflow
 
 1. **Accept the reproduction contract**. Require the paper and code Source Identities, exact target claim, intended task, dataset and split, evaluator, metrics, source command or mapped implementation, fidelity target, resources, and stop conditions.
@@ -25,10 +29,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 10. **Return status**. Produce the reproduction summary, Trial Run and result refs, failures, limitations, and a resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use only when the requested conclusion is genuine reproduction of a source claim and the intended evidence contract can be stated. Do not use for a source-only assessment, smoke test, ordinary code trial, generated-data probe, multi-method empirical comparison, silent environment repair, or unbounded optimization.
 
 ## Reproduction Contract
 
@@ -60,11 +60,11 @@ Numbers carry the identity of the code, inputs, evaluator, environment, and exec
 - An ordinary or generated-data trial is labeled reproduction.
 - A failure disappears after a repaired Run succeeds.
 
-## Common Mistakes
+## Guardrails
 
-- Asking for a dataset before checking registered data. Query and validate the Topic Dataset Manifest first.
-- Running setup commands outside the owner or resource boundary. Route them and retain logs.
-- Calling a smoke test a benchmark. Record the actual Run purpose and achieved depth.
+- DO NOT ask for a dataset before checking registered data. Query and validate the Topic Dataset Manifest first.
+- DO NOT run setup commands outside the owner or resource boundary. Route them and retain logs.
+- DO NOT call a smoke test a benchmark. Record the actual Run purpose and achieved depth.
 
 ## Chat Response
 

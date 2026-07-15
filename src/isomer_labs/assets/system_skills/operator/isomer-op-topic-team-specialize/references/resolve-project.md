@@ -44,6 +44,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not treat a Domain Agent Team Template as a complete static topic team.
-- Do not infer credentials, live process state, or research results from configuration files.
-- Do not mutate Project Config or Topic Workspace files except through validated Isomer commands or APIs.
+- DO NOT treat a Domain Agent Team Template as a complete static topic team.
+- DO NOT infer credentials, live process state, or research results from configuration files.
+- DO NOT mutate Project Config or Topic Workspace files except through validated Isomer commands or APIs.

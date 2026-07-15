@@ -109,13 +109,13 @@ This skill can end when all applicable checks are true:
 - `<DATA_AVAILABILITY_STATEMENT>` does not invent repositories, identifiers, licenses, or approvals.
 - `<FAIR_METADATA_AUDIT>` and `<DATASET_CITATION_ACTIONS>` record remaining actions.
 
-## Common Mistakes
+## Guardrails
 
-- Using available on request as a default instead of a justified exception.
-- Inventing accession numbers, DOIs, embargoes, licenses, or ethics approvals.
-- Writing polished prose before repository strategy is clear.
-- Ignoring target journal instructions when exact policy matters.
-- Letting data availability become a general manuscript rewrite task.
+- DO NOT use available on request as a default instead of a justified exception.
+- DO NOT invent accession numbers, DOIs, embargoes, licenses, or ethics approvals.
+- DO NOT write polished prose before repository strategy is clear.
+- DO NOT ignore target journal instructions when exact policy matters.
+- DO NOT let data availability become a general manuscript rewrite task.
 
 ## Chat Response
 

@@ -1,19 +1,27 @@
 ---
 name: isomer-op-system-skill-mgr
-description: Detect, reconcile, install, inspect, and repair Isomer system-skill extensions from a Project Operator Session. Use when an operator needs to resolve optional extension availability, register receipt-backed or live-inventory extensions, install an extension into its own host-known skill root, diagnose stale Project declarations, or explain agent-host refresh requirements.
+description: Use when a Project Operator Session needs to detect, reconcile, install, inspect, or repair Isomer system-skill extensions, including resolving optional extension availability, registering receipt-backed or live-inventory extensions, installing an extension for a concrete agent host and scope, diagnosing stale Project declarations, or explaining agent-host refresh requirements.
 ---
 
 # Isomer Operator System Skill Manager
 
-Own working-agent system-skill extension management without teaching `isomer-cli` provider discovery conventions. Use the current agent host to supply project-scope skill roots and live inventory names, then use Isomer's explicit-input CLI primitives for catalog, receipt, projection, and compatibility interpretation.
+## Overview
+
+Own working-agent system-skill extension management without teaching `isomer-cli` provider discovery conventions. Use the current agent host to supply project-scope skill roots, a concrete installation target, and live inventory names, then use Isomer's explicit-input CLI primitives for catalog, scoped installation, receipt, projection, and compatibility interpretation.
+
+## When to Use
+
+Use this skill for operator-controlled extension discovery, additive reconciliation, scoped installation, status inspection, repair planning, and host refresh guidance.
 
 ## Workflow
 
 1. Resolve the current Project with Project Manifest-backed CLI discovery. If no Project exists, allow read-only catalog and root inspection, but require a selected Project before registration.
 2. Select exactly one subcommand from the table below and load only its detail page plus [references/evidence-and-mutation.md](references/evidence-and-mutation.md).
 3. Apply the evidence ladder in order: trust the Project declaration, inspect each host-known project root, then classify the host-visible live inventory. Stop at the first evidence level that establishes the requested extension.
-4. Preserve the selected subcommand's mutation posture. Detection and status never mutate. Reconciliation, installation, and repair mutate only when the user request authorizes that operation.
+4. Preserve the selected subcommand's mutation posture. Detection and status never mutate. Reconciliation, installation, and repair mutate only when the user request authorizes that operation. For installation, default a Project Operator request to project scope and require explicit user intent before selecting user scope.
 5. Report the evidence basis, compatibility state when known, declaration result, partial outcomes, and host refresh guidance.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the requested extension operation, host context, evidence order, and mutation boundary, then execute the plan.
 
 ## Subcommands
 
@@ -21,7 +29,7 @@ Own working-agent system-skill extension management without teaching `isomer-cli
 | --- | --- | --- | --- |
 | `detect-extensions` | Read-only | Resolve declarations, explicit roots, and live inventory without registering anything | [references/detect-extensions.md](references/detect-extensions.md) |
 | `reconcile-extensions` | Additive mutation unless opted out | Remember complete receipt-backed or live-inventory extensions in the selected Project | [references/reconcile-extensions.md](references/reconcile-extensions.md) |
-| `install-extension` | Authorized installation and additive registration | Install one extension into the current operator host's selected root, verify it, and remember it | [references/install-extension.md](references/install-extension.md) |
+| `install-extension` | Authorized installation and additive registration | Install one extension for a concrete host target and scope, verify its resolved root, and remember it | [references/install-extension.md](references/install-extension.md) |
 | `status` | Read-only | Summarize declarations, supplied roots, inventory coverage, compatibility, and refresh state | [references/status.md](references/status.md) |
 | `repair` | Plan-first; mutation only when requested | Diagnose stale declarations, malformed receipts, invalid projections, incompatible versions, or incomplete registration | [references/repair.md](references/repair.md) |
 
@@ -34,9 +42,11 @@ Own working-agent system-skill extension management without teaching `isomer-cli
 
 ## Host Context Boundary
 
-Use only roots the current host exposes or that can be derived from the loaded Isomer skill's own discovery location. Do not encode `.claude/skills`, `.codex/skills`, `.kimi-code/skills`, `.agents/skills`, plugin directories, or user-home paths as universal rules. A tool may load project, user, plugin, environment, symlinked, or dynamically supplied roots.
+Use only roots the current host exposes or that can be derived from the loaded Isomer skill's own discovery location. Do not encode `.claude/skills`, `.codex/skills`, `.kimi-code/skills`, `.agents/skills`, plugin directories, or user-home paths as universal discovery rules. A tool may load project, user, plugin, environment, symlinked, or dynamically supplied roots.
 
-For installation, choose the root used by the current Project Operator Session, pass it explicitly through the low-level installer `--home` option, and select the matching concrete target label only when the host makes that label known. Do not let `isomer-cli` choose a default root on behalf of this workflow.
+For installation, require the host to identify one supported concrete target. If the target is unknown, report a blocker without guessing a target or path. Select `--scope project` by default for a Project Operator installation; this scope is anchored to the current working directory and applies to the current agent-host project context. Select `--scope user` only after an explicit user request or confirmation, and state that the installation can affect the selected host across Projects.
+
+Run `isomer-cli --print-json system-skills install --target <host-known-target> --scope <selected-scope> --extension <extension-id>`. Read the resolved skill root from the installation result and pass that exact root to the explicit-root inspector. The scoped installer supports only target-defined project and user roots; for an arbitrary plugin, extra, or custom destination, explain the boundary and use host-native installation guidance instead of reconstructing a path override.
 
 ## Mutation Rules
 
@@ -52,11 +62,13 @@ Lead with whether the requested extension work is ready, detected, reconciled, i
 
 ## Guardrails
 
-Treat Project declarations and Isomer receipts as trusted bookkeeping, not cryptographic verification. Keep direct `isomer-cli project init`, low-level `system-skills install`, and internal inspectors conservative; this owner skill supplies the agent-host context they lack.
+- MUST treat Project declarations and Isomer receipts as trusted bookkeeping, not cryptographic verification. Keep direct `isomer-cli project init`, low-level `system-skills install`, and internal inspectors conservative; this owner skill supplies the agent-host context they lack.
 
-Do not claim that an ambient same-name skill is package-authentic. Live inventory evidence means only that the host exposed every package-catalog name. Keep that evidence basis visible.
+- DO NOT claim that an ambient same-name skill is package-authentic. Live inventory evidence means only that the host exposed every package-catalog name. Keep that evidence basis visible.
 
-Do not claim current-session availability after installation unless the host inventory refresh confirms it. Recommend a new turn, thread, or host-native reload when required.
+- DO NOT claim current-session availability after installation unless the host inventory refresh confirms it. Recommend a new turn, thread, or host-native reload when required.
+
+- DO NOT translate a custom destination request into a guessed target or private installer escape hatch. Preserve Project declarations and existing projections when a supported concrete host target cannot be established.
 
 ## Local References
 

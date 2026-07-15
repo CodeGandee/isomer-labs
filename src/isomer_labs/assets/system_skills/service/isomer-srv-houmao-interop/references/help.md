@@ -15,6 +15,14 @@ Use this skill whenever the support request mentions:
 
 Do not use this skill for full Topic Team Specialization, approval, profile materialization, launch orchestration, Gate decisions, or research task routing. Route those responsibilities back to the appropriate operator workflow such as `isomer-op-topic-team-specialize`.
 
+## Workflow
+
+1. Match the support request to one mode in the table below.
+2. Load only the selected mode page and preserve its operator and service boundaries.
+3. Report the selected mode, key files or commands, blockers, and next action.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a bounded support plan from the available modes and ownership boundaries, then execute the plan.
+
 ## Modes
 
 | Mode | Use When |

@@ -18,4 +18,4 @@ Report the validation outcome and selected Research Topic, then summarize semant
 
 ## Guardrails
 
-Use Workspace Path Resolution for storage answers. Do not infer the selected Topic Workspace by scanning sibling directories, and do not edit `topic-workspace.toml` by hand.
+- MUST use Workspace Path Resolution for storage answers. Do not infer the selected Topic Workspace by scanning sibling directories, and do not edit `topic-workspace.toml` by hand.

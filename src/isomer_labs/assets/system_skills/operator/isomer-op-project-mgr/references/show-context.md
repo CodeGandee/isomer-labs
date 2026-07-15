@@ -16,5 +16,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Keep this subcommand read-only.
-- Do not create missing topics, workspaces, runtime state, or profile material from context inspection alone.
+- MUST keep this subcommand read-only.
+- DO NOT create missing topics, workspaces, runtime state, or profile material from context inspection alone.

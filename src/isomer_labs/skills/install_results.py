@@ -31,8 +31,7 @@ class SystemSkillStatusResult:
 
     def to_json(self) -> dict[str, object]:
         return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
+            **self.target.to_json(),
             "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "installed": [record.to_json() for record in self.installed],
             "installed_skills": [record.name for record in self.installed],
@@ -65,8 +64,7 @@ class SystemSkillInstallResult:
 
     def to_json(self) -> dict[str, object]:
         return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
+            **self.target.to_json(),
             "projection_mode": self.projection_mode,
             "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "installed": [record.to_json() for record in self.installed],
@@ -99,8 +97,7 @@ class SystemSkillUninstallResult:
 
     def to_json(self) -> dict[str, object]:
         return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
+            **self.target.to_json(),
             "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "removed": [record.to_json() for record in self.removed],
             "removed_skills": [record.name for record in self.removed],
@@ -132,8 +129,7 @@ class SystemSkillUpgradeResult:
 
     def to_json(self) -> dict[str, object]:
         return {
-            "target": self.target.target,
-            "skill_root": str(self.target.skill_root),
+            **self.target.to_json(),
             "projection_mode_override": self.projection_mode_override,
             "manifest": self.manifest.to_json() if self.manifest is not None else None,
             "refreshed": [record.to_json() for record in self.refreshed],

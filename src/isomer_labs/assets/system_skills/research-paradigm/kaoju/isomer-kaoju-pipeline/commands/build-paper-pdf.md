@@ -9,6 +9,8 @@
 5. Permit bounded automatic presentation-only or TeX-syntax repair that preserves canonical MyST and evidence meaning. Any canonical content, dependency, toolchain policy, or interpretation change requires a revised plan and human Gate.
 6. Validate PDF media type, digest, extracted text, hierarchy, citations, page sequence, displays, clipping, overflow, blank pages, density, and publication-quality profile before the publication Gate.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-write`. Outputs: derived TeX template and draft, immutable build Run and compile log, PDF, PDF revision log, validation report, and publication bundle refs.

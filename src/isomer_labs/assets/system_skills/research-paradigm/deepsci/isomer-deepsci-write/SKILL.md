@@ -114,13 +114,13 @@ This skill can end when all applicable checks are true:
 - `<MANUSCRIPT_VALIDATION_REPORT>` records remaining gaps and the next route.
 - `<PAPER_BUNDLE_CHECKPOINT>` exists for a coherent draft, review package, or submission package, or `<WRITING_ROUTE_DECISION>` names the blocker and responsible next skill.
 
-## Common Mistakes
+## Guardrails
 
-- Drafting around a weak outline instead of routing to paper-outline.
-- Using polished prose to hide missing evidence.
-- Writing citations, metrics, or method details from memory.
-- Putting user, operator, agent, route-control, worktree, or local execution details into manuscript text.
-- Planning figures after prose has already forced unsupported claims.
+- DO NOT draft around a weak outline instead of routing to paper-outline.
+- DO NOT use polished prose to hide missing evidence.
+- DO NOT write citations, metrics, or method details from memory.
+- DO NOT put user, operator, agent, route-control, worktree, or local execution details into manuscript text.
+- DO NOT plan figures after prose has already forced unsupported claims.
 
 ## Chat Response
 

@@ -91,10 +91,10 @@ If any required specialization output is missing, refuse to run directly, explai
 
 ## Guardrails
 
-Do not approve, materialize, or run the team from this subcommand.
+- DO NOT approve, materialize, or run the team from this subcommand.
 
-Do not create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised copied topic-team material, specialization plan, `Final Report`, placeholder resolutions, deferrals, and draft packet/profile inputs.
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised copied topic-team material, specialization plan, `Final Report`, placeholder resolutions, deferrals, and draft packet/profile inputs.
 
-Do not change the source Domain Agent Team Template.
+- DO NOT change the source Domain Agent Team Template.
 
-Do not hide unresolved static-material blockers or later-operation blockers. Keep deferrals explicit.
+- DO NOT hide unresolved static-material blockers or later-operation blockers. Keep deferrals explicit.

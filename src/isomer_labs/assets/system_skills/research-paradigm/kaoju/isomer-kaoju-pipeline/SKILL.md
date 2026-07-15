@@ -9,6 +9,10 @@ description: Use when a user asks to choose survey directions, build or ingest a
 
 Route one accepted survey intent to its bounded owner, preserve Gates and durable checkpoints, and stop at the selected terminal boundary. This skill never performs a focused owner's research or operational work.
 
+## When to Use
+
+Use as the single public router for the ten current survey intents, retained compatibility procedures, and grouped managers. Call a focused Kaoju skill directly only when the caller already selected its bounded stage and supplies verified predecessors.
+
 ## Workflow
 
 1. **Resolve context**. Identify the Research Topic, Topic Workspace, user intent, clarification posture, accepted refs, and requested resume stage.
@@ -24,10 +28,6 @@ Route one accepted survey intent to its bounded owner, preserve Gates and durabl
 11. **Return one terminal report**. Report `complete`, `paused`, or `blocked`; accepted refs; Run, Gate, Service Request, and blocker refs; limitations; and resume point. Do not choose another macro intent autonomously.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use as the single public router for the ten current survey intents, retained compatibility procedures, and grouped managers. Call a focused Kaoju skill directly only when the caller already selected its bounded stage and supplies verified predecessors.
 
 ## Survey Intents
 
@@ -78,14 +78,14 @@ Resolve `kaoju:proceed-decision` and `kaoju:survey-terminal-report` through `pro
 
 `help` lists this checked surface. It performs no durable mutation.
 
-## Common Mistakes
+## Guardrails
 
-- Treating resume as a fresh procedure. Verify durable refs and restart at the first incomplete stage.
-- Asking an operational service skill to make a research decision.
-- Using a directory scan when the state DB query is empty or ambiguous.
-- Routing wiki work to an external skill checkout.
-- Treating TeX or PDF as canonical paper state.
+- DO NOT treat resume as a fresh procedure. Verify durable refs and restart at the first incomplete stage.
+- DO NOT ask an operational service skill to make a research decision.
+- DO NOT use a directory scan when the state DB query is empty or ambiguous.
+- DO NOT route wiki work to an external skill checkout.
+- DO NOT treat TeX or PDF as canonical paper state.
 
 ## Chat Response
 
-Lead with the selected intent and current outcome. Use natural-language Markdown and name durable refs, blockers, limitations, and the exact resume stage. Keep machine schemas in Artifacts and JSON CLI output.
+Present normal chat responses in natural-language Markdown. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat. Lead with the selected intent and current outcome. Name durable refs, blockers, limitations, and the exact resume stage.

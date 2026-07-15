@@ -104,13 +104,13 @@ This skill can end when all applicable checks are true:
 - `<OUTLINE_VALIDATION_REPORT>` either passes or names a concrete blocker.
 - `<SECTION_WRITING_PLAN>` exists when the outline is ready for writing.
 
-## Common Mistakes
+## Guardrails
 
-- Copying run logs into the paper plan.
-- Treating a section list as a mature outline.
-- Leaving claims without evidence or falsification boundaries.
-- Planning too little reviewer-facing analysis for an empirical paper.
-- Inventing a paper story that the evidence cannot support.
+- DO NOT copy run logs into the paper plan.
+- DO NOT treat a section list as a mature outline.
+- DO NOT leave claims without evidence or falsification boundaries.
+- DO NOT plan too little reviewer-facing analysis for an empirical paper.
+- DO NOT invent a paper story that the evidence cannot support.
 
 ## Chat Response
 

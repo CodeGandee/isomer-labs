@@ -9,6 +9,8 @@
 5. Present the list for inspection and refinement. A short list may be approved with a non-blocking shortage warning.
 6. Persist `kaoju:reading-list` as a scoped current-state Artifact and checkpoint the Run.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-discover`. Inputs: accepted `kaoju:direction-set`, direction id, Survey Contract, provider bindings. Outputs: scoped Reading List and Discovery Ledger refs.

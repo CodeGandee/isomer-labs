@@ -11,6 +11,10 @@ Acquire only the material needed for the accepted evidence purpose, pin its iden
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:material-acquisition-manifest` and `kaoju:topic-dataset-manifest` exactly. Return a storage blocker instead of inventing persistence, and keep material bytes outside canonical JSON.
 
+## When to Use
+
+Use after discovery or framing identifies material that must be read, checked out, registered, or executed. Do not use this skill for broad discovery, ungoverned workspace mutation, environment improvisation, or claim synthesis.
+
 ## Workflow
 
 1. **Accept requested identities**. Read the Survey Contract, Discovery Ledger, material purpose, destination posture, and resource boundary.
@@ -25,10 +29,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 10. **Return status**. Produce Artifact Library, Associated Source Code, Material Acquisition Manifest, or Source Access Blocker refs and the next inspect or execute stage.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use after discovery or framing identifies material that must be read, checked out, registered, or executed. Do not use this skill for broad discovery, ungoverned workspace mutation, environment improvisation, or claim synthesis.
 
 ## Acquisition Contract
 
@@ -62,11 +62,15 @@ Acquisition is not evidence acceptance. Pin and verify the acquired material bef
 - A large or restricted download begins without its required Gate.
 - An external dataset is modified during registration.
 
-## Common Mistakes
+## Guardrails
 
-- Recording only a local checkout path. Keep the canonical external locator and immutable identity.
-- Treating an access failure as evidence that the material does not exist. Return an access blocker.
-- Hiding substitutions. Record requested versus observed materials and their effect on fidelity.
+- DO NOT record only a local checkout path. Keep the canonical external locator and immutable identity.
+- DO NOT hide substitutions. Record requested versus observed materials and their effect on fidelity.
+
+## Troubleshooting Guide
+
+- Source material cannot be accessed.
+  - If source material cannot be accessed, then return an access blocker without concluding that the material does not exist.
 
 ## Chat Response
 

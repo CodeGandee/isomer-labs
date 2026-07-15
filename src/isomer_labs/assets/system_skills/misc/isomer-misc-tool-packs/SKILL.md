@@ -1,6 +1,6 @@
 ---
 name: isomer-misc-tool-packs
-description: Use only when explicitly invoked as isomer-misc-tool-packs or when the user directly asks to resolve a named installable toolset such as paper-writing, paper-figures-python, paper2ppt, cuda-build, torch-gpu, or topic-python-starter into dependency contracts, aliases, CLI-tool install routes, Python package install targets, verification checks, blockers, and downstream setup-skill handoff.
+description: Use when explicitly invoked as isomer-misc-tool-packs or when the user directly asks to resolve a named installable toolset such as paper-writing, paper-figures-python, paper2ppt, cuda-build, torch-gpu, or topic-python-starter into dependency contracts, aliases, CLI-tool install routes, Python package install targets, verification checks, blockers, and downstream setup-skill handoff.
 ---
 
 # Isomer Misc Tool Packs
@@ -57,15 +57,15 @@ Say whether the toolset request was resolved, remains ambiguous or unknown, or i
 
 Group the complete contract by toolset identity and purpose, included packs and dependencies, required and optional tools, package-source and host-tool expectations, verification, blockers, helper routes, setup owner, and notes.
 
-## Common Mistakes
+## Guardrails
 
-- Installing directly from this misc skill instead of returning a contract to topic environment setup.
-- Routing here automatically from service, operator, or research workflow skills before manual invocation is enabled.
-- Treating a CLI tool distributed on PyPI as an importable project library.
-- Installing importable Python libraries with `uv tool install` or `pixi global install` instead of the Topic Workspace Pixi environment.
-- Including the R figure stack in `paper-writing` by default.
-- Copying production DeepSci skill paths into this tool-pack catalog.
-- Treating a successful package install as readiness without running the verification checks from the contract.
+- DO NOT install directly from this misc skill; return a contract to topic environment setup.
+- DO NOT route here automatically from service, operator, or research workflow skills before manual invocation is enabled.
+- DO NOT treat a CLI tool distributed on PyPI as an importable project library.
+- DO NOT install importable Python libraries with `uv tool install` or `pixi global install`; use the Topic Workspace Pixi environment.
+- DO NOT include the R figure stack in `paper-writing` by default.
+- DO NOT copy production DeepSci skill paths into this tool-pack catalog.
+- DO NOT treat a successful package install as readiness without running the verification checks from the contract.
 
 ## Chat Response
 

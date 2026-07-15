@@ -34,6 +34,8 @@ TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
 WELCOME_SKILL = "isomer-op-welcome"
 PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
 HOUMAO_INTEROP_SERVICE_SKILL = "isomer-srv-houmao-interop"
+SYSTEM_SKILL_TEMPLATE_CODE = "SKL007"
+SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS = frozenset({"org", "migrate", "templates"})
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -75,7 +77,7 @@ COPIED_TOPIC_MAIN_GUIDANCE_TERMS = (
 )
 
 TOPIC_TEAM_SPECIALIZATION_REQUIRED_SKILL_TERMS = (
-    "Use only when the user explicitly invokes Topic Team Specialization",
+    "Use when the user explicitly invokes Topic Team Specialization",
     "Default help mode",
     "invoked without a prompt",
     "Manual mode",
@@ -456,7 +458,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
     ),
     "resolve-topic-input.md": (
         "concrete Research Topic",
-        "does not write",
+        "DO NOT use this helper to write",
         "topic.intent.overview",
     ),
     "create-research-intent.md": (
@@ -519,7 +521,7 @@ TOPIC_CREATOR_REFERENCE_REQUIRED_TERMS = {
         "ready",
         "verified",
         "blocked",
-        "Do not recommend a next research step",
+        "DO NOT recommend a next research step",
     ),
     "step-by-step.md": (
         "same main workflow order as `fast-forward`",
@@ -832,8 +834,8 @@ SWITCH_IDENTITY_REQUIRED_SKILL_TERMS = (
     "restore",
     "resolved cwd",
     "Project Operator acted as or on behalf",
-    "Do not infer a target by scanning workspace directories",
-    "Do not use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd",
+    "DO NOT infer a target by scanning workspace directories",
+    "DO NOT use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd",
     "OS-level impersonation",
     "launched Agent Instance",
     "Houmao",
@@ -849,7 +851,7 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "isomer-cli --print-json project paths get topic.actors.workspace",
         "isomer-cli --print-json project paths get agent.workspace",
         "resolved `topic.actors.workspace` or `agent.workspace`",
-        "Do not infer the target by scanning workspace directories",
+        "DO NOT infer the target by scanning workspace directories",
     ),
     "act-as.md": (
         "following prompt",
@@ -966,6 +968,11 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "one operator root or inventory",
     "partial outcome",
     "host refresh is required",
+    "--scope <selected-scope>",
+    "project scope",
+    "user scope",
+    "resolved skill root",
+    "If the target is unknown",
     "Default to **Essential Output** in chat.",
     "Complete Output",
 )
@@ -977,12 +984,23 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "internals inspect-system-skill-root",
         "internals classify-system-skill-inventory",
         "project system-extensions remember",
+        "--scope <selected-scope>",
+        "Read `skill_root`",
         "Never call `forget`",
         "host refresh is required",
     ),
     "detect-extensions.md": ("read-only", "Project", "project-scope skill roots", "host-visible skill names"),
     "reconcile-extensions.md": ("additive", "Project", "remember", "Never infer removal"),
-    "install-extension.md": ("Select the skill root", "--home", "Verify with", "registration", "host refresh is required"),
+    "install-extension.md": (
+        "Select a concrete host target",
+        "project scope",
+        "user scope",
+        "--scope <selected-scope>",
+        "Read the resolved skill root",
+        "Verify with",
+        "registration",
+        "host refresh is required",
+    ),
     "status.md": ("non-mutating", "declarations", "host-known roots", "stale user-controlled state"),
     "repair.md": ("stale declaration", "malformed", "obsolete", "newer-than-CLI", "explicit user request"),
 }
@@ -993,6 +1011,8 @@ SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS = (
     ".kimi-code/skills",
     ".agents/skills",
 )
+
+SYSTEM_SKILL_MANAGER_FORBIDDEN_TERMS = ("--home",)
 
 ENTRYPOINT_SERVICE_SKILLS = (
     "isomer-srv-topic-env-setup",
@@ -1054,7 +1074,7 @@ ENTRYPOINT_REQUIRED_SKILL_TERMS = (
     "## Workflow",
     "## Reference Pages",
     "## Output Contract",
-    "## Common Mistakes",
+    "## Guardrails",
     "route",
     "proceed",
     "system skills",
@@ -1302,7 +1322,7 @@ TOPIC_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "verify-env-gate",
     "single capable agent or operator",
     "Topic environment setup is independent of Topic Agent Team structure",
-    "Do not require or inspect Topic Agent Team Profile material",
+    "DO NOT require or inspect Topic Agent Team Profile material",
     "agent count",
     "pixi run --manifest-path <manifest_path> --environment <pixi_environment>",
     "pixi add --manifest-path <manifest_path>",
@@ -1461,6 +1481,7 @@ TOPIC_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
 }
 
 TOPIC_ENV_SETUP_SUBCOMMANDS = (
+    "fulfill-service-request.md",
     "resolve-topic-workspace.md",
     "read-env-gate.md",
     "derive-env-gate.md",
@@ -1486,8 +1507,8 @@ TOPIC_ENV_SETUP_INDEPENDENCE_TERMS = (
     "Do not block solely because `<topic-workspace>/team-profile/`",
     "non-blocking for this subcommand unless",
     "one agent or operator",
-    "Do not require `team-profile/`",
-    "Do not require or verify `team-profile/`",
+    "DO NOT require `team-profile/`",
+    "DO NOT require or verify `team-profile/`",
 )
 
 AGENT_ENV_SETUP_SERVICE_SKILL = "isomer-srv-agent-env-setup"
@@ -1512,7 +1533,7 @@ HOUMAO_INTEROP_SERVICE_REQUIRED_SKILL_TERMS = (
     "isomer-op-project-mgr",
     "isomer-op-topic-team-specialize",
     "next action",
-    "Do not own Project lifecycle",
+    "DO NOT own Project lifecycle",
 )
 
 HOUMAO_INTEROP_SERVICE_REFERENCE_REQUIRED_TERMS = {
@@ -1571,9 +1592,9 @@ AGENT_ENV_SETUP_REQUIRED_SKILL_TERMS = (
     "unknown-risk",
     "generic best-effort judgment",
     "A generic smoke test is only supporting evidence",
-    "Do not initialize, repair, or configure the Topic Main Development Repository",
-    "Do not create per-agent Pixi manifests",
-    "Do not install or mutate Topic Workspace dependencies",
+    "DO NOT initialize, repair, or configure the Topic Main Development Repository",
+    "DO NOT create per-agent Pixi manifests",
+    "DO NOT install or mutate Topic Workspace dependencies",
     "mutate Workspace Runtime records",
 )
 
@@ -1691,7 +1712,7 @@ AGENT_ENV_SETUP_REFERENCE_REQUIRED_TERMS = {
         "isomer-srv-topic-env-setup",
         "isomer-misc-pkg-specifics",
         "no package-specific rule",
-        "Do not write or run independent PyPI, Pixi, Conda, or runtime-wiring package install commands",
+        "DO NOT write or run independent PyPI, Pixi, Conda, or runtime-wiring package install commands",
     ),
     "setup-agent-env.md": (
         "resolve-agent-env-context",
@@ -2100,6 +2121,320 @@ def add(
     message: str,
 ) -> None:
     diagnostics.append(Diagnostic(relpath(path, repo_root), max(line, 1), code, message))
+
+
+def packaged_skill_dirs(repo_root: Path, diagnostics: list[Diagnostic] | None = None) -> tuple[Path, ...]:
+    manifest_path = repo_root / "skillset" / "manifest.toml"
+    local_diagnostics = diagnostics if diagnostics is not None else []
+    if not manifest_path.exists():
+        add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest is required")
+        return ()
+    try:
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        add(local_diagnostics, repo_root, manifest_path, exc.lineno, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest must be valid TOML")
+        return ()
+
+    groups = manifest.get("groups")
+    if not isinstance(groups, dict):
+        add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest must contain a groups table")
+        return ()
+
+    repository_root = repo_root.resolve()
+    skill_dirs: list[Path] = []
+    seen: set[Path] = set()
+    for group_name, raw_group in groups.items():
+        if not isinstance(raw_group, dict):
+            add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, f"manifest group {group_name!r} must be a table")
+            continue
+        raw_skills = raw_group.get("skills")
+        if not isinstance(raw_skills, list) or not all(isinstance(item, str) and item for item in raw_skills):
+            add(
+                local_diagnostics,
+                repo_root,
+                manifest_path,
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"manifest group {group_name!r} skills must be a list of non-empty strings",
+            )
+            continue
+        for raw_skill in raw_skills:
+            relative_skill = Path(raw_skill)
+            if relative_skill.is_absolute() or ".." in relative_skill.parts:
+                add(
+                    local_diagnostics,
+                    repo_root,
+                    manifest_path,
+                    1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"manifest skill path {raw_skill!r} must be a relative path without parent traversal",
+                )
+                continue
+            skill_dir = repo_root / "skillset" / raw_skill
+            resolved = skill_dir.resolve()
+            if not resolved.is_relative_to(repository_root):
+                add(
+                    local_diagnostics,
+                    repo_root,
+                    manifest_path,
+                    1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"manifest skill path {raw_skill!r} must resolve inside the repository",
+                )
+                continue
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            skill_dirs.append(skill_dir)
+    return tuple(skill_dirs)
+
+
+def active_skill_markdown_pages(skill_dir: Path) -> tuple[Path, ...]:
+    pages: list[Path] = []
+    for path in skill_dir.rglob("*.md"):
+        relative = path.relative_to(skill_dir)
+        if any(part in SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS for part in relative.parts):
+            continue
+        pages.append(path)
+    return tuple(sorted(pages))
+
+
+def _h2_indices(lines: tuple[str, ...], title: str) -> list[int]:
+    expected = f"## {title}"
+    return [index for index, line in enumerate(lines) if line.strip() == expected]
+
+
+def _h2_section(lines: tuple[str, ...], start_index: int) -> tuple[str, ...]:
+    end_index = len(lines)
+    for index in range(start_index + 1, len(lines)):
+        if lines[index].startswith("## "):
+            end_index = index
+            break
+    return lines[start_index + 1 : end_index]
+
+
+def _subcommand_markdown_refs(skill_dir: Path, lines: tuple[str, ...]) -> set[Path]:
+    references: set[Path] = set()
+    in_subcommands = False
+    for line in lines:
+        if line.startswith("## "):
+            in_subcommands = "Subcommands" in line
+        if not in_subcommands:
+            continue
+        for raw_reference in local_references_from_line(line):
+            if raw_reference.endswith(".md"):
+                references.add((skill_dir / raw_reference).resolve())
+    return references
+
+
+def _validate_current_workflow(
+    path: Path,
+    lines: tuple[str, ...],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    *,
+    require_near_top: bool,
+) -> None:
+    workflow_indices = _h2_indices(lines, "Workflow")
+    if len(workflow_indices) != 1:
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            1,
+            SYSTEM_SKILL_TEMPLATE_CODE,
+            "active executable page must contain exactly one ## Workflow section",
+        )
+        return
+    workflow_index = workflow_indices[0]
+    if require_near_top:
+        preceding_h2 = [line.strip() for line in lines[:workflow_index] if line.startswith("## ")]
+        if preceding_h2 != ["## Overview", "## When to Use"]:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                workflow_index + 1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "SKILL.md must place ## Workflow after ## Overview and ## When to Use and before other top-level sections",
+            )
+    if not has_numbered_step_after(lines, workflow_index):
+        add(diagnostics, repo_root, path, workflow_index + 1, SYSTEM_SKILL_TEMPLATE_CODE, "## Workflow must contain numbered steps")
+    if not any("does not map cleanly" in line for line in lines[workflow_index + 1 :]):
+        add(diagnostics, repo_root, path, workflow_index + 1, SYSTEM_SKILL_TEMPLATE_CODE, "active executable page must include a freeform planning fallback")
+
+
+def _validate_guardrails(
+    path: Path,
+    lines: tuple[str, ...],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    *,
+    required: bool,
+) -> None:
+    guardrail_indices = _h2_indices(lines, "Guardrails")
+    if required and len(guardrail_indices) != 1:
+        add(diagnostics, repo_root, path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "SKILL.md must contain exactly one ## Guardrails section")
+    elif len(guardrail_indices) > 1:
+        add(diagnostics, repo_root, path, guardrail_indices[1] + 1, SYSTEM_SKILL_TEMPLATE_CODE, "active page must not contain duplicate ## Guardrails sections")
+
+    for guardrail_index in guardrail_indices:
+        bullet_count = 0
+        for offset, line in enumerate(_h2_section(lines, guardrail_index), start=guardrail_index + 2):
+            if not line.strip():
+                continue
+            if line.startswith("- "):
+                bullet_count += 1
+                if not re.match(r"^- (?:DO NOT|MUST)(?:\s|$)", line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        offset,
+                        SYSTEM_SKILL_TEMPLATE_CODE,
+                        "top-level Guardrails bullets must start with DO NOT or MUST",
+                    )
+                continue
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                offset,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "## Guardrails must contain only concise top-level bullets",
+            )
+        if bullet_count == 0:
+            add(diagnostics, repo_root, path, guardrail_index + 1, SYSTEM_SKILL_TEMPLATE_CODE, "## Guardrails must contain at least one rule")
+
+
+def _validate_troubleshooting(
+    path: Path,
+    lines: tuple[str, ...],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    troubleshooting_indices = _h2_indices(lines, "Troubleshooting Guide")
+    if len(troubleshooting_indices) > 1:
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            troubleshooting_indices[1] + 1,
+            SYSTEM_SKILL_TEMPLATE_CODE,
+            "active page must not contain duplicate ## Troubleshooting Guide sections",
+        )
+    for troubleshooting_index in troubleshooting_indices:
+        child_count: int | None = None
+        problem_count = 0
+        for offset, line in enumerate(_h2_section(lines, troubleshooting_index), start=troubleshooting_index + 2):
+            if not line.strip():
+                continue
+            if line.startswith("- "):
+                if child_count is not None and child_count != 1:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        offset,
+                        SYSTEM_SKILL_TEMPLATE_CODE,
+                        "each troubleshooting problem must have exactly one nested solution",
+                    )
+                problem_count += 1
+                child_count = 0
+                continue
+            nested_match = re.match(r"^\s{2,}- (.+)$", line)
+            if nested_match and child_count is not None:
+                child_count += 1
+                if not re.match(r"^If .+, then .+\.$", nested_match.group(1)):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        offset,
+                        SYSTEM_SKILL_TEMPLATE_CODE,
+                        "troubleshooting solutions must use 'If <problem>, then <action>.'",
+                    )
+                continue
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                offset,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "## Troubleshooting Guide must use exactly two bullet levels",
+            )
+        if child_count is not None and child_count != 1:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                troubleshooting_index + 1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "each troubleshooting problem must have exactly one nested solution",
+            )
+        if problem_count == 0:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                troubleshooting_index + 1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "## Troubleshooting Guide must not be empty or used as a placeholder",
+            )
+
+
+def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    for skill_dir in packaged_skill_dirs(repo_root, diagnostics):
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.exists():
+            add(diagnostics, repo_root, skill_md, 1, SYSTEM_SKILL_TEMPLATE_CODE, "manifest-declared skill must contain SKILL.md")
+            continue
+        skill_lines = read_lines(skill_md)
+        frontmatter = parse_frontmatter(skill_lines)
+        description = frontmatter.get("description", "")
+        if not description.startswith("Use when"):
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(skill_lines, "description:"),
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "frontmatter description must start with 'Use when'",
+            )
+        for heading in ("Overview", "When to Use"):
+            if len(_h2_indices(skill_lines, heading)) != 1:
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_md,
+                    1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"SKILL.md must contain exactly one ## {heading} section",
+                )
+        _validate_current_workflow(skill_md, skill_lines, repo_root, diagnostics, require_near_top=True)
+
+        subcommand_refs = _subcommand_markdown_refs(skill_dir, skill_lines)
+        for page in active_skill_markdown_pages(skill_dir):
+            lines = read_lines(page)
+            if _h2_indices(lines, "Common Mistakes"):
+                add(
+                    diagnostics,
+                    repo_root,
+                    page,
+                    _h2_indices(lines, "Common Mistakes")[0] + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    "active packaged skill pages must not contain ## Common Mistakes",
+                )
+            _validate_guardrails(page, lines, repo_root, diagnostics, required=page == skill_md)
+            _validate_troubleshooting(page, lines, repo_root, diagnostics)
+            if page == skill_md:
+                continue
+            relative = page.relative_to(skill_dir)
+            is_executable = "commands" in relative.parts or page.resolve() in subcommand_refs or bool(_h2_indices(lines, "Workflow"))
+            if is_executable:
+                _validate_current_workflow(page, lines, repo_root, diagnostics, require_near_top=False)
+    return sorted(set(diagnostics))
 
 
 def validate_global_isomer_cli_invocation(repo_root: Path, roots: tuple[Path, ...], *, code: str) -> list[Diagnostic]:
@@ -3151,6 +3486,16 @@ def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
 
     for skill_file in sorted(path for path in skill_dir.rglob("*") if path.is_file() and path.suffix in ACTIVE_REF_SUFFIXES):
         for line_number, line in enumerate(read_lines(skill_file), start=1):
+            for forbidden_term in SYSTEM_SKILL_MANAGER_FORBIDDEN_TERMS:
+                if forbidden_term in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS014",
+                        f"{SYSTEM_SKILL_MANAGER_SKILL} must use scoped installation guidance instead of '{forbidden_term}'",
+                    )
             for provider_path in SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS:
                 if provider_path not in line:
                     continue
@@ -3738,6 +4083,7 @@ def validate_package_specifics_skill(repo_root: Path) -> list[Diagnostic]:
 
 def validate_all(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
+    diagnostics.extend(validate_packaged_skill_template(repo_root))
     diagnostics.extend(
         Diagnostic(item.path, item.line, item.code, item.message)
         for item in research_validator.validate_skillset(repo_root / "skillset" / "research-paradigm", repo_root)

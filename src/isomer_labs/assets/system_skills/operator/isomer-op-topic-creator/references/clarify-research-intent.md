@@ -93,12 +93,12 @@ If `topic.intent.overview` does not exist, refuse to run directly, explain that 
 
 ## Guardrails
 
-Do not derive topic env target specs, install dependencies, create Actor Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand. Stop after topic intent clarification and route to `define-topic-env` when the intent is ready.
+- DO NOT derive topic env target specs, install dependencies, create Actor Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand. Stop after topic intent clarification and route to `define-topic-env` when the intent is ready.
 
-Do not create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
+- DO NOT create ADRs, decision logs, user-decision records, or separate clarification transcripts as durable sources of truth for user answers. The durable result of this subcommand is the revised `topic-overview.md`.
 
-Do not silently discard earlier assumptions. Mark corrected assumptions as revised.
+- DO NOT silently discard earlier assumptions. Mark corrected assumptions as revised.
 
-Do not promote a provisional topic workspace seed into authoritative Project Manifest state.
+- DO NOT promote a provisional topic workspace seed into authoritative Project Manifest state.
 
-Do not invoke `clarify-research-intent` from `fast-forward`, `run-to`, `step-by-step`, or any other automatic workflow.
+- DO NOT invoke `clarify-research-intent` from `fast-forward`, `run-to`, `step-by-step`, or any other automatic workflow.

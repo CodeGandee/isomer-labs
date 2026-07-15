@@ -35,6 +35,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not place credentials, command output, mailbox state, gateway state, Evidence Items, Findings, Gates, or Decision Records in packet inputs.
-- Do not select a user-controlled profile id for an authoritative topic bundle.
-- Do not edit Domain Agent Team Template source; plan copies and topic edits inside the Topic Workspace bundle.
+- DO NOT place credentials, command output, mailbox state, gateway state, Evidence Items, Findings, Gates, or Decision Records in packet inputs.
+- DO NOT select a user-controlled profile id for an authoritative topic bundle.
+- DO NOT edit Domain Agent Team Template source; plan copies and topic edits inside the Topic Workspace bundle.

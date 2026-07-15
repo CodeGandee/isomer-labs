@@ -9,6 +9,10 @@ description: Use when accepted Kaoju records need a self-contained LLM Wiki expo
 
 Export accepted state-DB records to a self-contained survey wiki, deploy the package-owned viewer, and launch it under an explicit network-exposure posture.
 
+## When to Use
+
+Use for `export-survey-wiki` or direct Kaoju wiki export, deployment, refresh, and launch. Do not invoke, import, or route to the external `imsight-llm-wiki` skill. The packaged viewer is an independently implemented compatible reader for the Kaoju wiki manifest.
+
 ## Workflow
 
 1. **Resolve accepted scope**. Query the state DB for explicit Artifact refs or the selected direction and paper-line scopes. Reject ambiguous, stale, missing, or checksum-mismatched candidates. Never discover durable inputs by scanning directories.
@@ -23,10 +27,6 @@ Export accepted state-DB records to a self-contained survey wiki, deploy the pac
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
 
-## When to Use
-
-Use for `export-survey-wiki` or direct Kaoju wiki export, deployment, refresh, and launch. Do not invoke, import, or route to the external `imsight-llm-wiki` skill. The packaged viewer is an independently implemented compatible reader for the Kaoju wiki manifest.
-
 ## Artifact Operations
 
 Resolve bindings through `project artifacts describe` and persist only through typed Artifact operations. Read `artifact-bindings.md`, `references/wiki-contract.md`, and `$isomer-kaoju-shared` before mutation.
@@ -35,13 +35,13 @@ Resolve bindings through `project artifacts describe` and persist only through t
 
 Use `$isomer-kaoju-shared` for Artifact, evidence, Gate, lineage, execution request, and terminal contracts. Use `$isomer-kaoju-workspace-mgr` when state-DB readiness or export-target ownership is missing.
 
-## Common Mistakes
+## Guardrails
 
-- Treating rendered pages as new evidence.
-- Overwriting an unrecognized target or deleting a human file.
-- Loading an external viewer checkout at runtime.
-- Binding the viewer to a public interface without the network-exposure Gate.
+- DO NOT treat rendered pages as new evidence.
+- DO NOT overwrite an unrecognized target or delete a human file.
+- DO NOT load an external viewer checkout at runtime.
+- DO NOT bind the viewer to a public interface without the network-exposure Gate.
 
 ## Chat Response
 
-Lead with the export or launch outcome. Name the stable target, created and stale pages, manifest and viewer refs, local URL when launched, blockers, and resume point.
+Present normal chat responses in natural-language Markdown. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat. Lead with the export or launch outcome. Name the stable target, created and stale pages, manifest and viewer refs, local URL when launched, blockers, and resume point.

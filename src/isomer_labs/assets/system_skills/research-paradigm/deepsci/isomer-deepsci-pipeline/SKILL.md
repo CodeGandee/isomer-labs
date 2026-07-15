@@ -13,6 +13,10 @@ Structured payloads use the supported DeepSci v2 display contract: write non-emp
 
 Each pass is defined by a dedicated subcommand page under `commands/`. The recipe is embedded in that page so pass-specific customization can grow without complicating the main skill entrypoint.
 
+## When to Use
+
+Use this skill when a research task matches one named single-pass procedure and the caller wants automatic artifact handoffs across its fixed production DeepSci stages without starting an external macro loop.
+
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
@@ -78,14 +82,14 @@ This skill can end only when one of the following is durably true:
 - A stage blocked the pipeline and `pipeline-terminal-report` has `status: blocked` with a `resume_point` and blocker record.
 - The requested pass is unknown and a help or `list-passes` response was returned.
 
-## Common Mistakes
+## Guardrails
 
-- Treating the pipeline skill as a loop manager. Looping is external control.
-- Silently continuing after a stage blocker or unexpected route decision.
-- Skipping a wrapped skill's callbacks or quality gates.
-- Binding source paths, filenames, or source harness outputs as final Isomer storage contracts.
-- Asking the user routine technical questions before checking durable local evidence.
-- Hiding blocked states behind vague progress language.
+- DO NOT treat the pipeline skill as a loop manager. Looping is external control.
+- DO NOT silently continue after a stage blocker or unexpected route decision.
+- DO NOT skip a wrapped skill's callbacks or quality gates.
+- DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
+- DO NOT ask the user routine technical questions before checking durable local evidence.
+- DO NOT hide blocked states behind vague progress language.
 
 ## Chat Response
 

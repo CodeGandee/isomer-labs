@@ -11,6 +11,10 @@ Write the strongest survey conclusion supported by accepted evidence and no stro
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:related-work-catalog`, `kaoju:claim-status-table`, `kaoju:field-summary`, and `kaoju:kaoju-dossier` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
+## When to Use
+
+Use only after audit accepts the evidence for synthesis or narrows the claims explicitly. Do not use this skill to fill evidence gaps, discover new sources, execute code, repair Runs, or bypass a not-ready Audit Report.
+
 ## Workflow
 
 1. **Accept audited inputs**. Require an accepted Audit Report, Survey Contract, accepted Artifact and Evidence Item refs, and the requested output view.
@@ -23,10 +27,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 8. **Return status**. Report `complete`, `paused`, or `blocked` with output refs, coverage limits, unresolved questions, and a resume point when applicable.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use only after audit accepts the evidence for synthesis or narrows the claims explicitly. Do not use this skill to fill evidence gaps, discover new sources, execute code, repair Runs, or bypass a not-ready Audit Report.
 
 ## Output Contract
 
@@ -60,11 +60,11 @@ Synthesis organizes accepted evidence; it does not manufacture missing evidence 
 - Audited limitations disappear from the summary.
 - A generated-data capability probe is presented as benchmark reproduction.
 
-## Common Mistakes
+## Guardrails
 
-- Writing from memory instead of accepted refs. Build every section from the audited evidence set.
-- Turning `unclear` or `disputed` into a neutral score. Preserve the state and source basis.
-- Claiming the field is complete. State the bounded search and remaining frontier.
+- DO NOT write from memory instead of accepted refs. Build every section from the audited evidence set.
+- DO NOT turn `unclear` or `disputed` into a neutral score. Preserve the state and source basis.
+- DO NOT claim the field is complete. State the bounded search and remaining frontier.
 
 ## Chat Response
 

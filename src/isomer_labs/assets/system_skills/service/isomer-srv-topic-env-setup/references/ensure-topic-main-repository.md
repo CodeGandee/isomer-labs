@@ -63,7 +63,7 @@ Use `isomer-cli --print-json project topic-main-guidance inspect --topic <topic>
 
 ## Guardrails
 
-- Do not delete, reset, clean, rewrite history, reinitialize, reclone, pull, or silently repair existing repositories.
-- Do not create top-level `extern/`, `shared/`, `tasks/`, `runs/`, `views/`, `logs/`, or `tools/` directories inside topic-main as standard Isomer material. Root-level `AGENTS.md` and `CLAUDE.md` are the only standard top-level Isomer-injected worker-facing rule files.
-- Do not create Agent Workspace worktrees here; that belongs to `isomer-srv-agent-env-setup`.
-- Do not claim per-agent readiness from a prepared Topic Main Development Repository alone.
+- DO NOT delete, reset, clean, rewrite history, reinitialize, reclone, pull, or silently repair existing repositories.
+- DO NOT create top-level `extern/`, `shared/`, `tasks/`, `runs/`, `views/`, `logs/`, or `tools/` directories inside topic-main as standard Isomer material. Root-level `AGENTS.md` and `CLAUDE.md` are the only standard top-level Isomer-injected worker-facing rule files.
+- DO NOT create Agent Workspace worktrees here; that belongs to `isomer-srv-agent-env-setup`.
+- DO NOT claim per-agent readiness from a prepared Topic Main Development Repository alone.

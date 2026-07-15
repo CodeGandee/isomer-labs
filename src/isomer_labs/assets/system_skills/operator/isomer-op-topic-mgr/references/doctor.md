@@ -19,4 +19,4 @@ Report the diagnostic outcome and selected Research Topic, then summarize semant
 
 ## Guardrails
 
-This subcommand is diagnostic by default. Do not mutate storage bindings, repositories, actors, worktrees, package environments, or service evidence unless the user explicitly asks for a follow-up repair command.
+- MUST keep this subcommand diagnostic by default. Do not mutate storage bindings, repositories, actors, worktrees, package environments, or service evidence unless the user explicitly asks for a follow-up repair command.

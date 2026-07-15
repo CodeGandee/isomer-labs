@@ -12,4 +12,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-Reset does not delete workspace files, change branches, stop runtime agents, mutate Workspace Runtime records, or undo task edits. It only clears the Project Operator's remembered identity posture.
+- MUST reset does not delete workspace files, change branches, stop runtime agents, mutate Workspace Runtime records, or undo task edits. It only clears the Project Operator's remembered identity posture.

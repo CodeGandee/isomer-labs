@@ -1,6 +1,6 @@
 ---
 name: isomer-op-welcome
-description: Manual invocation only; use when an Isomer Labs Project Operator Session needs to show supported operator workflow options, choose a safe owner skill, map visible usage paths such as start-research-manually or start-research-by-agent-team, or recommend a read-only next step.
+description: Use when manually invoked by an Isomer Labs Project Operator Session to show supported operator workflow options, choose a safe owner skill, map visible usage paths such as start-research-manually or start-research-by-agent-team, or recommend a read-only next step. Manual invocation only.
 ---
 
 # Isomer Admin Welcome
@@ -77,31 +77,31 @@ Group the complete explanation by Project and prompt evidence, read-only command
 
 ## Guardrails
 
-The default posture is read-only. This skill may recommend an owner skill and safe first command, but it must not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages, specialize teams, launch agents, or bootstrap research-paradigm v2 artifacts.
+- MUST keep the default posture read-only. This skill may recommend an owner skill and safe first command, but it must not initialize Projects, create Research Topics, mutate Topic Workspaces, install packages, specialize teams, launch agents, or bootstrap research-paradigm v2 artifacts.
 
-`next-step` may use only read-only Project inspection commands such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Report commands run in Complete Output.
+- MUST limit `next-step` to read-only Project inspection commands such as `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, and `isomer-cli project context show`. Report commands run in Complete Output.
 
-Route Project setup, Project checks, topic listing, context inspection, runtime initialization, and Project-level routing to `isomer-op-project-mgr`.
+- MUST route Project setup, Project checks, topic listing, context inspection, runtime initialization, and Project-level routing to `isomer-op-project-mgr`.
 
-Route Project Web GUI lifecycle, GUI Backend launch or status, cache-mode debugging, GUI refresh, recent-errors inspection, backend API reference, or GUI troubleshooting to `isomer-op-gui-mgr`. This welcome skill may recommend the owner route, but it must not start the GUI Backend, inspect HTTP routes, rebuild query-index rows, or troubleshoot code defects itself.
+- MUST route Project Web GUI lifecycle, GUI Backend launch or status, cache-mode debugging, GUI refresh, recent-errors inspection, backend API reference, or GUI troubleshooting to `isomer-op-gui-mgr`. This welcome skill may recommend the owner route, but it must not start the GUI Backend, inspect HTTP routes, rebuild query-index rows, or troubleshoot code defects itself.
 
-Route blank or partial Research Topic creation and manual-research-ready topic preparation to `isomer-op-topic-creator`.
+- MUST route blank or partial Research Topic creation and manual-research-ready topic preparation to `isomer-op-topic-creator`.
 
-Route initialized-topic storage, Topic Actors, package mutation, environment verification, reset checkpoints, and diagnostics to `isomer-op-topic-mgr`.
+- MUST route initialized-topic storage, Topic Actors, package mutation, environment verification, reset checkpoints, and diagnostics to `isomer-op-topic-mgr`.
 
-Route Topic Team Specialization to `isomer-op-topic-team-specialize` only when the user explicitly invokes that skill or a named specialization route, or when the prompt or authoritative context establishes a formal Agent Team target such as a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team material.
+- MUST route Topic Team Specialization to `isomer-op-topic-team-specialize` only when the user explicitly invokes that skill or a named specialization route, or when the prompt or authoritative context establishes a formal Agent Team target such as a Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team material.
 
-Route Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping questions to the owning operator workflow first. Project bootstrap or check questions belong to `isomer-op-project-mgr`; launch-facing work belongs to `isomer-op-topic-team-specialize` only when the launch target is a formal Agent Team established by the prompt or authoritative context. Runtime, Topic Service Master, GUI, topic preparation, and other launch-facing requests retain their actual owners. Those workflows may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
+- MUST route Houmao loop, runtime, launch profile, mailbox, gateway, and template-mapping questions to the owning operator workflow first. Project bootstrap or check questions belong to `isomer-op-project-mgr`; launch-facing work belongs to `isomer-op-topic-team-specialize` only when the launch target is a formal Agent Team established by the prompt or authoritative context. Runtime, Topic Service Master, GUI, topic preparation, and other launch-facing requests retain their actual owners. Those workflows may delegate bounded Houmao adapter support to `isomer-srv-houmao-interop`.
 
-Do not infer a formal Agent Team target from generic topic preparation, launch-facing language, readiness gaps, missing summaries, missing Agent Workspaces, or Topic Workspace context alone. When a contextual formal-team route is valid, name the evidence in the recommendation.
+- DO NOT infer a formal Agent Team target from generic topic preparation, launch-facing language, readiness gaps, missing summaries, missing Agent Workspaces, or Topic Workspace context alone. When a contextual formal-team route is valid, name the evidence in the recommendation.
 
-Route project-local Toolbox creation, conversion, install, inspection, callback insertion, callback insertion-point, Runtime Param, disable, uninstall, or source-update questions to `isomer-op-toolbox-mgr`. This welcome skill may recommend the owner route, but it must not author Toolbox files, install Toolboxes, mutate callback registries, or mutate Runtime Params itself.
+- MUST route project-local Toolbox creation, conversion, install, inspection, callback insertion, callback insertion-point, Runtime Param, disable, uninstall, or source-update questions to `isomer-op-toolbox-mgr`. This welcome skill may recommend the owner route, but it must not author Toolbox files, install Toolboxes, mutate callback registries, or mutate Runtime Params itself.
 
-Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; those are retired operator compatibility skills, not active routes.
+- DO NOT ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; those are retired operator compatibility skills, not active routes.
 
-Do not route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
+- DO NOT route manual, human-orchestrated, or multiple manually controlled coding-agent research requests to Topic Team Specialization unless the user explicitly invokes specialization or the prompt or authoritative context establishes a formal Agent Team target and applies the requested action to that team.
 
-Do not automatically route to `isomer-misc-tool-packs`. Mention `isomer-misc-tool-packs` only as a manual skill when the user explicitly asks for installable toolsets, and keep package mutation routing with the active owner skill.
+- DO NOT automatically route to `isomer-misc-tool-packs`. Mention `isomer-misc-tool-packs` only as a manual skill when the user explicitly asks for installable toolsets, and keep package mutation routing with the active owner skill.
 
 ## Chat Response
 

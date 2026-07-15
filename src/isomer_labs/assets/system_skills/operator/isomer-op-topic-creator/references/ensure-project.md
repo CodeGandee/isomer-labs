@@ -13,4 +13,4 @@ If the user's task does not map cleanly to these steps, ask whether the user wan
 
 ## Guardrails
 
-Do not create a Research Topic, Topic Workspace, Workspace Runtime, Topic Actor, Agent Workspace, Houmao launch material, mailbox, gateway, or readiness summary in this command.
+- DO NOT create a Research Topic, Topic Workspace, Workspace Runtime, Topic Actor, Agent Workspace, Houmao launch material, mailbox, gateway, or readiness summary in this command.

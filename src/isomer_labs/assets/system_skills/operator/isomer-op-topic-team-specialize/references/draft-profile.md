@@ -33,6 +33,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not write authoritative profile bundle material without approval provenance.
-- Do not mark synthetic preview material as authoritative, live, or ready for runtime operation.
-- Do not include rich research outputs or credentials in profile bundle files.
+- DO NOT write authoritative profile bundle material without approval provenance.
+- DO NOT mark synthetic preview material as authoritative, live, or ready for runtime operation.
+- DO NOT include rich research outputs or credentials in profile bundle files.

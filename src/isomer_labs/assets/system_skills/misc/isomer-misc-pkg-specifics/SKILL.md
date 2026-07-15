@@ -34,6 +34,8 @@ When this skill is invoked, execute the following steps in order.
 4. **Report evidence back to the caller**:
    - Include package name, selected source or unresolved source, required variant, verification expectation, warnings, and blockers.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the named package, package-specific references, and caller context, then execute the plan.
+
 If the package is not listed, do not invent a package-specific rule inside the caller's workflow. Report `no package-specific rule`; the caller remains responsible for generic package routing, Pixi mutation, package-source reachability checks, bounded-run handling, env gate writing, and final readiness reporting.
 
 ## Packages
@@ -42,13 +44,13 @@ If the package is not listed, do not invent a package-specific rule inside the c
 | --- | --- | --- |
 | `pytorch` | PyTorch package source, CPU/GPU variants, CUDA runtime support, Flash Attention builds, Triton compatibility, and model execution readiness | [references/pytorch.md](references/pytorch.md) |
 
-## Common Mistakes
+## Guardrails
 
-- Treating `import <package>` as proof that the required accelerator or runtime variant is installed.
-- Installing an unqualified package name when the task requires a specific CPU, CUDA, ROCm, MPI, or platform variant.
-- Recording a package as ready from solver success alone instead of checking the package's runtime metadata.
-- Putting package-specific caveats in core service skills instead of this package-specific index.
-- Turning this skill into a generic environment setup, package-source reachability, or bounded-run guide.
+- DO NOT treat `import <package>` as proof that the required accelerator or runtime variant is installed.
+- DO NOT install an unqualified package name when the task requires a specific CPU, CUDA, ROCm, MPI, or platform variant.
+- DO NOT record a package as ready from solver success alone; check the package's runtime metadata.
+- DO NOT put package-specific caveats in core service skills instead of this package-specific index.
+- DO NOT turn this skill into a generic environment setup, package-source reachability, or bounded-run guide.
 
 ## Chat Response
 

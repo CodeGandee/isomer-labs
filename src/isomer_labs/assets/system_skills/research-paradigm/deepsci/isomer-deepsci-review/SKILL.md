@@ -107,13 +107,13 @@ This skill can end when all applicable checks are true:
 - Any new evidence request appears in `<REVIEW_EXPERIMENT_TODO>` with concrete scope, or the report explains why no new evidence is needed.
 - `<REVIEW_ROUTE_DECISION>` names the next responsible route.
 
-## Common Mistakes
+## Guardrails
 
-- Writing no weaknesses without showing likely rejection routes.
-- Turning manuscript blockers into fake experiments.
-- Requesting new experiments before checking recorded evidence.
-- Letting review work perform follow-up experiments itself instead of routing to analysis.
-- Reviewing from author optimism rather than evidence.
+- DO NOT write no weaknesses without showing likely rejection routes.
+- DO NOT turn manuscript blockers into fake experiments.
+- DO NOT request new experiments before checking recorded evidence.
+- DO NOT let review work perform follow-up experiments itself instead of routing to analysis.
+- DO NOT review from author optimism rather than evidence.
 
 ## Chat Response
 

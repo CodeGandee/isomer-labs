@@ -12,6 +12,8 @@
 
 3. Record affected refs and checkpoint the Run at the first incomplete stage.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-write`; CLI: `isomer-cli ext kaoju paper export-template|apply-template`. Inputs: paper-line and canonical MyST refs. Outputs: export, manifest, template revision, conflict, and handoff refs.

@@ -9,6 +9,8 @@
 5. Require explicit human confirmation, then persist `kaoju:direction-set` through `project artifacts put` or `revise` with the survey scope.
 6. Checkpoint the Run and return the selected direction ids. Do not build reading lists in this intent.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
+
 ## Owner, Inputs, and Outputs
 
 Owner: `$isomer-kaoju-frame`. Inputs: Workspace Readiness, Survey Contract, prior direction ref, actor choices. Output: one accepted scoped `kaoju:direction-set` revision.

@@ -35,7 +35,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not create `.isomer-labs/` by hand when `isomer-cli project init` can run.
-- Do not treat a failed Houmao bootstrap as a successful Project init.
-- Do not run `project runtime init`, `project runtime prepare`, or team launch commands from this subcommand unless the user explicitly asks for a later step.
-- Do not imply that direct `isomer-cli project init` performs agent-host discovery or extension registration. Those are separate operator-skill actions.
+- DO NOT create `.isomer-labs/` by hand when `isomer-cli project init` can run.
+- DO NOT treat a failed Houmao bootstrap as a successful Project init.
+- DO NOT run `project runtime init`, `project runtime prepare`, or team launch commands from this subcommand unless the user explicitly asks for a later step.
+- DO NOT imply that direct `isomer-cli project init` performs agent-host discovery or extension registration. Those are separate operator-skill actions.

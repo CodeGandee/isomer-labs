@@ -33,6 +33,6 @@ Read as needed:
 
 ## Guardrails
 
-- Do not write runtime observations, live process state, or adapter state into Topic Agent Team Profile material.
-- Do not invent policy refs when none are configured.
-- Do not bypass user approval for profile bundle materialization.
+- DO NOT write runtime observations, live process state, or adapter state into Topic Agent Team Profile material.
+- DO NOT invent policy refs when none are configured.
+- DO NOT bypass user approval for profile bundle materialization.

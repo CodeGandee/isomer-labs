@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-from typing import Mapping, Sequence
+from typing import Literal, Mapping, Sequence
 
 from packaging.version import Version
 
@@ -27,6 +27,7 @@ from isomer_labs.skills.receipts import (
     SKILL_MANIFEST_FILENAME as SKILL_MANIFEST_FILENAME,
     SKILL_MANIFEST_SCHEMA,
     SystemSkillManifestInspection,
+    SystemSkillManifestBinding,
     SystemSkillManifestRecord,
     SystemSkillRootManifest,
     inspect_system_skill_receipt,
@@ -42,6 +43,8 @@ from isomer_labs.skills.versioning import inspect_skill_version, require_skill_v
 
 CONCRETE_TARGETS = ("claude-code", "codex", "kimi-code", "generic")
 SUPPORTED_TARGETS = (*CONCRETE_TARGETS, "all")
+SUPPORTED_SCOPES = ("user", "project")
+SystemSkillScope = Literal["user", "project"]
 
 
 class SystemSkillInstallError(RuntimeError):
@@ -94,14 +97,32 @@ class SystemSkillSelection:
 
 
 @dataclass(frozen=True)
+class SystemSkillTargetBinding:
+    """One agent-host target and installation-scope binding."""
+
+    target: str
+    scope: SystemSkillScope
+
+    def to_json(self) -> dict[str, str]:
+        return {"target": self.target, "scope": self.scope}
+
+
+@dataclass(frozen=True)
 class SystemSkillTarget:
-    """Resolved concrete installation target."""
+    """One normalized physical system-skill destination."""
 
     target: str
     skill_root: Path
+    scope: SystemSkillScope | None = None
+    bindings: tuple[SystemSkillTargetBinding, ...] = ()
 
-    def to_json(self) -> dict[str, str]:
-        return {"target": self.target, "skill_root": str(self.skill_root)}
+    def to_json(self) -> dict[str, object]:
+        return {
+            "target": self.target,
+            "scope": self.scope,
+            "skill_root": str(self.skill_root),
+            "bindings": [binding.to_json() for binding in self.bindings],
+        }
 
 
 @dataclass(frozen=True)
@@ -256,22 +277,38 @@ def resolve_system_skill_selection(
 def resolve_targets(
     target: str,
     *,
-    home: Path | None = None,
+    scope: SystemSkillScope,
     cwd: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> tuple[SystemSkillTarget, ...]:
-    """Resolve a CLI target selector to concrete skill roots."""
+    """Resolve target and scope selectors to unique physical skill roots."""
 
     if target not in SUPPORTED_TARGETS:
         supported = ", ".join(SUPPORTED_TARGETS)
         raise SystemSkillInstallError(f"Unsupported system skill target {target!r}. Expected one of: {supported}.")
-    if target == "all":
-        if home is not None:
-            raise SystemSkillInstallError("--home can only be used with one concrete --target, not --target all.")
-        return tuple(resolve_targets(item, cwd=cwd, env=env)[0] for item in CONCRETE_TARGETS)
+    if scope not in SUPPORTED_SCOPES:
+        supported = ", ".join(SUPPORTED_SCOPES)
+        raise SystemSkillInstallError(f"Unsupported system skill scope {scope!r}. Expected one of: {supported}.")
 
-    root = _default_skill_root(target, cwd=cwd, env=env) if home is None else home.expanduser()
-    return (SystemSkillTarget(target=target, skill_root=root.resolve(strict=False)),)
+    selected_targets = CONCRETE_TARGETS if target == "all" else (target,)
+    grouped: dict[Path, list[SystemSkillTargetBinding]] = {}
+    for concrete_target in selected_targets:
+        root = _scoped_skill_root(concrete_target, scope=scope, cwd=cwd, env=env).resolve(strict=False)
+        grouped.setdefault(root, []).append(SystemSkillTargetBinding(target=concrete_target, scope=scope))
+
+    destinations: list[SystemSkillTarget] = []
+    for root, bindings in grouped.items():
+        resolved_bindings = tuple(bindings)
+        result_target = resolved_bindings[0].target if len(resolved_bindings) == 1 else "all"
+        destinations.append(
+            SystemSkillTarget(
+                target=result_target,
+                scope=scope,
+                skill_root=root,
+                bindings=resolved_bindings,
+            )
+        )
+    return tuple(destinations)
 
 
 def install_system_skills(
@@ -312,7 +349,7 @@ def install_system_skills(
 
     updated_manifest = manifest
     if installed or replaced:
-        updated_manifest = _write_manifest(target, manifest_records)
+        updated_manifest = _write_manifest(target, manifest_records, existing_manifest=manifest)
     return SystemSkillInstallResult(
         target=target,
         selection=selection,
@@ -399,7 +436,7 @@ def uninstall_system_skills(target: SystemSkillTarget, selection: SystemSkillSel
     updated_manifest = manifest
     if removed or changed_manifest:
         target.skill_root.mkdir(parents=True, exist_ok=True)
-        updated_manifest = _write_manifest(target, manifest_records)
+        updated_manifest = _write_manifest(target, manifest_records, existing_manifest=manifest)
     return SystemSkillUninstallResult(
         target=target,
         selection=selection,
@@ -456,7 +493,7 @@ def upgrade_system_skills(
         refreshed.append(_installed_record(record, destination, mode, refreshed_record))
         manifest_records[record.name] = refreshed_record
 
-    updated_manifest = _write_manifest(target, manifest_records)
+    updated_manifest = _write_manifest(target, manifest_records, existing_manifest=manifest)
     return SystemSkillUpgradeResult(
         target=target,
         selection=selection,
@@ -469,26 +506,50 @@ def upgrade_system_skills(
     )
 
 
-def _default_skill_root(
+def _scoped_skill_root(
     target: str,
     *,
+    scope: SystemSkillScope,
     cwd: Path | None = None,
     env: Mapping[str, str] | None = None,
 ) -> Path:
     base = (cwd or Path.cwd()).resolve()
+    if scope == "project":
+        if target == "claude-code":
+            return base / ".claude" / "skills"
+        if target in {"codex", "generic"}:
+            return base / ".agents" / "skills"
+        if target == "kimi-code":
+            return base / ".kimi-code" / "skills"
+        raise SystemSkillInstallError(f"Unsupported concrete target: {target}")
+
+    effective_env = os.environ if env is None else env
+    user_home_value = effective_env.get("HOME", "").strip()
+    user_home = Path(user_home_value).expanduser() if user_home_value else Path.home()
     if target == "claude-code":
-        return base / ".claude" / "skills"
+        claude_config_dir = effective_env.get("CLAUDE_CONFIG_DIR", "").strip()
+        config_root = _expand_user_path(claude_config_dir, user_home) if claude_config_dir else user_home / ".claude"
+        return config_root / "skills"
     if target == "codex":
-        effective_env = os.environ if env is None else env
         codex_home = effective_env.get("CODEX_HOME", "").strip()
         if codex_home:
-            return Path(codex_home).expanduser() / "skills"
-        return Path.home() / ".codex" / "skills"
+            return _expand_user_path(codex_home, user_home) / "skills"
+        return user_home / ".codex" / "skills"
     if target == "kimi-code":
-        return base / ".kimi-code" / "skills"
+        kimi_code_home = effective_env.get("KIMI_CODE_HOME", "").strip()
+        config_root = _expand_user_path(kimi_code_home, user_home) if kimi_code_home else user_home / ".kimi-code"
+        return config_root / "skills"
     if target == "generic":
-        return base / ".agents" / "skills"
+        return user_home / ".agents" / "skills"
     raise SystemSkillInstallError(f"Unsupported concrete target: {target}")
+
+
+def _expand_user_path(value: str, user_home: Path) -> Path:
+    if value == "~":
+        return user_home
+    if value.startswith("~/"):
+        return user_home / value[2:]
+    return Path(value).expanduser()
 
 
 def _validate_projection_mode(projection_mode: str) -> None:
@@ -539,16 +600,24 @@ def _read_manifest(target: SystemSkillTarget) -> tuple[SystemSkillRootManifest |
 def _write_manifest(
     target: SystemSkillTarget,
     records: dict[str, SystemSkillManifestRecord],
+    *,
+    existing_manifest: SystemSkillRootManifest | None = None,
 ) -> SystemSkillRootManifest:
+    bindings = set(existing_manifest.bindings if existing_manifest is not None else ())
+    bindings.update(
+        SystemSkillManifestBinding(target=binding.target, scope=binding.scope) for binding in target.bindings
+    )
+    if not bindings:
+        raise SystemSkillInstallError("Cannot write a system-skill receipt without a target-scope binding.")
     manifest = SystemSkillRootManifest(
         schema_version=SKILL_MANIFEST_SCHEMA,
-        target=target.target,
         skill_root=target.skill_root,
         package_name="isomer-labs",
         package_version=_package_version(),
         installed_by="isomer-cli",
         updated_at=datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         skills=tuple(records[name] for name in sorted(records)),
+        bindings=tuple(sorted(bindings)),
     )
     target.skill_root.mkdir(parents=True, exist_ok=True)
     manifest.path.write_text(json.dumps(_manifest_file_json(manifest), indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -559,6 +628,7 @@ def _manifest_file_json(manifest: SystemSkillRootManifest) -> dict[str, object]:
     data = manifest.to_json()
     data.pop("path", None)
     data.pop("skill_names", None)
+    data.pop("target", None)
     return data
 
 

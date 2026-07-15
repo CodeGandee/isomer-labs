@@ -58,24 +58,22 @@ When requested, include:
 
 ## Guardrails
 
-Use `isomer-cli project web serve --root <project-root>` as the canonical start command. Installed operators must invoke the global `isomer-cli` executable directly, not a repo-local Pixi wrapper for Isomer's own CLI.
+- MUST use `isomer-cli project web serve --root <project-root>` as the canonical start command. Installed operators must invoke the global `isomer-cli` executable directly, not a repo-local Pixi wrapper for Isomer's own CLI.
 
-Treat the GUI Backend as a local single-user service for one selected Project root per process. This skill does not provide daemon, supervisor, remote deployment, authentication, or process-manager authority.
+- MUST treat the GUI Backend as a local single-user service for one selected Project root per process. This skill does not provide daemon, supervisor, remote deployment, authentication, or process-manager authority.
 
-Use normal cache mode for ordinary launches. Use debug cache mode when frontend or backend changes might be hidden by browser cache, because debug mode applies no-store behavior to the GUI shell, static assets, and API responses.
+- MUST use normal cache mode for ordinary launches. Use debug cache mode when frontend or backend changes might be hidden by browser cache, because debug mode applies no-store behavior to the GUI shell, static assets, and API responses.
 
-Treat GUI Backend APIs as read surfaces unless a route is explicitly an index maintenance action. Index rebuild and cleanup are explicit user-triggered operations; frontend refresh is not canonical record repair.
+- MUST treat GUI Backend APIs as read surfaces unless a route is explicitly an index maintenance action. Index rebuild and cleanup are explicit user-triggered operations; frontend refresh is not canonical record repair.
 
-Do not claim that the GUI Backend owns canonical research state. It reads Project, Topic Workspace, Workspace Runtime, query-index, and payload-file state; canonical state stays in those owners.
+- DO NOT claim that the GUI Backend owns canonical research state. It reads Project, Topic Workspace, Workspace Runtime, query-index, and payload-file state; canonical state stays in those owners.
 
-Route invalid Project configuration to `isomer-op-project-mgr`. Route initialized-topic storage, package/environment, reset checkpoint, or Topic Actor problems to `isomer-op-topic-mgr`. Report record schema defects or GUI code defects as repository development work.
+- MUST route invalid Project configuration to `isomer-op-project-mgr`. Route initialized-topic storage, package/environment, reset checkpoint, or Topic Actor problems to `isomer-op-topic-mgr`. Report record schema defects or GUI code defects as repository development work.
 
-## Common Mistakes
-
-- Treating `project web serve` as a daemon lifecycle manager. It starts the local service; status, stop, restart, and logs are currently handled by the user's process environment unless this skill inspects `/api/health`.
-- Restarting repeatedly in normal cache mode while debugging frontend assets. Use `--cache-mode debug` when cache interference is plausible.
-- Treating browser refresh as data repair. Use recent-errors and index validation to distinguish stale UI state from non-interpretable records or stale query-index rows.
-- Listing backend API routes as schemas. Detailed GUI payload expectations live in `docs/ui/contracts/`.
+- DO NOT treat `project web serve` as a daemon lifecycle manager; it starts the local service, while status, stop, restart, and logs are handled by the user's process environment unless this skill inspects `/api/health`.
+- DO NOT restart repeatedly in normal cache mode while debugging frontend assets; use `--cache-mode debug` when cache interference is plausible.
+- DO NOT treat browser refresh as data repair; use recent-errors and index validation to distinguish stale UI state from non-interpretable records or stale query-index rows.
+- DO NOT list backend API routes as schemas; detailed GUI payload expectations live in `docs/ui/contracts/`.
 
 ## Chat Response
 

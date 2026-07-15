@@ -29,8 +29,8 @@ Require the active Survey Contract, exact target Artifact versions, accepted evi
 
 Stop at `not-ready` without synthesis, or after synthesis from `ready` or `ready-with-narrowed-claims`. This pass does not invent evidence, silently relabel it, or choose a repair procedure.
 
-## Common Mistakes
+## Guardrails
 
-- Fixing a source locator while auditing and forgetting the new lineage step.
-- Treating polished prose as evidence readiness.
-- Omitting failed Runs or contradictory Evidence Items from closeout.
+- DO NOT fix a source locator during an audit and forget the new lineage step.
+- DO NOT treat polished prose as evidence readiness.
+- DO NOT omit failed Runs or contradictory Evidence Items from closeout.

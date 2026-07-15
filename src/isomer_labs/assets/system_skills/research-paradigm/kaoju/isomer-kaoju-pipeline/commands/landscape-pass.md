@@ -32,8 +32,8 @@ Require the survey question or seed, boundary or clarification mode, desired aud
 
 Stop when the accepted coverage and representative-depth conditions are met, or return `paused` or `blocked` when access, resources, Gates, or material ambiguity prevents them. Never call the survey exhaustive unless the Survey Contract defines a finite, verifiable universe.
 
-## Common Mistakes
+## Guardrails
 
-- Letting code search replace literature search.
-- Reading every candidate deeply before triage.
-- Hiding excluded candidates or query provenance.
+- DO NOT let code search replace literature search.
+- DO NOT read every candidate deeply before triage.
+- DO NOT hide excluded candidates or query provenance.

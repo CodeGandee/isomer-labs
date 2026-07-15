@@ -13,13 +13,13 @@ Structured payloads use the supported DeepSci v2 display contract: write non-emp
 
 Shared defines the coordination contract for production DeepSci research skills. It is not migrated from one upstream source skill; it exists to keep production DeepSci skill handoffs, route decisions, placeholder usage, and storage-binding cautions consistent across the refactor-migrated skills.
 
-## Latest Context Preflight
+### Latest Context Preflight
 
 Before a production DeepSci research skill writes or refreshes accepted durable research records, or makes durable route, claim, context, evidence, result, or publication-facing decisions, run `references/latest-context-preflight.md`. The preflight resolves current Effective Topic Context, Workspace Runtime state, relevant durable records, duplicate-record posture, prompt-versus-durable-context conflicts, and the storage-neutral `latest-context-snapshot` verdict before prompt memory, chat memory, prior prose, or remembered research state is trusted.
 
 Standalone source-only reading may skip the latest-context preflight until accepted Isomer records are written or refreshed. Worker Output Policy still governs plain generated files; the preflight applies before those files are promoted or recorded as accepted durable records.
 
-## Worker Output Policy
+### Worker Output Policy
 
 Before a production DeepSci research skill writes plain generated files, resolve the current worker output policy with `isomer-cli --print-json project outputs policy --topic <research-topic-id> --agent <agent-name>` for a formal Agent Workspace or `isomer-cli --print-json project outputs policy --topic <research-topic-id> --topic-actor <topic-actor-name>` for a Topic Actor Workspace. Use the returned `absolute_root`, `worker_relative_root`, `operation_set_pattern`, `tracking_authority`, and `commit_after_operation`.
 
@@ -60,14 +60,14 @@ When this skill is invoked, execute the following steps in order.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the shared registry, the relevant production DeepSci skill, and the user's request, then execute the plan.
 
-## Common Mistakes
+## Guardrails
 
-- Treating shared as the owner of research work rather than the owner of vocabulary consistency.
-- Treating shared as the post-preparation bootstrap manager instead of routing to `isomer-deepsci-workspace-mgr`.
-- Letting a durable record write, refresh, route decision, or claim decision proceed from prompt memory before `references/latest-context-preflight.md` checks current Isomer context.
-- Binding placeholders to paths, database rows, or Artifact kinds before a storage-binding pass.
-- Inventing a new semantic object when an existing registry entry already fits.
-- Letting a route decision hide the evidence or blocker that made the route justified.
+- DO NOT treat shared as the owner of research work rather than the owner of vocabulary consistency.
+- DO NOT treat shared as the post-preparation bootstrap manager instead of routing to `isomer-deepsci-workspace-mgr`.
+- DO NOT let a durable record write, refresh, route decision, or claim decision proceed from prompt memory before `references/latest-context-preflight.md` checks current Isomer context.
+- DO NOT bind placeholders to paths, database rows, or Artifact kinds before a storage-binding pass.
+- DO NOT invent a new semantic object when an existing registry entry already fits.
+- DO NOT let a route decision hide the evidence or blocker that made the route justified.
 
 ## Reference Routing
 

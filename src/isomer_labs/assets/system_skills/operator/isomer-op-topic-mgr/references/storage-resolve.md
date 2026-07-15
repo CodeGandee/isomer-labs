@@ -23,6 +23,6 @@ Report the Research Topic, Topic Workspace and its path, then summarize resolved
 
 ## Guardrails
 
-Do not infer the selected Topic Workspace by scanning directories. Directory inspection can confirm material after Project Manifest-backed selection, but it must not choose the topic.
+- DO NOT infer the selected Topic Workspace by scanning directories. Directory inspection can confirm material after Project Manifest-backed selection, but it must not choose the topic.
 
-Do not create files from this subcommand. It is a read-only context and semantic path planning stage. Do not create or rewrite `topic-workspace.toml`; use explicit default materialization or binding lifecycle commands only when the operator asks for creation or registration.
+- DO NOT create files from this subcommand. It is a read-only context and semantic path planning stage. Do not create or rewrite `topic-workspace.toml`; use explicit default materialization or binding lifecycle commands only when the operator asks for creation or registration.

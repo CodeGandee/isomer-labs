@@ -32,8 +32,8 @@ Require seed identities, base survey refs, relevance boundary, coverage date, po
 
 Stop when every planned route reaches its accepted bound and important candidates have an audited disposition. Citation count, publication date, or provider rank alone never determines importance.
 
-## Common Mistakes
+## Guardrails
 
-- Following only backward citations.
-- Calling any chronologically later item a continuation of the seed direction.
-- Losing which seed or query produced each candidate.
+- DO NOT follow only backward citations.
+- DO NOT call any chronologically later item a continuation of the seed direction.
+- DO NOT lose which seed or query produced each candidate.

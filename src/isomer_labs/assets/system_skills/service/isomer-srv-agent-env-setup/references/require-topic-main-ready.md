@@ -52,8 +52,8 @@ Report a blocker for:
 
 ## Guardrails
 
-- Do not create, initialize, configure, repair, delete, reset, clean, rewrite history, reclone, pull, or silently repair `topic.repos.main`.
-- Do not create external repo projections.
-- Do not mutate topic dependencies.
-- Do not create Agent Workspaces here; that belongs to `create-agent-worktrees`.
-- Route missing or stale topic-main and projection evidence to `isomer-srv-topic-env-setup`.
+- DO NOT create, initialize, configure, repair, delete, reset, clean, rewrite history, reclone, pull, or silently repair `topic.repos.main`.
+- DO NOT create external repo projections.
+- DO NOT mutate topic dependencies.
+- DO NOT create Agent Workspaces here; that belongs to `create-agent-worktrees`.
+- MUST route missing or stale topic-main and projection evidence to `isomer-srv-topic-env-setup`.

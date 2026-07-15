@@ -63,8 +63,8 @@ Group the complete explanation by Topic intent status, overview label and path, 
 
 ## Guardrails
 
-Do not write canonical topic understanding to `<topic-workspace>/topic-def/topic-overview.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.overview` plus its resolved default-layout path.
+- DO NOT write canonical topic understanding to `<topic-workspace>/topic-def/topic-overview.md`. If only that legacy path exists, report a breaking-layout diagnostic and name `topic.intent.overview` plus its resolved default-layout path.
 
-Do not infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context explicitly names them. Record uncertainty as assumptions or open questions.
+- DO NOT infer exact dependency versions, repository URLs, datasets, metrics, or tools unless the source topic context explicitly names them. Record uncertainty as assumptions or open questions.
 
-Do not specialize the team, derive env target specs, install dependencies, create Agent Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand.
+- DO NOT specialize the team, derive env target specs, install dependencies, create Agent Workspaces, mutate Workspace Runtime, or launch live agents from this subcommand.

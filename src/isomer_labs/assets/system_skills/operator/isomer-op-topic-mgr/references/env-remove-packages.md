@@ -21,6 +21,6 @@ Report the removal outcome and selected Research Topic, then summarize Pixi cont
 
 ## Guardrails
 
-Package removal can break topic readiness. Do not remove packages from the selected Topic Workspace Pixi environment until dependency risks and verification checks are explicit.
+- MUST make dependency risks and verification checks explicit before removing packages from the selected Topic Workspace Pixi environment because package removal can break topic readiness.
 
-Do not choose a generic removal route before checking package-specific guidance for a named package. Treat package-specific runtime, accelerator, or companion-package caveats as removal blockers or post-removal verification requirements when they apply.
+- DO NOT choose a generic removal route before checking package-specific guidance for a named package. Treat package-specific runtime, accelerator, or companion-package caveats as removal blockers or post-removal verification requirements when they apply.

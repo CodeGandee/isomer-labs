@@ -45,7 +45,14 @@ The `system-skills` namespace discovers and installs packaged Isomer system skil
 - `system-skills upgrade`
 - `system-skills uninstall`
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Defaults are `.claude/skills` for Claude Code, `$CODEX_HOME/skills` or `~/.codex/skills` for Codex, `.kimi-code/skills` for Kimi Code, and `.agents/skills` for the generic Open Agent Skills-compatible layout. The `all` target expands to every concrete target and cannot be combined with `--home`. Every packaged skill carries its PEP 440 Isomer release version in `agents/openai.yaml`; install receipts snapshot each skill version, and status reports receipt drift and compatibility against package-owned minimum floors.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. The `install`, `status`, `upgrade`, and `uninstall` commands require both `--target` and `--scope user|project`. Project scope is anchored to the exact current working directory; user scope is independent of the working directory. The `all` target expands to every concrete target and deduplicates identical physical roots. Every packaged skill carries its PEP 440 Isomer release version in `agents/openai.yaml`; version 3 install receipts store sorted target-scope bindings and per-skill version snapshots, and status reports receipt drift and compatibility against package-owned minimum floors.
+
+| Target | Project Scope | User Scope |
+| --- | --- | --- |
+| `claude-code` | `<cwd>/.claude/skills` | `${CLAUDE_CONFIG_DIR:-~/.claude}/skills` |
+| `codex` | `<cwd>/.agents/skills` | `${CODEX_HOME:-~/.codex}/skills` |
+| `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
+| `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
 
 **Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `extensions list`, `extensions show`, `list`, and `status` are read-only.
 
@@ -54,15 +61,17 @@ isomer-cli system-skills list
 isomer-cli --print-json system-skills list
 isomer-cli system-skills extensions list
 isomer-cli system-skills extensions show kaoju
-isomer-cli system-skills install --target codex
-isomer-cli system-skills install --target codex --extension deepsci
-isomer-cli system-skills install --target codex --extension kaoju
-isomer-cli system-skills install --target all --skill isomer-op-entrypoint
-isomer-cli system-skills install --target codex --skill isomer-op-entrypoint --force
-isomer-cli system-skills upgrade --target codex
-isomer-cli --print-json system-skills status --target generic
-isomer-cli system-skills uninstall --target codex
+isomer-cli system-skills install --target codex --scope project
+isomer-cli system-skills install --target codex --scope project --extension deepsci
+isomer-cli system-skills install --target codex --scope project --extension kaoju
+isomer-cli system-skills install --target all --scope project --skill isomer-op-entrypoint
+isomer-cli system-skills install --target codex --scope project --skill isomer-op-entrypoint --force
+isomer-cli system-skills upgrade --target codex --scope project
+isomer-cli --print-json system-skills status --target generic --scope project
+isomer-cli system-skills uninstall --target codex --scope project
 ```
+
+Migration: add `--scope project` or `--scope user` to commands that previously relied on a target default. Replace an old command such as `--target kimi-code --home .kimi-code/skills` with `--target kimi-code --scope project`; replace `--target kimi-code --home ~/.kimi-code/skills` with `--target kimi-code --scope user`. The public installer no longer accepts arbitrary roots. Use host-native installation for custom destinations and keep `internals inspect-system-skill-root --skill-root <root>` for provider-neutral read-only verification.
 
 ### Internal System Skill Inspection Commands
 

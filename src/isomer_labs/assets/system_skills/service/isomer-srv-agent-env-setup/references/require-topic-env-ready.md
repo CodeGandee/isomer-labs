@@ -43,7 +43,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Do not install dependencies or repair Pixi state here.
-- Do not claim per-agent cwd readiness from topic-root verification.
-- Do not duplicate or reinterpret dependency installation policy as a separate per-agent dependency plan.
-- Report next action as `isomer-srv-topic-env-setup` when dependency, topic-main, or projection readiness is missing or stale; this is a repair route for predecessor evidence, not downstream readiness ownership by topic env setup.
+- DO NOT install dependencies or repair Pixi state here.
+- DO NOT claim per-agent cwd readiness from topic-root verification.
+- DO NOT duplicate or reinterpret dependency installation policy as a separate per-agent dependency plan.
+- MUST report next action as `isomer-srv-topic-env-setup` when dependency, topic-main, or projection readiness is missing or stale; this is a repair route for predecessor evidence, not downstream readiness ownership by topic env setup.

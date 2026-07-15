@@ -14,4 +14,4 @@ If the user's task does not map cleanly to these steps, explain whether the bloc
 
 ## Guardrails
 
-Do not create launch-facing adapter material, Agent Team Instances, Houmao agents, mailboxes, or gateways.
+- DO NOT create launch-facing adapter material, Agent Team Instances, Houmao agents, mailboxes, or gateways.

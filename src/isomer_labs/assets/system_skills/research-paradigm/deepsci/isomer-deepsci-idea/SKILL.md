@@ -107,15 +107,15 @@ This skill can end only when one of these is durably true:
 - The current line is rejected and routed back to scout, baseline, or decision.
 - The stage is blocked and the missing evidence, unresolved gate, or user-sensitive tradeoff is recorded in <IDEA_BLOCKER_RECORD>.
 
-## Common Mistakes
+## Guardrails
 
-- Do not continue after the route, gate, or blocker is already clear.
-- Do not replace evidence requirements with optimistic prose.
-- Do not treat a small implementable tweak as a strong idea unless literature and local evidence show it is the highest-value surviving route.
-- Do not skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
-- Do not bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
-- Do not ask the user routine technical questions before checking durable local evidence.
-- Do not hide blocked states behind vague progress language.
+- DO NOT continue after the route, gate, or blocker is already clear.
+- DO NOT replace evidence requirements with optimistic prose.
+- DO NOT treat a small implementable tweak as a strong idea unless literature and local evidence show it is the highest-value surviving route.
+- DO NOT skip the support pages referenced by workflow steps; they contain the source skill's operative guidance and gates.
+- DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
+- DO NOT ask the user routine technical questions before checking durable local evidence.
+- DO NOT hide blocked states behind vague progress language.
 
 ## Chat Response
 

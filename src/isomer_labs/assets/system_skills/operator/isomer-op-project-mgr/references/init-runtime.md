@@ -13,5 +13,5 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- `project runtime init` is the explicit boundary for `state.sqlite` and default runtime directories.
-- Do not run `project runtime prepare` or team launch work unless the user asks for those later steps.
+- MUST use `project runtime init` as the explicit boundary for `state.sqlite` and default runtime directories.
+- DO NOT run `project runtime prepare` or team launch work unless the user asks for those later steps.

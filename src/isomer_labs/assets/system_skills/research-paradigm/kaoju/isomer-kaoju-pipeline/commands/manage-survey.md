@@ -24,8 +24,8 @@ If the request does not map cleanly to these actions, use the native planning to
 
 Export does not create new survey evidence or change an Audit Report. If the destination requires a Topic Workspace mutation or external side effect, route it to the applicable owner and Gate.
 
-## Common Mistakes
+## Guardrails
 
-- Using `status` to restart work. Return the resume context instead.
-- Treating an export as a new canonical survey version.
-- Adding create, update, or delete as separate public commands.
+- DO NOT use `status` to restart work. Return the resume context instead.
+- DO NOT treat an export as a new canonical survey version.
+- DO NOT add create, update, or delete as separate public commands.

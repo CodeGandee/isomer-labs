@@ -26,8 +26,8 @@ Use this table shape whenever choices affect execution.
 
 ## Guardrails
 
-Do not mutate Project, Topic Workspace, runtime, repository, actor, actor onboarding, or summary state before the user acknowledges the current step preview or selects an option that authorizes proceeding.
+- DO NOT mutate Project, Topic Workspace, runtime, repository, actor, actor onboarding, or summary state before the user acknowledges the current step preview or selects an option that authorizes proceeding.
 
-Keep `step-by-step` aligned with `fast-forward`; interaction changes, but stage order and readiness rules do not.
+- MUST keep `step-by-step` aligned with `fast-forward`; interaction changes, but stage order and readiness rules do not.
 
-Do not route to a next research command after `finalize`. Report ready, verified, skipped, blocked, and the summary path.
+- DO NOT route to a next research command after `finalize`. Report ready, verified, skipped, blocked, and the summary path.

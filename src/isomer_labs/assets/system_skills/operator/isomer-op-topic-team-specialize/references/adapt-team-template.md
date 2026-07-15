@@ -40,8 +40,8 @@ If registration assurance is missing during an explicit `adapt-team-template` re
 
 ## Guardrails
 
-Adapt exactly one Research Topic and one Domain Agent Team Template at a time.
+- MUST adapt exactly one Research Topic and one Domain Agent Team Template at a time.
 
-Do not edit the source Domain Agent Team Template. Adapt only copied material under the selected Topic Workspace.
+- DO NOT edit the source Domain Agent Team Template. Adapt only copied material under the selected Topic Workspace.
 
-Do not claim approval, materialization, setup readiness, or live operation from this subcommand. Route static setup and profile-material boundaries to `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, or `materialize-profile`.
+- DO NOT claim approval, materialization, setup readiness, or live operation from this subcommand. Route static setup and profile-material boundaries to `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, or `materialize-profile`.

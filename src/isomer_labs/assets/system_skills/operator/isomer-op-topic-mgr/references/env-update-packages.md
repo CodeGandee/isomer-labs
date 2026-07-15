@@ -22,6 +22,6 @@ Report the update outcome and selected Research Topic, then summarize Pixi conte
 
 ## Guardrails
 
-Do not create local `venv`, `.venv`, or `virtualenv` environments, run ambient `pip`, mutate system package managers, run `sudo`, edit global shell profiles, or perform machine-global package setup.
+- DO NOT create local `venv`, `.venv`, or `virtualenv` environments, run ambient `pip`, mutate system package managers, run `sudo`, edit global shell profiles, or perform machine-global package setup.
 
-Do not choose a generic update route before checking package-specific guidance for a named package. Do not report package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.
+- DO NOT choose a generic update route before checking package-specific guidance for a named package. Do not report package-specific runtime readiness from solver success, package metadata, or generic import success when `isomer-misc-pkg-specifics` requires stronger evidence.

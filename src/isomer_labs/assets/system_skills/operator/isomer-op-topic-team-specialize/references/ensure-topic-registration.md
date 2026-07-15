@@ -81,12 +81,12 @@ next_operator_action: run the environment setup or project-management command th
 
 ## Guardrails
 
-Do not hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files.
+- DO NOT hand-edit `.isomer-labs/manifest.toml` or Research Topic Config files.
 
-Do not create a duplicate Research Topic or Topic Workspace when an existing Project Manifest-backed registration already matches the selected topic.
+- DO NOT create a duplicate Research Topic or Topic Workspace when an existing Project Manifest-backed registration already matches the selected topic.
 
-Do not register a topic from vague text, generic default topic statements, directory names, or unrelated workspace names.
+- DO NOT register a topic from vague text, generic default topic statements, directory names, or unrelated workspace names.
 
-Do not treat a provisional topic workspace seed as authoritative registration until the Project Manifest proves the Research Topic and Topic Workspace refs.
+- DO NOT treat a provisional topic workspace seed as authoritative registration until the Project Manifest proves the Research Topic and Topic Workspace refs.
 
-Do not call `isomer-srv-topic-env-setup` from this subcommand. Only verify or report the Topic Workspace Pixi binding that service setup needs.
+- DO NOT call `isomer-srv-topic-env-setup` from this subcommand. Only verify or report the Topic Workspace Pixi binding that service setup needs.

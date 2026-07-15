@@ -4,6 +4,15 @@
 
 Inspect a live Houmao-managed agent through the Houmao CLI, the passive API server, or the runtime filesystem. Read-only inspection is preferred; route prompt, interrupt, stop, or other control actions through the Project Operator Session, Operator Agent, or Execution Adapter boundary.
 
+## Workflow
+
+1. Resolve the managed agent and selected Houmao project from explicit operator or service context.
+2. Select the smallest read-only CLI, API, or filesystem inspection surface that answers the request.
+3. Interpret gateway, mailbox, lifecycle, and runtime evidence without taking a control action.
+4. Report the observed state, evidence source, blockers, and owning lifecycle action when one is needed.
+
+If the user's task does not map cleanly to these steps, use your native planning tool to build a read-only inspection plan from the CLI, API, and filesystem surfaces on this page, then execute the plan.
+
 ## CLI Inspection
 
 ### List agents
@@ -82,8 +91,8 @@ Implementation: `src/houmao/passive_server/app.py`.
 | `houmao.agents.realm_controller.gateway_client.GatewayClient` | HTTP client to a live gateway. |
 | `houmao.project.overlay.discover_project_overlay(start_directory)` | Find the `.houmao/` overlay from a path. |
 
-## Common Mistakes
+## Guardrails
 
-- Killing tmux sessions directly instead of using `houmao-mgr agents single --agent-id <id> stop`. Direct tmux kills can leave gateway state inconsistent.
-- Reading runtime files while a turn is active; the files may be partially written.
-- Confusing gateway status with model status. `blocked` or `stalled` often means a lifecycle recovery action is needed, not that the model is broken.
+- DO NOT kill tmux sessions directly instead of using `houmao-mgr agents single --agent-id <id> stop`; direct tmux kills can leave gateway state inconsistent.
+- DO NOT read runtime files while a turn is active; the files may be partially written.
+- DO NOT confuse gateway status with model status; `blocked` or `stalled` often means a lifecycle recovery action is needed, not that the model is broken.

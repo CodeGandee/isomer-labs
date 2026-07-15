@@ -90,28 +90,24 @@ Include grouped details for commands run, project and scope selectors, authored 
 
 ## Guardrails
 
-Do not edit packaged system skill files or the packaged system-skill manifest as part of Toolbox operations.
+- DO NOT edit packaged system skill files or the packaged system-skill manifest as part of Toolbox operations.
 
-Do not mutate callback registries, Project Manifests, or Topic Workspace Manifests directly when an `isomer-cli` command owns that behavior.
+- DO NOT mutate callback registries, Project Manifests, or Topic Workspace Manifests directly when an `isomer-cli` command owns that behavior.
 
-Do not write credentials, tokens, passwords, private data, or secret-like values into Toolbox manifests, callback material, README notes, prompt files, or Runtime Param bundles. Report a blocker or redacted diagnostic instead.
+- DO NOT write credentials, tokens, passwords, private data, or secret-like values into Toolbox manifests, callback material, README notes, prompt files, or Runtime Param bundles. Report a blocker or redacted diagnostic instead.
 
-Do not describe a Toolbox skill as automatically or implicitly invoked by default. Direct `skill_dir` callback sources are supplemental instruction material; use them only when that is the explicit requested shape.
+- DO NOT describe a Toolbox skill as automatically or implicitly invoked by default. Direct `skill_dir` callback sources are supplemental instruction material; use them only when that is the explicit requested shape.
 
-Warn when Project scope could affect every compatible topic context. Warn again before disable, uninstall, or source replacement when the operation can broadly change callback behavior.
+- MUST warn when Project scope could affect every compatible topic context. Warn again before disable, uninstall, or source replacement when the operation can broadly change callback behavior.
 
-Use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent Runtime Param scope explicit.
+- MUST use `--topic-agent` for Topic Agent selection. Keep Topic Actor and Topic Agent Runtime Param scope explicit.
 
-## Common Mistakes
-
-| Mistake | Correction |
-| --- | --- |
-| Splitting each CRUD operation into a separate helper command | Group operations by target resource, such as callback declarations or Runtime Params. |
-| Treating callback ids and local keys as the same thing | Author local `key` values and report installed callback ids as `<toolbox_id>:<toolbox-local-key>`. |
-| Letting Toolbox skills look implicitly auto-invoked | Add `agents/openai.yaml` with `allow_implicit_invocation: false`, and route through prompt-file callbacks or manual invocation. |
-| Setting Runtime Params by editing TOML from memory | Use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles. |
-| Installing before validating scope and insertion point | Validate manifest, target skill, stage, source paths, and scope before install or refresh. |
-| Hiding broad effects in a short success message | Report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output. |
+- DO NOT split each CRUD operation into a separate helper command; group operations by target resource, such as callback declarations or Runtime Params.
+- DO NOT treat callback ids and local keys as the same thing; author local `key` values and report installed callback ids as `<toolbox_id>:<toolbox-local-key>`.
+- MUST add `agents/openai.yaml` with `allow_implicit_invocation: false` and route Toolbox skills through prompt-file callbacks or manual invocation.
+- DO NOT set Runtime Params by editing TOML from memory; use `isomer-cli project toolbox-params` for mutation and explanation unless a command is only drafting source bundles.
+- MUST validate the manifest, target skill, stage, source paths, and scope before install or refresh.
+- MUST report selected scope, effective status, blockers, diagnostics, and rollback hints in Essential Output.
 
 ## Chat Response
 

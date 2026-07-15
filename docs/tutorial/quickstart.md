@@ -15,7 +15,7 @@ When working from a source checkout, use the developer setup in [Testing](../dev
 
 ## Install System Skills
 
-Install the packaged core skills into the coding-agent surface you use. Pick one target, or use `all` when you intentionally want every supported local target populated.
+Install the packaged core skills into the coding-agent surface you use. Pick one target, or use `all` when you intentionally want every supported target populated. This quickstart uses user scope so the skills remain available after you create and enter the Project directory; use project scope from an existing project directory when you want a local installation.
 
 List optional agent-skill extensions or inspect one extension before installation:
 
@@ -25,22 +25,31 @@ isomer-cli system-skills extensions show kaoju
 ```
 
 ```bash
-isomer-cli system-skills install --target codex
-isomer-cli system-skills install --target claude-code
-isomer-cli system-skills install --target kimi-code
-isomer-cli system-skills install --target generic
+isomer-cli system-skills install --target codex --scope user
+isomer-cli system-skills install --target claude-code --scope user
+isomer-cli system-skills install --target kimi-code --scope user
+isomer-cli system-skills install --target generic --scope user
 ```
+
+Every install, status, upgrade, and uninstall command requires `--scope user|project`.
+
+| Target | Project Scope | User Scope |
+| --- | --- | --- |
+| `claude-code` | `<cwd>/.claude/skills` | `${CLAUDE_CONFIG_DIR:-~/.claude}/skills` |
+| `codex` | `<cwd>/.agents/skills` | `${CODEX_HOME:-~/.codex}/skills` |
+| `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
+| `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
 
 Use `--extension deepsci` when the agent should run the DeepSci research workflow skills:
 
 ```bash
-isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
 Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. Invoke it through `$isomer-kaoju-pipeline` after installation.
 
 ```bash
-isomer-cli system-skills install --target codex --extension kaoju
+isomer-cli system-skills install --target codex --scope user --extension kaoju
 ```
 
 The pipeline routes ten user intents from direction selection and reading-list construction through source ingestion, MyST paper production, package-owned wiki export, environment preparation, and separately approved code trials. Deterministic state operations use `project artifacts`, `project runs`, `project repos acquire`, `project service-requests`, `ext kaoju paper`, and `ext kaoju wiki`; the installed skills decide what research work those services should perform.

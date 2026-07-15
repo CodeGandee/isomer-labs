@@ -16,8 +16,10 @@ When this subcommand is selected, execute the following steps in order.
 10. Run Houmao commands with `--project-dir <houmao_project_path>` and do not rely on implicit `.houmao/` discovery from cwd.
 11. Report launch status, binding status, agent identity, cwd, Houmao Project path, blockers, and validation refs.
 
+If the user's task does not map cleanly to these steps, use your native planning tool to build a launch plan from the prepared binding, projected Houmao route, authorization, and runtime boundaries, then execute the plan.
+
 ## Guardrails
 
-Do not launch from Topic Creator setup. Launch is an explicit lifecycle operation.
+- DO NOT launch from Topic Creator setup. Launch is an explicit lifecycle operation.
 
-Do not store credentials or live process secrets in support Artifacts.
+- DO NOT store credentials or live process secrets in support Artifacts.

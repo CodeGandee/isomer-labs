@@ -1,6 +1,6 @@
 ---
 name: isomer-deepsci-workspace-mgr
-description: Use after Topic Workspace and Topic Actor preparation, and optionally after Topic Team preparation, to own production DeepSci research workspace bootstrap, selected production DeepSci skill readiness, placeholder binding readiness, worker access posture, accepted research artifact guidance, and bootstrap validation before ordinary production DeepSci research skills write durable outputs.
+description: Use when Topic Workspace and Topic Actor preparation is complete, and optionally after Topic Team preparation, to own production DeepSci research workspace bootstrap, selected production DeepSci skill readiness, placeholder binding readiness, worker access posture, accepted research artifact guidance, and bootstrap validation before ordinary production DeepSci research skills write durable outputs.
 ---
 
 # Isomer Research Workspace Mgr
@@ -99,15 +99,15 @@ This skill can end only when all applicable checks are true:
 - <RSCH_AGENT_ACCESS_PLAN> tells working Topic Actors or formal agents where pre-promotion outputs belong, which actor metadata to preserve, and how durable refs should be cited after accepted research artifacts are promoted.
 - <RSCH_BOOTSTRAP_VALIDATION_REPORT> says the production DeepSci research loop can start, or <RSCH_WORKSPACE_BLOCKER_RECORD> states what must be prepared first.
 
-## Common Mistakes
+## Guardrails
 
-- Treating this skill as a replacement for Topic Team Specialization or environment setup.
-- Treating `isomer-op-topic-mgr` as the owner of production DeepSci placeholder binding.
-- Requiring a Topic Service Master when the Project Operator Session or Operator Agent can perform the same bounded bootstrap work.
-- Requiring formal Topic Team material for a human-orchestrated Topic Actor session.
-- Treating a Topic Actor Workspace as an Agent Workspace or fabricating Agent Instance refs for Topic Actor records.
-- Inventing hard-coded paths when a semantic label, typed ref, or blocker is required.
-- Letting working agents cite generated links instead of semantic labels and typed refs.
+- DO NOT treat this skill as a replacement for Topic Team Specialization or environment setup.
+- DO NOT treat `isomer-op-topic-mgr` as the owner of production DeepSci placeholder binding.
+- DO NOT require a Topic Service Master when the Project Operator Session or Operator Agent can perform the same bounded bootstrap work.
+- DO NOT require formal Topic Team material for a human-orchestrated Topic Actor session.
+- DO NOT treat a Topic Actor Workspace as an Agent Workspace or fabricate Agent Instance refs for Topic Actor records.
+- DO NOT invent hard-coded paths when a semantic label, typed ref, or blocker is required.
+- DO NOT let working agents cite generated links instead of semantic labels and typed refs.
 
 ## Chat Response
 

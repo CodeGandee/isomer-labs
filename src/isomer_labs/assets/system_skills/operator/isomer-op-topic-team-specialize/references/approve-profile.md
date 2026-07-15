@@ -45,7 +45,7 @@ Read as needed:
 
 ## Guardrails
 
-- Do not treat missing approval as implicit approval.
-- Do not convert this approval into a Gate or Decision Record unless the project already asks for that separate record.
-- Do not treat approval as live runtime approval, Agent Team Instance attachment, or execution adapter preflight.
-- Do not approve later-operation blockers without naming their impact and required action.
+- DO NOT treat missing approval as implicit approval.
+- DO NOT convert this approval into a Gate or Decision Record unless the project already asks for that separate record.
+- DO NOT treat approval as live runtime approval, Agent Team Instance attachment, or execution adapter preflight.
+- DO NOT approve later-operation blockers without naming their impact and required action.

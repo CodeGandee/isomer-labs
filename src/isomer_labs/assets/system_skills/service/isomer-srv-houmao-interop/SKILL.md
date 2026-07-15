@@ -1,13 +1,15 @@
 ---
 name: isomer-srv-houmao-interop
-description: Use for bounded service-routed Houmao adapter support when a Project Operator Session, Operator Agent, or Service Request needs Houmao loop explanation, adapter customization guidance, Domain Agent Team Template mapping, or runtime inspection without making operator, launch, Gate, or research decisions.
+description: Use when a Project Operator Session, Operator Agent, or Service Request needs bounded service-routed Houmao adapter support for loop explanation, adapter customization guidance, Domain Agent Team Template mapping, or runtime inspection without making operator, launch, Gate, or research decisions.
 ---
 
 # Isomer Service Houmao Interop
 
+## Overview
+
 Use this skill as bounded Service Team support between Isomer Labs project concepts and the Houmao agent runtime. It explains how the Houmao agent loop works, where each customization point lives, and how Isomer constructs such as Domain Agent Team Templates, Research Topics, and Topic Workspaces map onto Houmao adapter concepts such as presets, specialists, launch profiles, and project overlays.
 
-## Operating Model
+## When to Use
 
 Run this workflow at the command of a Project Operator Session, Operator Agent, Topic Service Agent, Topic Service Master, or explicit Service Request pointed at the Isomer Project root. Treat Houmao as the execution and adapter layer underneath Isomer Labs unless the Isomer domain language has explicitly promoted a Houmao term into core Isomer schema or UI language.
 
@@ -66,17 +68,17 @@ Group the complete explanation by selected mode, Houmao and Domain Agent Team Te
 
 ## Guardrails
 
-Do not treat Houmao terms as Isomer core domain language unless the Isomer schema or UI explicitly uses them. Keep Houmao as the adapter/implementation layer.
+- DO NOT treat Houmao terms as Isomer core domain language unless the Isomer schema or UI explicitly uses them. Keep Houmao as the adapter/implementation layer.
 
-Do not edit the Houmao source checkout (`extern/orphan/houmao`) to fix Isomer project behavior. If a Houmao bug blocks Isomer work, fix it in the Houmao checkout as separate local work and validate it with Houmao's own commands before depending on it.
+- DO NOT edit the Houmao source checkout (`extern/orphan/houmao`) to fix Isomer project behavior. If a Houmao bug blocks Isomer work, fix it in the Houmao checkout as separate local work and validate it with Houmao's own commands before depending on it.
 
-Do not launch Houmao-managed agents from Domain Agent Team Template source directly. Route through the approved Topic Agent Team Profile Bundle and Workspace Runtime flow owned by `isomer-op-topic-team-specialize`.
+- DO NOT launch Houmao-managed agents from Domain Agent Team Template source directly. Route through the approved Topic Agent Team Profile Bundle and Workspace Runtime flow owned by `isomer-op-topic-team-specialize`.
 
-Do not conflate DeepScientist's single-agent stage-skill model with Houmao's multi-agent role/recipe model. One DeepScientist quest normally maps to one Houmao-managed agent that loads stage skills through prompts and state, not to one Houmao agent per stage.
+- DO NOT conflate DeepScientist's single-agent stage-skill model with Houmao's multi-agent role/recipe model. One DeepScientist quest normally maps to one Houmao-managed agent that loads stage skills through prompts and state, not to one Houmao agent per stage.
 
-Do not own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing. Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
+- DO NOT own Project lifecycle, Research Topic creation, Topic Team Specialization, approval provenance, Topic Agent Team Profile materialization, Agent Team Instance launch orchestration, Gate decisions, Research Claims, or research task routing. Route those decisions back to the Project Operator Session, Operator Agent, generic Isomer CLI/API surface, or Execution Adapter boundary.
 
-Do not tell users that direct Houmao system-skill installation is required for ordinary Isomer operation. Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.
+- DO NOT tell users that direct Houmao system-skill installation is required for ordinary Isomer operation. Houmao is an internal integration provider for this route; Project-local projected support material comes from `isomer-cli project integrations houmao prepare-skills`.
 
 ## Chat Response
 

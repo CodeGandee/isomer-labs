@@ -31,8 +31,8 @@ Require the nominated locators or identities, base survey Artifact refs, active 
 
 Stop only after every nominated item has a terminal disposition. Code execution remains out of scope unless the user separately selects `method-trial-pass` or `comparative-pass`.
 
-## Common Mistakes
+## Guardrails
 
-- Treating the user's list as ground truth.
-- Dropping inaccessible or duplicate nominations from the intake record.
-- Mutating the base survey before the delta is audited.
+- DO NOT treat the user's list as ground truth.
+- DO NOT drop inaccessible or duplicate nominations from the intake record.
+- DO NOT mutate the base survey before the delta is audited.

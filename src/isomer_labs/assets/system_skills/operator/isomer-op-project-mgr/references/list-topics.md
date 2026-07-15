@@ -19,6 +19,6 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Guardrails
 
-- Use Project Manifest-backed CLI output as authority.
-- Start Research Topic deletion with `isomer-cli project topics delete <topic-id> --dry-run`; use `--yes` only after the user reviews the plan.
-- Do not treat unregistered files under `.isomer-labs/research-topics/` or directories under a Topic Workspace base such as `isomer-content/topic-ws/` as managed topics.
+- MUST use Project Manifest-backed CLI output as authority.
+- MUST start Research Topic deletion with `isomer-cli project topics delete <topic-id> --dry-run`; use `--yes` only after the user reviews the plan.
+- DO NOT treat unregistered files under `.isomer-labs/research-topics/` or directories under a Topic Workspace base such as `isomer-content/topic-ws/` as managed topics.

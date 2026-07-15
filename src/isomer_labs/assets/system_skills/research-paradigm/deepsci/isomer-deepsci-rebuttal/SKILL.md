@@ -109,13 +109,13 @@ This skill can end when all applicable checks are true:
 - `<RESPONSE_LETTER_DRAFT>` cites the evidence or text delta for each response.
 - `<REVISION_HANDOFF_BUNDLE>` records remaining risks and final route.
 
-## Common Mistakes
+## Guardrails
 
-- Launching free-floating ablations that do not answer reviewer item ids.
-- Rewriting reviewer meaning during normalization.
-- Pretending limitations are solved when they are only reframed.
-- Finalizing while reviewer-critical feasible rows remain unresolved.
-- Writing a response before evidence and text deltas are clear.
+- DO NOT launch free-floating ablations that do not answer reviewer item ids.
+- DO NOT rewrite reviewer meaning during normalization.
+- DO NOT pretend limitations are solved when they are only reframed.
+- DO NOT finalize while reviewer-critical feasible rows remain unresolved.
+- DO NOT write a response before evidence and text deltas are clear.
 
 ## Chat Response
 

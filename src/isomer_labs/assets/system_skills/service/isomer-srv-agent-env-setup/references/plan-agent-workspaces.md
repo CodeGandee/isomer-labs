@@ -45,7 +45,7 @@ The planned Agent Workspace path must resolve under the selected Topic Workspace
 
 ## Guardrails
 
-- Do not infer Agent Names from existing directories, branches, provider ids, or ad hoc maps.
-- Do not create files or Git refs from this subcommand.
-- Do not edit packet/profile material here; report the needed Topic Team Specialization repair route.
-- Selected-agent direct subcommands may target only one authoritative Agent Name and produce partial evidence.
+- DO NOT infer Agent Names from existing directories, branches, provider ids, or ad hoc maps.
+- DO NOT create files or Git refs from this subcommand.
+- DO NOT edit packet/profile material here; report the needed Topic Team Specialization repair route.
+- MUST limit selected-agent direct subcommands to one authoritative Agent Name and report their output as partial evidence.

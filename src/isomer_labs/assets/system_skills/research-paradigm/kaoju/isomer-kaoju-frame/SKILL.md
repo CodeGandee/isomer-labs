@@ -11,6 +11,10 @@ Turn the user's survey question into an explicit contract before discovery or ex
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:direction-set`, `kaoju:survey-contract`, or `kaoju:comparison-intent` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
 
+## When to Use
+
+Use at the start of a survey procedure, when a prior contract no longer fits, or when empirical comparison needs a user checkpoint. Do not use this skill to search, acquire, inspect, execute, audit, or synthesize evidence.
+
 ## Workflow
 
 1. **Resolve context**. Read the Research Topic, Research Inquiry, user request, prior survey refs, and Workspace Readiness Artifact.
@@ -25,10 +29,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 10. **Return status**. Report the Direction Set, Survey Contract, or Comparison Intent Document ref and the next allowed stage.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use at the start of a survey procedure, when a prior contract no longer fits, or when empirical comparison needs a user checkpoint. Do not use this skill to search, acquire, inspect, execute, audit, or synthesize evidence.
 
 ## Survey Contract
 
@@ -62,11 +62,11 @@ A vague request is not an execution contract. Do not spend material resources or
 - Empirical candidates start preparation before a Proceed Decision.
 - “Latest” appears without a `searched_through` boundary.
 
-## Common Mistakes
+## Guardrails
 
-- Treating repositories as primary related works when no paper or report relationship is established.
-- Asking many unstructured questions. Ask one material A/B/C/D choice at a time.
-- Using clarification-first as a procedure. It is an interaction mode inside the chosen procedure.
+- DO NOT treat repositories as primary related works when no paper or report relationship is established.
+- DO NOT ask many unstructured questions. Ask one material A/B/C/D choice at a time.
+- DO NOT use clarification-first as a procedure. It is an interaction mode inside the chosen procedure.
 
 ## Chat Response
 

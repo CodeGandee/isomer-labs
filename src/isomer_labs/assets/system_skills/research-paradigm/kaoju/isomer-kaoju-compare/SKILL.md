@@ -11,6 +11,10 @@ Compare only on dimensions or measurements whose definitions and evidence are ex
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `kaoju:theory-comparison`, `kaoju:comparison-matrix`, and `kaoju:comparison-run` exactly. Return a storage blocker rather than inventing a path, profile, direct Markdown state, or untracked JSON.
 
+## When to Use
+
+Use for theory comparison of selected works, preparation of an actual-run comparison plan, or execution of an accepted empirical comparison. Do not use for a broad survey, a single-method trial, ranking based only on reported headline numbers, or candidate preparation before user approval.
+
 ## Workflow
 
 1. **Select comparison mode**. Require named candidate Source Identities, target question, accepted source evidence, and either theory intent or empirical intent.
@@ -24,10 +28,6 @@ Before accepting durable output, read the shared artifact semantics and recordin
 9. **Return status**. Produce a Theory Comparison Artifact or empirical Comparison Matrix with evidence refs, limits, failures, and a resume point.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from this skill's constraints.
-
-## When to Use
-
-Use for theory comparison of selected works, preparation of an actual-run comparison plan, or execution of an accepted empirical comparison. Do not use for a broad survey, a single-method trial, ranking based only on reported headline numbers, or candidate preparation before user approval.
 
 ## Comparison Modes
 
@@ -69,11 +69,11 @@ A complete-looking matrix is weaker than an honest sparse one if its cells hide 
 - Theory cells receive `compared` verification depth.
 - A single number has no variability statement or reason it is unavailable.
 
-## Common Mistakes
+## Guardrails
 
-- Letting source availability determine the dimensions. Start from the domain question and accepted source basis.
-- Ranking unclear or disputed cells. Preserve their state.
-- Reusing old Runs without verifying their identities and Comparison Contract compatibility.
+- DO NOT let source availability determine the dimensions. Start from the domain question and accepted source basis.
+- DO NOT rank unclear or disputed cells. Preserve their state.
+- DO NOT reuse old Runs without verifying their identities and Comparison Contract compatibility.
 
 ## Chat Response
 

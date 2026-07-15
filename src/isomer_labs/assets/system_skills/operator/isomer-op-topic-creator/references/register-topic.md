@@ -14,4 +14,4 @@ If the user's task does not map cleanly to these steps, report the missing topic
 
 ## Guardrails
 
-Do not hand-edit Project Manifest or `topic-workspace.toml`. Use supported CLI/API surfaces.
+- DO NOT hand-edit Project Manifest or `topic-workspace.toml`. Use supported CLI/API surfaces.

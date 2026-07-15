@@ -111,13 +111,13 @@ This skill can end when all applicable checks are true:
 - `<FIRST_PASS_FIGURE>` was rendered and inspected.
 - Durable or paper-facing outputs have a `<FIGURE_POLISH_HANDOFF>`.
 
-## Common Mistakes
+## Guardrails
 
-- Mutating the bundled template instead of a copied script.
-- Picking a chart style before clarifying the comparison and units.
-- Skipping the rendered-output inspection.
-- Using this skill for final figure QA.
-- Changing style and data at the same time without recording the substitution.
+- DO NOT mutate the bundled template instead of a copied script.
+- DO NOT pick a chart style before clarifying the comparison and units.
+- DO NOT skip the rendered-output inspection.
+- DO NOT use this skill for final figure QA.
+- DO NOT change style and data at the same time without recording the substitution.
 
 ## Chat Response
 
