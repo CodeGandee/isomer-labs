@@ -4,16 +4,22 @@ schema_version = "isomer-project-manifest.v1"
 isomer_content_root = "isomer-content"
 topic_workspace_base_dir = "isomer-content/topic-ws"
 [[research_topics]]
+id = "predmem-survey"
+schema_version = "isomer-research-topic-registration.v1"
+config_path = ".isomer-labs/research-topics/predmem-survey.toml"
+topic_workspace_id = "predmem-survey"
+status = "active"
+[[research_topics]]
 id = "flash-attention-4-whitebox-runtime-model"
 schema_version = "isomer-research-topic-registration.v1"
 config_path = ".isomer-labs/research-topics/flash-attention-4-whitebox-runtime-model.toml"
 topic_workspace_id = "flash-attention-4-whitebox-runtime-model"
 status = "active"
-[[research_topics]]
+[[topic_workspaces]]
 id = "predmem-survey"
-schema_version = "isomer-research-topic-registration.v1"
-config_path = ".isomer-labs/research-topics/predmem-survey.toml"
-topic_workspace_id = "predmem-survey"
+schema_version = "isomer-topic-workspace.v1"
+research_topic_id = "predmem-survey"
+path = "isomer-content/topic-ws/predmem-survey"
 status = "active"
 [[topic_workspaces]]
 id = "flash-attention-4-whitebox-runtime-model"
@@ -21,12 +27,9 @@ schema_version = "isomer-topic-workspace.v1"
 research_topic_id = "flash-attention-4-whitebox-runtime-model"
 path = "isomer-content/topic-ws/flash-attention-4-whitebox-runtime-model"
 status = "active"
-
-[[topic_workspaces]]
-id = "predmem-survey"
-schema_version = "isomer-topic-workspace.v1"
-research_topic_id = "predmem-survey"
-path = "isomer-content/topic-ws/predmem-survey"
-status = "active"
 [operator.system_extensions]
-installed = ["kaoju"]
+installed = ["deepsci", "kaoju"]
+
+[defaults]
+research_topic_id = "flash-attention-4-whitebox-runtime-model"
+topic_workspace_id = "flash-attention-4-whitebox-runtime-model"
