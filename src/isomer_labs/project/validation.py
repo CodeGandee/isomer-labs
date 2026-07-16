@@ -96,6 +96,7 @@ class ProjectValidationScope(str, Enum):
     """Capability boundary for Project state validation."""
 
     FULL = "full"
+    CALLBACK_RESOLUTION = "callback_resolution"
     RESEARCH_TEMPLATES = "research_templates"
 
 
@@ -106,15 +107,17 @@ def build_project_state(
     research_topic_ids: Collection[str] | None = None,
 ) -> ProjectState:
     diagnostics: list[Diagnostic] = []
-    diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
-    diagnostics.extend(_validate_path_defaults(project))
+    if validation_scope is not ProjectValidationScope.CALLBACK_RESOLUTION:
+        diagnostics.extend(scan_for_forbidden_fields(project.manifest.raw, "Project Manifest", project.manifest_path))
+        diagnostics.extend(_validate_path_defaults(project))
     diagnostics.extend(
         _duplicate_id_diagnostics(
             project,
             include_capability_registrations=validation_scope is ProjectValidationScope.FULL,
         )
     )
-    diagnostics.extend(_validate_workspace_registrations(project))
+    if validation_scope is not ProjectValidationScope.CALLBACK_RESOLUTION:
+        diagnostics.extend(_validate_workspace_registrations(project))
     if validation_scope is ProjectValidationScope.FULL:
         diagnostics.extend(_validate_environment_bindings(project))
         diagnostics.extend(_validate_template_registrations(project))
@@ -142,7 +145,8 @@ def build_project_state(
         diagnostics.extend(load_diagnostics)
         if raw is None:
             continue
-        diagnostics.extend(scan_for_forbidden_fields(raw, "Research Topic Config", config_path))
+        if validation_scope is not ProjectValidationScope.CALLBACK_RESOLUTION:
+            diagnostics.extend(scan_for_forbidden_fields(raw, "Research Topic Config", config_path))
         config, parse_diagnostics = parse_research_topic_config(config_path, raw)
         diagnostics.extend(parse_diagnostics)
         if config is None:
@@ -171,8 +175,13 @@ def build_project_state(
         raw, load_diagnostics = load_toml(local_path, "Local active context")
         diagnostics.extend(load_diagnostics)
         if raw is not None:
-            diagnostics.extend(scan_for_forbidden_fields(raw, "Local active context", local_path))
-            local_context, parse_diagnostics = parse_local_active_context(local_path, raw)
+            local_raw = raw
+            if validation_scope is ProjectValidationScope.CALLBACK_RESOLUTION:
+                callback_context_keys = {"schema_version", "research_topic_id", "topic_workspace_id", "topic_agent_team_profile_id"}
+                local_raw = {key: value for key, value in raw.items() if key in callback_context_keys}
+            else:
+                diagnostics.extend(scan_for_forbidden_fields(raw, "Local active context", local_path))
+            local_context, parse_diagnostics = parse_local_active_context(local_path, local_raw)
             diagnostics.extend(parse_diagnostics)
 
     return ProjectState(

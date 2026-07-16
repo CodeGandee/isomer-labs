@@ -79,6 +79,7 @@ from isomer_labs.cli.handlers.shared import (
     preview_paths,
     profile_to_toml,
     Project,
+    ProjectValidationScope,
     ProjectState,
     reconcile_houmao_manifests,
     record_topic_service_master_binding,
@@ -540,7 +541,7 @@ def _cmd_skill_callbacks_install(options: CliOptions) -> int:
 
 
 def _cmd_skill_callbacks_resolve(options: CliOptions) -> int:
-    state, context, diagnostics = _callback_state_and_context(options, require_topic=False)
+    state, context, diagnostics = _callback_resolution_state_and_context(options)
     if state is None:
         payload = {"ok": False, "mutated": False, "callbacks": []}
         return _emit("skill-callbacks resolve", options, payload, diagnostics, [])
@@ -549,12 +550,16 @@ def _cmd_skill_callbacks_resolve(options: CliOptions) -> int:
         context,
         skill=_value(options, "callback_skill"),
         stage=_value(options, "callback_stage"),
+        topic_actor_name=_value(options, "topic_actor_name"),
+        topic_agent_name=_value(options, "agent_name"),
     )
     diagnostics.extend(result.diagnostics)
+    payload = result.to_json() if bool(_value(options, "callback_explain")) else result.to_execution_json()
+    payload["ok"] = result.ok and not has_errors(diagnostics)
     return _emit(
         "skill-callbacks resolve",
         options,
-        result.to_json(),
+        payload,
         diagnostics,
         _render_callback_result("Resolved User Skill Callbacks", result),
     )
@@ -1259,6 +1264,59 @@ def _callback_state_and_context(
             diagnostics.extend(context_diagnostics)
     else:
         diagnostics.extend(context_diagnostics)
+    return state, context, diagnostics
+
+
+def _callback_resolution_state_and_context(
+    options: CliOptions,
+) -> tuple[ProjectState | None, EffectiveTopicContext | None, list[Diagnostic]]:
+    project, diagnostics = _discover(options)
+    if project is None:
+        return None, None, diagnostics
+    request = SelectionRequest(
+        research_topic_id=_value(options, "research_topic_id"),
+        topic_workspace_id=_value(options, "topic_workspace_id"),
+        topic_agent_team_profile_id=_value(options, "topic_agent_team_profile_id"),
+    )
+    selection_env = {
+        key: value
+        for key, value in os.environ.items()
+        if key
+        in {
+            "ISOMER_RESEARCH_TOPIC_ID",
+            "ISOMER_TOPIC_WORKSPACE_ID",
+            "ISOMER_TOPIC_AGENT_TEAM_PROFILE_ID",
+        }
+    }
+    selection_state = build_project_state(
+        project,
+        validation_scope=ProjectValidationScope.CALLBACK_RESOLUTION,
+        research_topic_ids=(),
+    )
+    selected_context, selected_diagnostics = resolve_effective_topic_context(
+        selection_state,
+        request,
+        cwd=Path.cwd(),
+        env=selection_env,
+    )
+    if selected_context is None:
+        diagnostics.extend(selection_state.diagnostics)
+        if _topic_selector_requested(options):
+            diagnostics.extend(selected_diagnostics)
+        return selection_state, None, diagnostics
+    state = build_project_state(
+        project,
+        validation_scope=ProjectValidationScope.CALLBACK_RESOLUTION,
+        research_topic_ids=(selected_context.research_topic.id,),
+    )
+    diagnostics.extend(state.diagnostics)
+    context, context_diagnostics = resolve_effective_topic_context(
+        state,
+        request,
+        cwd=Path.cwd(),
+        env=selection_env,
+    )
+    diagnostics.extend(context_diagnostics)
     return state, context, diagnostics
 
 

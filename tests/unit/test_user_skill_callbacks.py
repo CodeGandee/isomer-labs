@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import textwrap
 import unittest
@@ -155,6 +156,100 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertTrue(result.ok, result.diagnostics)
         self.assertEqual(["a", "b"], [callback.id for callback in result.callbacks])
 
+    def test_compact_execution_projection_normalizes_instruction_entrypoints_and_size(self) -> None:
+        project = self.make_project()
+        registry = self.registry_ref(project)
+        write(project.root / "inline.md", "Inline\n")
+        write(project.root / "prompt.md", "Prompt file\n")
+        write(project.root / "callback-skill" / "SKILL.md", "# Callback\n")
+        external_tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(external_tmp.cleanup)
+        external_prompt = Path(external_tmp.name) / "external.md"
+        write(external_prompt, "External\n")
+        write(
+            registry.path,
+            f"""
+            schema_version = "isomer-user-skill-callback-registry.v1"
+
+            [[callbacks]]
+            id = "inline"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 10
+            source_type = "prompt"
+            prompt_file = "inline.md"
+
+            [[callbacks]]
+            id = "prompt-file"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 20
+            source_type = "prompt_file"
+            prompt_file = "prompt.md"
+
+            [[callbacks]]
+            id = "skill-directory"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 30
+            source_type = "skill_dir"
+            skill_dir = "callback-skill"
+
+            [[callbacks]]
+            id = "external"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 40
+            source_type = "prompt_file"
+            prompt_file = "{external_prompt.as_posix()}"
+            external_source = true
+            """,
+        )
+        state = ProjectState(project=project, topic_configs={}, local_context=None, diagnostics=[])
+
+        result = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="begin")
+        payload = result.to_execution_json()
+
+        self.assertTrue(result.ok, result.diagnostics)
+        self.assertEqual({"ok", "mutated", "callbacks"}, set(payload))
+        callbacks = payload["callbacks"]
+        assert isinstance(callbacks, list)
+        self.assertEqual(["inline", "prompt-file", "skill-directory", "external"], [callback["id"] for callback in callbacks])
+        self.assertEqual(
+            [
+                str((project.root / "inline.md").resolve()),
+                str((project.root / "prompt.md").resolve()),
+                str((project.root / "callback-skill" / "SKILL.md").resolve()),
+                str(external_prompt.resolve()),
+            ],
+            [callback["instruction_path"] for callback in callbacks],
+        )
+        self.assertEqual(
+            [
+                {"id", "source_type", "instruction_path"},
+                {"id", "source_type", "instruction_path"},
+                {"id", "source_type", "instruction_path"},
+                {"id", "source_type", "instruction_path", "external"},
+            ],
+            [set(callback) for callback in callbacks],
+        )
+        self.assertNotIn("external", callbacks[0])
+        self.assertIs(callbacks[-1]["external"], True)
+        representative = {**payload, "callbacks": callbacks[:1]}
+        self.assertLess(len(json.dumps(representative, sort_keys=True, separators=(",", ":")).encode()), 512)
+
+        empty = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="end").to_execution_json()
+        self.assertEqual({"ok": True, "mutated": False, "callbacks": []}, empty)
+        self.assertLess(len(json.dumps(empty, sort_keys=True, separators=(",", ":")).encode()), 128)
+
     def test_resolve_skips_plugin_callbacks_when_toolbox_is_disabled(self) -> None:
         project = self.make_project()
         project.manifest.toolboxes.append(
@@ -204,6 +299,70 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertTrue(result.ok, result.diagnostics)
         self.assertEqual(["manual"], [callback.id for callback in result.callbacks])
         self.assertEqual(("demo.toolbox:group/a",), result.gated_callback_ids)
+        self.assertEqual(
+            {"ok": True, "mutated": False, "callbacks": [{"id": "manual", "source_type": "prompt_file", "instruction_path": str((project.root / "prompt-b.md").resolve())}]},
+            result.to_execution_json(),
+        )
+        self.assertIn("gated_callback_ids", result.to_json())
+
+    def test_resolve_reports_missing_toolbox_registration(self) -> None:
+        project = self.make_project()
+        first = self.registry_ref(project)
+        write(project.root / "prompt.md", "Prompt\n")
+        callback_row = """
+            [[callbacks]]
+            id = "missing.toolbox:shared"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 10
+            source_type = "prompt_file"
+            prompt_file = "prompt.md"
+            toolbox_id = "missing.toolbox"
+            toolbox_key = "shared"
+        """
+        write(first.path, f'schema_version = "isomer-user-skill-callback-registry.v1"\n{callback_row}')
+        state = ProjectState(project=project, topic_configs={}, local_context=None, diagnostics=[])
+
+        result = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="begin")
+
+        self.assertFalse(result.ok)
+        self.assertEqual((), result.callbacks)
+        self.assertEqual(("missing.toolbox:shared",), result.gated_callback_ids)
+        self.assertIn("ISO104", codes(result.diagnostics))
+
+    def test_resolve_with_cross_registry_duplicate_returns_no_untrusted_callbacks(self) -> None:
+        project = self.make_project()
+        first = self.registry_ref(project)
+        second = CallbackRegistryRef(
+            scope="project",
+            path_input=".isomer-labs/user-skill-callbacks/second.toml",
+            path=project.root / ".isomer-labs" / "user-skill-callbacks" / "second.toml",
+            source_path=project.manifest_path,
+        )
+        project.manifest.user_skill_callback_registry_refs.append(second.path_input)
+        write(project.root / "prompt.md", "Prompt\n")
+        callback_row = """
+            [[callbacks]]
+            id = "duplicate-visible"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 10
+            source_type = "prompt_file"
+            prompt_file = "prompt.md"
+        """
+        write(first.path, f'schema_version = "isomer-user-skill-callback-registry.v1"\n{callback_row}')
+        write(second.path, f'schema_version = "isomer-user-skill-callback-registry.v1"\n{callback_row}')
+        state = ProjectState(project=project, topic_configs={}, local_context=None, diagnostics=[])
+
+        result = resolve_user_skill_callbacks(state, None, skill="isomer-deepsci-scout", stage="begin")
+
+        self.assertFalse(result.ok)
+        self.assertEqual((), result.callbacks)
+        self.assertIn("ISO104", codes(result.diagnostics))
 
     def test_namespaced_callback_ids_resolve_together_and_reject_duplicates(self) -> None:
         project = self.make_project()

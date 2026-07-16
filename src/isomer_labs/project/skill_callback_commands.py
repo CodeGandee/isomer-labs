@@ -71,6 +71,14 @@ class CallbackCommandResult:
             payload["gated_callback_ids"] = list(self.gated_callback_ids)
         return payload
 
+    def to_execution_json(self) -> dict[str, object]:
+        """Return the compact callback projection used by executing agents."""
+        return {
+            "ok": self.ok,
+            "mutated": self.mutated,
+            "callbacks": [_callback_execution_json(callback) for callback in self.callbacks],
+        }
+
 
 def register_user_skill_callback(
     state: ProjectState,
@@ -481,18 +489,29 @@ def resolve_user_skill_callbacks(
     *,
     skill: str,
     stage: str,
+    topic_actor_name: str | None = None,
+    topic_agent_name: str | None = None,
 ) -> CallbackCommandResult:
     project = state.project
     diagnostics: list[Diagnostic] = _callback_identity_diagnostics(skill=skill, stage=stage, scope=None, callback_id=None)
-    callbacks, refs, load_diagnostics = _load_visible_callbacks(project, context, missing_severity="warning")
+    callbacks, refs, load_diagnostics = _load_visible_callbacks(project, context, missing_severity="error")
     diagnostics.extend(load_diagnostics)
-    selected = tuple(
-        sorted(
-            (callback for callback in callbacks if callback.active and callback.skill == skill and callback.stage == stage),
-            key=_callback_sort_key,
+    diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
+    selected: tuple[UserSkillCallback, ...] = ()
+    if not has_errors(diagnostics):
+        selected = tuple(
+            sorted(
+                (callback for callback in callbacks if callback.active and callback.skill == skill and callback.stage == stage),
+                key=_callback_sort_key,
+            )
         )
+    selected, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(
+        project,
+        context,
+        selected,
+        topic_actor_name=topic_actor_name,
+        topic_agent_name=topic_agent_name,
     )
-    selected, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, selected)
     diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
         ok=not has_errors(diagnostics),
@@ -671,6 +690,9 @@ def _apply_toolbox_gating(
     project: Project,
     context: EffectiveTopicContext | None,
     callbacks: tuple[UserSkillCallback, ...],
+    *,
+    topic_actor_name: str | None = None,
+    topic_agent_name: str | None = None,
 ) -> tuple[tuple[UserSkillCallback, ...], tuple[dict[str, object], ...], tuple[str, ...], tuple[Diagnostic, ...]]:
     statuses: dict[str, dict[str, object]] = {}
     gated: list[str] = []
@@ -680,7 +702,14 @@ def _apply_toolbox_gating(
         if callback.toolbox_id is None:
             retained.append(callback)
             continue
-        status = effective_toolbox_status(project, context, callback.toolbox_id)
+        status = effective_toolbox_status(
+            project,
+            context,
+            callback.toolbox_id,
+            topic_actor_name=topic_actor_name,
+            topic_agent_name=topic_agent_name,
+        )
+        diagnostics.extend(status.diagnostics)
         statuses[callback.toolbox_id] = status.to_json()
         if status.source == "missing-registration":
             gated.append(callback.id)
@@ -699,6 +728,20 @@ def _apply_toolbox_gating(
             continue
         retained.append(callback)
     return tuple(retained), tuple(statuses[key] for key in sorted(statuses)), tuple(gated), tuple(diagnostics)
+
+
+def _callback_execution_json(callback: UserSkillCallback) -> dict[str, object]:
+    instruction_path = callback.source.resolved_path
+    if callback.source.source_type == "skill_dir":
+        instruction_path = instruction_path / "SKILL.md"
+    payload: dict[str, object] = {
+        "id": callback.id,
+        "source_type": callback.source.source_type,
+        "instruction_path": str(instruction_path.resolve(strict=False)),
+    }
+    if callback.source.external:
+        payload["external"] = True
+    return payload
 
 
 def _generated_callback_id(skill: str, stage: str, source_hint: str) -> str:

@@ -692,6 +692,28 @@ DEEPSCI_CALLBACK_REQUIRED_TERMS = (
     "empty callback results continue normally",
     "conflicts must be reported",
 )
+CALLBACK_COMPACT_REQUIRED_TERMS = (
+    "compact `callbacks` array",
+    "returned order",
+    "absolute `instruction_path`",
+    "supplemental material",
+    "`source_type`",
+    "`skill_dir`",
+    "reported `SKILL.md`",
+    "installed system skill",
+    "do not request `--explain`",
+    "only to diagnose or manage callback resolution",
+    "higher-priority instructions",
+    "report any material conflict",
+)
+CALLBACK_MANAGEMENT_ONLY_FIELDS = (
+    "registry",
+    "priority",
+    "scope",
+    "status",
+    "toolbox registration",
+    "gating",
+)
 
 
 @dataclass(frozen=True, order=True)
@@ -1039,14 +1061,31 @@ def validate_skill_layout(
         )
         end_ok = any(all(term in line for term in DEEPSCI_CALLBACK_REQUIRED_TERMS) for _, _, line in end_steps)
         ordered_ok = bool(begin_steps and end_steps and min(number for _, number, _ in begin_steps) < max(number for _, number, _ in end_steps))
-        if reminder_line is not None or not begin_ok or not end_ok or not ordered_ok:
+        skill_text = "\n".join(lines)
+        compact_ok = all(term in skill_text for term in CALLBACK_COMPACT_REQUIRED_TERMS)
+        callback_step_lines = [line.casefold() for _, _, line in (*begin_steps, *end_steps)]
+        requests_explanation = any("--explain" in line for line in callback_step_lines)
+        depends_on_management_fields = any(
+            field in line
+            for line in callback_step_lines
+            for field in CALLBACK_MANAGEMENT_ONLY_FIELDS
+        )
+        if (
+            reminder_line is not None
+            or not begin_ok
+            or not end_ok
+            or not ordered_ok
+            or not compact_ok
+            or requests_explanation
+            or depends_on_management_fields
+        ):
             add(
                 diagnostics,
                 repo_root,
                 skill_md,
                 reminder_line or workflow_line or 1,
                 "RPS017",
-                f"production {family.key} SKILL.md must express User Skill Callback begin/end resolution as numbered workflow steps",
+                f"production {family.key} SKILL.md must express ordered compact User Skill Callback locator consumption without management-only fields in ordinary begin/end workflow steps",
             )
 
 

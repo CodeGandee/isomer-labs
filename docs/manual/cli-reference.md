@@ -342,6 +342,7 @@ isomer-cli --print-json project skill-callbacks register --topic my-topic --id p
 isomer-cli --print-json project skill-callbacks insertion-points
 isomer-cli --print-json project skill-callbacks insertion-points --extension deepsci --skill isomer-deepsci-scout --stage begin
 isomer-cli --print-json project skill-callbacks resolve --topic my-topic --skill isomer-deepsci-scout --stage begin
+isomer-cli --print-json project skill-callbacks resolve --topic my-topic --skill isomer-deepsci-scout --stage begin --explain
 isomer-cli --print-json project skill-callbacks list --topic my-topic
 isomer-cli --print-json project skill-callbacks show scout-domain-prior --topic my-topic
 isomer-cli --print-json project skill-callbacks disable scout-domain-prior --topic my-topic
@@ -350,9 +351,17 @@ isomer-cli --print-json project skill-callbacks validate --topic my-topic
 
 Use `--prompt` for short inline guidance that Isomer should materialize into managed callback content. Use `--prompt-file` for a project-scoped file that already contains the guidance. Use `--skill-dir` when the callback guidance lives in an external skill directory with `SKILL.md`; Isomer reads it as supplemental instruction material and does not install it as a packaged system skill.
 
+Ordinary `resolve` is the agent execution surface. Its ordered `callbacks` array contains only `id`, `source_type`, and an absolute `instruction_path`, plus `external: true` for an explicitly authorized source outside the Project root. `prompt` and `prompt_file` entries point to their readable prompt file. A `skill_dir` entry points directly to `<skill-dir>/SKILL.md`. An empty array is a successful result and needs no special handling.
+
+Use `resolve --explain` when an operator or agent must diagnose precedence, registry provenance, source selection, Toolbox status, or gating. It returns the full callback records, registry refs, source metadata, effective Toolbox statuses, and gated callback ids that ordinary resolution intentionally omits. `list`, `show`, and `validate` remain the detailed inventory and management surfaces.
+
+Resolution validates only state that can affect the requested instruction set: Project and selected-topic context, visible registries, the requested insertion point, callback sources, duplicate visible callback ids, and applicable Toolbox gating. Unrelated environment, template, profile, research-record, and other Project diagnostics remain available through `project validate`; registry-wide callback health remains available through `project skill-callbacks validate`.
+
 Use `insertion-points` to query manifest-declared callback targets. By default it lists core insertion points and insertion points from Project-declared operator system extensions; `--extension <id>` and `--all-catalog-extensions` query catalog extension points without claiming that optional extension skill files were filesystem-verified.
 
-Toolbox-installed callbacks include `toolbox_id` metadata. During `resolve`, Isomer checks the effective Toolbox status for the selected Project or topic context. A disabled Toolbox leaves callback records installed for audit, but its callbacks are omitted from resolution and reported in `gated_callback_ids`. Callback records with Toolbox metadata but no matching Toolbox registration are gated with diagnostics.
+Toolbox-installed callbacks include `toolbox_id` metadata. During `resolve`, Isomer checks the effective Toolbox status for the selected Project or topic context. A disabled Toolbox leaves callback records installed for audit, but its callbacks are omitted from ordinary resolution without exposing management state. `resolve --explain`, `list`, `show`, and `validate` report the relevant Toolbox status and `gated_callback_ids`. Callback records with Toolbox metadata but no matching Toolbox registration are omitted with a resolution-blocking diagnostic.
+
+This compact default is a breaking JSON response change. Execution callers that previously parsed full callback records must consume the returned order and read each `instruction_path`. Management or diagnostic callers must add `--explain` or use `list` or `show`. The change requires no callback-registry, Toolbox-manifest, or Toolbox-registration migration.
 
 System skill families use `isomer-<extension-name>-<purpose>` names for domain extensions such as `isomer-deepsci-*`. `isomer-misc-*` remains the public cross-domain helper namespace, not a generic extension bucket.
 

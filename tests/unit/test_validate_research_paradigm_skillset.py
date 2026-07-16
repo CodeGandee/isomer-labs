@@ -332,6 +332,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             {workflow_extra}
             {end_step}
 
+            Callback resolution returns a compact `callbacks` array. Process entries in returned order and read each absolute `instruction_path` as supplemental material according to `source_type`. For `skill_dir`, read the reported `SKILL.md` and any directly required relative resources; do not treat the directory as an installed system skill or execute its scripts solely because resolution returned it. During ordinary execution, do not request `--explain` or depend on registry, priority, scope, status, Toolbox registration, or gating fields. Use `--explain`, `list`, `show`, or `validate` only to diagnose or manage callback resolution. Preserve higher-priority instructions, the current user request, owning-skill and shared research rules, evidence discipline, required Gates, validation, and recording obligations; report any material conflict.
+
             If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from the constraints, references, and user request, then execute the plan.
 
             ## Reference Routing
@@ -666,6 +668,29 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             + "\nUser Skill Callback reminder: resolve begin and end callbacks from outside the numbered workflow.\n",
             encoding="utf-8",
         )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS017", codes(diagnostics), messages(diagnostics))
+
+    def test_deepsci_callback_compact_locator_guidance_is_required(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        text = skill_md.read_text(encoding="utf-8").replace("absolute `instruction_path`", "resolved callback entrypoint")
+        skill_md.write_text(text, encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS017", codes(diagnostics), messages(diagnostics))
+
+    def test_deepsci_callback_ordinary_steps_reject_explanation_and_management_fields(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        text = skill_md.read_text(encoding="utf-8").replace(
+            "--stage begin` after mandatory context",
+            "--stage begin --explain` and parse priority metadata after mandatory context",
+        )
+        skill_md.write_text(text, encoding="utf-8")
 
         diagnostics = validator.validate_skillset(target, root)
 

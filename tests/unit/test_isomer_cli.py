@@ -680,6 +680,12 @@ class IsomerCliTests(unittest.TestCase):
             self.assertNotIn("--json", help_result.output)
             self.assertNotIn("--format json", help_result.output)
             self.assertNotIn("--format=json", help_result.output)
+        resolve_help = runner.invoke(cli.app, ["project", "skill-callbacks", "resolve", "--help"])
+        self.assertEqual(0, resolve_help.exit_code, resolve_help.output)
+        self.assertIn("compact User Skill Callback instruction locators", resolve_help.output)
+        self.assertIn("--explain", resolve_help.output)
+        self.assertIn("Return detailed callback, registry, source,", resolve_help.output)
+        self.assertIn("and Toolbox gating evidence.", resolve_help.output)
         self.assertNotEqual(0, runner.invoke(cli.app, ["uc01", "--help"]).exit_code)
         for legacy_help_args in (
             ["init", "--help"],
@@ -2801,7 +2807,39 @@ class IsomerCliTests(unittest.TestCase):
         )
         data = json.loads(output)
         self.assertEqual(0, status, output)
+        self.assertEqual(
+            {"output_schema_version", "command", "ok", "mutated", "callbacks", "diagnostics"},
+            set(data),
+        )
         self.assertEqual(["scout-begin-domain"], [callback["id"] for callback in data["callbacks"]])
+        self.assertEqual(
+            {"id", "source_type", "instruction_path"},
+            set(data["callbacks"][0]),
+        )
+        self.assertEqual(str(prompt_path.resolve()), data["callbacks"][0]["instruction_path"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "default",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--explain",
+                "--json",
+            ],
+            cwd=root,
+        )
+        explained = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertIn("project_root", explained)
+        self.assertIn("registry_refs", explained)
+        self.assertIn("source", explained["callbacks"][0])
+        self.assertEqual("scout-begin-domain", explained["callbacks"][0]["id"])
 
         for command in ("list", "show", "validate"):
             args = ["project", "skill-callbacks", command, "--topic", "default", "--json"]
@@ -2847,6 +2885,233 @@ class IsomerCliTests(unittest.TestCase):
         data = json.loads(output)
         self.assertEqual(0, status, output)
         self.assertEqual([], data["callbacks"])
+
+    def test_skill_callback_resolution_excludes_unrelated_project_diagnostics_but_keeps_source_errors(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "register",
+                "--scope",
+                "project",
+                "--id",
+                "bounded-resolution",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--prompt",
+                "Use bounded callback state.",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        prompt_path = root / ".isomer-labs" / "user-skill-callbacks" / "prompts" / "bounded-resolution.md"
+        self.append_manifest(
+            root,
+            """
+            [[topic_pixi_environment_bindings]]
+            research_topic_id = "unregistered-topic"
+            pixi_environment = "missing-environment"
+            purpose = "runtime"
+            """,
+        )
+        write(
+            root / ".isomer-labs" / "local.toml",
+            """
+            schema_version = "isomer-local-active-context.v1"
+            research_topic_id = "default"
+            research_task_id = 123
+            """,
+        )
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual([], data["diagnostics"])
+        self.assertEqual(["bounded-resolution"], [callback["id"] for callback in data["callbacks"]])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "unregistered-topic",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+        invalid_context = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertFalse(invalid_context["ok"])
+        self.assertIn("ISO013", {diagnostic["code"] for diagnostic in invalid_context["diagnostics"]})
+
+        validate_status, validate_output = self.run_cli(["project", "validate", "--json"], cwd=root)
+        validate_data = json.loads(validate_output)
+        self.assertEqual(1, validate_status, validate_output)
+        self.assertTrue(
+            any(diagnostic["field"] == "topic_pixi_environment_bindings.unregistered-topic.research_topic_id" for diagnostic in validate_data["diagnostics"]),
+            validate_data["diagnostics"],
+        )
+
+        prompt_path.unlink()
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--explain",
+                "--json",
+            ],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertIn("ISO001", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_skill_callback_resolve_rejects_missing_project_without_creating_state(self) -> None:
+        root = self.make_root()
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+                "--json",
+            ],
+            cwd=root,
+        )
+
+        data = json.loads(output)
+        self.assertEqual(1, status, output)
+        self.assertFalse(data["ok"])
+        self.assertEqual([], data["callbacks"])
+        self.assertFalse((root / ".isomer-labs").exists())
+
+    def test_skill_callback_resolution_applies_context_specific_toolbox_gating(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        self.write_callback_toolbox(
+            root / "skillset" / "toolboxes" / "context-gating",
+            toolbox_id="context.toolbox",
+        )
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "install",
+                "--scope",
+                "project",
+                "--toolbox-dir",
+                "skillset/toolboxes/context-gating",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        def resolve_for(agent_name: str, *, explain: bool = False) -> tuple[int, dict[str, object], str]:
+            args = [
+                "project",
+                "skill-callbacks",
+                "resolve",
+                "--topic",
+                "default",
+                "--topic-agent",
+                agent_name,
+                "--skill",
+                "isomer-deepsci-scout",
+                "--stage",
+                "begin",
+            ]
+            if explain:
+                args.append("--explain")
+            args.append("--json")
+            resolve_status, resolve_output = self.run_cli(args, cwd=root)
+            return resolve_status, json.loads(resolve_output), resolve_output
+
+        status, data, output = resolve_for("coder")
+        self.assertEqual(0, status, output)
+        self.assertEqual(["context.toolbox:scout/begin"], [callback["id"] for callback in data["callbacks"]])  # type: ignore[index]
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "disable",
+                "context.toolbox",
+                "--topic",
+                "default",
+                "--scope",
+                "topic_agent",
+                "--topic-agent",
+                "coder",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        status, compact, output = resolve_for("coder")
+        self.assertEqual(0, status, output)
+        self.assertEqual([], compact["callbacks"])
+        self.assertNotIn("toolbox_statuses", compact)
+        self.assertNotIn("gated_callback_ids", compact)
+
+        status, explained, output = resolve_for("coder", explain=True)
+        self.assertEqual(0, status, output)
+        self.assertEqual(["context.toolbox:scout/begin"], explained["gated_callback_ids"])
+        self.assertEqual("disabled", explained["toolbox_statuses"][0]["status"])  # type: ignore[index]
+
+        status, active_elsewhere, output = resolve_for("reviewer")
+        self.assertEqual(0, status, output)
+        self.assertEqual(["context.toolbox:scout/begin"], [callback["id"] for callback in active_elsewhere["callbacks"]])  # type: ignore[index]
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "toolboxes",
+                "uninstall",
+                "context.toolbox",
+                "--scope",
+                "project",
+                "--json",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        status, missing, output = resolve_for("reviewer")
+        self.assertEqual(1, status, output)
+        self.assertEqual([], missing["callbacks"])
+        self.assertIn("ISO104", {diagnostic["code"] for diagnostic in missing["diagnostics"]})  # type: ignore[index]
 
     def test_system_extensions_cli_remembers_and_forgets_project_declarations(self) -> None:
         root = self.make_root()
@@ -3715,7 +3980,8 @@ class IsomerCliTests(unittest.TestCase):
             {"toolbox-a:a", "toolbox-a:b", "toolbox-a:group/z", "toolbox-b:a"},
             {callback["id"] for callback in data["callbacks"]},
         )
-        self.assertEqual(["a", "b", "group/z"], [callback["toolbox_key"] for callback in data["callbacks"] if callback["toolbox_id"] == "toolbox-a"])
+        self.assertTrue(all(set(callback) == {"id", "source_type", "instruction_path"} for callback in data["callbacks"]))
+        self.assertTrue(all(callback["source_type"] == "skill_dir" for callback in data["callbacks"]))
 
         status, output = self.run_cli(
             ["project", "skill-callbacks", "list", "--topic", "default", "--json"],
@@ -3727,6 +3993,7 @@ class IsomerCliTests(unittest.TestCase):
             {"toolbox-a:a", "toolbox-a:b", "toolbox-a:group/z", "toolbox-b:a"},
             {callback["id"] for callback in data["callbacks"]},
         )
+        self.assertEqual(["a", "b", "group/z"], [callback["toolbox_key"] for callback in data["callbacks"] if callback["toolbox_id"] == "toolbox-a"])
 
         status, output = self.run_cli(
             ["project", "skill-callbacks", "disable", "toolbox-a:a", "--topic", "default", "--json"],

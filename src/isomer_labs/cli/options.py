@@ -53,6 +53,7 @@ class CliOptions:
     callback_id: str | None = None
     callback_skill: str | None = None
     callback_stage: str | None = None
+    callback_explain: bool = False
     callback_scope: str | None = None
     callback_prompt: str | None = None
     callback_prompt_file: str | None = None

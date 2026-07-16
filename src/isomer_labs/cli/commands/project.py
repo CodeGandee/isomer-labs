@@ -949,11 +949,22 @@ def register_project_commands(app: click.Group) -> None:
         )
 
 
-    @skill_callbacks_group.command(name="resolve", help="Resolve User Skill Callbacks for one system skill stage.")
+    @skill_callbacks_group.command(
+        name="resolve",
+        help="Resolve compact User Skill Callback instruction locators for one system skill stage.",
+    )
     @_common_options
     @_topic_selection_options
+    @click.option("--topic-actor", "topic_actor_name", default=None, help="Topic Actor name for Toolbox gating.")
+    @click.option("--topic-agent", "agent_name", default=None, help="Topic-local Agent Name for Toolbox gating.")
     @click.option("--skill", "callback_skill", required=True, help="Target packaged system skill name.")
     @click.option("--stage", "callback_stage", type=click.Choice(["begin", "end"]), required=True, help="Callback stage.")
+    @click.option(
+        "--explain",
+        "callback_explain",
+        is_flag=True,
+        help="Return detailed callback, registry, source, and Toolbox gating evidence.",
+    )
     @click.pass_context
     def skill_callbacks_resolve_command(
         ctx: click.Context,
@@ -969,8 +980,11 @@ def register_project_commands(app: click.Group) -> None:
         agent_team_instance_id: str | None = None,
         agent_instance_id: str | None = None,
         topic_agent_team_profile_id: str | None = None,
+        topic_actor_name: str | None = None,
+        agent_name: str | None = None,
         callback_skill: str | None = None,
         callback_stage: str | None = None,
+        callback_explain: bool = False,
     ) -> int:
         return _cmd_skill_callbacks_resolve(
             _merge_options(
@@ -987,8 +1001,11 @@ def register_project_commands(app: click.Group) -> None:
                 agent_team_instance_id=agent_team_instance_id,
                 agent_instance_id=agent_instance_id,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
+                topic_actor_name=topic_actor_name,
+                agent_name=agent_name,
                 callback_skill=callback_skill,
                 callback_stage=callback_stage,
+                callback_explain=callback_explain,
             )
         )
 
