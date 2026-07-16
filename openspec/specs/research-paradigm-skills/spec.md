@@ -3,6 +3,7 @@
 ## Purpose
 Define the reusable Isomer Labs research-paradigm skillset, including portable research-stage skills, shared evidence vocabulary, generic agent mappings, provenance handling, Imsight skill-entrypoint structure, and validation rules that prevent DeepScientist runtime coupling from becoming an Isomer requirement.
 ## Requirements
+
 ### Requirement: Research Paradigm Skillset Layout
 The project SHALL provide a reusable production DeepSci research-paradigm skillset under `skillset/research-paradigm/deepsci/` using Codex skill folder layout and the `isomer-deepsci-<purpose>` naming convention for research-stage method skills only.
 
@@ -335,29 +336,6 @@ Research-paradigm documentation SHALL distinguish research-stage skills from ope
 - **WHEN** generic research agent role mappings are inspected
 - **THEN** ordinary research roles such as scout, baseline, experiment, analysis, writer, reviewer, or synthesis reviewer do not install `isomer-op-*` skills unless the role is explicitly an Operator Agent role
 
-### Requirement: Production DeepSci Semantic Placeholder Contract
-The production DeepSci research-paradigm skillset SHALL define semantic placeholders before binding research objects to Isomer storage.
-
-#### Scenario: Placeholder syntax is stable
-- **WHEN** a production DeepSci skill names a research object whose storage binding is deferred
-- **THEN** it uses the syntax `[[rsch-object:<id>]]`
-
-#### Scenario: Placeholder ids are semantic
-- **WHEN** a placeholder id is defined
-- **THEN** the id names research meaning rather than storage mechanism, for example `research-frame`, `comparator-contract`, `selected-hypothesis`, `experiment-result`, `analysis-finding`, `route-decision`, or `final-summary`
-
-#### Scenario: Placeholder registry is authoritative for production DeepSci
-- **WHEN** production DeepSci placeholder meaning is inspected
-- **THEN** the authoritative definitions live in `skillset/research-paradigm/deepsci/isomer-deepsci-shared/references/semantic-placeholders.md`
-
-#### Scenario: Placeholder entry has minimum semantic fields
-- **WHEN** a placeholder entry is inspected
-- **THEN** it defines id, plain-language meaning, required semantic content, typical producer skills, typical consumer skills, and storage-binding status
-
-#### Scenario: Placeholder entry rejects premature storage binding
-- **WHEN** a placeholder entry is inspected
-- **THEN** it states that the placeholder is not yet bound to Artifact, Evidence Item, Run, Gate, Decision Record, Provenance Record, path, storage label, or database schema
-
 ### Requirement: Production DeepSci Core Research Process
 The production DeepSci core skillset SHALL organize research conduction around the core process rather than around implementation bookkeeping.
 
@@ -449,39 +427,28 @@ Active production DeepSci research skills SHALL read local placeholder binding p
 - **WHEN** a production DeepSci skill still needs a source-shaped DeepScientist compatibility call
 - **THEN** the skill allows `isomer-cli ext deepsci call ...` only as a compatibility fallback and still summarizes durable meaning through the placeholder binding
 
-### Requirement: Binding Pages Preserve Workflow Flexibility
-The production DeepSci research skills SHALL keep placeholders in workflow prose and bind them through local binding pages.
-
-#### Scenario: Workflow placeholders are not replaced
-- **WHEN** placeholder binding pages are added to production DeepSci skills
-- **THEN** the existing workflow steps keep semantic placeholders such as `<MAIN_RUN_RECORD>` and `<NEXT_ROUTE_DECISION>` instead of replacing them with concrete paths or record ids
-
-#### Scenario: Binding updates do not rewrite method prose
-- **WHEN** a storage target changes from extension-backed CRUD to a future native command
-- **THEN** the binding page can change without requiring workflow prose to rename the placeholder
-
 ### Requirement: Writing Artifacts Use Paper-Line Placeholder Bindings
-The research-paradigm production DeepSci skillset SHALL map writing-related placeholders to paper-line storage profiles through local `placeholder-bindings.md` pages while preserving placeholders in workflow prose.
+The research-paradigm production DeepSci skillset SHALL map writing-related uppercase artifact identifiers to paper-line storage profiles through local `placeholder-bindings.md` pages while preserving the same identifiers in workflow prose.
 
 #### Scenario: Paper contract binding uses a paper contract view
-- **WHEN** a production DeepSci skill binds a placeholder that represents the active paper contract, selected outline, evidence view, paper view, section writing plan, or claim-evidence boundary
+- **WHEN** a production DeepSci skill binds an uppercase artifact identifier that represents the active paper contract, selected outline, evidence view, paper view, section writing plan, or claim-evidence boundary
 - **THEN** the binding maps it to an Isomer record kind and profile that preserves its paper-line role, such as `view_manifest` with `paper.contract.selected-outline`, `artifact` with `paper.outline.*`, or `view_manifest` with `paper.claim-evidence-map`
 
 #### Scenario: Paper control surfaces use view records
-- **WHEN** a production DeepSci skill binds a placeholder that represents the paper evidence ledger, experiment matrix, manuscript validation, outline validation, paper-line state, or other paper control surface
+- **WHEN** a production DeepSci skill binds an uppercase artifact identifier that represents the paper evidence ledger, experiment matrix, manuscript validation, outline validation, paper-line state, or another paper control surface
 - **THEN** the binding uses `topic.records.views` with a paper-specific profile such as `paper.evidence-ledger`, `paper.experiment-matrix`, `paper.validation.*`, or `paper.line-state`
 
 #### Scenario: Paper bodies use artifact records
-- **WHEN** a production DeepSci skill binds a placeholder that represents manuscript drafts, LaTeX material, bibliography files, compile reports, PDFs, review reports, rebuttal packets, response letters, final summaries, or paper bundle manifests
+- **WHEN** a production DeepSci skill binds an uppercase artifact identifier that represents manuscript drafts, LaTeX material, bibliography files, compile reports, PDFs, review reports, rebuttal packets, response letters, final summaries, or paper bundle manifests
 - **THEN** the binding uses `topic.records.artifacts` with a paper, review, rebuttal, figure, release, or package profile rather than a generic report or handoff profile when a more precise profile exists
 
 #### Scenario: Paper work queues use task records when resumable
-- **WHEN** a production DeepSci skill binds a placeholder that represents a resumable writing plan, reviewer-linked evidence TODO, or paper-facing work queue
+- **WHEN** a production DeepSci skill binds an uppercase artifact identifier that represents a resumable writing plan, reviewer-linked evidence TODO, or paper-facing work queue
 - **THEN** the binding uses `research_task` under `topic.records.tasks` when the item must be resumed, assigned, or queried as work, and may use `view_manifest` only when the item is a read-only board
 
 #### Scenario: Binding commands include queryable paper metadata
-- **WHEN** a production DeepSci skill binding provides an `isomer-cli ext research records` create or update command for a writing-related placeholder
-- **THEN** the command includes explicit `--semantic-label`, `--profile`, `--placeholder`, `--skill`, producer, consumer, and any natural query metadata such as `selected_outline_ref`, `paper_surface`, `package_type`, `section_id`, `claim_id`, or `reviewer_item_id`
+- **WHEN** a production DeepSci skill binding provides an `isomer-cli ext research records` create or update command for a writing-related artifact
+- **THEN** the command includes the exact uppercase `--semantic-id`, `--semantic-label`, `--profile`, `--skill`, producer, consumer, and natural query metadata such as `selected_outline_ref`, `paper_surface`, `package_type`, `section_id`, `claim_id`, or `reviewer_item_id`
 
 #### Scenario: Binding convention avoids paper-specific semantic labels
 - **WHEN** writing-related production DeepSci binding pages are updated
@@ -495,6 +462,14 @@ The research-paradigm production DeepSci skillset SHALL map writing-related plac
 #### Scenario: Placeholder registries change only for real drift
 - **WHEN** implementation inspects `migrate/placeholders.md` for writing-related skills
 - **THEN** it changes placeholder definitions only when a placeholder is missing or its kind conflicts with the durable storage role that the binding page must express
+
+#### Scenario: Workflow identifiers remain stable
+- **WHEN** writing-related binding rows are updated
+- **THEN** `SKILL.md` workflow prose keeps the exact registered uppercase identifiers and relies on `placeholder-bindings.md` for storage mapping
+
+#### Scenario: Registry definitions change only for real drift
+- **WHEN** implementation inspects writing-related migration registries
+- **THEN** it changes semantic definitions only when an artifact is missing or its kind conflicts with the durable storage role that the binding page must express
 
 ### Requirement: Research Workspace Bootstrap Supports Actor Topology
 The production DeepSci research workspace bootstrap SHALL support base topic readiness, Topic Actor readiness, and optional formal team readiness as composable topology layers.
@@ -555,25 +530,6 @@ The production DeepSci research-paradigm skillset SHALL make `isomer-deepsci-wor
 - **WHEN** production DeepSci bootstrap includes human-orchestrated Topic Actors
 - **THEN** it preserves Topic Actor names, actor kind, runtime kind, role kind, controller kind, and cwd labels from operator readiness evidence
 - **AND** it adds production DeepSci-specific recording metadata only inside production DeepSci research workspace outputs
-
-### Requirement: Production DeepSci Research Workspace Manager Skill
-The research-paradigm skillset SHALL include an `isomer-deepsci-workspace-mgr` skill that performs research-specific Topic Workspace bootstrap after Topic Team Specialization and full Topic Workspace initialization.
-
-#### Scenario: Workspace manager skill exists
-- **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains `skillset/research-paradigm/deepsci/isomer-deepsci-workspace-mgr/SKILL.md` with valid frontmatter, workflow, reference routing, fallback guidance, and an `agents/openai.yaml` manifest that invokes `$isomer-deepsci-workspace-mgr`
-
-#### Scenario: Workspace manager runs after specialization
-- **WHEN** the skill explains its entry conditions
-- **THEN** it requires a selected Research Topic, a fully initialized Topic Workspace, completed Topic Team Specialization material, Workspace Runtime readiness, and Agent Workspace context before ordinary production DeepSci research skills rely on its bootstrap outputs
-
-#### Scenario: Workspace manager is distinct from operator topic management
-- **WHEN** the skill describes its boundary
-- **THEN** it states that `isomer-op-topic-mgr` remains the operator initialized-topic manager while `isomer-deepsci-workspace-mgr` owns research placeholder binding and production DeepSci storage bootstrap guidance
-
-#### Scenario: Topic Service Master is optional
-- **WHEN** the skill describes the actor that performs bootstrap
-- **THEN** it names the Topic Service Master as the preferred topic-workspace manager when started and states that the Project Operator Session or Operator Agent performs the same bounded work when no Topic Service Master is running
 
 ### Requirement: Production DeepSci Package Setup Routes to Topic Manager
 Active research-paradigm production DeepSci skills SHALL route package installation, package update, package removal, and package verification needs to `isomer-op-topic-mgr` environment commands instead of installing packages directly.
@@ -980,20 +936,20 @@ The research-paradigm validation harness SHALL validate the fourteen-skill Kaoju
 
 #### Scenario: Valid Kaoju family passes validation
 - **WHEN** the validator inspects the complete production Kaoju family
-- **THEN** it accepts the exact fourteen-skill inventory, valid frontmatter and manifests, near-top workflows, approved survey-intent and compatibility command inventory, self-contained direct references, canonical namespace, and binding-registry use
+- **THEN** it accepts the exact fourteen-skill inventory, valid frontmatter and manifests, near-top workflows, approved survey-intent and compatibility command inventory, self-contained direct references, canonical namespace, binding-registry use, and external-acquisition followed by semantic-registration guidance
 
 #### Scenario: Invalid Kaoju family reports deterministic diagnostics
-- **WHEN** a Kaoju skill is missing, uses the wrong namespace, has manifest identity drift, references a missing local file, hardcodes a local or provider-specific runtime path, scans for durable records, repeats a physical binding as independent authority, invokes an unregistered executable path, treats Markdown or TeX as canonical paper content, invokes the external wiki skill, mutates Pixi state directly, or exposes an unapproved procedure
+- **WHEN** a Kaoju skill is missing, uses the wrong namespace, has manifest identity drift, references a missing local file, hardcodes a local or provider-specific runtime path, scans for durable records, repeats a physical binding as independent authority, invokes an unregistered executable path other than an authorized external repository command, routes repository acquisition through `isomer-cli` or an Isomer execution request, registers before verification, treats Markdown or TeX as canonical paper content, invokes the external wiki skill, mutates Pixi state directly, or exposes an unapproved procedure
 - **THEN** validation fails with a deterministic diagnostic that names the file, line when available, skill, semantic id when applicable, and violated Kaoju rule
 
 #### Scenario: Shared checks do not erase family-specific checks
-- **WHEN** common frontmatter, manifest, reference, CLI-spelling, terminology, or binding checks are refactored for multiple families
-- **THEN** DeepSci retains its inventory, placeholder, source-lineage, structured-output, and other existing family-specific validation
+- **WHEN** common frontmatter, manifest, reference, CLI-spelling, terminology, repository-boundary, or binding checks are refactored for multiple families
+- **THEN** DeepSci retains its inventory, artifact-identity, source-lineage, structured-output, and other existing family-specific validation
 - **AND** the existing DeepSci validation tests continue to pass unchanged in meaning
 
 #### Scenario: Validator tests cover Kaoju active and invalid zones
 - **WHEN** unit tests exercise family-aware research-paradigm validation
-- **THEN** they include valid Kaoju fixtures and failures for missing inventory, wrong namespace, manifest mismatch, broken direct references, stale domain terms, hard-coded provider or local paths, procedural-command drift, binding drift, directory scanning, canonical-format violations, external wiki routing, and direct environment mutation
+- **THEN** they include valid Kaoju fixtures and failures for missing inventory, wrong namespace, manifest mismatch, broken direct references, stale domain terms, hard-coded provider or local paths, procedural-command drift, binding drift, directory scanning, canonical-format violations, external wiki routing, direct environment mutation, Isomer-owned repository acquisition, and pre-verification registration
 - **AND** they retain regression fixtures for valid and invalid DeepSci material
 
 ### Requirement: Production Kaoju Skills Use Artifact Binding Authority
@@ -1067,13 +1023,6 @@ The Kaoju pipeline's grouped management helpers SHALL use exact binding and quer
 - **THEN** the Topic Workspace owner performs material or link mutation and the Kaoju helper revises the bound Topic Dataset Manifest with returned refs and provenance
 - **AND** read-only `list` and `show` actions query the canonical manifest record
 
-### Requirement: DeepSci Research Skill Behavior Remains Compatible
-Adding Kaoju bindings and family-neutral format support SHALL preserve current production DeepSci skill, placeholder, provider, and validation behavior.
-
-#### Scenario: DeepSci binding suite is unchanged in meaning
-- **WHEN** research-paradigm validation runs after Kaoju binding support is added
-- **THEN** every existing DeepSci inventory, placeholder coverage, payload-first command, display field, latest-context, lineage, query metadata, and profile-ref test retains its accepted behavior and diagnostics
-
 ### Requirement: Formal Team Recovery Is Conditional on Selected Team Topology
 Research-paradigm workspace and readiness skills SHALL route missing formal-team material to Topic Team Specialization only when the selected research topology includes a formal Agent Team layer.
 
@@ -1093,29 +1042,99 @@ Research-paradigm workspace and readiness skills SHALL route missing formal-team
 - **AND** it does not infer Topic Team Specialization from the missing workspace evidence alone
 
 ### Requirement: Kaoju Skills Separate Research Judgment from Deterministic Operations
-Production Kaoju skills SHALL make research and human-interaction decisions while delegating deterministic state and executable operations to typed Isomer CLI and owner services.
+Production Kaoju skills SHALL own arbitrary template construction, interpretation, and reconciliation while delegating named-template CRUD, export inspection, state-token checks, integrity validation, and atomic mutation to typed Isomer CLI and owner services.
 
 #### Scenario: Skill performs research judgment
-- **WHEN** a procedure selects a direction, appraises a source, forms or qualifies a claim, audits evidence, writes paper prose, interprets code, repairs TeX semantics, or recommends a trial design
-- **THEN** the responsible Kaoju capability skill performs and records that judgment with evidence and actor provenance
+- **WHEN** a procedure selects a direction, appraises a source, forms a claim, writes prose, interprets a template tree, reconciles template changes, identifies entrypoints, repairs TeX semantics, or recommends a trial design
+- **THEN** the responsible Kaoju skill performs and records that judgment with evidence and actor provenance
 
 #### Scenario: Skill needs deterministic mutation
 - **WHEN** the procedure persists an artifact, resolves a managed path, acquires a repository, exports or applies a template, initializes a conversion, dispatches environment support, executes a trial, builds a PDF, exports a wiki, deploys a viewer, or launches a process
 - **THEN** it invokes the applicable typed CLI or owner service and consumes returned durable refs
 - **AND** it does not substitute prose instructions for a missing deterministic contract
 
+#### Scenario: Skill needs deterministic Isomer mutation
+- **WHEN** the procedure persists an artifact, resolves or registers a managed path, exports or applies a template, initializes a conversion, dispatches environment support, executes a trial, builds a PDF, exports a wiki, deploys a viewer, or launches a managed process
+- **THEN** it invokes the applicable typed CLI or owner service and consumes returned durable refs
+- **AND** it does not substitute prose instructions for a missing deterministic Isomer contract
+
+#### Scenario: Skill needs repository acquisition
+- **WHEN** the procedure needs to clone, fetch, copy, check out, deepen, repair, or inspect source-control state to obtain a repository
+- **THEN** the acting agent runs user-supplied or task-appropriate commands outside Isomer APIs under the applicable authorization
+- **AND** it uses typed Isomer operations only to plan a semantic target, register the verified existing path, and record Artifacts, provenance, checkpoints, or blockers
+
+#### Scenario: Skill needs deterministic support
+- **WHEN** the procedure lists, reads, creates, updates, copies, replaces, archives, or exports a named template; calculates digests; resolves a managed path; edits allowed metadata; initializes a conversion; executes a trial; or builds a PDF
+- **THEN** it invokes the applicable typed CLI or owner service and consumes returned state tokens, paths, digests, diagnostics, and refs
+- **AND** it does not directly update SQL or managed Artifact files
+
+#### Scenario: Arbitrary directory drives an update
+- **WHEN** a user asks to update a database template from an arbitrary directory
+- **THEN** the Kaoju skill inspects the source and current target, prepares the intended candidate, records its assessment, and invokes low-level template update with the expected target state token
+- **AND** it does not delegate high-level conversion or merge decisions to isomer-cli
+
+#### Scenario: Known named source replaces target
+- **WHEN** the user explicitly asks to replace one named template with another known named template
+- **THEN** the skill invokes exact named-template replacement after reporting source and target
+- **AND** it does not construct a merge unless the user requested one
+
 ### Requirement: Kaoju Write Guidance Is MyST-First
-`isomer-kaoju-write` SHALL treat MyST structure, template, and draft artifacts as canonical and SHALL treat Markdown, TeX, and PDF as derived views or publication artifacts.
+`isomer-kaoju-write` SHALL treat mutable named MyST-oriented template records and MyST draft Artifacts as canonical and SHALL treat exported template directories, Markdown, TeX, and PDF as non-canonical exchange, review, or publication material.
 
 #### Scenario: Write skill starts a paper
 - **WHEN** accepted audit and synthesis inputs are available
-- **THEN** the skill creates and fills MyST artifacts, citation mapping, and revision provenance before requesting derived publication artifacts
-- **AND** it does not create `kaoju:survey-manuscript` or `kaoju:writing-template` as new canonical state
+- **THEN** the skill resolves the explicitly named template or canonical `main`, interprets its current tree and entrypoint metadata, and creates paper state with the selected stable ref and observed digest
+- **AND** it does not create legacy `kaoju:writing-template` state
 
 #### Scenario: TeX requires semantic repair
-- **WHEN** the paper service initializes TeX from MyST
-- **THEN** the write skill inspects and directly repairs directives, tables, citations, floats, raw blocks, and venue structure before build readiness
-- **AND** a script or successful compiler exit does not replace this inspection obligation
+- **WHEN** the paper service initializes TeX from current MyST template state
+- **THEN** the write skill inspects and repairs directives, tables, citations, floats, raw blocks, and venue structure before build readiness
+- **AND** a compiler exit does not replace inspection
+
+#### Scenario: User requests export without a name
+- **WHEN** the user asks to get, edit, or export the paper template without naming one
+- **THEN** the skill selects canonical `main` and exports to resolved `intent/derived/writing-template/main/`
+- **AND** it reports that the directory is non-canonical
+
+#### Scenario: Unnamed database update finds an edited export
+- **WHEN** the user asks to update the current database template without any locator and exactly one registered export is edited
+- **THEN** the skill selects that export and its recorded target name before constructing the update candidate
+- **AND** it does not prefer topic `main/` merely because it exists
+
+#### Scenario: Unnamed database update falls back to topic main
+- **WHEN** no eligible edited export exists and the current Topic Workspace contains `intent/derived/writing-template/main/`
+- **THEN** the skill uses that directory as source and target name `main`, subject to consistent export metadata
+- **AND** it does not require database `main` to exist before selecting the source
+
+#### Scenario: Unnamed database update remains ambiguous
+- **WHEN** several edited exports qualify, an edited export has inconsistent identity, or neither an edited export nor topic `main/` exists
+- **THEN** the skill asks the user to select a concrete template or path and presents discovered candidates
+- **AND** it does not choose by timestamp or unrelated database record order
+
+#### Scenario: Explicit source bypasses discovery
+- **WHEN** the database-update request names a template, canonical ref, template path, or export path
+- **THEN** the skill validates and uses the explicit source and performs agentic construction as needed
+- **AND** it does not run implicit source discovery
+
+#### Scenario: User requests an explicit saved copy
+- **WHEN** the user asks to preserve the current template before an edit
+- **THEN** the skill chooses or confirms a new ordinary template name and invokes create-from-template
+- **AND** it does not attach snapshot type or lifecycle metadata
+
+#### Scenario: Agent chooses to preserve a state
+- **WHEN** the agent determines that an explicit saved copy is useful and the request authorizes that additional named template
+- **THEN** it reports the chosen name and creates the copy before mutation
+- **AND** ordinary updates do not create copies silently
+
+#### Scenario: User restores from a named copy
+- **WHEN** the user asks to restore or replace target `main` from another name
+- **THEN** the skill invokes exact update-from-template with current target state token
+- **AND** the source named template remains unchanged
+
+#### Scenario: User requests a merge
+- **WHEN** the user asks to merge current target state with another named template or editable directory
+- **THEN** the skill interprets both inputs, asks about material ambiguity, constructs a new candidate, and invokes low-level update
+- **AND** it does not invoke generic CLI merge or treat the source name as a special snapshot
 
 ### Requirement: Kaoju Environment Guidance Uses Service Requests
 Kaoju skills SHALL represent UC-09 as a research intent whose environment mutation is owned by the Service Team through a Service Request.
@@ -1132,3 +1151,102 @@ Kaoju skills SHALL represent UC-09 as a research intent whose environment mutati
 - **WHEN** the actor selects `export-survey-wiki`
 - **THEN** the skill selects accepted artifacts through state-DB queries and invokes `isomer-cli ext kaoju wiki`
 - **AND** it does not route to, mention as a required runtime dependency, or invoke the external `imsight-llm-wiki` skill
+
+### Requirement: Research Skill Validation Enforces Shared Resource Ownership
+The research-paradigm validation harness SHALL enforce the skill/shared-resource contract and canonical uppercase artifact identity contract for production research skill families without relying on repository symlink layout.
+
+#### Scenario: Active extension artifact identity is validated
+- **WHEN** the validator inspects an active DeepSci or Kaoju skill, registry, binding projection, generated summary, source declaration, or command example
+- **THEN** it requires an exact registered `DEEPSCI:WHAT` or `KAOJU:WHAT` identifier owned by the skill's manifest extension
+- **AND** it rejects angle-wrapped, double-bracket, bare, lowercase, mixed-case, wrong-family, unknown, duplicate, aliased, or lossy artifact identities without an old-form exemption
+
+#### Scenario: Kaoju active reference leaves its bundle
+- **WHEN** the validator finds parent traversal, a sibling-skill link, a family-root contract path, or an absolute source path in active Kaoju filesystem guidance
+- **THEN** it fails with the skill, file, line when available, and offending reference
+- **AND** it directs a private resource into the owning skill or a shared machine resource behind `isomer-cli ext kaoju`
+
+#### Scenario: Kaoju guidance names a shared contract file
+- **WHEN** active Kaoju guidance names `survey-process.v2.json`, `bindings.v2.json`, `bindings.v2.schema.json`, or their package locations as an agent-readable authority
+- **THEN** validation fails and names the required `ext kaoju process` or `ext kaoju bindings` query
+- **AND** internal package loader code and passive source-provenance material remain outside this active-guidance rule
+
+#### Scenario: Local binding projection is valid
+- **WHEN** a Kaoju skill bundles an `artifact-bindings.md` projection for its own semantic ids
+- **THEN** validation accepts the page only when it contains no parent-relative registry dependency, does not repeat the full physical registry, uses exact uppercase identifiers, and routes current resolution through `ext kaoju bindings describe`
+
+#### Scenario: Cross-skill process uses Kaoju shared
+- **WHEN** a Kaoju stage needs the family-wide evidence, source identity, lineage, Gate, owner-routing, recording, or terminal process
+- **THEN** validation requires routing to `isomer-kaoju-shared`
+- **AND** it rejects active sibling-file traversal or a known duplicated full process that bypasses the shared skill
+
+#### Scenario: Flat projection fixtures exercise the boundary
+- **WHEN** unit tests validate the production Kaoju family or an invalid Kaoju fixture
+- **THEN** they copy each skill to an ordinary non-symlink projection with no family-root contracts and test extension queries separately from skill-local links
+- **AND** fixtures cover parent traversal, missing local resources, direct registry paths, missing extension-query routing, shared-procedure bypass, and every noncanonical artifact identity class
+
+### Requirement: Production DeepSci Skills Use Canonical Artifact Identifiers
+Active production DeepSci skills SHALL use exact uppercase `DEEPSCI:WHAT` artifact identifiers throughout their workflow, registry, binding, source, and record-operation guidance.
+
+#### Scenario: Existing DeepSci registry is replaced
+- **WHEN** a DeepSci migration registry or binding page is inspected
+- **THEN** every registered artifact uses the deterministic canonical form obtained by removing the old wrapper, converting underscores to hyphens, retaining uppercase letters, and prefixing `DEEPSCI:`
+- **AND** the replacement inventory is implementation-only, registry-to-binding coverage remains one-to-one, and no runtime conversion table remains
+
+#### Scenario: Active DeepSci prose names an artifact
+- **WHEN** a DeepSci workflow step names an expected input, output, control object, route decision, report, or handoff
+- **THEN** it uses the exact registered `DEEPSCI:WHAT` identifier
+- **AND** it does not use an angle-wrapped token, double-bracket form, bare object name, lowercase value, or mixed-case value
+
+#### Scenario: DeepSci binding performs a record operation
+- **WHEN** an active DeepSci binding page shows how to create, update, revise, list, show, or query a durable artifact
+- **THEN** the command passes or filters by the canonical identifier through `--semantic-id`
+- **AND** it does not use `--placeholder` or ask the agent or source code to translate between representations
+
+#### Scenario: DeepSci pipeline control artifacts are qualified
+- **WHEN** `isomer-deepsci-pipeline` produces or consumes recipe context, terminal report, run record, or resume packet state
+- **THEN** it uses `DEEPSCI:PIPELINE-RECIPE-CONTEXT`, `DEEPSCI:PIPELINE-TERMINAL-REPORT`, `DEEPSCI:PIPELINE-RUN-RECORD`, or `DEEPSCI:PIPELINE-RESUME-PACKET` respectively
+- **AND** the same identifiers appear in pipeline guidance, bindings, profiles when declared, source constants, record metadata, and tests
+
+#### Scenario: DeepSci source and package mirrors agree
+- **WHEN** validation compares the source DeepSci skill tree with packaged system-skill assets
+- **THEN** every active artifact identifier and binding reference agrees exactly
+- **AND** no source or packaged skill copy retains a superseded artifact identity
+
+### Requirement: Research Skill Validation Preserves Unrelated Family Rules
+Adding shared-resource and artifact-identity checks SHALL preserve existing DeepSci and Kaoju content, inventory, binding, evidence, and command-surface validation except where the uppercase clean break explicitly replaces artifact identity behavior.
+
+#### Scenario: Shared boundary validation is introduced
+- **WHEN** the research-paradigm validation suite runs after the resource and identifier refactor
+- **THEN** existing valid DeepSci and Kaoju behavior continues to pass except for guidance or fixtures that use a removed artifact identity or violate the new ownership boundary
+- **AND** family-specific diagnostics unrelated to artifact identity retain their existing meaning and deterministic identifiers where defined
+
+### Requirement: Participating Research Skills Consume Compact Callback Resolution
+DeepSci and Kaoju system skills that declare User Skill Callback insertion points SHALL consume the compact execution projection during ordinary workflow execution.
+
+#### Scenario: Skill applies compact callbacks in returned order
+- **WHEN** a participating research skill resolves `begin` or `end` callbacks
+- **THEN** its workflow guidance tells the agent to process callback entries in their returned order
+- **AND** the agent reads each reported `instruction_path` as supplemental instruction material according to its `source_type`
+
+#### Scenario: Skill-directory callback remains supplemental
+- **WHEN** a compact callback entry has source type `skill_dir`
+- **THEN** the agent reads the reported `SKILL.md` entrypoint and any directly required relative resources as supplemental callback material
+- **AND** it does not treat the callback directory as an installed system skill or execute its scripts solely because resolution returned it
+
+#### Scenario: Ordinary workflow avoids explanation metadata
+- **WHEN** callback resolution succeeds during a normal participating skill workflow
+- **THEN** the skill does not request `--explain` or parse registry, priority, scope, status, Toolbox registration, or gating metadata
+- **AND** it uses `--explain`, `list`, `show`, or `validate` only when diagnosis or management is required
+
+#### Scenario: Empty compact resolution continues normally
+- **WHEN** ordinary callback resolution returns an empty callback list
+- **THEN** the participating skill continues without treating the missing callback as a blocker
+
+#### Scenario: Callback authority remains subordinate
+- **WHEN** compact callback instruction material conflicts with higher-priority instructions, the current user request, the owning skill, shared research rules, evidence discipline, required Gates, validation, or recording obligations
+- **THEN** the participating skill preserves the higher-priority constraint and reports a material callback conflict
+
+#### Scenario: Skill validation enforces compact consumption
+- **WHEN** the research-paradigm skill validation harness inspects callback-participating DeepSci and Kaoju skills
+- **THEN** it requires guidance for ordered compact callback consumption and instruction-entrypoint reading
+- **AND** it reports ordinary workflow guidance that requests detailed explanation or depends on management-only callback fields

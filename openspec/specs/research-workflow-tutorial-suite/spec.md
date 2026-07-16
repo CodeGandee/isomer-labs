@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving change add-research-workflow-tutorial-suite. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Research workflow tutorial suite
 The documentation SHALL provide a research-workflow tutorial suite under `docs/tutorial/` that teaches users how to conduct a human-steered research topic through Isomer using general concepts, best practices, shortened prompt/response examples, and a concrete example workspace.
 
@@ -31,11 +32,17 @@ The tutorial suite SHALL teach users how to author research intent by creating a
 - **THEN** it presents reusable intent-authoring moves rather than requiring access to raw local chatlogs
 
 ### Requirement: Topic environment preparation tutorial
-The tutorial suite SHALL teach users how to prepare a Topic Workspace environment after research intent is clear.
+The tutorial suite SHALL teach users how to prepare a Topic Workspace environment after research intent is clear, including user-controlled or agent-controlled external repository acquisition followed by Isomer registration.
 
 #### Scenario: Environment tutorial covers readiness checks
 - **WHEN** a reader follows `docs/tutorial/prepare-topic-environment.md`
-- **THEN** the tutorial explains how to prepare topic environment dependencies, capture host facts, acquire required repositories, handle proxy or dependency constraints, and verify readiness before research work begins
+- **THEN** the tutorial explains how to prepare topic environment dependencies, capture host facts, handle proxy or dependency constraints, and verify readiness before research work begins
+- **AND** for each required repository it shows how to query or choose a semantic target, run customizable repository commands outside `isomer-cli`, verify source identity, register the existing path, and preserve applicable evidence or blockers
+
+#### Scenario: Environment tutorial preserves user command flexibility
+- **WHEN** the tutorial demonstrates Git or provider-specific repository acquisition
+- **THEN** it presents the commands as examples that the user may supply or the acting agent may adapt to branch, commit, sparse, partial, submodule, LFS, local-source, mirror, credential, and provider requirements
+- **AND** it does not teach `project repos acquire`, a fixed depth-one policy, or Isomer-owned cleanup as the supported workflow
 
 ### Requirement: Human-steered research pass tutorial
 The tutorial suite SHALL teach users how to run research passes as a human-steered loop instead of treating agents as unattended automation.
@@ -90,3 +97,25 @@ The research-workflow tutorials SHALL teach users how to interact with an agent 
 - **THEN** the tutorials do not present `pixi run isomer-cli` as normal end-user usage
 - **AND** direct `isomer-cli` examples appear only in "Under the Hood" sections
 
+### Requirement: Tutorials Teach Prerequisite Recovery and Run-To
+The research-workflow tutorial suite SHALL teach the conservative missing-prerequisite interaction and the explicit run-to option alongside the existing human-steered workflow.
+
+#### Scenario: Tutorial target lacks prerequisites
+- **WHEN** a tutorial example asks an agent to perform a target whose accepted inputs are missing
+- **THEN** the example AI response pauses before prerequisite mutation
+- **AND** it names the missing inputs, recommended producer sequence, run-to choice, next-prerequisite-only choice, alternative-route choice, and stop choice
+
+#### Scenario: User chooses run-to
+- **WHEN** a tutorial user responds with `run to <task>`, “automate everything,” “yes to all,” or equivalent target-scoped authorization
+- **THEN** the example shows the agent planning and executing transitive prerequisites through their owner skills before resuming the target
+- **AND** it explains that routine prerequisite prompts are suppressed only inside that target closure
+
+#### Scenario: Run-to reaches a Gate
+- **WHEN** the tutorial traversal reaches a human Gate, material research choice, destructive action, unexpected resource request, or external publication boundary
+- **THEN** the example shows the agent pausing with completed refs and the exact required decision
+- **AND** it explains that run-to does not bypass nondelegable boundaries
+
+#### Scenario: Tutorial distinguishes run-to from Control Mode
+- **WHEN** a tutorial explains run-to semantics
+- **THEN** it describes run-to as prompt-scoped prerequisite recovery for one target
+- **AND** it does not present run-to as a new Run-level Control Mode, global yes-to-all setting, or CLI command

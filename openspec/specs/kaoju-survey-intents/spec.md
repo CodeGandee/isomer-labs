@@ -4,6 +4,7 @@
 TBD - created by syncing change revise-kaoju-survey-process. Update Purpose after archive.
 
 ## Requirements
+
 ### Requirement: Kaoju Proposes and Records Survey Directions
 The system SHALL derive candidate survey directions from the active Research Topic and SHALL return the final human-selected directions as one current `kaoju:direction-set` artifact distinct from `kaoju:survey-contract`.
 
@@ -132,17 +133,22 @@ An accepted `kaoju:source-digest` SHALL distinguish source statements, agent int
 - **AND** the prior digest remains historical and synthesis consumes only accepted revisions
 
 ### Requirement: Associated Source Code Is Registered and Related
-The system SHALL discover and register associated source code for a selected paper when an accessible and unambiguous repository can be established.
+The system SHALL discover and register associated source code for a selected paper when an accessible and unambiguous repository can be established through externally executed acquisition and verification.
 
 #### Scenario: Associated repository is found
 - **WHEN** a paper, report, metadata page, or verified project reference identifies associated source code
-- **THEN** the system resolves and acquires the repository through the canonical repository service
-- **AND** it records `kaoju:associated-source-code` with paper ref, repository identity, immutable commit, relationship basis, and access provenance
+- **THEN** the acting agent resolves the repository identity, runs the applicable external repository commands, verifies the resulting immutable identity, and registers the existing path as a Canonical External Repository
+- **AND** it records `KAOJU:ASSOCIATED-SOURCE-CODE` with paper ref, semantic repository label, requested and resolved repository identity, immutable commit or digest, relationship basis, acquisition method, sanitized command evidence, and access provenance
 
 #### Scenario: Repository relationship is uncertain
 - **WHEN** multiple repositories plausibly correspond to the paper or the relationship cannot be verified
 - **THEN** the system records the candidates and asks for clarification or creates a blocker
-- **AND** it does not register an arbitrary repository as associated source code
+- **AND** it does not execute acquisition commands or register an arbitrary repository as associated source code
+
+#### Scenario: Acquisition does not complete
+- **WHEN** the selected external acquisition or identity-verification procedure fails
+- **THEN** the system records a resumable source-access blocker and any safe partial-result posture
+- **AND** it does not create a successful repository binding or associated-source-code record for the failed attempt
 
 ### Requirement: Claim-Bearing Survey Work Is Audited Before Synthesis
 The system SHALL prevent claim-bearing survey records from becoming synthesis or paper inputs until the applicable audit accepts their identity, provenance, locator, evidence, and limitation posture.

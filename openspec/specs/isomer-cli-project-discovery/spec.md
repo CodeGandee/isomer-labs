@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving changes implement-isomer-cli-project-discovery and refactor-isomer-cli-to-click. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: CLI Entrypoint and Command Surface
 The system SHALL provide an installed `isomer-cli` command with a global command surface for environment diagnostics, global extensions, schema inspection, and system skill inspection, plus a `project` command group for Project discovery, Workspace Runtime management, topic environment readiness preparation, Agent Team Instance record management, template inspection, and Topic Agent Team Profile validation commands.
 
@@ -861,7 +862,7 @@ The topic-main guidance renderer SHALL direct coding agents to start with the sm
 - **AND** it does not embed a concrete Research Topic id, Topic Workspace path, Agent Name, Agent Instance id, manifest path, Pixi environment, credential, or external repository path
 
 ### Requirement: Project Skill Callback Command Group
-The system SHALL expose User Skill Callback management, resolution, and insertion-point discovery through the generic `isomer-cli project skill-callbacks` command group.
+The system SHALL expose User Skill Callback management, compact execution resolution, detailed resolution explanation, and insertion-point discovery through the generic `isomer-cli project skill-callbacks` command group.
 
 #### Scenario: Project group exposes skill-callbacks
 - **WHEN** a user runs `isomer-cli project --help`
@@ -886,6 +887,18 @@ The system SHALL expose User Skill Callback management, resolution, and insertio
 #### Scenario: Missing project is rejected
 - **WHEN** no Project can be discovered for a `project skill-callbacks` command
 - **THEN** the command fails with the standard missing-Project diagnostic and does not create callback registry files in the current directory
+
+#### Scenario: Resolve help exposes detailed explanation
+- **WHEN** a user runs `isomer-cli project skill-callbacks resolve --help`
+- **THEN** the command documents compact execution output as the default
+- **AND** it documents `--explain` as the detailed callback, registry, source, and Toolbox gating view
+
+#### Scenario: JSON output is deterministic and purpose appropriate
+- **WHEN** a user runs `isomer-cli --print-json project skill-callbacks <subcommand>`
+- **THEN** the command returns deterministic machine-readable output and diagnostics
+- **AND** ordinary `resolve` returns only ordered callback ids, source types, absolute instruction paths, and applicable external-source markers
+- **AND** `resolve --explain`, `list`, `show`, `register`, `install`, `disable`, and `validate` return the management fields appropriate to their operation
+- **AND** insertion-point metadata appears only when requested by the insertion-point surface
 
 ### Requirement: Project System Extensions Command Group
 The system SHALL expose Project operator system-extension memory through the generic `isomer-cli project system-extensions` command group.

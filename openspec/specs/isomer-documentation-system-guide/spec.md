@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving change rewrite-docs-comprehensive-system-guide. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Documentation Information Architecture
 The system SHALL provide a coherent `docs/` documentation set with stable tutorial, manual, developer, and UI contract entry points for published users, operators, and contributors.
 
@@ -65,8 +66,17 @@ The system SHALL document every public `isomer-cli` command with purpose, prereq
 - **WHEN** a documented command is read-only
 - **THEN** the command reference states that it does not create Workspace Runtime state, Agent Workspaces, launch material, or live Houmao state
 
+#### Scenario: Repository commands show the external boundary
+- **WHEN** the command reference documents `project paths default`, `project repos create`, or `project repos register`
+- **THEN** it states that default-path lookup is read-only, repository registration changes only the Topic Workspace Manifest, and repository-directory creation does not initialize or acquire a Git repository
+- **AND** it explains that clone, fetch, checkout, copy, repair, and verification commands run outside Isomer APIs
+
+#### Scenario: Removed repository acquisition command is absent
+- **WHEN** the public CLI reference and examples are validated after this change
+- **THEN** they contain no active `project repos acquire`, `repository_acquisition`, fixed depth-one clone, or Isomer-owned repository cleanup workflow
+
 ### Requirement: Intended Usage Workflows
-The system SHALL document operator-oriented workflows for the current supported paths through Project setup, validation, runtime preparation, team profile work, Agent Team Instance records, Houmao materialization, quick launch, inspection, stop, reconciliation, and adoption.
+The system SHALL document operator-oriented workflows for the current supported paths through Project setup, validation, runtime preparation, external repository acquisition and registration, team profile work, Agent Team Instance records, Houmao materialization, quick launch, inspection, stop, reconciliation, and adoption.
 
 #### Scenario: Minimal project workflow is documented
 - **WHEN** a new user follows the getting-started guide
@@ -79,6 +89,11 @@ The system SHALL document operator-oriented workflows for the current supported 
 #### Scenario: Manual Houmao workflow is documented
 - **WHEN** a user wants to inspect or edit Houmao launch material before invoking Houmao directly
 - **THEN** the docs explain prepare-only materialization, manual `houmao-mgr` operation, direct edit drift detection, reconciliation, and explicit adoption
+
+#### Scenario: External repository workflow is documented
+- **WHEN** a user or agent needs a Canonical External Repository
+- **THEN** the docs show how to query or choose a non-mutating target, run user-selected or task-appropriate repository commands outside `isomer-cli`, verify source identity, register the existing path, and record applicable provenance
+- **AND** failure examples do not create a successful binding or imply that Isomer cleans partial filesystem content
 
 ### Requirement: Assumptions and Non-goals Documentation
 The system SHALL document current assumptions, side-effect boundaries, security posture, adapter boundaries, and non-goals so readers do not infer unsupported guarantees.
@@ -132,6 +147,11 @@ The system SHALL provide a repository-local documentation verification path that
 #### Scenario: Docs validation checks legacy workspace paths
 - **WHEN** docs validation runs after this change
 - **THEN** it reports `.isomer-agent/` and top-level `repos/topic-main/{shared,artifacts,tasks,runs,views,logs,tools}` guidance outside migration notes as stale workspace layout language
+
+#### Scenario: Docs validation checks repository-acquisition ownership
+- **WHEN** docs validation scans active documentation, tutorials, and system-skill explanations
+- **THEN** it reports `project repos acquire`, `repository_acquisition`, the removed repository service, fixed Isomer-owned clone behavior, registration before verification, and claims that Isomer cleans partial external acquisitions
+- **AND** it accepts direct repository commands only when nearby guidance identifies them as user-controlled or agent-controlled external operations followed by non-executing Isomer registration
 
 ### Requirement: Semantic Workspace Path Documentation
 The documentation SHALL explain that semantic surface labels are the workspace path contract and default directories are one layout profile.
@@ -255,7 +275,7 @@ The documentation SHALL describe Workspace Path Resolution as the storage-layer 
 
 #### Scenario: Semantic labels are named as storage API
 - **WHEN** docs describe where agents, services, or adapters read or write topic files
-- **THEN** they present Semantic Workspace Surface Labels and `isomer-cli project paths get/list/preview` as the canonical path lookup interface
+- **THEN** they present Semantic Workspace Surface Labels and `isomer-cli project paths get/list/preview/default` as the canonical path lookup interface
 
 #### Scenario: Default directories are examples
 - **WHEN** docs show directories such as `repos/topic-main`, `repos/extern/<repo-label-path>`, `records/artifacts`, `runtime`, or `agents/<agent-name>`
@@ -270,8 +290,8 @@ The documentation SHALL describe Workspace Path Resolution as the storage-layer 
 - **THEN** they explain register, update, unregister, reset, and materialize behavior, including that unregistering or resetting a binding does not delete filesystem content or rewrite historical Path Plans
 
 #### Scenario: Default path and materialization commands are documented
-- **WHEN** docs describe reserved semantic labels with default paths
-- **THEN** they document how to query the default path and materialize the default filesystem target without treating the physical default path as the public contract
+- **WHEN** docs describe reserved or valid grouped repository semantic labels with default paths
+- **THEN** they document how to query the default path and, where supported, materialize a default filesystem target without treating the physical default path as the public contract
 
 #### Scenario: Repository helper default is documented
 - **WHEN** docs describe `project repos create`
@@ -280,6 +300,11 @@ The documentation SHALL describe Workspace Path Resolution as the storage-layer 
 #### Scenario: Agents are told to query paths
 - **WHEN** docs or skill references instruct an agent to use a Topic Workspace or Agent Workspace storage surface
 - **THEN** they tell the agent to query the semantic label through `isomer-cli` or equivalent resolver output instead of remembering physical paths
+
+#### Scenario: Repository helpers are documented
+- **WHEN** docs describe `project repos create` or `project repos register`
+- **THEN** they explain that bare non-main repository labels become `topic.repos.<group...>.<repo-name>` bindings with `storage_profile = "topic_repo"` and helper defaults under `repos/extern/...`
+- **AND** they distinguish directory creation from registration of an existing externally acquired repository and state that neither helper executes Git commands
 
 ### Requirement: Documentation Validation Detects Default-path-only Guidance
 Documentation validation SHALL report guidance that treats concrete default directories as authoritative without nearby semantic labels or default-profile framing.
@@ -343,4 +368,3 @@ The documentation system SHALL update canonical Isomer domain language so Topic 
 - **WHEN** documentation, schemas, CLI help, or skill prose describes manually controlled workers
 - **THEN** it uses Topic Actor Workspace for their managed cwd surface
 - **AND** it does not describe Topic Actor Workspaces as Agent Workspaces, Agent Instance ids, or Agent Team Instance membership
-

@@ -3,21 +3,23 @@
 ## Purpose
 TBD - created by archiving change add-family-neutral-research-artifact-bindings. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Kaoju Artifact Semantics Are Storage-Neutral
-The Kaoju extension SHALL define one shared artifact semantic registry whose entries describe durable survey meanings independently of storage implementation.
+The Kaoju extension SHALL define one shared artifact semantic registry whose entries describe durable survey meanings independently of storage implementation and are queryable through the package-owned Kaoju extension surface.
 
 #### Scenario: Semantic entry avoids physical binding
-- **WHEN** an agent reads a Kaoju artifact semantic entry
-- **THEN** the entry provides a stable `kaoju:<semantic-id>`, meaning, required semantic content, producer, consumer, and update intent
-- **AND** it does not prescribe a filesystem path, record kind, semantic label, format profile, or CLI command
+- **WHEN** an agent reads a Kaoju artifact semantic entry returned by the extension or summarized by bundle-local shared guidance
+- **THEN** the entry provides a stable canonical identifier such as `KAOJU:SURVEY-CONTRACT`, meaning, required semantic content, producer, consumer, and update intent
+- **AND** it does not prescribe a filesystem path, record-store subpath, provider payload, or implementation command body
 
 #### Scenario: Active skills use registered semantic ids
 - **WHEN** active Kaoju guidance names an accepted durable output
-- **THEN** it uses an exact semantic id registered in the shared artifact semantic registry
+- **THEN** it uses an exact registered `KAOJU:WHAT` identifier available from the shared Kaoju extension query
+- **AND** it does not wrap the identifier in angle brackets, use a bare object name, or use lowercase or mixed case
 - **AND** unregistered or ambiguous durable output semantics are reported by validation
 
 ### Requirement: Kaoju Artifact Bindings Are Separate and Complete
-The package SHALL provide one versioned machine-readable Kaoju binding registry that is separate from the storage-neutral semantic registry and complete for every active Kaoju semantic id.
+The package-owned Kaoju extension implementation SHALL provide one versioned machine-readable Kaoju binding registry that is separate from the storage-neutral semantic registry and complete for every active Kaoju semantic id.
 
 #### Scenario: Binding entry is complete
 - **WHEN** the binding registry maps a Kaoju semantic id
@@ -26,7 +28,7 @@ The package SHALL provide one versioned machine-readable Kaoju binding registry 
 
 #### Scenario: Binding coverage is bidirectional
 - **WHEN** the Kaoju binding validator compares the shared semantic registry, active skill references, binding registry, schema and renderer assets, and built-in profile catalog
-- **THEN** it rejects missing, extra, duplicated, cross-family, unresolved, or incompatible semantic ids, profiles, producers, consumers, scope policies, and content modes
+- **THEN** it rejects missing, extra, duplicated, cross-family, unresolved, aliased, non-uppercase, or incompatible semantic ids, profiles, producers, consumers, scope policies, and content modes
 - **AND** each diagnostic names the family, semantic id, affected file, line when available, and violated binding rule
 
 #### Scenario: Skills resolve physical bindings through the registry
@@ -38,6 +40,16 @@ The package SHALL provide one versioned machine-readable Kaoju binding registry 
 - **WHEN** a Kaoju binding selects a managed content mode and default Semantic Workspace Surface Label
 - **THEN** the artifact service allocates a generic internal path from record kind and opaque record or revision identity
 - **AND** the binding and producer do not declare, construct, or rely on a Kaoju-specific subdirectory convention
+
+#### Scenario: Skills discover and apply physical bindings
+- **WHEN** a Kaoju skill needs to inspect a binding before creating, revising, or querying an accepted durable output
+- **THEN** it discovers the contract through an exact command such as `isomer-cli --print-json ext kaoju bindings describe KAOJU:SURVEY-CONTRACT` and uses `isomer-cli project artifacts` for the topic-scoped operation
+- **AND** the extension query and project artifact service resolve the same package-owned canonical registry
+
+#### Scenario: Per-skill binding guidance remains a local projection
+- **WHEN** a skill contains `artifact-bindings.md` or equivalent local guidance
+- **THEN** that bundle-local page may summarize only the semantic ids and usage needed by its owning skill and directs the agent to the extension query for current binding data
+- **AND** it does not name a registry filesystem path, become an independent physical binding authority, or repeat full executable command shapes
 
 ### Requirement: Kaoju Structured Payload Is Canonical
 Accepted structured Kaoju records SHALL use validated file-backed JSON payloads as canonical machine-readable content, while non-structured artifacts SHALL use their registered ordinary file, directory manifest, external locator, or canonical repository reference as authoritative content.
@@ -85,7 +97,7 @@ The production Kaoju binding inventory SHALL cover every durable object required
 - **AND** validation rejects an undocumented implicit storage choice
 
 ### Requirement: Kaoju Records Preserve Lineage and Revision Meaning
-Kaoju bindings SHALL define canonical lineage, scope, and revision behavior for every semantic id.
+Kaoju bindings SHALL define canonical lineage, scope, update, and revision behavior for every semantic id, including explicit mutable-state exceptions.
 
 #### Scenario: Scoped current-state object is revised
 - **WHEN** accepted content changes for a direction set, direction-owned reading list, source-owned digest, artifact library, Topic Dataset Manifest, Claim-Evidence Ledger, Related-Work Catalog, paper structure, paper template, paper draft, current terminal status, or another binding marked as current state
@@ -93,25 +105,45 @@ Kaoju bindings SHALL define canonical lineage, scope, and revision behavior for 
 - **AND** records in another direction, source, paper line, or target scope remain independently current
 
 #### Scenario: Delta and audit remain separate records
-- **WHEN** a curated intake, direction expansion, audit, follow-up, bounded repair, template export, build attempt, wiki export, environment preparation, or trial produces event evidence
-- **THEN** it creates a separate descendant record with immediate parent refs and applicable lineage roles
-- **AND** it does not overwrite the base survey artifact or prior event
+- **WHEN** a curated intake, direction expansion, audit, follow-up, bounded repair, template export observation, template mutation audit, build attempt, wiki export, environment preparation, or trial produces event evidence
+- **THEN** it creates the applicable separate evidence record with parent or subject refs
+- **AND** it does not silently convert event evidence into restorable template content
 
 #### Scenario: Run fidelity is not revised away
 - **WHEN** a faithful Run fails and an adapted or repaired Run follows
-- **THEN** each Run remains a separate record with its own purpose, fidelity, inputs, outputs, timing, environment, and lineage
-- **AND** the later Run does not revise or replace the earlier verdict
+- **THEN** each Run remains separate with its own purpose, inputs, outputs, timing, environment, and lineage
+- **AND** the later Run does not replace the earlier verdict
 
 #### Scenario: Competing current candidates remain visible
 - **WHEN** two non-superseded accepted records claim the same semantic id and scope
 - **THEN** scoped latest lookup reports a conflict with both stable refs
 - **AND** it does not select solely by timestamp
 
+#### Scenario: Ordinary scoped current-state object is revised
+- **WHEN** accepted content changes for a direction set, direction-owned reading list, source-owned digest, artifact library, Topic Dataset Manifest, Claim-Evidence Ledger, Related-Work Catalog, paper structure, paper draft, current terminal status, or another binding marked as revisioned current state
+- **THEN** the service creates a revision so the prior record remains historical and the new record becomes the explicit latest candidate for the same binding-defined scope
+- **AND** records in another direction, source, paper line, or target scope remain independently current
+
+#### Scenario: Mutable named template is updated
+- **WHEN** accepted content or metadata changes for a binding-marked mutable named paper template
+- **THEN** the service atomically updates its stable current record and lightweight audit evidence
+- **AND** it does not apply the revisioned-current-state behavior used by other semantic ids
+
+#### Scenario: Explicit named copy preserves template content
+- **WHEN** a user or agent requires a restorable paper-template state
+- **THEN** it creates another ordinary named template through the same binding
+- **AND** no implicit historical revision or snapshot record is created
+
+#### Scenario: Competing revisioned candidates remain visible
+- **WHEN** two non-superseded accepted records claim the same revisioned semantic id and scope
+- **THEN** scoped latest lookup reports a conflict with both stable refs
+- **AND** this candidate-selection rule is not used for binding-enforced unique mutable template names
+
 ### Requirement: Large Research Materials Remain Referenced
 Kaoju records SHALL reference rather than embed large, binary, directory-shaped, externally governed, or repository material.
 
 #### Scenario: Material manifest records exact identity
-- **WHEN** a repository, paper file, dataset, model, checkpoint, generated-data directory, raw output, log, wiki tree, TeX tree, viewer deployment, or PDF is acquired or registered
+- **WHEN** a repository, paper file, dataset, model, checkpoint, generated-data directory, raw output, log, wiki tree, TeX tree, viewer deployment, or PDF is externally acquired or registered
 - **THEN** the applicable record stores or links its immutable locator, revision or digest, source class, size when known, access and license posture, managed-link or Artifact refs, observed time, staleness policy, and Provenance Record refs
 - **AND** structured payloads and DB metadata do not contain the material bytes or directory tree
 
@@ -124,6 +156,11 @@ Kaoju records SHALL reference rather than embed large, binary, directory-shaped,
 - **WHEN** `manage-dataset` registers, refreshes, or removes a local dataset
 - **THEN** the Topic Dataset Manifest is revised through its binding while link mutation remains owned by the Topic Workspace owner
 - **AND** removal never deletes or rewrites the external dataset
+
+#### Scenario: Repository material records external acquisition evidence
+- **WHEN** a Canonical External Repository is accepted as Kaoju material
+- **THEN** its Artifact records or links the semantic repository label, requested and resolved source locators, observed immutable commit or digest, acquisition method, sanitized external command evidence, relationship basis, limitations, and verification time
+- **AND** it does not depend on a `repository_acquisition` extension point, an Isomer-generated Git command request, or raw credential-bearing output
 
 ### Requirement: Kaoju Workspace Bootstrap Validates Storage Readiness
 `isomer-kaoju-workspace-mgr` SHALL establish semantic binding, scoped query, path, and storage readiness before ordinary Kaoju skills write accepted durable artifacts.
@@ -161,12 +198,12 @@ The `manage-survey` and `manage-dataset` helpers SHALL operate on canonical boun
 - **AND** the export does not become a new latest survey state or evidence source
 
 ### Requirement: Every Survey-Process Durable Output Has a State-DB Entry
-Every durable record named by a survey-process use case SHALL be registered in the Topic Workspace state DB and linked to authoritative filesystem or canonical repository content.
+Every durable record named by a survey-process use case SHALL be registered in the Topic Workspace state DB and linked to authoritative filesystem or Canonical External Repository content.
 
 #### Scenario: Durable artifact is accepted
-- **WHEN** a Kaoju procedure accepts a structured record, ordinary file, directory export, repository, script, log, environment ref, Run result, or PDF
+- **WHEN** a Kaoju procedure accepts a structured record, ordinary file, directory export, registered repository, script, log, environment ref, Run result, or PDF
 - **THEN** it creates an Artifact Core Record with semantic id metadata, artifact kind, status, timestamps, locator kind, locator or semantic label, content link, checksum or immutable identity when applicable, and provenance links
-- **AND** success is not reported until registration completes
+- **AND** success is not reported until Artifact registration completes
 
 #### Scenario: Agent looks for an artifact
 - **WHEN** a skill needs an existing direction, reading list, source, paper, wiki, environment, trial, audit, or synthesis artifact
@@ -174,6 +211,44 @@ Every durable record named by a survey-process use case SHALL be registered in t
 - **AND** it does not scan the Topic Workspace directory tree as a fallback
 
 #### Scenario: DB and content disagree
-- **WHEN** the DB entry points to missing or checksum-mismatched content
+- **WHEN** the DB entry points to missing or checksum-mismatched content or its repository identity disagrees with the observed registered path
 - **THEN** the system reports stale or corrupt artifact state and the recovery route
-- **AND** the DB entry remains discoverable for diagnosis rather than being silently ignored
+- **AND** the DB entry remains discoverable for diagnosis rather than being silently ignored or revised
+
+#### Scenario: External repository topology is registered before Artifact acceptance
+- **WHEN** a Kaoju procedure accepts repository content acquired through external commands
+- **THEN** it first requires the verified existing path to resolve through its non-main `topic.repos.*` binding and then records the applicable Artifact revision
+- **AND** a filesystem checkout without semantic registration remains pre-acceptance material rather than a successful durable output
+
+### Requirement: Named Template Binding Uses Mutable State
+The `kaoju:paper-template-myst` binding SHALL support one stable mutable current record per template name without automatic content revisions.
+
+#### Scenario: Stable name owns one current record
+- **WHEN** a template name is created
+- **THEN** its Topic Workspace and template-name scope identify one stable record whose managed tree and authored metadata can be updated atomically
+- **AND** ordinary lookup does not select among superseding candidates
+
+#### Scenario: Update replaces current state
+- **WHEN** content or allowed metadata changes with the expected state token
+- **THEN** the binding updates the stable record's current managed tree, digest, metadata, token, and update time
+- **AND** it creates no `revision_of`, `supersedes`, or historical template-content record
+
+#### Scenario: Explicit saved state is another name
+- **WHEN** the actor copies one template to a new name
+- **THEN** the new record uses the same semantic id, binding, content mode, mutable-state behavior, and operations
+- **AND** no binding field classifies it as a snapshot
+
+#### Scenario: Canonical content supports arbitrary file trees
+- **WHEN** a named template contains multiple files or no conventional main filename
+- **THEN** its current content uses a managed directory manifest with checksummed safe relative paths
+- **AND** the binding does not assert a universal internal template format
+
+#### Scenario: Lightweight audit does not retain old content
+- **WHEN** mutable named state changes
+- **THEN** an audit event records name, stable ref, actor, operation, source refs, time, and before-and-after tokens and digests
+- **AND** the event does not retain prior template bytes or become a restorable template
+
+#### Scenario: Working directory remains non-canonical
+- **WHEN** a named template is exported
+- **THEN** the external working directory and export observation remain distinct from the mutable canonical record
+- **AND** editing the directory does not change database state until explicit low-level CRUD succeeds

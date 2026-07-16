@@ -30,7 +30,7 @@ The system SHALL list packaged Isomer system-skill groups, extensions, and skill
 - **AND** each skill includes its install name and manifest-relative source path
 
 ### Requirement: System Skill Operations Report Resolved Scope
-The system SHALL report the selected installation scope and resolved target bindings for every target-resolving system-skill operation.
+The system SHALL report the effective installation scope and resolved target bindings for every target-resolving system-skill operation, including an install whose scope came from the Project default.
 
 #### Scenario: Concrete target reports scope
 - **WHEN** a user runs `isomer-cli --print-json system-skills status --target kimi-code --scope user`
@@ -42,8 +42,13 @@ The system SHALL report the selected installation scope and resolved target bind
 - **THEN** JSON and human output report one physical-root result for that root
 - **AND** the result includes both `codex/project` and `generic/project` bindings
 
+#### Scenario: Omitted install scope reports effective Project scope
+- **WHEN** a user runs `isomer-cli --print-json system-skills install --target generic` without `--scope`
+- **THEN** the result reports `project` as the effective scope
+- **AND** it reports the same normalized skill root, `generic/project` binding, diagnostics, and receipt metadata as an explicit `--scope project` install from the same current working directory
+
 ### Requirement: Target Resolution
-The system SHALL require an explicit `user` or `project` scope and resolve each supported system-skill target and scope to a deterministic skill root.
+The system SHALL require a target for every target-resolving system-skill command, SHALL default omitted scope to `project` for `system-skills install` only, SHALL require an explicit `user` or `project` scope for `status`, `upgrade`, and `uninstall`, and SHALL resolve each supported target and effective scope to a deterministic skill root.
 
 #### Scenario: Scope is required
 - **WHEN** a user runs a target-resolving `system-skills` command without `--scope`
@@ -100,34 +105,45 @@ The system SHALL require an explicit `user` or `project` scope and resolve each 
 - **THEN** the target skill root is `~/.agents/skills`
 
 #### Scenario: Project scope is anchored exactly at the current working directory
-- **WHEN** the current working directory is nested below a Git root or initialized Isomer Project and the user selects `--scope project`
+- **WHEN** the current working directory is nested below a Git root or initialized Isomer Project and the user selects Project scope explicitly or through the install default
 - **THEN** the resolver uses that current working directory as `<cwd>`
 - **AND** it does not search parent directories for Git or Isomer metadata
 
 #### Scenario: All target deduplicates shared physical roots
-- **WHEN** a user supplies `--target all --scope project`
+- **WHEN** a user supplies `--target all --scope project` or installs with `--target all` and omits scope
 - **THEN** the command expands `claude-code`, `codex`, `kimi-code`, and `generic`
 - **AND** it groups bindings with the same normalized absolute skill root before any filesystem operation
 - **AND** it operates on each physical skill root exactly once
 
+#### Scenario: Install scope defaults to Project
+- **WHEN** a user runs `isomer-cli system-skills install --target generic` without `--scope`
+- **THEN** the command behaves as if `--scope project` were supplied
+- **AND** it resolves the target from the exact current working directory
+- **AND** it does not inspect or mutate the generic user skill root
+
+#### Scenario: Non-install scope is required
+- **WHEN** a user runs `system-skills status`, `system-skills upgrade`, or `system-skills uninstall` with a target but without `--scope`
+- **THEN** the command reports a missing required option
+- **AND** it does not mutate any skill root
+
 ### Requirement: Skill Selection
-The system SHALL select installable packaged skills by group, extension, all extensions, or explicit skill name after resolving an explicit target and scope.
+The system SHALL select installable packaged skills by group, extension, all extensions, or explicit skill name after resolving a required target and an effective scope.
 
 #### Scenario: Install defaults to core group
-- **WHEN** a user runs `isomer-cli system-skills install --target generic --scope project` without selectors
-- **THEN** the command installs only the packaged `core` group
+- **WHEN** a user runs `isomer-cli system-skills install --target generic` without selectors or scope
+- **THEN** the command installs only the packaged `core` group into Project scope
 
 #### Scenario: Install selected extension
-- **WHEN** a user runs `isomer-cli system-skills install --target generic --scope project --extension deepsci`
-- **THEN** the command installs the packaged `core` group and the `deepsci` extension skills
+- **WHEN** a user runs `isomer-cli system-skills install --target generic --extension deepsci`
+- **THEN** the command installs the packaged `core` group and the `deepsci` extension skills into Project scope
 
 #### Scenario: Install all extensions
-- **WHEN** a user runs `isomer-cli system-skills install --target generic --scope project --all-extensions`
-- **THEN** the command installs the packaged `core` group and every packaged extension group
+- **WHEN** a user runs `isomer-cli system-skills install --target generic --all-extensions`
+- **THEN** the command installs the packaged `core` group and every packaged extension group into Project scope
 
 #### Scenario: Install explicit skill
-- **WHEN** a user runs `isomer-cli system-skills install --target generic --scope project --skill isomer-op-entrypoint`
-- **THEN** the command installs `isomer-op-entrypoint` even if no group selector is provided
+- **WHEN** a user runs `isomer-cli system-skills install --target generic --skill isomer-op-entrypoint`
+- **THEN** the command installs `isomer-op-entrypoint` into Project scope even if no group selector is provided
 
 #### Scenario: Extension selector advertises packaged ids
 - **WHEN** a user inspects help or shell completion for a `system-skills` command with `--extension`
@@ -139,7 +155,7 @@ The system SHALL select installable packaged skills by group, extension, all ext
 - **THEN** the command reports a deterministic error and does not mutate files
 
 ### Requirement: Skill Projection
-The system SHALL project selected packaged skills into explicitly scoped target skill roots as flat skill directories or symlinks whose install slots are identified by packaged skill name.
+The system SHALL project selected packaged skills into resolved target skill roots as flat skill directories or symlinks whose install slots are identified by packaged skill name.
 
 #### Scenario: Copy projection writes flat skill directory
 - **WHEN** a user installs `isomer-op-entrypoint` into a target skill root in copy mode and `<skill-root>/isomer-op-entrypoint` does not exist
@@ -202,7 +218,7 @@ The system SHALL inspect and remove selected packaged skill install slots by pac
 - **AND** it does not delete the symlink target
 
 ### Requirement: Documentation
-The system SHALL document released-package system skill installation through explicit `--target` and `--scope` selection.
+The system SHALL document released-package system skill installation through a required target, a Project-scope default when install scope is omitted, and an explicit scope for user-wide installation and all status, upgrade, and uninstall operations.
 
 #### Scenario: README describes scoped CLI skill installation
 - **WHEN** the README is inspected
@@ -218,6 +234,25 @@ The system SHALL document released-package system skill installation through exp
 - **WHEN** a caller migrates from the prior CLI contract
 - **THEN** documentation explains how to replace an implicit default or `--home` invocation with the corresponding target and scope
 - **AND** it states that arbitrary public install roots are no longer supported
+
+#### Scenario: README describes install scope default
+- **WHEN** the README is inspected
+- **THEN** it recommends installing Isomer system skills through `isomer-cli system-skills install`
+- **AND** it states that an omitted install scope selects `project` at the exact current working directory
+- **AND** it names the supported targets and the explicit `user` and `project` scopes
+
+#### Scenario: Manual CLI reference distinguishes install from other operations
+- **WHEN** the CLI reference is inspected
+- **THEN** it documents `system-skills list`, `system-skills status`, `system-skills install`, `system-skills upgrade`, and `system-skills uninstall`
+- **AND** its Project-install examples demonstrate the omitted-scope default or an explicit equivalent
+- **AND** its user install, status, upgrade, and uninstall examples retain explicit scope
+- **AND** its active command examples contain no `--home` option
+
+#### Scenario: Migration guidance explains the relaxed install syntax
+- **WHEN** a caller migrates from the prior CLI contract
+- **THEN** documentation explains that an install without `--scope` now selects Project scope while explicit `--scope project` remains equivalent
+- **AND** it states that user-wide install still requires `--scope user`
+- **AND** it states that status, upgrade, and uninstall remain scope-explicit and arbitrary public install roots remain unsupported
 
 ### Requirement: Target Root Skill Manifest
 The system SHALL maintain an `isomer-labs-skill-manifest.json` file in each physical skill root that records target-scope bindings and the Isomer system skills tracked in that root.
@@ -249,7 +284,7 @@ The system SHALL maintain an `isomer-labs-skill-manifest.json` file in each phys
 - **AND** it reports the missing scope or binding metadata as unknown rather than inferring it from the path
 
 #### Scenario: Authorized mutation upgrades a legacy receipt
-- **WHEN** a supported legacy receipt exists at the root selected by an explicit target and scope and install, upgrade, or uninstall mutates that root
+- **WHEN** a supported legacy receipt exists at the root selected by a required target and effective scope and install, upgrade, or uninstall mutates that root
 - **THEN** the command writes a v3 receipt with the current target-scope binding
 - **AND** it preserves valid tracked skill records that remain installed
 
@@ -262,6 +297,12 @@ The system SHALL maintain an `isomer-labs-skill-manifest.json` file in each phys
 - **WHEN** `<skill-root>/isomer-labs-skill-manifest.json` exists but cannot be parsed as a supported manifest
 - **THEN** status reports a deterministic warning diagnostic
 - **AND** status still derives selected skill path existence from the filesystem
+
+#### Scenario: Install writes effective-scope target root manifest
+- **WHEN** `isomer-cli system-skills install` mutates a target skill root selected through omitted Project scope or an explicit scope
+- **THEN** the command writes `<skill-root>/isomer-labs-skill-manifest.json` using `isomer-labs-skill-manifest.v3`
+- **AND** the manifest records the normalized skill root path, Isomer CLI or package version, update timestamp, and a sorted set of target-scope bindings
+- **AND** each tracked installed skill record includes skill name, manifest-relative source path, projection mode, and skill version
 
 ### Requirement: System Skill Upgrade
 The system SHALL provide `isomer-cli system-skills upgrade` to refresh installed packaged system skills and clean up stale manifest-tracked skill paths under an explicit target and scope after Isomer CLI or package upgrades.
@@ -293,7 +334,7 @@ The system SHALL provide `isomer-cli system-skills upgrade` to refresh installed
 - **AND** it records that projection mode in the target root manifest
 
 ### Requirement: Packaged Extension Discovery Commands
-The system SHALL provide focused commands for discovering optional packaged system-skill extensions and their agent-facing entry surfaces using the scoped installer contract.
+The system SHALL provide focused commands for discovering optional packaged system-skill extensions and their agent-facing entry surfaces using the Project-default install contract and scope-explicit status contract.
 
 #### Scenario: Extension list summarizes available extensions
 - **WHEN** a user runs `isomer-cli system-skills extensions list`
@@ -304,11 +345,11 @@ The system SHALL provide focused commands for discovering optional packaged syst
 - **WHEN** a user runs `isomer-cli system-skills extensions show kaoju`
 - **THEN** the output identifies `$isomer-kaoju-pipeline` as the entry skill
 - **AND** it lists Kaoju's public procedure and helper command ids
-- **AND** it provides install and status command templates that require target and scope selection
+- **AND** it provides an install command template that uses the omitted-scope Project default and a status command template that requires target and scope selection
 
 #### Scenario: JSON discovery is structured
 - **WHEN** a user requests JSON output for extension list or show
-- **THEN** each extension object includes its id, group, description, entry skill, commands, skills, scoped install command template, scoped status command template, and invocation
+- **THEN** each extension object includes its id, group, description, entry skill, commands, skills, Project-default install command template, scope-explicit status command template, and invocation
 - **AND** the response reports `mutated` as false
 
 #### Scenario: Unknown extension show fails safely

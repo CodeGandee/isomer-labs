@@ -3,6 +3,7 @@
 ## Purpose
 TBD - created by archiving change define-workspace-path-resolution. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Workspace Path Resolution Precedence
 The system SHALL resolve Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths through a single Workspace Path Resolver using deterministic precedence.
 
@@ -615,7 +616,7 @@ Workspace Path Resolution SHALL materialize topic intent and target-spec file su
 - **THEN** the output includes the semantic label, resolved path, storage profile, source, source detail, and any blocker diagnostics
 
 ### Requirement: Non-main Topic Repository Default Placement
-Workspace Path Resolution and repository helper commands SHALL keep `topic.repos.main` as the primary Topic Main Repository label while placing helper-created non-main topic repositories under the default external repository namespace.
+Workspace Path Resolution and repository helper commands SHALL keep `topic.repos.main` as the primary Topic Main Repository label while planning, registering, or helper-creating non-main topic repositories under the default external repository namespace.
 
 #### Scenario: Main repository default remains stable
 - **WHEN** a caller resolves or materializes the built-in `topic.repos.main` label under `isomer-default.v1`
@@ -633,6 +634,21 @@ Workspace Path Resolution and repository helper commands SHALL keep `topic.repos
 #### Scenario: Extern namespace is physical layout only
 - **WHEN** a caller queries a non-main topic repository
 - **THEN** the semantic label remains `topic.repos.<group...>.<repo-name>` rather than including `extern` as a semantic label segment unless the user explicitly chose `extern` as part of the repository label
+
+#### Scenario: Unregistered non-main repository default can be queried
+- **WHEN** a caller queries `project paths default` for a valid unregistered `topic.repos.<group...>.<repo-name>` label
+- **THEN** Workspace Path Resolution returns `<topic-workspace>/repos/extern/<group...>/<repo-name>` with `storage_profile = "topic_repo"`
+- **AND** the query does not create a binding, directory, repository, or Path Plan
+
+#### Scenario: Existing non-main repository is registered
+- **WHEN** a user runs `project repos register <repo-label> --path <existing-path>` after externally acquiring and verifying a repository
+- **THEN** the helper registers the requested `topic.repos.<group...>.<repo-name>` label with `storage_profile = "topic_repo"` at the existing canonical path
+- **AND** it does not create, initialize, clone, fetch, checkout, move, rewrite, or delete repository content
+
+#### Scenario: Non-main topic repo creation helper uses extern namespace
+- **WHEN** a user creates a grouped non-main topic repository directory through `project repos create` without an explicit `--path`
+- **THEN** the helper registers the requested `topic.repos.<group...>.<repo-name>` label with `storage_profile = "topic_repo"`
+- **AND** it uses `<topic-workspace>/repos/extern/<group...>/<repo-name>` as the default target path without initializing or acquiring a Git repository
 
 ### Requirement: Topic Main Projection Path Resolution
 Workspace Path Resolution SHALL resolve Topic Main Development Repository projection labels as built-in topic-scoped surfaces derived from the resolved `topic.repos.main` path.
@@ -794,3 +810,36 @@ Workspace Runtime SHALL record worker output root path plans when worker setup o
 #### Scenario: Historical output path plans are preserved
 - **WHEN** a later manifest change would resolve a different output root for an existing worker
 - **THEN** validation reports drift against historical path plans without silently rewriting prior dependent records
+
+### Requirement: Kaoju Writing-Template Exchange Has a Semantic Path Surface
+Workspace Path Resolution SHALL expose a built-in topic-scoped root for non-canonical named Kaoju template working copies.
+
+#### Scenario: Exchange root is in the effective catalog
+- **WHEN** a caller lists semantic paths for a selected Topic Workspace
+- **THEN** the effective catalog includes `topic.paper.template_exchange_root` with topic scope, owner-editable durable-directory traits, source, source detail, storage profile, and diagnostics
+- **AND** the surface is described as non-canonical exchange material rather than an Artifact record root
+
+#### Scenario: Default exchange root is resolved
+- **WHEN** the Topic Workspace uses the built-in default layout and no higher-precedence binding overrides the exchange root
+- **THEN** `topic.paper.template_exchange_root` resolves to `<topic-workspace>/intent/derived/writing-template`
+- **AND** a validated template name is appended by the Kaoju paper service rather than embedded in the root binding
+
+#### Scenario: Main working directory is derived
+- **WHEN** an unnamed export selects canonical `main` or underspecified update discovery reaches the topic-directory fallback
+- **THEN** the Kaoju service or agent resolves the exchange root and selects child directory `main`
+- **AND** it reports both the semantic root label and concrete `<resolved-root>/main/` path
+
+#### Scenario: Skills and services do not guess the path
+- **WHEN** a Kaoju skill or CLI service needs to export, discover, inspect, reconcile, validate, or report a template working directory
+- **THEN** it queries Workspace Path Resolution for `topic.paper.template_exchange_root` before filesystem access
+- **AND** resolver failure blocks the operation instead of falling back to `exports/kaoju-paper`, a remembered `intent/derived` path, or cwd-relative construction
+
+#### Scenario: Named child is path safe
+- **WHEN** a template name is appended to the resolved exchange root
+- **THEN** validation accepts exactly one normalized path-safe name segment and confirms that the resulting default path remains beneath the root
+- **AND** absolute paths, traversal, separators, empty names, and ambiguous normalization are rejected
+
+#### Scenario: Exchange root is materialized
+- **WHEN** an authorized template export materializes the effective exchange root
+- **THEN** Workspace Path Resolution creates or validates the resolved directory according to its storage profile before the service creates the named child
+- **AND** path materialization does not create canonical template content or an empty canonical record

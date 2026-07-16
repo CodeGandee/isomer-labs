@@ -3,8 +3,9 @@
 ## Purpose
 TBD - created by archiving change implement-kaoju-research-extension. Update Purpose after archive.
 ## Requirements
+
 ### Requirement: Production Kaoju Skill Family
-The package SHALL provide a self-contained production Kaoju research-paradigm skill family under `src/isomer_labs/assets/system_skills/research-paradigm/kaoju/` using the `isomer-kaoju-<purpose>` namespace.
+The package SHALL provide a self-contained production Kaoju research-paradigm skill family under `src/isomer_labs/assets/system_skills/research-paradigm/kaoju/` using the `isomer-kaoju-<purpose>` namespace and the skill/shared-resource contract.
 
 #### Scenario: Exact production inventory exists
 - **WHEN** the packaged Kaoju root is inspected
@@ -20,6 +21,16 @@ The package SHALL provide a self-contained production Kaoju research-paradigm sk
 - **WHEN** the production inventory is inspected for executable evidence work
 - **THEN** `isomer-kaoju-trial` owns bounded method trials and generated-data capability probes while `isomer-kaoju-reproduce` owns only work that satisfies the stronger reproduction contract
 - **AND** neither skill treats a repaired or capability-probe result as faithful paper reproduction
+
+#### Scenario: Skill identity and resource boundary are consistent
+- **WHEN** a production Kaoju skill is inspected
+- **THEN** its folder name, `SKILL.md` frontmatter name, `agents/openai.yaml` display name, and default-prompt invocation use the same `isomer-kaoju-*` name
+- **AND** every active filesystem-linked resource resolves within that skill directory, shared machine data is queried through `isomer-cli ext kaoju`, and shared procedures are routed through `isomer-kaoju-shared`
+
+#### Scenario: Artifact identity is consistent
+- **WHEN** a production Kaoju skill names, resolves, produces, consumes, or queries a durable extension artifact
+- **THEN** it uses the exact registered `KAOJU:WHAT` identifier in prose, local projections, source declarations, and commands
+- **AND** it does not use an angle-wrapped token, a bare object name, lowercase or mixed case, or an artifact alias
 
 ### Requirement: Kaoju Pipeline Command Surface
 `isomer-kaoju-pipeline` SHALL use the complex-procedure shape as the single extension entry skill, with separate helper, survey-intent, legacy-procedure, and miscellaneous command groups.
@@ -201,10 +212,10 @@ All Kaoju skills SHALL preserve the shared evidence dimensions and finish bounde
 - **AND** it does not select another macro procedure autonomously
 
 ### Requirement: Kaoju Uses Existing Platform Owners
-Kaoju skills SHALL use existing Isomer owner skills, Service Requests, and extension points for topology, environment, provider, execution, Gate, path, and recording behavior.
+Kaoju skills SHALL use existing Isomer owner skills, Service Requests, and extension points for topology, environment, provider, execution, Gate, path, and recording behavior while keeping repository command selection and execution with the acting user or agent.
 
 #### Scenario: Governed mutation routes to owner
-- **WHEN** a Kaoju procedure needs repository acquisition or registration, Topic Workspace mutation, environment preparation, managed dataset links, credentials, private data, large downloads, document builds, viewer launch, or accelerator execution
+- **WHEN** a Kaoju procedure needs Topic Workspace registration or projection, environment preparation, managed dataset links, credentials, private data, large downloads other than repository command execution, document builds, viewer launch, or accelerator execution
 - **THEN** it routes the operation to the applicable project, workspace, service, provider-binding, execution-adapter, or Gate owner
 - **AND** it records and consumes returned durable refs rather than bypassing the owner
 
@@ -215,13 +226,18 @@ Kaoju skills SHALL use existing Isomer owner skills, Service Requests, and exten
 
 #### Scenario: Generic maintenance is not promoted to a survey procedure
 - **WHEN** repository refresh, generic environment repair, claim tracing, or resume is needed only as an implementation step
-- **THEN** Kaoju performs or routes that step inside the active survey procedure
+- **THEN** Kaoju performs an authorized repository command directly or routes another owned step inside the active survey procedure
 - **AND** it does not create a new top-level survey procedure for the generic task
 
 #### Scenario: Direct user intent remains public
 - **WHEN** the actor explicitly requests source-code ingestion, code-run preparation, or a source-code trial as defined by UC-08, UC-09, or UC-10
-- **THEN** the pipeline exposes the corresponding bounded intent while routing owned mutations to platform owners
-- **AND** the public intent does not make the capability skill the owner of repository, environment, or execution infrastructure
+- **THEN** the pipeline exposes the corresponding bounded intent while keeping repository execution external and routing other owned mutations to platform owners
+- **AND** the public intent does not make the capability skill the owner of workspace topology, environment, or trial-execution infrastructure
+
+#### Scenario: Repository acquisition stays outside platform execution owners
+- **WHEN** a Kaoju procedure needs to clone, fetch, copy, check out, deepen, repair, or otherwise acquire repository content
+- **THEN** the acting user or agent selects and executes the commands outside `isomer-cli`, Isomer services, Service Requests, and Execution Adapter Command Requests under the applicable Gate and authorization
+- **AND** the procedure routes only target planning, post-verification semantic registration, Artifact recording, and provenance recording to Isomer owners
 
 ### Requirement: Survey-Process Procedures Use Durable Stage Checkpoints
 Each new survey-process procedure SHALL create or resume a bounded Run and checkpoint every accepted durable stage.
@@ -242,3 +258,62 @@ All production Kaoju procedures SHALL discover accepted durable inputs through d
 - **WHEN** a stage needs a direction set, reading list, source digest, artifact library, audit, synthesis, paper, wiki, repository, environment, or trial record
 - **THEN** it queries by semantic id, scope key, status, stable ref, and lineage as applicable
 - **AND** it does not scan the Topic Workspace directory tree or trust conversation memory as canonical state
+
+### Requirement: Kaoju Survey Process Data Is Extension-Queried
+Kaoju active guidance SHALL obtain the checked survey-process inventory through the package-owned Kaoju extension query instead of a family-root contract file.
+
+#### Scenario: Pipeline loads its checked contract
+- **WHEN** `isomer-kaoju-pipeline` starts a Kaoju routing task
+- **THEN** it runs `isomer-cli --print-json ext kaoju process show` and treats the returned version, entry skill, skill inventory, survey intents, compatibility procedures, manager actions, aliases, and policy decisions as the checked machine contract
+- **AND** it does not open `../contracts`, an absolute checkout path, or another skill's resources
+
+#### Scenario: Pipeline loads a command process
+- **WHEN** the selected survey intent, compatibility procedure, or grouped manager action has a procedure used only by the pipeline
+- **THEN** the pipeline loads the corresponding command page from its own `commands/` directory
+- **AND** the machine contract identifies the command without becoming a duplicate prose procedure
+
+### Requirement: Kaoju Cross-Skill Procedures Are Shared-Skill Owned
+Kaoju guidance used across multiple stages SHALL remain in `isomer-kaoju-shared` and SHALL be consumed through skill routing rather than sibling filesystem references.
+
+#### Scenario: Stage needs common Kaoju discipline
+- **WHEN** a stage needs common evidence semantics, source identity, lineage, latest-context, Gate, owner-routing, Artifact recording, or terminal-state procedure
+- **THEN** it invokes or follows `isomer-kaoju-shared` and loads only its own bundle-local stage guidance
+- **AND** it does not copy the complete shared command process or traverse into the shared skill directory
+
+### Requirement: Kaoju Pipeline Supports Authorized Run-To Recovery
+The Kaoju pipeline SHALL keep each survey intent and compatibility procedure bounded while allowing a prompt-level controller to chain their producer and repair routes after explicit run-to authorization for a named target.
+
+#### Scenario: Kaoju target lacks accepted artifacts
+- **WHEN** a Kaoju target such as synthesis, drafting, PDF construction, comparison, or export lacks accepted prerequisite artifacts
+- **AND** the required artifacts have known Kaoju or platform owner routes
+- **THEN** the Kaoju pipeline's numbered workflow makes the bounded target report `paused` with exact missing semantic ids, producer routes, and resume point
+- **AND** the user is offered inclusive run-to recovery before those producer routes execute
+
+#### Scenario: Authorized Kaoju run-to chains bounded procedures
+- **WHEN** the user authorizes run-to for a Kaoju target
+- **THEN** the controller uses separate bounded Kaoju procedures to produce or repair the required inputs in dependency order
+- **AND** it consumes each procedure's terminal report and accepted refs before selecting the next planned procedure or resuming the target
+- **AND** every procedure retains its own Run, audit boundary, evidence semantics, and terminal report
+
+#### Scenario: Kaoju audit recommends repair
+- **WHEN** an audit procedure remains non-repairing and returns defects with bounded producer or repair routes inside an authorized target closure
+- **THEN** the controller invokes those repair owners as separate procedures
+- **AND** it starts a fresh audit after repair before allowing synthesis or paper writing to consume the repaired evidence
+
+#### Scenario: Kaoju has no run-to authorization
+- **WHEN** a bounded Kaoju procedure returns a terminal report without an active target-scoped run-to grant
+- **THEN** the pipeline does not select another macro procedure autonomously
+- **AND** it returns the recommended next procedure to the user as before
+
+### Requirement: Kaoju Run-To Preserves Interaction and Gate Contracts
+Kaoju run-to traversal SHALL automate only routine in-scope prerequisite routing and SHALL preserve every applicable clarification, Proceed Decision, resource, publication, and human Gate contract.
+
+#### Scenario: Routine transitive prerequisite is discovered
+- **WHEN** a Kaoju prerequisite procedure discovers another routine in-scope input needed for the same target
+- **THEN** the controller adds the known producer route to the active plan without another routine confirmation
+- **AND** the producer still resolves durable state through the state DB and writes through its typed Artifact bindings
+
+#### Scenario: Kaoju traversal reaches a protected boundary
+- **WHEN** the next stage requires a nondelegable Gate or a material choice that changes survey direction, evidence meaning, resource posture, or publication state
+- **THEN** the controller checkpoints the active procedures and pauses
+- **AND** it asks only for the decision needed to resume the named target
