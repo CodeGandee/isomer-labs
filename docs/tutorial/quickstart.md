@@ -31,7 +31,13 @@ isomer-cli system-skills install --target kimi-code --scope user
 isomer-cli system-skills install --target generic --scope user
 ```
 
-Every install, status, upgrade, and uninstall command requires `--scope user|project`.
+From an existing Project directory, omit scope for a Project-local installation:
+
+```bash
+isomer-cli system-skills install --target codex
+```
+
+When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact current working directory and does not search ancestor Git or Isomer roots. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`.
 
 | Target | Project Scope | User Scope |
 | --- | --- | --- |

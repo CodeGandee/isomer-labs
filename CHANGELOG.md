@@ -12,6 +12,7 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ### Changed
 
+- Defaulted `system-skills install` to Project scope when `--scope` is omitted. The default uses the exact current working directory, user-wide installation still requires `--scope user`, and status, upgrade, and uninstall remain scope-explicit.
 - Moved Canonical External Repository acquisition and verification to user-controlled or agent-controlled commands outside Isomer. Kaoju now records the registered semantic label, externally observed immutable identity, selected method, sanitized command evidence, source relationship, access and license posture, limitations, and blockers.
 
 ### Breaking

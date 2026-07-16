@@ -56,6 +56,18 @@ README_LINK_TARGETS = [
 ]
 CLI_REFERENCE_PAGE = "docs/manual/cli-reference.md"
 TOPIC_WORKSPACE_PAGE = "docs/manual/topic-workspaces.md"
+SYSTEM_SKILL_SCOPE_PAGES = (
+    "README.md",
+    "docs/tutorial/quickstart.md",
+    "docs/manual/cli-reference.md",
+    "docs/developer/packaged-system-skills.md",
+)
+SYSTEM_SKILL_STALE_SCOPE_TERMS = (
+    "every target-resolving command requires",
+    "every install, status, upgrade, and uninstall command requires",
+    "the `install`, `status`, `upgrade`, and `uninstall` commands require",
+    "the target-resolving commands `install`, `status`, `upgrade`, and `uninstall` require",
+)
 STALE_ISOMER_JSON_PATTERNS = [
     re.compile(r"\bisomer-cli\b[^\n]*\s--json\b"),
     re.compile(r"\bisomer-cli\b[^\n]*\s--format(?:=|\s+)json\b"),
@@ -305,6 +317,28 @@ def check_stale_isomer_cli_json_examples(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_system_skill_scope_documentation(repo_root: Path) -> list[str]:
+    issues: list[str] = []
+    for relative in SYSTEM_SKILL_SCOPE_PAGES:
+        path = repo_root / relative
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        install_lines = [line for line in content.splitlines() if "isomer-cli system-skills install --target" in line]
+        if not any("--scope" not in line for line in install_lines):
+            issues.append(f"{relative} must include a Project-default system-skills install example without --scope")
+        if not any("--scope user" in line for line in install_lines):
+            issues.append(f"{relative} must include an explicit user-scoped system-skills install example")
+        for term in ("`--scope` is omitted", "defaults to Project scope", "require an explicit `--scope user|project`"):
+            if term not in content:
+                issues.append(f"{relative} missing system-skill scope guidance: {term}")
+        lowered = content.lower()
+        for stale_term in SYSTEM_SKILL_STALE_SCOPE_TERMS:
+            if stale_term in lowered:
+                issues.append(f"{relative} contains stale universal system-skill scope guidance: {stale_term}")
+    return issues
+
+
 def check_cli_error_example_registry(repo_root: Path) -> list[str]:
     cli_doc = repo_root / CLI_REFERENCE_PAGE
     if not cli_doc.is_file():
@@ -434,6 +468,7 @@ def validate_docs(repo_root: Path, cli_help_workers: int = DEFAULT_CLI_HELP_WORK
     else:
         issues.extend(check_cli_coverage(repo_root, commands))
     issues.extend(check_stale_isomer_cli_json_examples(repo_root))
+    issues.extend(check_system_skill_scope_documentation(repo_root))
     issues.extend(check_cli_error_example_registry(repo_root))
     issues.extend(check_legacy_workspace_paths(repo_root))
     issues.extend(check_semantic_path_documentation(repo_root))

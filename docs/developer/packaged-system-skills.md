@@ -13,12 +13,13 @@ isomer-cli system-skills extensions show kaoju
 Released-package installation should use `isomer-cli system-skills install`, which reads packaged resources from the installed Python package and projects flat skill directories into supported agent-tool skill roots:
 
 ```bash
-isomer-cli system-skills install --target codex --scope project
-isomer-cli system-skills install --target codex --scope project --extension deepsci
-isomer-cli system-skills install --target codex --scope project --extension kaoju
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --extension deepsci
+isomer-cli system-skills install --target codex --extension kaoju
+isomer-cli system-skills install --target codex --scope user
 ```
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. The target-resolving commands `install`, `status`, `upgrade`, and `uninstall` require `--scope user|project`. Project scope uses the exact process working directory and does not search upward for Git or Isomer metadata.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`, and every target-resolving operation requires `--target`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact process working directory and does not search upward for Git or Isomer metadata. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`.
 
 | Target | Project Scope | User Scope |
 | --- | --- | --- |
@@ -29,7 +30,7 @@ Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`.
 
 The `all` target expands to all four logical targets and groups normalized identical roots before mutation. For example, Codex and generic project bindings produce one operation at `<cwd>/.agents/skills`.
 
-Packaged skill names are reserved install slots in each target skill root. Every packaged skill stores the Isomer release version, including release candidates, in `agents/openai.yaml` at `metadata.version`. Successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, sorted target-scope bindings, source paths, projection modes, tracked skill names, and per-skill version snapshots. Receipt versions 1 and 2 remain readable as legacy evidence; the next authorized mutation migrates the root to version 3 with the explicitly selected binding. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
+Packaged skill names are reserved install slots in each target skill root. Every packaged skill stores the Isomer release version, including release candidates, in `agents/openai.yaml` at `metadata.version`. Successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, sorted target-scope bindings, source paths, projection modes, tracked skill names, and per-skill version snapshots. Receipt versions 1 and 2 remain readable as legacy evidence; the next authorized mutation migrates the root to version 3 with the effective target-scope binding. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
 
 Compatibility policy belongs to `src/isomer_labs/assets/system_skills/manifest.toml`. Each group declares `minimum_compatible_skill_version`, and an optional per-skill `minimum_compatible_version` overrides that floor. Status compares versions with PEP 440: older skills at or above the floor remain compatible, skills below the floor are obsolete, and skills newer than the CLI require a CLI upgrade before automatic routing. Legacy unversioned receipts remain readable but unverified until upgrade.
 
@@ -43,9 +44,9 @@ isomer-cli system-skills upgrade --target codex --scope project --extension kaoj
 
 ## Migrating Existing Commands
 
-Commands that relied on an implicit target default must now state their intended scope. For example, migrate `isomer-cli system-skills install --target kimi-code` to `isomer-cli system-skills install --target kimi-code --scope project` for the current working directory, or to `--scope user` for the current user's Kimi Code configuration.
+An install without `--scope` now selects Project scope, and explicit `--scope project` remains equivalent. Use `--scope user` for user-wide installation. Status, upgrade, and uninstall remain scope-explicit.
 
-The former exact-root override is no longer public. Migrate `--target kimi-code --home .kimi-code/skills` to `--target kimi-code --scope project`, and migrate `--target kimi-code --home ~/.kimi-code/skills` to `--target kimi-code --scope user`. Arbitrary plugin, extra, and custom roots do not map to a scope; use the host's native installation mechanism for those destinations. Explicit-root inspection remains available through `internals inspect-system-skill-root`.
+The former exact-root override is no longer public. Migrate `--target kimi-code --home .kimi-code/skills` to `--target kimi-code` or `--target kimi-code --scope project`, and migrate `--target kimi-code --home ~/.kimi-code/skills` to `--target kimi-code --scope user`. Arbitrary plugin, extra, and custom roots do not map to a scope; use the host's native installation mechanism for those destinations. Explicit-root inspection remains available through `internals inspect-system-skill-root`.
 
 The internal inspection namespace lets version-aligned system skills inspect one agent-supplied root or classify a host-supplied live inventory without knowing receipt filenames, schemas, or extension membership:
 

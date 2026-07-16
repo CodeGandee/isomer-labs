@@ -67,6 +67,7 @@ DOUBLE_BRACKET_ARTIFACT_RE = re.compile(r"\[\[(?:rsch-object|artifact|placeholde
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 MAX_DEEPSCI_WORKFLOW_LINE = 45
+DEEPSCI_THANKS_TO = "https://github.com/ResearAI/DeepScientist"
 
 EXPECTED_DEEPSCI_SKILLS = frozenset(
     {
@@ -903,6 +904,8 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
     expected_version = package_release_version(repo_root)
     if expected_version is not None:
         validate_release_version_metadata(manifest, expected_version, repo_root, diagnostics, "RPS006")
+    if SKILL_NAME_RE.fullmatch(skill_name):
+        validate_deepsci_attribution_metadata(manifest, repo_root, diagnostics)
     fields = parse_interface_fields(read_lines(manifest))
     display_name = fields.get("display_name")
     if display_name is None:
@@ -927,6 +930,29 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
             default_prompt[1],
             "RPS006",
             f"interface.default_prompt must invoke ${skill_name}",
+        )
+
+
+def validate_deepsci_attribution_metadata(
+    manifest: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    try:
+        raw = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        add(diagnostics, repo_root, manifest, 1, "RPS006", f"agents/openai.yaml is invalid YAML: {exc}")
+        return
+    metadata = raw.get("metadata") if isinstance(raw, dict) else None
+    thanks_to = metadata.get("thanks_to") if isinstance(metadata, dict) else None
+    if thanks_to != DEEPSCI_THANKS_TO:
+        add(
+            diagnostics,
+            repo_root,
+            manifest,
+            1,
+            "RPS006",
+            f"DeepSci agents/openai.yaml metadata.thanks_to must be {DEEPSCI_THANKS_TO!r}",
         )
 
 
@@ -1855,6 +1881,8 @@ def validate_coupling_patterns(
     if not is_active_guidance(document):
         return
     for line_index, line in enumerate(document.lines):
+        if is_deepsci_attribution_line(document, line):
+            continue
         if allowed_by_rule("runtime_coupling", document, line_index, allow_zones):
             continue
         for label, pattern in COUPLING_PATTERNS:
@@ -1869,6 +1897,15 @@ def validate_coupling_patterns(
                     "RPS004",
                     f"active guidance contains {label}",
                 )
+
+
+def is_deepsci_attribution_line(document: Document, line: str) -> bool:
+    return (
+        document.path.name == "openai.yaml"
+        and document.path.parent.name == "agents"
+        and any(part.startswith("isomer-deepsci-") for part in document.path.parts)
+        and line.strip() == f'thanks_to: "{DEEPSCI_THANKS_TO}"'
+    )
 
 
 def validate_kaoju_direct_references(

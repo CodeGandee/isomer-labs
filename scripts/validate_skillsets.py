@@ -1056,6 +1056,8 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "partial outcome",
     "host refresh is required",
     "--scope <selected-scope>",
+    "Direct low-level install defaults to project scope",
+    "always passes `--scope <selected-scope>`",
     "project scope",
     "user scope",
     "resolved skill root",
@@ -1072,6 +1074,8 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "internals classify-system-skill-inventory",
         "project system-extensions remember",
         "--scope <selected-scope>",
+        "Direct CLI install defaults to project scope",
+        "always passes `--scope <selected-scope>`",
         "Read `skill_root`",
         "Never call `forget`",
         "host refresh is required",
@@ -1083,6 +1087,8 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "project scope",
         "user scope",
         "--scope <selected-scope>",
+        "Direct CLI install defaults to project scope",
+        "always passes `--scope <selected-scope>`",
         "Read the resolved skill root",
         "Verify with",
         "registration",
@@ -1100,6 +1106,12 @@ SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS = (
 )
 
 SYSTEM_SKILL_MANAGER_FORBIDDEN_TERMS = ("--home",)
+
+SYSTEM_SKILL_MANAGER_STALE_SCOPE_CLAIMS = (
+    "every system-skills install requires",
+    "system-skills install always requires",
+    "install always requires `--scope`",
+)
 
 ENTRYPOINT_SERVICE_SKILLS = (
     "isomer-srv-topic-env-setup",
@@ -3607,6 +3619,17 @@ def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
                         line_number,
                         "OPS014",
                         f"{SYSTEM_SKILL_MANAGER_SKILL} must use scoped installation guidance instead of '{forbidden_term}'",
+                    )
+            lower_line = line.lower()
+            for stale_claim in SYSTEM_SKILL_MANAGER_STALE_SCOPE_CLAIMS:
+                if stale_claim in lower_line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        skill_file,
+                        line_number,
+                        "OPS014",
+                        f"{SYSTEM_SKILL_MANAGER_SKILL} must not claim a stale universal install scope requirement",
                     )
             for provider_path in SYSTEM_SKILL_MANAGER_PROVIDER_PATH_TERMS:
                 if provider_path not in line:

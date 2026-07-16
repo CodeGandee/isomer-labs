@@ -2017,6 +2017,23 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS014", codes(diagnostics))
         self.assertTrue(any("must use scoped installation guidance" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_rejects_stale_universal_install_scope_claim(self) -> None:
+        root = self.make_root()
+        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        shutil.copytree(source, target)
+        install_reference = target / "references" / "install-extension.md"
+        install_reference.write_text(
+            install_reference.read_text(encoding="utf-8")
+            + "\nEvery system-skills install requires an explicit `--scope`.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_system_skill_manager_module(root)
+
+        self.assertIn("OPS014", codes(diagnostics))
+        self.assertTrue(any("stale universal install scope requirement" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_entrypoint_deepsci_extension_coverage(self) -> None:
         root = self.make_root()
         self.write_entrypoint_skill(root, omit_reference_term="isomer-deepsci-scout")

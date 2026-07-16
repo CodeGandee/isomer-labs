@@ -293,6 +293,9 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(
             target / name / "agents" / "openai.yaml",
             f"""
+            metadata:
+              thanks_to: "{validator.DEEPSCI_THANKS_TO}"
+
             interface:
               display_name: "{display_name or name}"
               short_description: "Valid fixture"
@@ -324,6 +327,39 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         root, target = self.make_valid_skillset()
         diagnostics = validator.validate_skillset(target, root)
         self.assertEqual([], messages(diagnostics))
+
+    def test_deepsci_metadata_requires_deepscientist_attribution(self) -> None:
+        for replacement in ("", '  thanks_to: "https://example.com/other"\n'):
+            with self.subTest(replacement=replacement):
+                root, target = self.make_valid_skillset()
+                manifest = target / "deepsci" / "isomer-deepsci-scout" / "agents" / "openai.yaml"
+                text = manifest.read_text(encoding="utf-8").replace(
+                    f'  thanks_to: "{validator.DEEPSCI_THANKS_TO}"\n',
+                    replacement,
+                )
+                manifest.write_text(text, encoding="utf-8")
+
+                diagnostics = validator.validate_skillset(target, root)
+
+                self.assertIn("RPS006", codes(diagnostics), messages(diagnostics))
+                self.assertTrue(any("metadata.thanks_to" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_packaged_deepsci_metadata_credits_deepscientist(self) -> None:
+        deepsci_root = (
+            REPO_ROOT
+            / "src"
+            / "isomer_labs"
+            / "assets"
+            / "system_skills"
+            / "research-paradigm"
+            / "deepsci"
+        )
+        active_skills = sorted(path for path in deepsci_root.glob("isomer-deepsci-*") if (path / "SKILL.md").is_file())
+        self.assertEqual(22, len(active_skills))
+        for skill_dir in active_skills:
+            with self.subTest(skill=skill_dir.name):
+                manifest = validator.yaml.safe_load((skill_dir / "agents" / "openai.yaml").read_text(encoding="utf-8"))
+                self.assertEqual(validator.DEEPSCI_THANKS_TO, manifest["metadata"]["thanks_to"])
 
     def test_valid_kaoju_family_passes_with_deepsci_fixture(self) -> None:
         root, target = self.make_valid_skillset()

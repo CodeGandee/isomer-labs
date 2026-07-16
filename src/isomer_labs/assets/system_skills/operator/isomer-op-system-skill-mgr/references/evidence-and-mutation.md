@@ -12,7 +12,7 @@ isomer-cli project system-extensions remember <extension-id> --json
 isomer-cli --print-json system-skills install --target <host-known-target> --scope <selected-scope> --extension <extension-id>
 ```
 
-The internal commands are read-only, use a versioned payload, and never search for roots or mutate Project declarations. `project system-extensions detect --skill-root <root>` is a Project-facing explicit-root wrapper; without a root it reports catalog and declaration state only. The scoped installer requires a concrete host target. It uses project scope for a normal Project Operator request and user scope only after explicit user-wide intent.
+The internal commands are read-only, use a versioned payload, and never search for roots or mutate Project declarations. `project system-extensions detect --skill-root <root>` is a Project-facing explicit-root wrapper; without a root it reports catalog and declaration state only. The scoped installer requires a concrete host target. Direct CLI install defaults to project scope when `--scope` is omitted, but this manager always passes `--scope <selected-scope>` to preserve its recorded choice. It selects project scope for a normal Project Operator request and user scope only after explicit user-wide intent.
 
 ## Ordered Resolution
 

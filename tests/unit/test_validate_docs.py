@@ -17,6 +17,7 @@ from scripts.validate_docs import (
     check_required_pages,
     check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
+    check_system_skill_scope_documentation,
     get_public_commands,
 )
 from isomer_labs.cli.examples import COMMAND_EXAMPLES
@@ -146,6 +147,50 @@ class ValidateDocsTests(unittest.TestCase):
             (root / "README.md").write_text("houmao-mgr --print-json system-skills list\n", encoding="utf-8")
             (root / "docs" / "houmao.md").write_text("pixi run isomer-cli --print-json validate\n", encoding="utf-8")
             self.assertEqual([], check_stale_isomer_cli_json_examples(root))
+
+    def test_system_skill_scope_documentation_accepts_project_default_and_explicit_user_scope(self) -> None:
+        content = """When `--scope` is omitted, `system-skills install` defaults to Project scope. Other operations require an explicit `--scope user|project`.
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --scope user
+"""
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for relative in (
+                "README.md",
+                "docs/tutorial/quickstart.md",
+                "docs/manual/cli-reference.md",
+                "docs/developer/packaged-system-skills.md",
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+
+            self.assertEqual([], check_system_skill_scope_documentation(root))
+
+    def test_system_skill_scope_documentation_rejects_stale_universal_requirement(self) -> None:
+        content = """When `--scope` is omitted, `system-skills install` defaults to Project scope. Other operations require an explicit `--scope user|project`.
+isomer-cli system-skills install --target codex
+isomer-cli system-skills install --target codex --scope user
+"""
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for relative in (
+                "README.md",
+                "docs/tutorial/quickstart.md",
+                "docs/manual/cli-reference.md",
+                "docs/developer/packaged-system-skills.md",
+            ):
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            (root / "README.md").write_text(
+                content + "Every target-resolving command requires `--scope user|project`.\n",
+                encoding="utf-8",
+            )
+
+            issues = check_system_skill_scope_documentation(root)
+
+            self.assertTrue(any("stale universal system-skill scope guidance" in issue for issue in issues), issues)
 
     def test_cli_error_example_registry_requires_documented_examples(self) -> None:
         with TemporaryDirectory() as tmp:

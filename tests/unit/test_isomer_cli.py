@@ -787,6 +787,67 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(["isomer-op-entrypoint"], removed["removed_skills"])
         self.assertFalse((skill_root / "isomer-op-entrypoint").exists())
 
+    def test_system_skills_install_defaults_to_exact_project_scope(self) -> None:
+        project_root = self.make_root()
+        (project_root / ".git").mkdir()
+        write(
+            project_root / ".isomer-labs" / "manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+            project_id = "ancestor-project"
+            """,
+        )
+        nested = project_root / "packages" / "service"
+        nested.mkdir(parents=True)
+        user_home = project_root / "user-home"
+        env = {"HOME": str(user_home)}
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "generic",
+                "--skill",
+                "isomer-op-entrypoint",
+            ],
+            cwd=nested,
+            env=env,
+        )
+
+        self.assertEqual(0, status, output)
+        installed = json.loads(output)
+        expected_skill_root = nested / ".agents" / "skills"
+        self.assertEqual("project", installed["scope"])
+        self.assertEqual(str(expected_skill_root), installed["skill_root"])
+        self.assertEqual([{"target": "generic", "scope": "project"}], installed["bindings"])
+        self.assertEqual(["isomer-op-entrypoint"], installed["manifest"]["skill_names"])
+        self.assertTrue((expected_skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertFalse((project_root / ".agents").exists())
+        self.assertFalse((user_home / ".agents").exists())
+
+        status, output = self.run_cli(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "generic",
+                "--scope",
+                "project",
+                "--skill",
+                "isomer-op-gui-mgr",
+            ],
+            cwd=nested,
+            env=env,
+        )
+        self.assertEqual(0, status, output)
+        explicit = json.loads(output)
+        self.assertEqual(installed["scope"], explicit["scope"])
+        self.assertEqual(installed["skill_root"], explicit["skill_root"])
+        self.assertEqual(installed["bindings"], explicit["bindings"])
+
     def test_system_skill_extension_discovery_explains_kaoju_entry_surface(self) -> None:
         root = self.make_root()
 
@@ -813,9 +874,17 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("$isomer-kaoju-pipeline", extension["invocation"])
         self.assertIn("--extension kaoju", extension["install_command"])
         self.assertIn("--extension kaoju", extension["status_command"])
-        self.assertIn("--scope <scope>", extension["install_command"])
+        self.assertNotIn("--scope", extension["install_command"])
         self.assertIn("--scope <scope>", extension["status_command"])
         self.assertIn("isomer-kaoju-synthesize", extension["skills"])
+
+        status, output = self.run_cli(["system-skills", "extensions", "show", "kaoju"], cwd=root)
+        self.assertEqual(0, status, output)
+        self.assertIn("Install: isomer-cli system-skills install --target <target> --extension kaoju", output)
+        self.assertIn(
+            "Status: isomer-cli system-skills status --target <target> --scope <scope> --extension kaoju",
+            output,
+        )
 
     def test_system_skill_extension_help_distinguishes_agent_and_runtime_extensions(self) -> None:
         runner = CliRunner()
@@ -827,6 +896,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, install_help.exit_code, install_help.output)
         self.assertIn("--extension [deepsci|kaoju]", install_help.output)
         self.assertIn("--scope [user|project]", install_help.output)
+        self.assertIn("[default: project]", install_help.output)
         self.assertNotIn("--home", install_help.output)
 
         ext_help = runner.invoke(cli.app, ["ext", "--help"])
@@ -928,8 +998,6 @@ class IsomerCliTests(unittest.TestCase):
                 "install",
                 "--target",
                 "all",
-                "--scope",
-                "project",
                 "--skill",
                 "isomer-op-entrypoint",
             ],
@@ -950,7 +1018,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue((root / ".kimi-code" / "skills" / "isomer-op-entrypoint").is_dir())
         self.assertTrue((root / ".agents" / "skills" / "isomer-op-entrypoint").is_dir())
 
-        status, stdout, stderr = self.run_main(
+        status, output = self.run_cli(
             [
                 "--print-json",
                 "system-skills",
@@ -959,28 +1027,66 @@ class IsomerCliTests(unittest.TestCase):
                 "all",
                 "--scope",
                 "project",
+                "--skill",
+                "isomer-op-gui-mgr",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        explicit = json.loads(output)
+        self.assertEqual(
+            [(item["scope"], item["skill_root"], item["bindings"]) for item in data["targets"]],
+            [(item["scope"], item["skill_root"], item["bindings"]) for item in explicit["targets"]],
+        )
+
+        rejected_root = self.make_root()
+        status, stdout, stderr = self.run_main(
+            [
+                "--print-json",
+                "system-skills",
+                "install",
+                "--target",
+                "all",
                 "--home",
-                str(root / "somewhere"),
+                str(rejected_root / "somewhere"),
                 "--skill",
                 "isomer-op-entrypoint",
             ],
-            cwd=root,
+            cwd=rejected_root,
         )
         self.assertEqual(2, status)
         self.assertEqual("", stderr)
         error = json.loads(stdout)
         self.assertFalse(error["ok"])
         self.assertIn("No such option '--home'", error["diagnostics"][0]["message"])
+        self.assertFalse((rejected_root / ".agents").exists())
 
+    def test_system_skills_scope_requirements_are_command_specific(self) -> None:
+        install_root = self.make_root()
         status, stdout, stderr = self.run_main(
-            ["--print-json", "system-skills", "install", "--target", "generic"],
-            cwd=root,
+            ["--print-json", "system-skills", "install", "--skill", "isomer-op-entrypoint"],
+            cwd=install_root,
         )
         self.assertEqual(2, status)
         self.assertEqual("", stderr)
-        missing_scope = json.loads(stdout)
-        self.assertFalse(missing_scope["ok"])
-        self.assertIn("Missing option '--scope'", missing_scope["diagnostics"][0]["message"])
+        missing_target = json.loads(stdout)
+        self.assertFalse(missing_target["ok"])
+        self.assertIn("Missing option '--target'", missing_target["diagnostics"][0]["message"])
+        self.assertFalse((install_root / ".agents").exists())
+
+        for command in ("status", "upgrade", "uninstall"):
+            with self.subTest(command=command):
+                root = self.make_root()
+                status, stdout, stderr = self.run_main(
+                    ["--print-json", "system-skills", command, "--target", "generic"],
+                    cwd=root,
+                )
+                self.assertEqual(2, status)
+                self.assertEqual("", stderr)
+                missing_scope = json.loads(stdout)
+                self.assertFalse(missing_scope["ok"])
+                self.assertIn("Missing option '--scope'", missing_scope["diagnostics"][0]["message"])
+                self.assertFalse((root / ".agents").exists())
 
     def test_system_skills_cli_resolves_and_renders_user_scope(self) -> None:
         root = self.make_root()
@@ -1007,6 +1113,8 @@ class IsomerCliTests(unittest.TestCase):
         installed = json.loads(output)
         self.assertEqual("user", installed["scope"])
         self.assertEqual(str(kimi_home / "skills"), installed["skill_root"])
+        self.assertTrue((kimi_home / "skills" / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertFalse((root / ".kimi-code").exists())
 
         status, output = self.run_cli(
             [

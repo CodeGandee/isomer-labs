@@ -166,6 +166,12 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "help.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "api-reference.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-project-mgr" / "SKILL.md").is_file())
+            system_skill_manager = target / "operator" / "isomer-op-system-skill-mgr" / "SKILL.md"
+            self.assertTrue(system_skill_manager.is_file())
+            self.assertIn(
+                "Direct low-level install defaults to project scope when `--scope` is omitted.",
+                system_skill_manager.read_text(encoding="utf-8"),
+            )
             self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "SKILL.md").is_file())
             self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "agents" / "openai.yaml").is_file())
             self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "commands" / "help.md").is_file())

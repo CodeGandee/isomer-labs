@@ -1,5 +1,6 @@
 metadata:
   version: "0.3.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
 
 interface:
   display_name: "isomer-deepsci-baseline"

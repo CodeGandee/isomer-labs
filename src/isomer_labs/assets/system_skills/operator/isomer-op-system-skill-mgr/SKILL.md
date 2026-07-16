@@ -46,6 +46,8 @@ Use only roots the current host exposes or that can be derived from the loaded I
 
 For installation, require the host to identify one supported concrete target. If the target is unknown, report a blocker without guessing a target or path. Select `--scope project` by default for a Project Operator installation; this scope is anchored to the current working directory and applies to the current agent-host project context. Select `--scope user` only after an explicit user request or confirmation, and state that the installation can affect the selected host across Projects.
 
+Direct low-level install defaults to project scope when `--scope` is omitted. This manager still always passes `--scope <selected-scope>` so its recorded operator decision remains explicit; an explicit `user` selection is the only manager route to user-wide installation.
+
 Run `isomer-cli --print-json system-skills install --target <host-known-target> --scope <selected-scope> --extension <extension-id>`. Read the resolved skill root from the installation result and pass that exact root to the explicit-root inspector. The scoped installer supports only target-defined project and user roots; for an arbitrary plugin, extra, or custom destination, explain the boundary and use host-native installation guidance instead of reconstructing a path override.
 
 ## Mutation Rules

@@ -137,7 +137,7 @@ def register_system_skill_commands(app: click.Group) -> None:
         return _emit("system-skills status", options, payload, _render_statuses(statuses), diagnostics)
 
     @system_skills_group.command(name="install", help="Install packaged Isomer system skills into a target tool skill root.")
-    @_target_options
+    @_install_target_options
     @_selection_options
     @click.option(
         "--mode",
@@ -289,6 +289,23 @@ def _target_options(func: Any) -> Any:
     return func
 
 
+def _install_target_options(func: Any) -> Any:
+    func = click.option(
+        "--scope",
+        default="project",
+        show_default=True,
+        type=click.Choice(SUPPORTED_SCOPES),
+        help="Installation scope: current user or current working directory project.",
+    )(func)
+    func = click.option(
+        "--target",
+        required=True,
+        type=click.Choice(SUPPORTED_TARGETS),
+        help=f"Install target ({', '.join(SUPPORTED_TARGETS)}).",
+    )(func)
+    return func
+
+
 def _selection_options(func: Any) -> Any:
     func = click.option("--skill", "skills", multiple=True, help="Explicit packaged skill name to select.")(func)
     func = click.option("--all-extensions", is_flag=True, help="Include every packaged extension group.")(func)
@@ -376,7 +393,7 @@ def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
         "commands": list(extension.commands),
         "skills": [Path(skill_path).name for skill_path in extension.skills],
         "install_command": (
-            f"isomer-cli system-skills install --target <target> --scope <scope> --extension {extension_id}"
+            f"isomer-cli system-skills install --target <target> --extension {extension_id}"
         ),
         "status_command": (
             f"isomer-cli system-skills status --target <target> --scope <scope> --extension {extension_id}"

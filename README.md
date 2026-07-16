@@ -89,10 +89,11 @@ isomer-cli system-skills extensions show kaoju
 ```
 
 ```bash
+isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --scope user
 ```
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. Every target-resolving command requires `--scope user|project`. Project scope uses the exact current working directory; user scope installs for the current OS user.
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact current working directory and does not search ancestor Git or Isomer roots. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`.
 
 | Target | Project Scope | User Scope |
 | --- | --- | --- |
@@ -106,13 +107,13 @@ Use project scope for skills confined to the current working directory. Choose u
 Install the DeepSci extension when a project needs the research pipeline skills:
 
 ```bash
-isomer-cli system-skills install --target codex --scope user --extension deepsci
+isomer-cli system-skills install --target codex --extension deepsci
 ```
 
 Install Kaoju when a project needs evidence-led literature and codebase surveys, first-hand method trials, or controlled comparisons. After installation, enter the extension through `$isomer-kaoju-pipeline` rather than `isomer-cli ext kaoju`.
 
 ```bash
-isomer-cli system-skills install --target codex --scope user --extension kaoju
+isomer-cli system-skills install --target codex --extension kaoju
 ```
 
 Inspect or remove Isomer-owned projections with:
@@ -206,6 +207,10 @@ For concrete prompt and response patterns, start with [Research Workflow Tutoria
 - [CLI Reference](docs/manual/cli-reference.md)
 - [Concepts](docs/manual/concepts.md)
 - [Developer Guide](docs/developer/index.md)
+
+## Acknowledgments
+
+The DeepSci skill family originated from the [DeepScientist project](https://github.com/ResearAI/DeepScientist). Isomer Labs completely refactored those skills to fit its system-skill architecture, Project and Topic Workspace model, artifact contracts, and operating workflows. We thank the DeepScientist authors for their work and inspiration.
 
 ## Status
 

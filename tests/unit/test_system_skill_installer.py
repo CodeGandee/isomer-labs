@@ -298,6 +298,21 @@ class SystemSkillInstallerTests(unittest.TestCase):
         manifest = json.loads((target.skill_root / SKILL_MANIFEST_FILENAME).read_text(encoding="utf-8"))
         self.assertEqual("symlink", manifest["skills"][0]["projection_mode"])
 
+    def test_symlink_projection_exposes_system_skill_manager_scope_guidance(self) -> None:
+        root = self.make_root()
+        target = resolve_targets("generic", scope="project", cwd=root)[0]
+        selection = resolve_system_skill_selection(skills=("isomer-op-system-skill-mgr",), default_core=False)
+
+        result = install_system_skills(target, selection, projection_mode="symlink")
+
+        self.assertTrue(result.ok)
+        skill_link = target.skill_root / "isomer-op-system-skill-mgr"
+        self.assertTrue(skill_link.is_symlink())
+        self.assertIn(
+            "Direct low-level install defaults to project scope when `--scope` is omitted.",
+            (skill_link / "SKILL.md").read_text(encoding="utf-8"),
+        )
+
     def test_install_preserves_existing_path_without_force_and_force_replaces_it(self) -> None:
         root = self.make_root()
         target = resolve_targets("generic", scope="project", cwd=root)[0]
