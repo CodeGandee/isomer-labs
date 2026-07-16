@@ -9,6 +9,8 @@ description: Use when a Kaoju source-code method needs governed environment prep
 
 Prepare a governed Pixi environment and run one approved bounded code trial while preserving exact source, environment, data, command, Gate, and attempt evidence.
 
+Portfolio reminder: a method, wrapper, patch, environment, trial attempt, metric, or result is not a Research Idea. When an accepted terminal trial directly changes exploration or evidence assessment for an existing direction, invoke `$isomer-research-idea-recording` and record an explicit transition with the exact Artifact, Evidence Item, Finding, Research Task, and Run refs. Leave decision state unchanged without a separate decision.
+
 ## When to Use
 
 Use for `prepare-code-run`, `run-code-trial`, bounded capability probes, and approved method trials. Use `$isomer-kaoju-reproduce` only when the claim is genuine reproduction and the stronger fidelity contract can be met.

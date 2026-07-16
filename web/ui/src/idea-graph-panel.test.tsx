@@ -150,8 +150,9 @@ describe("Idea graph panel interactions", () => {
     expect(screen.queryByLabelText("Status filter")).toBeNull();
     expect(screen.queryByLabelText("Relation filter")).toBeNull();
     expect(screen.queryByLabelText("Show supporting records")).toBeNull();
+    expect(screen.getByLabelText("Idea portfolio preset")).toBeTruthy();
     await waitFor(() => {
-      expect(getTopicGraphMock).toHaveBeenCalledWith("alpha", "idea-lineage", "react-flow", { includeSecondary: false, limit: 1000 });
+      expect(getTopicGraphMock).toHaveBeenCalledWith("alpha", "idea-lineage", "react-flow", { includeSecondary: true, limit: 5000, preset: "all-proposed" });
     });
   });
 

@@ -6,6 +6,8 @@ The GUI uses record metadata to build topic overview pages, idea lineage graphs,
 
 Records may contain more fields than the GUI currently displays. GUI data-contract schemas validate required fields and allow extra fields so newer agents can write richer payloads without breaking older viewers.
 
+Idea-bearing records have an additional acceptance obligation. Their structured payload declares canonical Research Idea identity, known independent facets, exact Idea Realization paths, generation membership, justified Idea Lineage Edges, complete considered option sets, and transitions. The record and promised canonical effects commit in one transaction. A profile that promises those effects fails acceptance if any required effect fails; a non-idea-bearing profile does not infer ideas. See [Research Idea Portfolio](research-idea-portfolio.md).
+
 ## Family-Neutral Structured Formats
 
 Built-in extension-neutral profiles use `isomer:research/record-format/profile/<family>/<class>/<semantic-id>/v1`. They share `isomer:research/record-format/schema/research-structured-record/v1` and `isomer:research/record-format/template/markdown/research-structured-record/v1`. The packaged Kaoju catalog is declarative: each entry defines compatible record kinds, required payload paths, relationship and file paths, query facets, renderer, version, and status.

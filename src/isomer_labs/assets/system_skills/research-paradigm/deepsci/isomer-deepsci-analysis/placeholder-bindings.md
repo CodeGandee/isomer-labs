@@ -18,7 +18,7 @@ When a durable record is produced from prior durable records, pass immediate par
 
 ## Canonical idea metadata
 
-Analysis record revisions should realize the same Research Idea unless the concept changes direction. Use `isomer-cli --print-json ext research ideas upsert`, `realize --source-json-path <exact-object-path>`, and `lineage add` for explicit follow-ups, splits, merges, returns to ideation, or `subsumes` relationships. The source path must name one idea object and must not name the whole analysis payload, a metrics table, notes, route context, or rendered Markdown.
+Invoke `$isomer-research-idea-recording` when an accepted analysis changes exploration or evidence assessment or creates a concept. Cite terminal result refs on explicit transitions, retain identity for concept-stable revisions, and create justified follow-up, split, merge, return-to-ideation, or `subsumes` lineage only when the concept changes. The exact realization path passed through `--source-json-path` must name one idea object, never the analysis root, metrics, notes, route context, or rendered Markdown.
 
 ## Query-index metadata
 

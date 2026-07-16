@@ -17,8 +17,10 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 
+from isomer_labs.records.steering import ResearchIdeaSteeringRequest
+
 from .read_model import ProjectWebReadModel
-from .schemas import IndexCleanupRequest, IndexRebuildRequest
+from .schemas import IndexCleanupRequest, IndexRebuildRequest, ResearchIdeaSteeringRequestModel
 
 WebCacheMode = Literal["normal", "debug"]
 
@@ -164,6 +166,14 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         hop_radius: int | None = Query(default=None, ge=0, le=8),
         direction: str = Query(default="both"),
         edge_mode: str = Query(default="induced"),
+        preset: str = Query(default="current"),
+        exploration_state: str | None = None,
+        decision_state: str | None = None,
+        evidence_state: str | None = None,
+        archive_state: str | None = None,
+        visibility: str | None = None,
+        generation_id: str | None = None,
+        decision_record_id: str | None = None,
     ) -> JSONResponse:
         return _json(
             read_model.topic_graph(
@@ -182,6 +192,14 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
                 hop_radius=hop_radius,
                 direction=direction,
                 edge_mode=edge_mode,
+                preset=preset,
+                exploration_state=exploration_state,
+                decision_state=decision_state,
+                evidence_state=evidence_state,
+                archive_state=archive_state,
+                visibility=visibility,
+                generation_id=generation_id,
+                decision_record_id=decision_record_id,
             )
         )
 
@@ -253,6 +271,43 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         include_payload: bool = False,
     ) -> JSONResponse:
         return _json(read_model.record_detail(topic_id, record_id, include_payload=include_payload))
+
+    @app.get("/api/topics/{topic_id}/ideas/traverse")
+    def idea_traversal(
+        topic_id: str,
+        root_idea_id: list[str] = Query(...),
+        direction: Literal["ancestors", "descendants"] = Query(default="descendants"),
+        relation_kind: list[str] = Query(default=[]),
+        max_depth: int = Query(default=8, ge=0, le=32),
+        max_nodes: int = Query(default=500, ge=1, le=5000),
+        max_edges: int = Query(default=1000, ge=0, le=10000),
+    ) -> JSONResponse:
+        return _json(
+            read_model.idea_traversal(
+                topic_id,
+                root_idea_ids=root_idea_id,
+                direction=direction,
+                relation_kinds=relation_kind or None,
+                max_depth=max_depth,
+                max_nodes=max_nodes,
+                max_edges=max_edges,
+            )
+        )
+
+    @app.get("/api/topics/{topic_id}/idea-decisions/{decision_record_id}")
+    def idea_decision_record_context(topic_id: str, decision_record_id: str) -> JSONResponse:
+        return _json(read_model.decision_context(topic_id, decision_record_id))
+
+    @app.get("/api/topics/{topic_id}/ideas/{idea_id}/decisions")
+    def idea_decision_context(topic_id: str, idea_id: str) -> JSONResponse:
+        return _json(read_model.idea_decision_context(topic_id, idea_id))
+
+    @app.post("/api/topics/{topic_id}/ideas/steer")
+    def idea_steering(topic_id: str, request: ResearchIdeaSteeringRequestModel) -> JSONResponse:
+        request_payload = request.model_dump()
+        dispatch = bool(request_payload.pop("dispatch", True))
+        steering_request = ResearchIdeaSteeringRequest(**request_payload)
+        return _json(read_model.steer_idea(topic_id, steering_request, dispatch=dispatch))
 
     @app.get("/api/topics/{topic_id}/ideas/{idea_id}")
     def idea_detail(

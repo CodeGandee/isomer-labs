@@ -20,7 +20,17 @@ def replace_canonical_lineage_rows_for_record(
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
     record_id: str,
+    *,
+    edges: Iterable[ResearchRecordLineageEdge] | None = None,
 ) -> None:
+    rows = [
+        _canonical_lineage_edge_row(context, edge)
+        for edge in edges if edge.parent_record_id == record_id or edge.child_record_id == record_id
+    ] if edges is not None else [
+        _canonical_lineage_edge_row(context, edge)
+        for edge in store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
+        if edge.parent_record_id == record_id or edge.child_record_id == record_id
+    ]
     connection.execute(
         delete(record_edges).where(
             record_edges.c.topic_workspace_id == context.topic_workspace_id,
@@ -28,11 +38,6 @@ def replace_canonical_lineage_rows_for_record(
             or_(record_edges.c.source_record_id == record_id, record_edges.c.target_record_id == record_id),
         )
     )
-    rows = [
-        _canonical_lineage_edge_row(context, edge)
-        for edge in store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
-        if edge.parent_record_id == record_id or edge.child_record_id == record_id
-    ]
     if rows:
         connection.execute(insert(record_edges), rows)
 
@@ -41,17 +46,22 @@ def replace_all_canonical_lineage_rows(
     connection: Any,
     context: EffectiveTopicContext,
     store: WorkspaceRuntimeStore,
+    *,
+    edges: Iterable[ResearchRecordLineageEdge] | None = None,
 ) -> None:
+    rows = [
+        _canonical_lineage_edge_row(context, edge)
+        for edge in edges
+    ] if edges is not None else [
+        _canonical_lineage_edge_row(context, edge)
+        for edge in store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
+    ]
     connection.execute(
         delete(record_edges).where(
             record_edges.c.topic_workspace_id == context.topic_workspace_id,
             record_edges.c.source_classification == SOURCE_CANONICAL_LINEAGE,
         )
     )
-    rows = [
-        _canonical_lineage_edge_row(context, edge)
-        for edge in store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
-    ]
     if rows:
         connection.execute(insert(record_edges), rows)
 

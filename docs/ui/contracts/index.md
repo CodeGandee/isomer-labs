@@ -8,8 +8,12 @@ Agents and backend code may include fields beyond these contracts. Schema checks
 
 - [Topic Overview](topic-overview.md): topic overview Markdown, source metadata, supporting Topic and Runtime JSON, and missing-file diagnostics.
 - [Topic Graph](topic-graph.md): graph identity, nodes, edges, groups, facets, renderer hints, paging, and diagnostics.
+- [Research Idea Portfolio](idea-portfolio.md): independent canonical facets, fixed presets, composed filters, counts, and paradigm-neutral projection.
 - [Idea Timeline](idea-timeline.md): timeline row derivation from the idea graph contract, display keys, fuzzy search, sorting, and row coloring settings.
 - [Idea Detail](idea-detail.md): canonical idea metadata, realizations, source provenance, source JSON availability, and lineage context.
+- [Research Idea Decision Context](idea-decision-context.md): recorded alternatives, outcomes, rationale, closure or deferral reasons, and reopen history.
+- [Research Idea Traversal](idea-traversal.md): bounded canonical ancestry and descendant reads with completeness metadata.
+- [Research Idea Steering](idea-steering.md): confirmed steering requests, atomic canonical effects, conflicts, Gates, and dispatch state.
 - [Record Inspection](record-inspection.md): record viewer descriptors, rendered records, files, lineage, siblings, facets, and openability.
 - [Diagnostics](diagnostics.md): common diagnostic fields and GUI rendering rules.
 - [Recent Errors](recent-errors.md): service-local recent graph/timeline warning and error query payloads.

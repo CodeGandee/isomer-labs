@@ -103,7 +103,7 @@
       "semantic_id": "KAOJU:DIRECTION-SET",
       "artifact_type": "direction-set",
       "record_kind": "decision_record",
-      "profile_ref": "isomer:research/record-format/profile/kaoju/decision/direction-set/v1",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/decision/direction-set/v2",
       "semantic_label": "topic.records.artifacts",
       "content_mode": "structured_file",
       "producer": "isomer-kaoju-frame",

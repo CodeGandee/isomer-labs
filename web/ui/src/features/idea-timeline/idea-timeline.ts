@@ -1,7 +1,7 @@
 import type { GraphFilters } from "../../api";
 import type { TopicGraphEdge, TopicGraphNode, TopicGraphView } from "../../types";
 
-export type IdeaTimelineSortKey = "created_at" | "display_key" | "title" | "parents" | "status";
+export type IdeaTimelineSortKey = "created_at" | "display_key" | "title" | "parents" | "exploration" | "decision" | "evidence" | "archive" | "visibility";
 export type IdeaTimelineSortDirection = "asc" | "desc";
 
 export type IdeaTimelineParent = {
@@ -18,7 +18,13 @@ export type IdeaTimelineRow = {
   summary: string;
   family: string;
   status: string;
+  explorationState: string;
+  decisionState: string;
+  evidenceState: string;
+  archiveState: string;
   visibility: string;
+  backendSelected: boolean;
+  needsClassification: string[];
   createdAt: string;
   updatedAt: string;
   aliases: string[];
@@ -49,7 +55,13 @@ export function buildIdeaTimelineRows(graph: TopicGraphView): IdeaTimelineRow[] 
         summary: String(node.summary || ""),
         family: String(source.family || node.renderer_hints?.cluster || ""),
         status: String(node.status || ""),
+        explorationState: String(node.exploration_state || "unknown"),
+        decisionState: String(node.decision_state || "unknown"),
+        evidenceState: String(node.evidence_state || "unknown"),
+        archiveState: String(node.archive_state || "active"),
         visibility: String(node.visibility || "primary"),
+        backendSelected: Boolean(node.backend_selected || node.selected),
+        needsClassification: node.needs_classification || [],
         createdAt: String(node.created_at || ""),
         updatedAt: String(node.updated_at || ""),
         aliases: Array.isArray(source.aliases) ? source.aliases.map(String) : [],
@@ -106,8 +118,20 @@ function sortValue(row: IdeaTimelineRow, sortKey: IdeaTimelineSortKey): string {
   if (sortKey === "parents") {
     return row.parents.map((parent) => parent.displayKey || parent.ideaId).join(" ");
   }
-  if (sortKey === "status") {
-    return row.status;
+  if (sortKey === "exploration") {
+    return row.explorationState;
+  }
+  if (sortKey === "decision") {
+    return row.decisionState;
+  }
+  if (sortKey === "evidence") {
+    return row.evidenceState;
+  }
+  if (sortKey === "archive") {
+    return row.archiveState;
+  }
+  if (sortKey === "visibility") {
+    return row.visibility;
   }
   return row.title;
 }
@@ -133,6 +157,10 @@ function matchesTimelineSearch(row: IdeaTimelineRow, normalizedQuery: string): b
     row.summary,
     row.family,
     row.status,
+    row.explorationState,
+    row.decisionState,
+    row.evidenceState,
+    row.archiveState,
     row.visibility,
     row.category,
     row.ideaId,

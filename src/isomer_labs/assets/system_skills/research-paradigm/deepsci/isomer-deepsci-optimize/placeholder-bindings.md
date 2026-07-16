@@ -18,7 +18,7 @@ When a durable record is produced from prior durable records, pass immediate par
 
 ## Canonical idea metadata
 
-Optimization records may promote, fuse, split, or follow up candidate Research Ideas, but idea status changes require explicit `isomer-cli --print-json ext research ideas` writes. Use `realize --source-json-path <exact-object-path>` only for one candidate or promoted-line object, not a frontier board, candidate list, debug notes, metrics, artifact list, or rendered Markdown.
+Invoke `$isomer-research-idea-recording` when optimization accepts durable candidate concepts, a promotion decision, fusion, split, follow-up, or exploration or evidence transition. Record exact candidate-object realizations, including the object path passed through `--source-json-path`, generation membership, complete promotion options, justified transitions with terminal refs, and concept lineage. Frontier boards, candidate lists, debug notes, metrics, artifact lists, implementation attempts, and rendered Markdown are not automatic Research Ideas.
 
 ## Query-index metadata
 

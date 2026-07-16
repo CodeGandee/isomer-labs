@@ -3,11 +3,11 @@
 ## Workflow
 
 1. Resolve Workspace Readiness, the Survey Contract, prior Direction Set revisions, and the active Run.
-2. Ask only material boundary questions. Propose three directions by default with stable ids, titles, research questions, scope, rationale, evidence opportunity, source classes, expected outputs, risks, and empirical feasibility.
+2. Ask only material boundary questions. Propose three directions by default with stable direction ids, canonical semantic `idea_id` values, titles, summaries, research questions, scope, rationale, evidence opportunity, source classes, expected outputs, risks, empirical feasibility, exact proposal paths, and one proposal-generation id.
 3. Describe empirical feasibility as available, requires environment work, requires unavailable hardware or service, or unknown. Never filter a useful direction solely because the current host cannot execute it.
-4. Let the actor select one or several proposals, add a custom direction, reject all, or request revision. Preserve rejected and revised proposals in history.
-5. Require explicit human confirmation, then persist `KAOJU:DIRECTION-SET` through `project artifacts put` or `revise` with the survey scope.
-6. Checkpoint the Run and return the selected direction ids. Do not build reading lists in this intent.
+4. Let the actor select one or several proposals, add a custom direction, close or defer a proposal with reason, reject all, or request revision. Author one option outcome and disposition rationale per proposal. A merely unselected proposal remains open.
+5. Require explicit human confirmation, invoke `$isomer-research-idea-recording`, and persist `KAOJU:DIRECTION-SET` through the active v2 `project artifacts put` or `revise` binding. Include `research_idea_effects` with `atomic=true`, explicit facets, every exact realization, one complete generation, every Decision Record option, and each justified transition with actor, rationale, closure reason, and terminal refs.
+6. Inspect returned record and canonical refs, query the Direction Set decision context, resolve proposal realizations, and run `ext research ideas validate`. Checkpoint the Run only after verification, then return selected direction ids. Do not build reading lists in this intent.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
 

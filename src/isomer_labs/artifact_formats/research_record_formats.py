@@ -20,7 +20,7 @@ TEMPLATE_RESOURCE = "assets/research_record_formats/templates/markdown/research-
 SCHEMA_REF = "isomer:research/record-format/schema/research-structured-record/v1"
 TEMPLATE_REF = "isomer:research/record-format/template/markdown/research-structured-record/v1"
 SUPPORTED_CATALOG_VERSION = "isomer-research-record-format-catalog.v1"
-SUPPORTED_PROFILE_VERSION = "v1"
+SUPPORTED_PROFILE_VERSIONS = ("v1", "v2")
 SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
@@ -42,8 +42,8 @@ def research_profile_ref(family: str, artifact_class: str, semantic_id: str, *, 
     """Build a canonical family-neutral research profile ref."""
 
     values = (family, artifact_class, semantic_id)
-    if any(SEGMENT_RE.fullmatch(value) is None for value in values) or version != SUPPORTED_PROFILE_VERSION:
-        raise ValueError("Research profile family, class, and semantic id must be lowercase slug segments and version must be v1.")
+    if any(SEGMENT_RE.fullmatch(value) is None for value in values) or version not in SUPPORTED_PROFILE_VERSIONS:
+        raise ValueError("Research profile family, class, and semantic id must be lowercase slug segments and version must be v1 or v2.")
     return f"isomer:research/record-format/profile/{family}/{artifact_class}/{semantic_id}/{version}"
 
 
@@ -54,7 +54,7 @@ def parse_research_profile_ref(ref: str) -> ResearchProfileRef | None:
     if not ref.startswith(prefix):
         return None
     parts = ref[len(prefix) :].split("/")
-    if len(parts) != 4 or parts[-1] != SUPPORTED_PROFILE_VERSION:
+    if len(parts) != 4 or parts[-1] not in SUPPORTED_PROFILE_VERSIONS:
         return None
     if any(SEGMENT_RE.fullmatch(value) is None for value in parts[:-1]):
         return None
@@ -98,6 +98,7 @@ class ResearchRecordFormatProvider:
                 "relationship_paths": raw["relationship_paths"],
                 "file_paths": raw["file_paths"],
                 "facet_paths": raw["facet_paths"],
+                "idea_effects": raw["idea_effects"],
                 "catalog_source": raw["catalog_source"],
             },
         }
@@ -184,7 +185,7 @@ def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: st
     status = str(entry.get("status") or "")
     if entry_family != family:
         raise ValueError(f"Research format catalog family mismatch at {source}: {entry_family!r} != {family!r}.")
-    if version != SUPPORTED_PROFILE_VERSION:
+    if version not in SUPPORTED_PROFILE_VERSIONS:
         raise ValueError(f"Research format profile at {source} uses unsupported version {version!r}.")
     if status not in {"active", "disabled"}:
         raise ValueError(f"Research format profile at {source} has unsupported status {status!r}.")
@@ -202,6 +203,9 @@ def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: st
     relationship_paths = _string_list(entry, "relationship_paths", source)
     file_paths = _string_list(entry, "file_paths", source)
     facet_paths = _path_map(entry, "facet_paths", source)
+    idea_effects_raw = entry.get("idea_effects", {})
+    if not isinstance(idea_effects_raw, Mapping):
+        raise ValueError(f"Research format profile at {source} idea_effects must be an object.")
     renderer = str(entry.get("renderer") or "")
     if renderer != "markdown":
         raise ValueError(f"Research format profile at {source} has unsupported renderer {renderer!r}.")
@@ -217,6 +221,7 @@ def _validate_catalog_entry(entry: Mapping[str, Any], *, family: str, source: st
         "relationship_paths": relationship_paths,
         "file_paths": file_paths,
         "facet_paths": facet_paths,
+        "idea_effects": {str(key): value for key, value in idea_effects_raw.items()},
         "renderer": renderer,
         "version": version,
         "status": status,

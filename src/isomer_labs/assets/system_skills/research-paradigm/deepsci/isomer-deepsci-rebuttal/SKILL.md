@@ -17,7 +17,7 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
-Idea-recording reminder: rebuttal work may change evidence or wording, but it should update Research Ideas only when reviewer pressure changes the concept, creates a follow-up, or supersedes a route. Read `isomer-deepsci-shared` before that write, and use `--source-json-path` for one idea object rather than reviewer comments, action matrices, response letters, or rendered Markdown.
+Idea-recording reminder: invoke `$isomer-research-idea-recording` only when accepted rebuttal work changes a concept or its exploration, evidence, or decision facets, or introduces a follow-up or superseding direction. Commit explicit transitions with terminal refs and exact object-valued realizations; add justified lineage only for a distinct concept. Reviewer comments, action matrices, response letters, and rendered Markdown are not Research Ideas by default.
 
 Rebuttal turns reviewer pressure into auditable work items. It preserves reviewer meaning, assigns stable item ids, classifies each issue, routes real evidence gaps to the right skill, records text deltas, and assembles a point-by-point response only after critical feasible rows are resolved or explicitly limited.
 

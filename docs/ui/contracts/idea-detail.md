@@ -24,6 +24,8 @@ The idea detail contract feeds the tab opened from a canonical Research Idea nod
 ## Optional Useful Fields
 
 - `exists`: whether the Research Idea exists.
+- Canonical idea facets: `exploration_state`, `decision_state`, `evidence_state`, `archive_state`, and `visibility` inside `idea`.
+- Transition, decision, and steering refs needed to open read-only context or a separate confirmed action.
 - `latest_realization`: latest Idea Realization.
 - `latest_record`: latest record metadata.
 - `idea_content`: normalized idea content used for Markdown preview.

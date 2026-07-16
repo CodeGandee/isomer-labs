@@ -29,14 +29,24 @@ from isomer_labs.records.index import (
     validate_query_index,
 )
 from isomer_labs.records.semantic_index import query_index_record_summary
-from isomer_labs.records.store import ResearchRecordError, render_record, show_record
+from isomer_labs.records.store import (
+    ResearchRecordError,
+    query_research_idea_decision_context,
+    render_record,
+    show_record,
+    traverse_research_ideas,
+)
 from isomer_labs.runtime.store import open_workspace_runtime
 from isomer_labs.runtime.validation import inspect_workspace_runtime
+from isomer_labs.records.steering import ResearchIdeaSteeringRequest, steer_research_idea
 from isomer_labs.workspace.actors import list_topic_actors
 from isomer_labs.workspace.manifest import resolve_semantic_binding
 
 from .contracts import (
+    IdeaDecisionContextResponseContract,
     IdeaDetailResponseContract,
+    IdeaSteeringResponseContract,
+    IdeaTraversalResponseContract,
     RecordFilesResponseContract,
     RecordDetailResponseContract,
     RecordRenderResponseContract,
@@ -464,6 +474,14 @@ class ProjectWebReadModel:
         hop_radius: int | None = None,
         direction: str = "both",
         edge_mode: str = "induced",
+        preset: str = "current",
+        exploration_state: str | None = None,
+        decision_state: str | None = None,
+        evidence_state: str | None = None,
+        archive_state: str | None = None,
+        visibility: str | None = None,
+        generation_id: str | None = None,
+        decision_record_id: str | None = None,
     ) -> dict[str, Any]:
         payload = self._with_context(
             topic_id,
@@ -483,6 +501,14 @@ class ProjectWebReadModel:
                 hop_radius=hop_radius,
                 direction=direction,
                 edge_mode=edge_mode,
+                preset=preset,
+                exploration_state=exploration_state,
+                decision_state=decision_state,
+                evidence_state=evidence_state,
+                archive_state=archive_state,
+                visibility=visibility,
+                generation_id=generation_id,
+                decision_record_id=decision_record_id,
             ),
         )
         self._recent_errors.record_payload(topic_id, f"graph:{graph_scope}", payload)
@@ -520,6 +546,78 @@ class ProjectWebReadModel:
                 IdeaDetailResponseContract,
                 "idea-detail",
             ),
+        )
+
+    def idea_decision_context(self, topic_id: str, idea_id: str) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: _ensure_contract_tuple(
+                self._portfolio_read_with_revision(
+                    context,
+                    query_research_idea_decision_context(
+                        context,
+                        env=self.selected_env,
+                        idea_id=idea_id,
+                    ),
+                ),
+                IdeaDecisionContextResponseContract,
+                "idea-decision-context",
+            ),
+        )
+
+    def decision_context(self, topic_id: str, decision_record_id: str) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: _ensure_contract_tuple(
+                self._portfolio_read_with_revision(
+                    context,
+                    query_research_idea_decision_context(
+                        context,
+                        env=self.selected_env,
+                        decision_record_id=decision_record_id,
+                    ),
+                ),
+                IdeaDecisionContextResponseContract,
+                "idea-decision-context",
+            ),
+        )
+
+    def idea_traversal(
+        self,
+        topic_id: str,
+        *,
+        root_idea_ids: list[str],
+        direction: str,
+        relation_kinds: list[str] | None = None,
+        max_depth: int = 8,
+        max_nodes: int = 500,
+        max_edges: int = 1000,
+    ) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: _ensure_contract_tuple(
+                self._portfolio_read_with_revision(
+                    context,
+                    traverse_research_ideas(
+                        context,
+                        env=self.selected_env,
+                        root_idea_ids=root_idea_ids,
+                        direction=direction,
+                        relation_kinds=relation_kinds,
+                        max_depth=max_depth,
+                        max_nodes=max_nodes,
+                        max_edges=max_edges,
+                    ),
+                ),
+                IdeaTraversalResponseContract,
+                "idea-traversal",
+            ),
+        )
+
+    def steer_idea(self, topic_id: str, request: ResearchIdeaSteeringRequest, *, dispatch: bool = True) -> dict[str, Any]:
+        return self._with_context(
+            topic_id,
+            lambda context: self._steer_idea_payload(context, request, dispatch=dispatch),
         )
 
     def record_render(self, topic_id: str, record_id: str) -> dict[str, Any]:
@@ -742,6 +840,14 @@ class ProjectWebReadModel:
         hop_radius: int | None,
         direction: str,
         edge_mode: str,
+        preset: str,
+        exploration_state: str | None,
+        decision_state: str | None,
+        evidence_state: str | None,
+        archive_state: str | None,
+        visibility: str | None,
+        generation_id: str | None,
+        decision_record_id: str | None,
     ) -> tuple[dict[str, Any], list[Diagnostic]]:
         export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
         graph_payload = build_topic_graph_view(
@@ -761,8 +867,48 @@ class ProjectWebReadModel:
             hop_radius=hop_radius,
             direction=direction,
             edge_mode=edge_mode,
+            preset=preset,
+            exploration_state=exploration_state,
+            decision_state=decision_state,
+            evidence_state=evidence_state,
+            archive_state=archive_state,
+            visibility=visibility,
+            generation_id=generation_id,
+            decision_record_id=decision_record_id,
         )
         return ensure_gui_payload(graph_payload, TopicGraphResponseContract, contract_name="topic-graph"), diagnostics
+
+    def _portfolio_read_with_revision(
+        self,
+        context: EffectiveTopicContext,
+        result: tuple[dict[str, Any], list[Diagnostic]],
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        payload, diagnostics = result
+        revision_payload, revision_diagnostics = query_index_revision(context, env=self.selected_env)
+        diagnostics.extend(revision_diagnostics)
+        payload = dict(payload)
+        payload["topic_id"] = context.research_topic.id
+        payload["topic_workspace_id"] = context.topic_workspace_id
+        payload["index_revision"] = revision_payload.get("index_revision")
+        payload["source_index_revision"] = revision_payload.get("index_revision")
+        return payload, diagnostics
+
+    def _steer_idea_payload(
+        self,
+        context: EffectiveTopicContext,
+        request: ResearchIdeaSteeringRequest,
+        *,
+        dispatch: bool,
+    ) -> tuple[dict[str, Any], list[Diagnostic]]:
+        payload, diagnostics = steer_research_idea(
+            context,
+            env=self.selected_env,
+            request=request,
+            dispatch=dispatch,
+        )
+        payload.setdefault("topic_id", context.research_topic.id)
+        payload.setdefault("topic_workspace_id", context.topic_workspace_id)
+        return ensure_gui_payload(payload, IdeaSteeringResponseContract, contract_name="idea-steering"), diagnostics
 
     def _record_files_payload(
         self,

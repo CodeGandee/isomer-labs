@@ -94,6 +94,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
             "interaction-and-gates.md",
             "lineage.md",
             "prerequisite-recovery.md",
+            "research-idea-recording.md",
             "source-identity.md",
             "survey-artifacts.md",
             "terminal-report.md",

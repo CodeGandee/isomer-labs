@@ -408,6 +408,8 @@ IDEA_ENTRY_SECTION_PATHS: dict[str, tuple[str, ...]] = {
     "draft/paper-outline-seed": ("$.sections",),
     "report/research-outline-note": ("$.sections",),
     "paper/outline/idea": ("$.sections",),
+    "kaoju/decision/direction-set": ("$.sections.proposals",),
+    "decision/direction-set": ("$.sections.proposals",),
 }
 
 CONTEXT_SECTION_PATHS: dict[str, tuple[str, ...]] = {

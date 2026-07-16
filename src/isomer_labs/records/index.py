@@ -22,7 +22,13 @@ from .index_extractors import (
     _sum_counts,
 )
 from .index_revision import index_revision_payload
-from .idea_index import canonical_ideas_with_source_status, canonical_realizations_with_source_status, idea_export_diagnostics, legacy_idea_facet
+from .idea_index import (
+    canonical_ideas_with_source_status,
+    canonical_realizations_with_source_status,
+    idea_export_diagnostics,
+    legacy_idea_facet,
+    unprojected_idea_bearing_record_diagnostics,
+)
 from .lineage_index import (
     canonical_lineage_edge_json,
     canonical_lineage_edges_for_query,
@@ -66,11 +72,12 @@ def refresh_query_index_for_record(
         return _operation_payload("refresh", False, [{"severity": "error", "code": "query_index_record_missing", "message": f"Research record not found for query-index refresh: {record_id}"}])
     payload = store.get_structured_payload(record_id)
     parts = _build_index_parts(context, record, payload)
+    canonical_edges = store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
     engine = _engine_for_db_path(store.db_path, read_only=False)
     try:
         with engine.begin() as connection:
             _replace_record_rows(connection, record_id, parts)
-            replace_canonical_lineage_rows_for_record(connection, context, store, record_id)
+            replace_canonical_lineage_rows_for_record(connection, context, store, record_id, edges=canonical_edges)
     finally:
         engine.dispose()
     return _operation_payload("refresh", True, [], counts=_parts_counts(parts))
@@ -90,6 +97,7 @@ def rebuild_query_index(
     try:
         records = _selected_lifecycle_records(context, store, record_id)
         parts = [_build_index_parts(context, record, store.get_structured_payload(record.id)) for record in records]
+        canonical_edges = store.list_research_record_lineage_edges(topic_workspace_id=context.topic_workspace_id)
         counts = _sum_counts(_parts_counts(part) for part in parts)
         payload: dict[str, object] = {
             "ok": True,
@@ -108,7 +116,7 @@ def rebuild_query_index(
             with engine.begin() as connection:
                 for record, part in zip(records, parts, strict=True):
                     _replace_record_rows(connection, record.id, part)
-                replace_all_canonical_lineage_rows(connection, context, store)
+                replace_all_canonical_lineage_rows(connection, context, store, edges=canonical_edges)
         finally:
             engine.dispose()
         return payload, diagnostics
@@ -269,7 +277,7 @@ def query_index_export(
         records = _query_records(engine, context)
         index_diagnostics = _validate_index_rows(context, store)
         legacy_ideas = _select_table(engine, record_ideas, context)
-        canonical_idea_records = store.list_research_ideas(topic_workspace_id=context.topic_workspace_id)
+        canonical_idea_records = store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True)
         canonical_realization_records = store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id)
         canonical_ideas, canonical_idea_source_diagnostics = canonical_ideas_with_source_status(
             context,
@@ -283,7 +291,10 @@ def query_index_export(
             canonical_idea_records,
             canonical_realization_records,
         )
-        idea_diagnostics = idea_export_diagnostics(legacy_ideas, canonical_ideas)
+        idea_diagnostics = [
+            *idea_export_diagnostics(legacy_ideas, canonical_ideas),
+            *unprojected_idea_bearing_record_diagnostics(records, canonical_realizations),
+        ]
         diagnostics_out = [*index_diagnostics, *idea_diagnostics, *canonical_idea_source_diagnostics, *canonical_realization_source_diagnostics]
         payload = {
             "ok": True,
@@ -299,6 +310,8 @@ def query_index_export(
             "canonical_idea_realizations": canonical_realizations,
             "canonical_idea_edges": [edge.to_json() for edge in store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id)],
             "canonical_idea_generation_groups": [group.to_json() for group in store.list_research_idea_generation_groups(topic_workspace_id=context.topic_workspace_id)],
+            "canonical_idea_transitions": [transition.to_json() for transition in store.list_research_idea_state_transitions(topic_workspace_id=context.topic_workspace_id)],
+            "canonical_idea_decision_options": [option.to_json() for option in store.list_research_idea_decision_options(topic_workspace_id=context.topic_workspace_id)],
             "routes": _select_table(engine, record_routes, context),
             "metrics": _select_table(engine, record_metrics, context),
             "claims": _select_table(engine, record_claims, context),

@@ -17,6 +17,8 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
+Idea-recording reminder: invoke `$isomer-research-idea-recording` only when scout output explicitly promotes a durable research concept. Record a generated concept set with explicit facets, exact object paths, one generation, and justified parents. Literature candidates, benchmark candidates, repositories, datasets, search routes, and comparator sources retain their existing types unless an actor explicitly promotes a distinct research direction.
+
 Scout makes an unclear research situation concrete enough to choose the next route. It resolves only the framing unknowns that can change downstream work, records the result as semantic handoff material, and stops once baseline, idea, Decision Record, Gate, or blocker routing is clear.
 
 Placeholder definitions live in `migrate/placeholders.md`; storage bindings live in `placeholder-bindings.md`.

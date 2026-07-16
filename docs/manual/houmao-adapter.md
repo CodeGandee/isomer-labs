@@ -62,6 +62,8 @@ Adapter-generated payloads, logs, snapshots, and reconciliation files are not wo
 
 Handoff commands are a generic Isomer CLI surface backed here by Houmao. Use `--print-json` at the root when scripts need deterministic JSON; without it, the commands print structured human-readable status lines. The handoff commands do not expose command-local `--json` or `--format json` flags.
 
+Research Idea steering uses the same adapter boundary after its canonical transaction commits. The Project Operator prompt contains exact Research Idea identity, latest Idea Realization refs, Decision Record ref when present, Research Inquiry ref, Research Task ref, and the user prompt. The adapter delivers that bounded instruction to the configured topic research actor. An unavailable actor or failed delivery marks the planned handoff pending or blocked and returns a retry ref; it does not roll back the user's durable steering decision. See [Research Idea Portfolio](research-idea-portfolio.md).
+
 ```bash
 isomer-cli --print-json project handoffs dispatch \
   --topic <research-topic-id> \

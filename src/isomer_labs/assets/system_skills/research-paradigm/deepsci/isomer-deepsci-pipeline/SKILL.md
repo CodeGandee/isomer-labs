@@ -15,6 +15,8 @@ Pipeline execution is a complex process. Before executing any pipeline task, use
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
+Before a pass accepts an idea-bearing output, invoke `$isomer-research-idea-recording` and require the producing stage to commit and verify canonical facets, exact realizations, generations, complete decision options, justified transitions with terminal refs, and lineage. A pipeline terminal report cannot substitute for missing canonical effects.
+
 Each pass is defined by a dedicated subcommand page under `commands/`. The recipe is embedded in that page so pass-specific customization can grow without complicating the main skill entrypoint.
 
 ## When to Use

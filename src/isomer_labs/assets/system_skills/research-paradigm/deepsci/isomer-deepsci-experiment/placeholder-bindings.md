@@ -18,7 +18,7 @@ When a durable record is produced from prior durable records, pass immediate par
 
 ## Canonical idea metadata
 
-Experiment records may suggest that an idea is supported, refuted, narrowed, stale, or superseded, but idea status changes require an explicit `isomer-cli --print-json ext research ideas upsert` write. Use `realize --source-json-path <exact-object-path>` and `lineage add` only when the experiment result is accepted as a realization or creates a follow-up Research Idea; the path must resolve to one idea object, not the result payload root, metrics, artifact list, notes, or rendered Markdown.
+Invoke `$isomer-research-idea-recording` when accepted experiment output changes exploration or evidence assessment or creates a follow-up concept. Record explicit transitions with terminal Evidence Item, Artifact, Finding, Research Task, or Run refs and leave decision state unchanged without a separate decision. Use one exact idea object passed through `--source-json-path` for realization, never the result root, metrics, artifact list, notes, or rendered Markdown.
 
 ## Query-index metadata
 

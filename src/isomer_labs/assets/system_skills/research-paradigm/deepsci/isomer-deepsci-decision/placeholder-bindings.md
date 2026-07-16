@@ -18,7 +18,7 @@ When a durable record is produced from prior durable records, pass immediate par
 
 ## Canonical idea metadata
 
-Decision records that select, reject, defer, collapse, branch, or supersede ideas must update canonical Research Idea rows. Use `realize --source-json-path <exact-object-path>` for selected, rejected, or deferred idea objects, `generation upsert` for sibling candidate groups, and `lineage add --lineage-kind subsumes` when one idea intentionally covers another idea's mechanism, ablation, or test role. The source path must not point at the decision payload root, route context, rationale notes, a collection, or rendered Markdown.
+Invoke `$isomer-research-idea-recording` before accepting a concept-changing Decision Record. Record every considered Research Idea and authored outcome, then commit exact realizations with each object path passed through `--source-json-path`, generation membership, justified facet transitions, closure reasons, terminal refs, and concept lineage in the same acceptance operation. Do not use a status-only write or infer options from the decision payload root, route context, rationale notes, a collection, or rendered Markdown.
 
 ## Query-index metadata
 

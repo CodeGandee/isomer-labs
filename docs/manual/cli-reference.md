@@ -1159,6 +1159,18 @@ isomer-cli project team-profiles validate isomer-content/topic-ws/my-topic/team-
 isomer-cli project --root /path/to/project team-profiles validate topic-workspaces/my-topic/team-profile/profile.toml
 ```
 
+## Research Idea Portfolio Commands
+
+`ext research ideas upsert` records stable canonical identity and initial exploration, decision, evidence, archive, and visibility facets. `transition` performs an expected-state mutation with actor, rationale, operation correlation, and applicable Decision Record, Gate, Evidence Item, Artifact, Finding, Research Task, Run, or Provenance Record refs. Closing requires a canonical reason code.
+
+`decision-options upsert` records explicit Decision Record membership and outcome. `generation upsert` records one production pass; generation membership never substitutes for decision membership. `lineage add` records a canonical Idea Lineage Edge independently of research-record lineage.
+
+`query`, `graph`, `decision-context`, `traverse`, and `validate` are read-only. `query` supports repeatable facet filters plus generation, Decision Record, archive, and visibility selection. `traverse` requires roots and `ancestors` or `descendants`, and accepts relation, depth, node, and edge bounds. Results label incomplete traversal.
+
+`migrate-status` and `migrate-kaoju-direction-set <record-id>` preview by default and mutate only with `--apply`. Preview preserves current data. Kaoju migration preserves direction ids as aliases and never invents disposition reasons or lineage.
+
+`steer` is the explicit composite mutation for `--action explore` or `--action explore-instead`. It requires target identity, actor, and idempotency key. Explore-instead also requires repeatable `--replace-idea-id` and rationale. Expected revision, expected facets, replacement dispositions, closure reasons, reopening confirmation, Gate policy, adapter routing, prompt, and `--no-dispatch` are available for deterministic operator workflows. See [Research Idea Portfolio](research-idea-portfolio.md) for examples and semantics.
+
 ## Side-effect Summary
 
 | Command | Mutates Project files | Mutates Workspace Runtime | Mutates adapter files | Mutates live Houmao state |
@@ -1216,6 +1228,11 @@ isomer-cli project --root /path/to/project team-profiles validate topic-workspac
 | `ext research records list` | no | no | no | no |
 | `ext research records update` | yes with body files | yes | no | no |
 | `ext research records delete` | no | yes (archives record) | no | no |
+| `ext research ideas query/graph/decision-context/traverse/validate` | no | no | no | no |
+| `ext research ideas upsert/realize/generation/lineage/transition/decision-options` | no | yes | no | no |
+| `ext research ideas migrate-status/migrate-kaoju-direction-set` | no in preview; no Project files on apply | only with `--apply` | no | no |
+| `ext research ideas steer --no-dispatch` | no | yes | no | no |
+| `ext research ideas steer` | no | yes | yes when a route is available | yes when a route is available |
 | `project team-templates list` | no | no | no | no |
 | `project team-templates inspect` | no | no | no | no |
 | `project team-templates validate` | no | no | no | no |

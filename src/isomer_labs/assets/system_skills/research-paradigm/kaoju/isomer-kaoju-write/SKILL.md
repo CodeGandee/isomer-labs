@@ -11,6 +11,8 @@ Own the transformation of audited survey knowledge into a publication-facing pap
 
 Before accepting durable output, read `$isomer-kaoju-shared`, this skill's `artifact-bindings.md`, and the applicable references. Resolve each semantic id through the binding registry and typed Artifact service. Return a storage blocker instead of inventing a profile, semantic label, state-DB entry, path, or untracked file.
 
+Portfolio reminder: paper structures, section jobs, claims, displays, templates, manuscripts, build products, and publication bundles are not Research Ideas. Invoke `$isomer-research-idea-recording` only to add an exact paper-facing realization of an existing direction or when an actor explicitly promotes a distinct new research concept. Writing never changes evidence or decision facets by implication.
+
 ## When to Use
 
 Use only after audit accepts the requested synthesis. Use for canonical MyST drafting and revision, actor template exchange, derived Markdown or TeX, PDF builds, validation, and publication bundling. Do not use this skill to discover sources, repair evidence, run scientific trials, change accepted verdicts, or bypass a missing audit.

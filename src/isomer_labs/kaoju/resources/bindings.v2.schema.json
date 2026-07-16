@@ -68,7 +68,7 @@
             "string",
             "null"
           ],
-          "pattern": "^isomer:research/record-format/profile/kaoju/.+/v1$"
+          "pattern": "^isomer:research/record-format/profile/kaoju/.+/v(?:1|2)$"
         },
         "semantic_label": {
           "enum": [

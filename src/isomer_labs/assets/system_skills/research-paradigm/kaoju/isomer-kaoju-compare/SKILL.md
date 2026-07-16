@@ -11,6 +11,8 @@ Compare only on dimensions or measurements whose definitions and evidence are ex
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:THEORY-COMPARISON`, `KAOJU:COMPARISON-MATRIX`, and `KAOJU:COMPARISON-RUN` exactly. Return a storage blocker rather than inventing a path, profile, direct Markdown state, or untracked JSON.
 
+Portfolio reminder: compared works, methods, matrix rows, dimensions, metrics, and execution candidates retain their existing types. Invoke `$isomer-research-idea-recording` only when an actor promotes a distinct conceptual direction or an accepted comparison directly justifies an exploration or evidence transition for an existing direction. Cite terminal comparison refs and never select, defer, or close a direction implicitly.
+
 ## When to Use
 
 Use for theory comparison of selected works, preparation of an actual-run comparison plan, or execution of an accepted empirical comparison. Do not use for a broad survey, a single-method trial, ranking based only on reported headline numbers, or candidate preparation before user approval.

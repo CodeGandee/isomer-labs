@@ -7,6 +7,7 @@ import uuid
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from typing import Literal, TypeAlias
 
 
 ADAPTER_HANDOFF_DISPATCH_STATUSES = ("sent", "failed", "blocked")
@@ -219,6 +220,61 @@ RESEARCH_RECORD_LINEAGE_KINDS = (
     "follow_up_to",
 )
 RESEARCH_RECORD_LINEAGE_STATUSES = ("ready", "stale", "archived")
+ResearchIdeaExplorationState: TypeAlias = Literal["unknown", "unexplored", "exploring", "explored"]
+ResearchIdeaDecisionState: TypeAlias = Literal["unknown", "open", "shortlisted", "selected", "deferred", "closed"]
+ResearchIdeaEvidenceState: TypeAlias = Literal["unknown", "unassessed", "inconclusive", "supported", "mixed", "refuted"]
+ResearchIdeaArchiveState: TypeAlias = Literal["active", "archived"]
+ResearchIdeaVisibility: TypeAlias = Literal["primary", "supporting", "hidden"]
+ResearchIdeaFacet: TypeAlias = Literal["exploration_state", "decision_state", "evidence_state", "archive_state", "visibility"]
+ResearchIdeaClosureReason: TypeAlias = Literal[
+    "rejection",
+    "supersession",
+    "duplication",
+    "invalidation",
+    "user_closure",
+    "legacy_rejection",
+    "legacy_supersession",
+    "other",
+]
+ResearchIdeaDecisionOptionOutcome: TypeAlias = Literal[
+    "considered",
+    "selected",
+    "not_selected",
+    "shortlisted",
+    "deferred",
+    "closed",
+    "reopened",
+]
+
+RESEARCH_IDEA_EXPLORATION_STATES: tuple[ResearchIdeaExplorationState, ...] = ("unknown", "unexplored", "exploring", "explored")
+RESEARCH_IDEA_DECISION_STATES: tuple[ResearchIdeaDecisionState, ...] = ("unknown", "open", "shortlisted", "selected", "deferred", "closed")
+RESEARCH_IDEA_EVIDENCE_STATES: tuple[ResearchIdeaEvidenceState, ...] = ("unknown", "unassessed", "inconclusive", "supported", "mixed", "refuted")
+RESEARCH_IDEA_ARCHIVE_STATES: tuple[ResearchIdeaArchiveState, ...] = ("active", "archived")
+RESEARCH_IDEA_VISIBILITIES: tuple[ResearchIdeaVisibility, ...] = ("primary", "supporting", "hidden")
+RESEARCH_IDEA_FACETS: tuple[ResearchIdeaFacet, ...] = ("exploration_state", "decision_state", "evidence_state", "archive_state", "visibility")
+RESEARCH_IDEA_CLOSURE_REASONS: tuple[ResearchIdeaClosureReason, ...] = (
+    "rejection",
+    "supersession",
+    "duplication",
+    "invalidation",
+    "user_closure",
+    "legacy_rejection",
+    "legacy_supersession",
+    "other",
+)
+RESEARCH_IDEA_DECISION_OPTION_OUTCOMES: tuple[ResearchIdeaDecisionOptionOutcome, ...] = (
+    "considered",
+    "selected",
+    "not_selected",
+    "shortlisted",
+    "deferred",
+    "closed",
+    "reopened",
+)
+RESEARCH_IDEA_OPERATION_STATUSES = ("planned", "committed", "failed", "blocked")
+
+# Deprecated compatibility vocabulary. Canonical code reads and writes the
+# independent facets above and maintains this projection for older clients.
 RESEARCH_IDEA_STATUSES = (
     "raw",
     "candidate",
@@ -231,7 +287,6 @@ RESEARCH_IDEA_STATUSES = (
     "superseded",
     "archived",
 )
-RESEARCH_IDEA_VISIBILITIES = ("primary", "supporting", "hidden")
 RESEARCH_IDEA_LINEAGE_KINDS = (
     "derived_from",
     "selected_from",
@@ -306,6 +361,75 @@ ADAPTER_STOP_OUTCOME_STATUSES = ("stopped", "failed", "partial", "stale")
 
 def utc_timestamp() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def research_idea_facets_from_legacy_status(
+    status: str,
+) -> tuple[ResearchIdeaExplorationState, ResearchIdeaDecisionState, ResearchIdeaEvidenceState, ResearchIdeaArchiveState]:
+    """Map only the meaning directly justified by one legacy status value."""
+
+    exploration: ResearchIdeaExplorationState = "unknown"
+    decision: ResearchIdeaDecisionState = "unknown"
+    evidence: ResearchIdeaEvidenceState = "unknown"
+    archive: ResearchIdeaArchiveState = "active"
+    if status == "raw":
+        exploration = "unexplored"
+        decision = "open"
+    elif status == "candidate":
+        decision = "open"
+    elif status == "selected":
+        decision = "selected"
+    elif status == "active":
+        exploration = "exploring"
+    elif status == "supported":
+        evidence = "supported"
+    elif status == "refuted":
+        evidence = "refuted"
+    elif status == "deferred":
+        decision = "deferred"
+    elif status in {"rejected", "superseded"}:
+        decision = "closed"
+    elif status == "archived":
+        archive = "archived"
+    return exploration, decision, evidence, archive
+
+
+def project_research_idea_compatibility_status(
+    *,
+    exploration_state: str,
+    decision_state: str,
+    evidence_state: str,
+    archive_state: str,
+    closure_reason: str | None = None,
+    preserved_status: str | None = None,
+) -> str:
+    """Return the deprecated one-value projection for compatibility clients."""
+
+    if archive_state == "archived":
+        return "archived"
+    if decision_state == "closed":
+        if closure_reason in {"supersession", "legacy_supersession"} or preserved_status == "superseded":
+            return "superseded"
+        return "rejected"
+    if decision_state == "deferred":
+        return "deferred"
+    if decision_state == "selected":
+        return "selected"
+    if evidence_state == "refuted":
+        return "refuted"
+    if evidence_state == "supported":
+        return "supported"
+    if exploration_state in {"exploring", "explored"}:
+        return "active"
+    if exploration_state == "unexplored" and decision_state == "open":
+        return "raw"
+    if decision_state in {"open", "shortlisted"}:
+        return "candidate"
+    if exploration_state == "unexplored":
+        return "raw"
+    if preserved_status in RESEARCH_IDEA_STATUSES:
+        return preserved_status
+    return "candidate"
 
 
 def _path_plan_id(topic_workspace_id: str, surface: str) -> str:
@@ -593,6 +717,10 @@ class ResearchIdea:
     metadata: dict[str, object]
     created_at: str
     updated_at: str
+    exploration_state: ResearchIdeaExplorationState = "unknown"
+    decision_state: ResearchIdeaDecisionState = "unknown"
+    evidence_state: ResearchIdeaEvidenceState = "unknown"
+    archive_state: ResearchIdeaArchiveState = "active"
     provenance_refs: list[str] = field(default_factory=list)
 
     def to_json(self) -> dict[str, object]:
@@ -603,6 +731,10 @@ class ResearchIdea:
             "idea_id": self.idea_id,
             "title": self.title,
             "summary": self.summary,
+            "exploration_state": self.exploration_state,
+            "decision_state": self.decision_state,
+            "evidence_state": self.evidence_state,
+            "archive_state": self.archive_state,
             "status": self.status,
             "visibility": self.visibility,
             "aliases": self.aliases,
@@ -619,6 +751,150 @@ class ResearchIdea:
         ):
             if value is not None:
                 data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaStateTransition:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    idea_id: str
+    facet: ResearchIdeaFacet
+    previous_value: str
+    next_value: str
+    operation_id: str
+    actor_ref: str
+    rationale: str
+    transitioned_at: str
+    reason_code: str | None = None
+    decision_record_id: str | None = None
+    gate_id: str | None = None
+    evidence_item_refs: list[str] = field(default_factory=list)
+    artifact_refs: list[str] = field(default_factory=list)
+    finding_refs: list[str] = field(default_factory=list)
+    research_task_id: str | None = None
+    run_id: str | None = None
+    provenance_record_refs: list[str] = field(default_factory=list)
+    metadata: dict[str, object] = field(default_factory=dict)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "idea_id": self.idea_id,
+            "facet": self.facet,
+            "previous_value": self.previous_value,
+            "next_value": self.next_value,
+            "operation_id": self.operation_id,
+            "actor_ref": self.actor_ref,
+            "rationale": self.rationale,
+            "transitioned_at": self.transitioned_at,
+            "evidence_item_refs": self.evidence_item_refs,
+            "artifact_refs": self.artifact_refs,
+            "finding_refs": self.finding_refs,
+            "provenance_record_refs": self.provenance_record_refs,
+            "metadata": self.metadata,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("reason_code", self.reason_code),
+            ("decision_record_id", self.decision_record_id),
+            ("gate_id", self.gate_id),
+            ("research_task_id", self.research_task_id),
+            ("run_id", self.run_id),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaDecisionOption:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    decision_record_id: str
+    idea_id: str
+    outcome: ResearchIdeaDecisionOptionOutcome
+    operation_id: str
+    created_at: str
+    updated_at: str
+    option_role: str | None = None
+    ordinal: int | None = None
+    generation_id: str | None = None
+    rationale: str | None = None
+    consequence: str | None = None
+    actor_ref: str | None = None
+    supporting_refs: list[str] = field(default_factory=list)
+    metadata: dict[str, object] = field(default_factory=dict)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "decision_record_id": self.decision_record_id,
+            "idea_id": self.idea_id,
+            "outcome": self.outcome,
+            "operation_id": self.operation_id,
+            "supporting_refs": self.supporting_refs,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        for key, value in (
+            ("option_role", self.option_role),
+            ("ordinal", self.ordinal),
+            ("generation_id", self.generation_id),
+            ("rationale", self.rationale),
+            ("consequence", self.consequence),
+            ("actor_ref", self.actor_ref),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchIdeaOperation:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    operation_id: str
+    idempotency_key: str
+    action_kind: str
+    input_digest: str
+    status: str
+    result: dict[str, object]
+    created_at: str
+    updated_at: str
+    actor_ref: str | None = None
+    metadata: dict[str, object] = field(default_factory=dict)
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "operation_id": self.operation_id,
+            "idempotency_key": self.idempotency_key,
+            "action_kind": self.action_kind,
+            "input_digest": self.input_digest,
+            "status": self.status,
+            "result": self.result,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        if self.actor_ref is not None:
+            data["actor_ref"] = self.actor_ref
         return data
 
 

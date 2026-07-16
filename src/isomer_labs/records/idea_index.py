@@ -91,6 +91,40 @@ def idea_export_diagnostics(legacy_ideas: list[dict[str, object]], canonical_ide
     return diagnostics
 
 
+def unprojected_idea_bearing_record_diagnostics(
+    records: list[dict[str, object]],
+    realizations: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    """Identify known idea-bearing records whose canonical effects are absent."""
+
+    realized_record_ids = {str(row.get("record_id") or "") for row in realizations}
+    diagnostics: list[dict[str, object]] = []
+    for record in records:
+        semantic_id = str(record.get("semantic_id") or "")
+        if semantic_id != "KAOJU:DIRECTION-SET":
+            continue
+        record_id = str(record.get("record_id") or "")
+        if not record_id or record_id in realized_record_ids:
+            continue
+        diagnostics.append(
+            _diag(
+                "warning",
+                "idea_bearing_record_unprojected",
+                f"Kaoju Direction Set has no canonical Research Idea projection: {record_id}",
+                record_id=record_id,
+                semantic_id=semantic_id,
+                format_profile_ref=record.get("format_profile_ref"),
+                portfolio_complete=False,
+                repair={
+                    "action": "preview_kaoju_direction_set_migration",
+                    "record_id": record_id,
+                    "apply_requires_preview": True,
+                },
+            )
+        )
+    return diagnostics
+
+
 def _diag(severity: str, code: str, message: str, **details: object) -> dict[str, object]:
     payload: dict[str, object] = {"severity": severity, "code": code, "message": message}
     payload.update(details)

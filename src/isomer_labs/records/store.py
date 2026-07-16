@@ -8,8 +8,9 @@ import os
 from pathlib import Path
 import re
 import shutil
+import sqlite3
 import tempfile
-from typing import Any, Mapping, TypedDict
+from typing import Any, Mapping, TypedDict, cast
 import uuid
 
 from isomer_labs.artifact_formats import (
@@ -43,11 +44,22 @@ from isomer_labs.runtime.records import (
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
     ResearchIdea,
+    ResearchIdeaArchiveState,
+    ResearchIdeaDecisionOptionOutcome,
+    ResearchIdeaDecisionOption,
+    ResearchIdeaDecisionState,
+    ResearchIdeaEvidenceState,
+    ResearchIdeaExplorationState,
+    ResearchIdeaFacet,
     ResearchIdeaGenerationGroup,
     ResearchIdeaLineageEdge,
+    ResearchIdeaOperation,
     ResearchIdeaRealization,
+    ResearchIdeaStateTransition,
     RuntimeLifecycleRecord,
     StructuredResearchPayloadRecord,
+    project_research_idea_compatibility_status,
+    research_idea_facets_from_legacy_status,
     utc_timestamp,
 )
 from isomer_labs.runtime.store import WorkspaceRuntimeStore, open_workspace_runtime
@@ -57,6 +69,7 @@ from isomer_labs.records.idea_sources import (
     IdeaEntryFragment,
     load_structured_payload,
     profile_idea_entry_fragments,
+    resolve_payload_source_fragment,
     resolve_structured_source_fragment,
 )
 
@@ -134,6 +147,8 @@ class ResearchRecordRequest:
     idea_realizations: list[dict[str, object]] | None = None
     idea_parents: list[dict[str, object]] | None = None
     primary_idea: dict[str, object] | None = None
+    idea_effects: dict[str, object] | None = None
+    idea_effects_required: bool = False
 
 
 class LineageParentSpec(TypedDict):
@@ -214,6 +229,11 @@ def create_record(
             diagnostics.extend(body_diagnostics)
         if has_errors(diagnostics):
             return _diagnostic_payload("create", diagnostics), diagnostics
+        try:
+            request = _request_with_resolved_idea_effects(context, runtime_store, request, structured_payload)
+        except ResearchRecordError:
+            _cleanup_failed_record_content(request, content_path)
+            raise
         metadata = _record_metadata(request)
         metadata["created_by"] = "isomer-cli ext research records create"
         if content_path is not None:
@@ -263,6 +283,9 @@ def create_record(
                     created_at=now,
                     updated_at=now,
                 )
+        except ResearchRecordError:
+            _cleanup_failed_record_content(request, content_path)
+            raise
         except Exception as exc:
             removed = _cleanup_failed_record_content(request, content_path)
             raise ResearchRecordError(
@@ -488,6 +511,7 @@ def update_record(
             diagnostics.extend(body_diagnostics)
         if has_errors(diagnostics):
             return _diagnostic_payload("update", diagnostics), diagnostics
+        request = _request_with_resolved_idea_effects(context, runtime_store, request, structured_payload)
         metadata = dict(existing.transition_metadata)
         metadata.update(_record_metadata(request))
         metadata["updated_by"] = "isomer-cli ext research records update"
@@ -789,7 +813,11 @@ def upsert_research_idea(
     title: str,
     summary: str,
     family: str | None = None,
-    status: str = "candidate",
+    status: str | None = None,
+    exploration_state: str | None = None,
+    decision_state: str | None = None,
+    evidence_state: str | None = None,
+    archive_state: str | None = None,
     visibility: str = "primary",
     aliases: list[str] | None = None,
     display_key: str | None = None,
@@ -803,6 +831,36 @@ def upsert_research_idea(
     try:
         now = utc_timestamp()
         existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        compatibility_diagnostics: list[dict[str, object]] = []
+        if status is not None:
+            compatibility_diagnostics.append(
+                {
+                    "severity": "warning",
+                    "code": "idea_status_deprecated",
+                    "message": "Direct Research Idea status mutation is deprecated; use canonical facet arguments or the transition command.",
+                    "status": status,
+                }
+            )
+        if status is not None and all(value is None for value in (exploration_state, decision_state, evidence_state, archive_state)):
+            legacy_facets = research_idea_facets_from_legacy_status(status)
+            exploration_state, decision_state, evidence_state, archive_state = legacy_facets
+        selected_exploration = exploration_state or (existing.exploration_state if existing is not None else "unknown")
+        selected_decision = decision_state or (existing.decision_state if existing is not None else "unknown")
+        selected_evidence = evidence_state or (existing.evidence_state if existing is not None else "unknown")
+        selected_archive = archive_state or (existing.archive_state if existing is not None else "active")
+        compatibility_status = project_research_idea_compatibility_status(
+            exploration_state=selected_exploration,
+            decision_state=selected_decision,
+            evidence_state=selected_evidence,
+            archive_state=selected_archive,
+            preserved_status=status or (existing.status if existing is not None else None),
+        )
+        if status is not None and status != compatibility_status:
+            raise ResearchRecordError(
+                "Deprecated status conflicts with the canonical Research Idea facets.",
+                code="idea_compatibility_status_conflict",
+                payload={"status": status, "projected_status": compatibility_status},
+            )
         record = _idea_record(
             context,
             idea_id=idea_id,
@@ -810,12 +868,16 @@ def upsert_research_idea(
             title=title,
             summary=summary,
             family=family,
-            status=status,
+            status=compatibility_status,
+            exploration_state=selected_exploration,
+            decision_state=selected_decision,
+            evidence_state=selected_evidence,
+            archive_state=selected_archive,
             visibility=visibility,
             aliases=aliases or (existing.aliases if existing is not None else []),
             source_record_id=source_record_id,
             source_json_path=source_json_path,
-            metadata=metadata or (existing.metadata if existing is not None else {}),
+            metadata={**(metadata or (existing.metadata if existing is not None else {})), "portfolio_state_version": 1},
             created_at=existing.created_at if existing is not None else now,
             updated_at=now,
         )
@@ -824,7 +886,220 @@ def upsert_research_idea(
             raise ResearchRecordError("Research idea failed validation.", code="idea_validation_failed", payload={"diagnostics": validation})
         with runtime_store.connection:
             runtime_store.upsert_research_idea(record, validate=False)
-        return {"ok": True, "mutated": True, "operation": "ideas.upsert", "idea": record.to_json(), "diagnostics": validation}, diagnostics
+        return {"ok": True, "mutated": True, "operation": "ideas.upsert", "idea": record.to_json(), "diagnostics": [*validation, *compatibility_diagnostics]}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def transition_research_idea(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    idea_id: str,
+    facet: str,
+    expected_from: str,
+    next_value: str,
+    actor_ref: str,
+    rationale: str,
+    reason_code: str | None = None,
+    decision_record_id: str | None = None,
+    gate_id: str | None = None,
+    evidence_item_refs: list[str] | None = None,
+    artifact_refs: list[str] | None = None,
+    finding_refs: list[str] | None = None,
+    research_task_id: str | None = None,
+    run_id: str | None = None,
+    provenance_record_refs: list[str] | None = None,
+    operation_id: str | None = None,
+    idempotency_key: str | None = None,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.transition", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        input_payload = {
+            "topic_workspace_id": context.topic_workspace_id,
+            "idea_id": idea_id,
+            "facet": facet,
+            "expected_from": expected_from,
+            "next_value": next_value,
+            "actor_ref": actor_ref,
+            "rationale": rationale,
+            "reason_code": reason_code,
+            "decision_record_id": decision_record_id,
+            "gate_id": gate_id,
+            "evidence_item_refs": sorted(evidence_item_refs or []),
+            "artifact_refs": sorted(artifact_refs or []),
+            "finding_refs": sorted(finding_refs or []),
+            "research_task_id": research_task_id,
+            "run_id": run_id,
+            "provenance_record_refs": sorted(provenance_record_refs or []),
+            "metadata": metadata or {},
+        }
+        input_digest = digest_json(input_payload)
+        selected_operation_id = operation_id or f"idea-transition-{input_digest[:16]}"
+        selected_idempotency_key = idempotency_key or selected_operation_id
+        transition_id = f"idea-state-transition-{digest_json({'operation_id': selected_operation_id, 'idea_id': idea_id, 'facet': facet})[:16]}"
+        transition = ResearchIdeaStateTransition(
+            id=transition_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            idea_id=idea_id,
+            facet=cast(Any, facet),
+            previous_value=expected_from,
+            next_value=next_value,
+            operation_id=selected_operation_id,
+            actor_ref=actor_ref,
+            reason_code=reason_code,
+            rationale=rationale,
+            decision_record_id=decision_record_id,
+            gate_id=gate_id,
+            evidence_item_refs=sorted(set(evidence_item_refs or [])),
+            artifact_refs=sorted(set(artifact_refs or [])),
+            finding_refs=sorted(set(finding_refs or [])),
+            research_task_id=research_task_id,
+            run_id=run_id,
+            provenance_record_refs=sorted(set(provenance_record_refs or [])),
+            metadata=metadata or {},
+            transitioned_at=now,
+            provenance_refs=[_provenance_ref("research-idea-state-transition", transition_id)],
+        )
+        operation = ResearchIdeaOperation(
+            id=f"idea-operation-{_slug(context.topic_workspace_id)}-{_slug(selected_operation_id)}",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            operation_id=selected_operation_id,
+            idempotency_key=selected_idempotency_key,
+            action_kind="ideas.transition",
+            input_digest=input_digest,
+            status="committed",
+            result={"transition_ids": [transition_id], "idea_ids": [idea_id]},
+            actor_ref=actor_ref,
+            metadata={"facet": facet, **(metadata or {})},
+            created_at=now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-operation", selected_operation_id)],
+        )
+        try:
+            result = runtime_store.apply_research_idea_mutation(transitions=[transition], operation=operation)
+        except ValueError as exc:
+            validation = runtime_store.validate_research_idea_state_transition(transition)
+            raise ResearchRecordError(
+                str(exc),
+                code="idea_transition_validation_failed",
+                payload={"diagnostics": validation},
+            ) from exc
+        result_payload = dict(result)
+        operation_record = result_payload.pop("operation", None)
+        return {
+            "ok": True,
+            "mutated": not bool(result.get("replayed")),
+            "operation": "ideas.transition",
+            "operation_record": operation_record,
+            **result_payload,
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def upsert_research_idea_decision_option(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    decision_record_id: str,
+    idea_id: str,
+    outcome: str,
+    actor_ref: str,
+    option_role: str | None = None,
+    ordinal: int | None = None,
+    generation_id: str | None = None,
+    rationale: str | None = None,
+    consequence: str | None = None,
+    supporting_refs: list[str] | None = None,
+    operation_id: str | None = None,
+    idempotency_key: str | None = None,
+    metadata: dict[str, object] | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=False)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.decision-options.upsert", diagnostics), diagnostics
+    try:
+        now = utc_timestamp()
+        input_payload = {
+            "topic_workspace_id": context.topic_workspace_id,
+            "decision_record_id": decision_record_id,
+            "idea_id": idea_id,
+            "outcome": outcome,
+            "actor_ref": actor_ref,
+            "option_role": option_role,
+            "ordinal": ordinal,
+            "generation_id": generation_id,
+            "rationale": rationale,
+            "consequence": consequence,
+            "supporting_refs": sorted(supporting_refs or []),
+            "metadata": metadata or {},
+        }
+        input_digest = digest_json(input_payload)
+        selected_operation_id = operation_id or f"idea-decision-option-{input_digest[:16]}"
+        selected_idempotency_key = idempotency_key or selected_operation_id
+        option_id = f"idea-decision-option-{digest_json({'topic_workspace_id': context.topic_workspace_id, 'decision_record_id': decision_record_id, 'idea_id': idea_id})[:16]}"
+        existing = runtime_store.get_research_idea_decision_option(option_id)
+        option = ResearchIdeaDecisionOption(
+            id=option_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            decision_record_id=decision_record_id,
+            idea_id=idea_id,
+            outcome=cast(Any, outcome),
+            operation_id=selected_operation_id,
+            option_role=option_role,
+            ordinal=ordinal,
+            generation_id=generation_id,
+            rationale=rationale,
+            consequence=consequence,
+            actor_ref=actor_ref,
+            supporting_refs=sorted(set(supporting_refs or [])),
+            metadata=metadata or {},
+            created_at=existing.created_at if existing is not None else now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-decision-option", option_id)],
+        )
+        operation = ResearchIdeaOperation(
+            id=f"idea-operation-{_slug(context.topic_workspace_id)}-{_slug(selected_operation_id)}",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            operation_id=selected_operation_id,
+            idempotency_key=selected_idempotency_key,
+            action_kind="ideas.decision-options.upsert",
+            input_digest=input_digest,
+            status="committed",
+            result={"decision_option_ids": [option_id], "idea_ids": [idea_id], "decision_record_ids": [decision_record_id]},
+            actor_ref=actor_ref,
+            metadata=metadata or {},
+            created_at=now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-operation", selected_operation_id)],
+        )
+        try:
+            result = runtime_store.apply_research_idea_mutation(transitions=[], decision_options=[option], operation=operation)
+        except ValueError as exc:
+            validation = runtime_store.validate_research_idea_decision_option(option)
+            raise ResearchRecordError(
+                str(exc),
+                code="idea_decision_option_validation_failed",
+                payload={"diagnostics": validation},
+            ) from exc
+        result_payload = dict(result)
+        operation_record = result_payload.pop("operation", None)
+        return {
+            "ok": True,
+            "mutated": not bool(result.get("replayed")),
+            "operation": "ideas.decision-options.upsert",
+            "operation_record": operation_record,
+            **result_payload,
+        }, diagnostics
     finally:
         runtime_store.close()
 
@@ -959,21 +1234,198 @@ def query_research_ideas(
     env: Mapping[str, str],
     visibility: str | None = None,
     include_archived: bool = False,
+    exploration_states: list[str] | None = None,
+    decision_states: list[str] | None = None,
+    evidence_states: list[str] | None = None,
+    archive_states: list[str] | None = None,
+    visibilities: list[str] | None = None,
+    generation_id: str | None = None,
+    decision_record_id: str | None = None,
 ) -> tuple[dict[str, Any], list[Diagnostic]]:
     runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     if runtime_store is None:
         return _runtime_missing_payload("ideas.query", diagnostics), diagnostics
     try:
-        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, visibility=visibility, include_archived=include_archived)
+        selected_visibilities = set(visibilities or ([] if visibility is None else [visibility]))
+        include_archive_rows = include_archived or bool(archive_states and "archived" in archive_states)
+        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=include_archive_rows)
+        edges = runtime_store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id, include_archived=include_archived)
+        options = runtime_store.list_research_idea_decision_options(topic_workspace_id=context.topic_workspace_id)
+        eligible_generation_ids: set[str] | None = None
+        if generation_id is not None:
+            eligible_generation_ids = {
+                edge.child_idea_id
+                for edge in edges
+                if edge.generation_id == generation_id
+            }
+            eligible_generation_ids.update(option.idea_id for option in options if option.generation_id == generation_id)
+        eligible_decision_ids: set[str] | None = None
+        if decision_record_id is not None:
+            eligible_decision_ids = {option.idea_id for option in options if option.decision_record_id == decision_record_id}
+        ideas = [
+            idea
+            for idea in ideas
+            if (not exploration_states or idea.exploration_state in exploration_states)
+            and (not decision_states or idea.decision_state in decision_states)
+            and (not evidence_states or idea.evidence_state in evidence_states)
+            and (not archive_states or idea.archive_state in archive_states)
+            and (not selected_visibilities or idea.visibility in selected_visibilities)
+            and (eligible_generation_ids is None or idea.idea_id in eligible_generation_ids)
+            and (eligible_decision_ids is None or idea.idea_id in eligible_decision_ids)
+        ]
+        allowed_ids = {idea.idea_id for idea in ideas}
         return {
             "ok": True,
             "mutated": False,
             "operation": "ideas.query",
             "ideas": [idea.to_json() for idea in ideas],
-            "realizations": [item.to_json() for item in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id)],
-            "edges": [edge.to_json() for edge in runtime_store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id, include_archived=include_archived)],
+            "realizations": [item.to_json() for item in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id) if item.idea_id in allowed_ids],
+            "edges": [edge.to_json() for edge in edges if edge.parent_idea_id in allowed_ids and edge.child_idea_id in allowed_ids],
             "generation_groups": [group.to_json() for group in runtime_store.list_research_idea_generation_groups(topic_workspace_id=context.topic_workspace_id)],
+            "state_transitions": [item.to_json() for item in runtime_store.list_research_idea_state_transitions(topic_workspace_id=context.topic_workspace_id) if item.idea_id in allowed_ids],
+            "decision_options": [item.to_json() for item in options if item.idea_id in allowed_ids],
+            "applied_filters": {
+                "exploration_states": sorted(exploration_states or []),
+                "decision_states": sorted(decision_states or []),
+                "evidence_states": sorted(evidence_states or []),
+                "archive_states": sorted(archive_states or []),
+                "visibilities": sorted(selected_visibilities),
+                "generation_id": generation_id,
+                "decision_record_id": decision_record_id,
+            },
             "diagnostics": [],
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def query_research_idea_decision_context(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    idea_id: str | None = None,
+    decision_record_id: str | None = None,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.decision-context", diagnostics), diagnostics
+    try:
+        options = runtime_store.list_research_idea_decision_options(topic_workspace_id=context.topic_workspace_id)
+        all_transitions = runtime_store.list_research_idea_state_transitions(topic_workspace_id=context.topic_workspace_id)
+        selected_decision_ids: set[str]
+        if decision_record_id is not None:
+            selected_decision_ids = {decision_record_id}
+        elif idea_id is not None:
+            selected_decision_ids = {
+                *(option.decision_record_id for option in options if option.idea_id == idea_id),
+                *(transition.decision_record_id for transition in all_transitions if transition.idea_id == idea_id and transition.decision_record_id is not None),
+            }
+        else:
+            selected_decision_ids = {option.decision_record_id for option in options}
+        selected_options = [option for option in options if option.decision_record_id in selected_decision_ids]
+        selected_idea_ids = {option.idea_id for option in selected_options}
+        if idea_id is not None:
+            selected_idea_ids.add(idea_id)
+        idea_records = [
+            idea
+            for idea in runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True)
+            if idea.idea_id in selected_idea_ids
+        ]
+        idea_by_id = {idea.idea_id: idea for idea in idea_records}
+        ideas = [idea.to_json() for idea in idea_records]
+        transitions = [
+            transition.to_json()
+            for transition in all_transitions
+            if transition.decision_record_id in selected_decision_ids
+            or (idea_id is not None and transition.idea_id == idea_id and transition.facet == "decision_state")
+        ]
+        reopen_history = [
+            transition.to_json()
+            for transition in all_transitions
+            if transition.idea_id in selected_idea_ids
+            and transition.facet == "decision_state"
+            and transition.previous_value in {"deferred", "closed"}
+            and transition.next_value in {"open", "shortlisted", "selected"}
+        ]
+        context_diagnostics: list[dict[str, object]] = []
+        decisions: list[dict[str, object]] = []
+        for selected_id in sorted(selected_decision_ids):
+            decision = runtime_store.get_lifecycle_record(selected_id)
+            if decision is None:
+                context_diagnostics.append({"severity": "error", "code": "idea_decision_record_missing", "message": f"Research Idea decision context references a missing Decision Record: {selected_id}", "decision_record_id": selected_id})
+                continue
+            decision_options = [option for option in selected_options if option.decision_record_id == selected_id]
+            decision_transitions = [transition for transition in all_transitions if transition.decision_record_id == selected_id]
+            option_set_complete = bool(decision_options) and all(option.metadata.get("option_set_complete") is True for option in decision_options)
+            rationale = _optional_metadata_string(decision.transition_metadata.get("rationale"))
+            if rationale is None:
+                rationale = next((option.rationale for option in decision_options if option.rationale), None)
+            if rationale is None:
+                rationale = next((transition.rationale for transition in decision_transitions if transition.rationale), None)
+            missing_fields: list[str] = []
+            if not decision_options:
+                missing_fields.append("options")
+            elif not option_set_complete:
+                missing_fields.append("complete_option_set")
+            if rationale is None:
+                missing_fields.append("rationale")
+            if missing_fields:
+                context_diagnostics.append(
+                    {
+                        "severity": "warning",
+                        "code": "idea_decision_context_incomplete",
+                        "message": f"Decision Record has incomplete Research Idea context: {selected_id}",
+                        "decision_record_id": selected_id,
+                        "missing_fields": missing_fields,
+                    }
+                )
+            enriched_options: list[dict[str, object]] = []
+            for option in decision_options:
+                idea = idea_by_id.get(option.idea_id)
+                option_transition = next(
+                    (
+                        transition
+                        for transition in reversed(decision_transitions)
+                        if transition.idea_id == option.idea_id and transition.facet == "decision_state"
+                    ),
+                    None,
+                )
+                enriched_options.append(
+                    {
+                        **option.to_json(),
+                        "idea": idea.to_json() if idea is not None else None,
+                        "reason_code": option_transition.reason_code if option_transition is not None else None,
+                        "transition_ref": option_transition.id if option_transition is not None else None,
+                        "transition_rationale": option_transition.rationale if option_transition is not None else None,
+                    }
+                )
+            decisions.append(
+                {
+                    **decision.to_json(),
+                    "decision_record_id": selected_id,
+                    "options": enriched_options,
+                    "selected_idea_ids": [option.idea_id for option in decision_options if option.outcome == "selected"],
+                    "option_set_complete": option_set_complete,
+                    "rationale": rationale,
+                    "consequences": [option.consequence for option in decision_options if option.consequence],
+                    "actor_refs": sorted({str(value) for value in [*(option.actor_ref for option in decision_options), *(transition.actor_ref for transition in decision_transitions)] if value}),
+                    "decided_at": max([decision.updated_at, *(option.updated_at for option in decision_options), *(transition.transitioned_at for transition in decision_transitions)]),
+                    "supporting_refs": sorted({ref for option in decision_options for ref in option.supporting_refs}),
+                    "transition_refs": [transition.id for transition in decision_transitions],
+                    "missing_fields": missing_fields,
+                }
+            )
+        return {
+            "ok": not any(item.get("severity") == "error" for item in context_diagnostics),
+            "mutated": False,
+            "operation": "ideas.decision-context",
+            "idea_id": idea_id,
+            "decision_record_id": decision_record_id,
+            "decisions": decisions,
+            "ideas": ideas,
+            "transitions": transitions,
+            "reopen_history": reopen_history,
+            "diagnostics": context_diagnostics,
         }, diagnostics
     finally:
         runtime_store.close()
@@ -1012,6 +1464,132 @@ def graph_research_ideas(
         runtime_store.close()
 
 
+def traverse_research_ideas(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    root_idea_ids: list[str],
+    direction: str,
+    relation_kinds: list[str] | None = None,
+    max_depth: int = 8,
+    max_nodes: int = 500,
+    max_edges: int = 1000,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.traverse", diagnostics), diagnostics
+    try:
+        traversal_diagnostics: list[dict[str, object]] = []
+        if direction not in {"ancestors", "descendants"}:
+            return {
+                "ok": False,
+                "mutated": False,
+                "operation": "ideas.traverse",
+                "error": {"code": "idea_traversal_direction_unsupported", "message": f"Unsupported traversal direction: {direction}"},
+                "diagnostics": [],
+            }, diagnostics
+        invalid_kinds = sorted(set(relation_kinds or []) - set(RESEARCH_IDEA_LINEAGE_KINDS))
+        if invalid_kinds:
+            return {
+                "ok": False,
+                "mutated": False,
+                "operation": "ideas.traverse",
+                "error": {"code": "idea_traversal_relation_unsupported", "message": f"Unsupported Research Idea lineage kind(s): {', '.join(invalid_kinds)}"},
+                "diagnostics": [],
+            }, diagnostics
+        if max_depth < 0 or max_nodes < 1 or max_edges < 0:
+            return {
+                "ok": False,
+                "mutated": False,
+                "operation": "ideas.traverse",
+                "error": {"code": "idea_traversal_bound_invalid", "message": "Traversal bounds require max-depth >= 0, max-nodes >= 1, and max-edges >= 0."},
+                "diagnostics": [],
+            }, diagnostics
+        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True)
+        idea_by_id = {idea.idea_id: idea for idea in ideas}
+        roots = list(dict.fromkeys(root_idea_ids))
+        valid_roots = [root for root in roots if root in idea_by_id]
+        unresolved_roots = [root for root in roots if root not in idea_by_id]
+        for root in unresolved_roots:
+            traversal_diagnostics.append({"severity": "warning", "code": "idea_traversal_root_unresolved", "message": f"Research Idea traversal root is unresolved: {root}", "idea_id": root})
+        eligible_kinds = set(relation_kinds or RESEARCH_IDEA_LINEAGE_KINDS)
+        all_edges = [
+            edge
+            for edge in runtime_store.list_research_idea_lineage_edges(topic_workspace_id=context.topic_workspace_id)
+            if edge.lineage_kind in eligible_kinds
+        ]
+        adjacency: dict[str, list[str]] = {}
+        for edge in all_edges:
+            source, target = (
+                (edge.parent_idea_id, edge.child_idea_id)
+                if direction == "descendants"
+                else (edge.child_idea_id, edge.parent_idea_id)
+            )
+            adjacency.setdefault(source, []).append(target)
+        for neighbors in adjacency.values():
+            neighbors.sort()
+
+        selected_ids: set[str] = set(valid_roots[:max_nodes])
+        depths: dict[str, int] = {root: 0 for root in valid_roots[:max_nodes]}
+        queue = list(valid_roots[:max_nodes])
+        cursor = 0
+        limiting_bounds: set[str] = set()
+        if len(valid_roots) > max_nodes:
+            limiting_bounds.add("max_nodes")
+        while cursor < len(queue):
+            current = queue[cursor]
+            cursor += 1
+            current_depth = depths[current]
+            neighbors = adjacency.get(current, [])
+            if current_depth >= max_depth:
+                if any(neighbor not in selected_ids for neighbor in neighbors):
+                    limiting_bounds.add("max_depth")
+                continue
+            for neighbor in neighbors:
+                if neighbor in selected_ids:
+                    continue
+                if len(selected_ids) >= max_nodes:
+                    limiting_bounds.add("max_nodes")
+                    continue
+                selected_ids.add(neighbor)
+                depths[neighbor] = current_depth + 1
+                queue.append(neighbor)
+
+        induced_edges = [edge for edge in all_edges if edge.parent_idea_id in selected_ids and edge.child_idea_id in selected_ids]
+        induced_edges.sort(key=lambda edge: (edge.parent_idea_id, edge.child_idea_id, edge.lineage_kind, edge.id))
+        if len(induced_edges) > max_edges:
+            limiting_bounds.add("max_edges")
+            induced_edges = induced_edges[:max_edges]
+        complete = not limiting_bounds
+        returned_ideas = [idea_by_id[idea_id] for idea_id in sorted(selected_ids)]
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "ideas.traverse",
+            "roots": roots,
+            "resolved_roots": valid_roots,
+            "unresolved_roots": unresolved_roots,
+            "direction": direction,
+            "relation_kinds": sorted(eligible_kinds),
+            "nodes": [idea.to_json() for idea in returned_ideas],
+            "edges": [edge.to_json() for edge in induced_edges],
+            "topology_complete": complete,
+            "limiting_bounds": sorted(limiting_bounds),
+            "maximum_observed_depth": max(depths.values(), default=0),
+            "counts": {
+                "nodes": len(returned_ideas),
+                "edges": len(induced_edges),
+                "source_nodes": len(ideas),
+                "source_edges": len(all_edges),
+            },
+            "bounds": {"max_depth": max_depth, "max_nodes": max_nodes, "max_edges": max_edges},
+            "continuation": None if complete else {"action": "increase_bounds_or_refine_relation_kinds", "limiting_bounds": sorted(limiting_bounds)},
+            "diagnostics": traversal_diagnostics,
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
 def validate_research_ideas(context: EffectiveTopicContext, *, env: Mapping[str, str]) -> tuple[dict[str, Any], list[Diagnostic]]:
     runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
     if runtime_store is None:
@@ -1020,6 +1598,35 @@ def validate_research_ideas(context: EffectiveTopicContext, *, env: Mapping[str,
         idea_diagnostics = runtime_store.validate_research_idea_lineage(topic_workspace_id=context.topic_workspace_id)
         for realization in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id):
             idea_diagnostics.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=True))
+        ideas = runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True)
+        transitions = runtime_store.list_research_idea_state_transitions(topic_workspace_id=context.topic_workspace_id)
+        options = runtime_store.list_research_idea_decision_options(topic_workspace_id=context.topic_workspace_id)
+        option_keys = {(option.decision_record_id, option.idea_id) for option in options}
+        transitions_by_facet: dict[tuple[str, str], list[ResearchIdeaStateTransition]] = {}
+        for transition in transitions:
+            transitions_by_facet.setdefault((transition.idea_id, transition.facet), []).append(transition)
+            if transition.decision_record_id is not None and transition.facet == "decision_state" and (transition.decision_record_id, transition.idea_id) not in option_keys:
+                idea_diagnostics.append({"severity": "error", "code": "idea_decision_option_missing", "message": f"Decision-linked Research Idea transition has no option membership: {transition.idea_id} in {transition.decision_record_id}", "idea_id": transition.idea_id, "decision_record_id": transition.decision_record_id, "transition_id": transition.id})
+        idea_by_id = {idea.idea_id: idea for idea in ideas}
+        for (idea_id, facet), history in transitions_by_facet.items():
+            history.sort(key=lambda item: (item.transitioned_at, item.id))
+            for previous, current in zip(history, history[1:]):
+                if previous.next_value != current.previous_value:
+                    idea_diagnostics.append({"severity": "error", "code": "idea_transition_history_gap", "message": f"Research Idea transition history is discontinuous for {idea_id} {facet}.", "idea_id": idea_id, "facet": facet, "previous_transition_id": previous.id, "transition_id": current.id})
+            idea = idea_by_id.get(idea_id)
+            if idea is not None and str(getattr(idea, facet)) != history[-1].next_value:
+                idea_diagnostics.append({"severity": "error", "code": "idea_transition_current_state_stale", "message": f"Research Idea current {facet} does not match its latest transition.", "idea_id": idea_id, "facet": facet, "latest_transition_id": history[-1].id, "current_value": str(getattr(idea, facet)), "transition_value": history[-1].next_value})
+        realizations_by_idea: dict[str, list[ResearchIdeaRealization]] = {}
+        for realization in runtime_store.list_research_idea_realizations(topic_workspace_id=context.topic_workspace_id):
+            realizations_by_idea.setdefault(realization.idea_id, []).append(realization)
+        for idea_id, realizations in realizations_by_idea.items():
+            latest_count = sum(1 for realization in realizations if realization.latest)
+            if latest_count != 1:
+                idea_diagnostics.append({"severity": "error" if latest_count > 1 else "warning", "code": "idea_realization_latest_inconsistent", "message": f"Research Idea {idea_id} has {latest_count} latest realizations.", "idea_id": idea_id, "latest_count": latest_count})
+        for idea in ideas:
+            unknown_facets = [field_name for field_name in ("exploration_state", "decision_state", "evidence_state") if getattr(idea, field_name) == "unknown"]
+            if unknown_facets:
+                idea_diagnostics.append({"severity": "warning", "code": "idea_needs_classification", "message": f"Research Idea needs classification for: {', '.join(unknown_facets)}.", "idea_id": idea.idea_id, "facets": unknown_facets})
         return {
             "ok": not _has_lineage_errors(idea_diagnostics),
             "mutated": False,
@@ -1097,6 +1704,473 @@ def import_research_ideas_from_record(
                     runtime_store.upsert_research_idea_realization(realization, validate=False)
                     applied.append(idea.to_json())
         return {"ok": True, "mutated": apply, "operation": "ideas.import-from-record", "record_id": record_id, "plan": plan, "applied": applied, "diagnostics": [*payload_diagnostics, *fragment_diagnostics]}, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def migrate_legacy_kaoju_direction_set(
+    context: EffectiveTopicContext,
+    record_id: str,
+    *,
+    env: Mapping[str, str],
+    apply: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    """Preview or apply a conservative canonical projection for one legacy Kaoju Direction Set."""
+
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=not apply)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.migrate-kaoju-direction-set", diagnostics), diagnostics
+    try:
+        structured = runtime_store.get_structured_payload(record_id)
+        if structured is None:
+            return {"ok": False, "mutated": False, "operation": "ideas.migrate-kaoju-direction-set", "error": {"code": "legacy_direction_set_payload_missing", "message": f"Direction Set has no structured payload: {record_id}"}, "diagnostics": []}, diagnostics
+        profile_ref = structured.format_profile_ref or ""
+        if "direction-set/v1" not in profile_ref:
+            return {"ok": False, "mutated": False, "operation": "ideas.migrate-kaoju-direction-set", "error": {"code": "legacy_direction_set_profile_required", "message": f"Direction Set migration requires the legacy v1 profile, observed: {profile_ref or 'none'}"}, "diagnostics": []}, diagnostics
+        lifecycle = runtime_store.get_lifecycle_record(record_id)
+        if lifecycle is None or lifecycle.record_kind != "decision_record":
+            return {"ok": False, "mutated": False, "operation": "ideas.migrate-kaoju-direction-set", "error": {"code": "legacy_direction_set_record_invalid", "message": f"Legacy Direction Set must resolve to a Decision Record: {record_id}"}, "diagnostics": []}, diagnostics
+        payload, payload_diagnostics = load_structured_payload(context, structured)
+        if not isinstance(payload, Mapping):
+            return {"ok": False, "mutated": False, "operation": "ideas.migrate-kaoju-direction-set", "error": {"code": "legacy_direction_set_payload_invalid", "message": f"Legacy Direction Set payload is not an object: {record_id}"}, "diagnostics": payload_diagnostics}, diagnostics
+        plan, plan_diagnostics, plan_metadata = _legacy_kaoju_direction_migration_plan(context, runtime_store, record_id, payload)
+        operation_id = f"legacy-kaoju-direction-set-migration-v1-{digest_json({'topic_workspace_id': context.topic_workspace_id, 'record_id': record_id})[:16]}"
+        provenance_record_id = f"provenance:{operation_id}"
+        error_diagnostics = [item for item in plan_diagnostics if item.get("severity") == "error"]
+        preview = {
+            "ok": not error_diagnostics,
+            "mutated": False,
+            "operation": "ideas.migrate-kaoju-direction-set",
+            "apply": False,
+            "record_id": record_id,
+            "operation_id": operation_id,
+            "plan": plan,
+            "plan_metadata": plan_metadata,
+            "affected_count": len(plan),
+            "diagnostics": [*payload_diagnostics, *plan_diagnostics],
+        }
+        if not apply:
+            return preview, diagnostics
+        existing_operation = runtime_store.get_research_idea_operation(operation_id, topic_workspace_id=context.topic_workspace_id)
+        if existing_operation is not None:
+            return {
+                **preview,
+                "ok": True,
+                "apply": True,
+                "replayed": True,
+                "diagnostics": [*payload_diagnostics, *(item for item in plan_diagnostics if item.get("code") != "legacy_direction_idea_collision")],
+                "operation_record": existing_operation.to_json(),
+                "applied": [],
+            }, diagnostics
+        if error_diagnostics:
+            return {**preview, "apply": True, "error": {"code": "legacy_direction_set_migration_plan_invalid", "message": "Legacy Direction Set migration plan contains blocking diagnostics."}}, diagnostics
+
+        now = utc_timestamp()
+        actor_ref = str(plan_metadata["actor_ref"])
+        generation_id = str(plan_metadata["generation_id"])
+        selected_ids = set(cast(list[str], plan_metadata["selected_idea_ids"]))
+        provenance = RuntimeLifecycleRecord(
+            id=provenance_record_id,
+            record_kind="provenance_record",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            status="complete",
+            created_at=now,
+            updated_at=now,
+            lifecycle_refs={"operation_id": operation_id, "source_record_id": record_id},
+            transition_metadata={"migration": "legacy-kaoju-direction-set-v1", "source_profile_ref": profile_ref},
+            provenance_refs=[_provenance_ref("legacy-kaoju-direction-set-migration", operation_id)],
+        )
+        generation = ResearchIdeaGenerationGroup(
+            id=generation_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            purpose="Canonical Research Ideas recovered from one actor-confirmed legacy Kaoju Direction Set proposal slate.",
+            parent_set_digest=_idea_parent_set_digest([]),
+            producer_skill=lifecycle.lifecycle_refs.get("producer_skill") or "isomer-kaoju-frame",
+            decision_record_id=record_id if bool(plan_metadata["confirmation_accepted"]) else None,
+            metadata={"parent_idea_ids": [], "member_idea_ids": [str(item["idea_id"]) for item in plan], "source_record_id": record_id, "migration_operation_id": operation_id},
+            created_at=now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-generation-group", generation_id), provenance_record_id],
+        )
+        ideas: list[ResearchIdea] = []
+        realizations: list[ResearchIdeaRealization] = []
+        transitions: list[ResearchIdeaStateTransition] = []
+        options: list[ResearchIdeaDecisionOption] = []
+        first_display_key = runtime_store.next_research_idea_display_key(context.topic_workspace_id)
+        first_display_match = re.fullmatch(r"I-(?P<number>[1-9][0-9]*)", first_display_key)
+        first_display_number = int(first_display_match.group("number")) if first_display_match else 1
+        for index, item in enumerate(plan):
+            idea_id = str(item["idea_id"])
+            decision_state = "selected" if idea_id in selected_ids else "unknown"
+            idea = _idea_record(
+                context,
+                idea_id=idea_id,
+                display_key=f"I-{first_display_number + index}",
+                title=str(item["title"]),
+                summary=str(item["summary"]),
+                family="kaoju-survey-direction",
+                status="selected" if decision_state == "selected" else "candidate",
+                exploration_state="unknown",
+                decision_state=decision_state,
+                evidence_state="unknown",
+                archive_state="active",
+                visibility="primary",
+                aliases=[str(item["direction_id"])],
+                source_record_id=record_id,
+                source_json_path=str(item["source_json_path"]),
+                metadata={"migration_operation_id": operation_id, "source_profile_ref": profile_ref, "legacy_direction_id": item["direction_id"], "ambiguous_fields": item["ambiguous_fields"]},
+                created_at=now,
+                updated_at=now,
+            )
+            ideas.append(idea)
+            realizations.append(
+                _idea_realization_record(
+                    context,
+                    idea_id=idea_id,
+                    record_id=record_id,
+                    source_json_path=str(item["source_json_path"]),
+                    realization_stage="survey-framing",
+                    semantic_id="KAOJU:DIRECTION-SET",
+                    latest=True,
+                    metadata={"migration_operation_id": operation_id, "legacy_direction_id": item["direction_id"]},
+                    created_at=now,
+                    updated_at=now,
+                )
+            )
+            if bool(plan_metadata["confirmation_accepted"]):
+                option_id = f"idea-decision-option-{digest_json({'topic_workspace_id': context.topic_workspace_id, 'decision_record_id': record_id, 'idea_id': idea_id})[:16]}"
+                options.append(
+                    ResearchIdeaDecisionOption(
+                        id=option_id,
+                        research_topic_id=context.research_topic.id,
+                        topic_workspace_id=context.topic_workspace_id,
+                        decision_record_id=record_id,
+                        idea_id=idea_id,
+                        outcome=cast(ResearchIdeaDecisionOptionOutcome, "selected" if idea_id in selected_ids else "not_selected"),
+                        operation_id=operation_id,
+                        option_role="legacy_direction_proposal",
+                        ordinal=index,
+                        generation_id=generation_id,
+                        rationale=cast(str | None, item.get("rationale")),
+                        actor_ref=actor_ref,
+                        supporting_refs=[record_id],
+                        metadata={"option_set_complete": True, "migration_operation_id": operation_id, "legacy_direction_id": item["direction_id"]},
+                        created_at=now,
+                        updated_at=now,
+                        provenance_refs=[_provenance_ref("research-idea-decision-option", option_id), provenance_record_id],
+                    )
+                )
+            if idea_id in selected_ids:
+                transition_id = f"idea-state-transition-{digest_json({'operation_id': operation_id, 'idea_id': idea_id, 'facet': 'decision_state'})[:16]}"
+                transitions.append(
+                    ResearchIdeaStateTransition(
+                        id=transition_id,
+                        research_topic_id=context.research_topic.id,
+                        topic_workspace_id=context.topic_workspace_id,
+                        idea_id=idea_id,
+                        facet="decision_state",
+                        previous_value="unknown",
+                        next_value="selected",
+                        operation_id=operation_id,
+                        actor_ref=actor_ref,
+                        rationale=cast(str | None, item.get("rationale")) or "Actor-confirmed selection in the legacy Kaoju Direction Set.",
+                        decision_record_id=record_id,
+                        artifact_refs=[],
+                        provenance_record_refs=[provenance_record_id],
+                        metadata={"migration_version": 1, "source_record_id": record_id},
+                        transitioned_at=now,
+                        provenance_refs=[_provenance_ref("research-idea-state-transition", transition_id), provenance_record_id],
+                    )
+                )
+        operation = ResearchIdeaOperation(
+            id=f"idea-operation-{_slug(context.topic_workspace_id)}-{_slug(operation_id)}",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            operation_id=operation_id,
+            idempotency_key=operation_id,
+            action_kind="ideas.migrate-kaoju-direction-set",
+            input_digest=digest_json({"record_id": record_id, "plan": plan, "plan_metadata": plan_metadata}),
+            status="committed",
+            result={"idea_ids": [idea.idea_id for idea in ideas], "realization_ids": [item.id for item in realizations], "transition_ids": [item.id for item in transitions], "decision_option_ids": [item.id for item in options], "generation_ids": [generation_id]},
+            actor_ref=actor_ref,
+            metadata={"migration_version": 1, "source_record_id": record_id, "source_profile_ref": profile_ref},
+            created_at=now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-operation", operation_id), provenance_record_id],
+        )
+        try:
+            with runtime_store.connection:
+                runtime_store.upsert_lifecycle_record(provenance)
+                for idea in ideas:
+                    idea_validation = runtime_store.validate_research_idea(idea)
+                    if _has_lineage_errors(idea_validation):
+                        raise ValueError(f"Migrated Research Idea failed validation: {idea.idea_id}")
+                    runtime_store.upsert_research_idea(idea, validate=False)
+                runtime_store.upsert_research_idea_generation_group(generation)
+                for realization in realizations:
+                    realization_validation = runtime_store.validate_research_idea_realization(realization)
+                    realization_validation.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=True))
+                    if _has_lineage_errors(realization_validation):
+                        raise ValueError(f"Migrated Research Idea realization failed validation: {realization.id}")
+                    runtime_store.upsert_research_idea_realization(realization, validate=False)
+                for option in options:
+                    option_validation = runtime_store.validate_research_idea_decision_option(option)
+                    if _has_lineage_errors(option_validation):
+                        raise ValueError(f"Migrated Research Idea decision option failed validation: {option.id}")
+                    runtime_store.upsert_research_idea_decision_option(option, validate=False)
+                for transition in transitions:
+                    transition_validation = runtime_store.validate_research_idea_state_transition(transition, check_current=False)
+                    if _has_lineage_errors(transition_validation):
+                        raise ValueError(f"Migrated Research Idea transition failed validation: {transition.id}")
+                    runtime_store.upsert_research_idea_state_transition(transition, validate=False)
+                runtime_store.upsert_research_idea_operation(operation)
+        except (ValueError, sqlite3.Error) as exc:
+            raise ResearchRecordError(f"Legacy Kaoju Direction Set migration rolled back: {exc}", code="legacy_direction_set_migration_failed", payload={"plan": plan, "diagnostics": plan_diagnostics}) from exc
+        refresh_query_index_for_record(context, runtime_store, record_id)
+        return {
+            **preview,
+            "ok": True,
+            "mutated": True,
+            "apply": True,
+            "provenance_record_id": provenance_record_id,
+            "operation_record": operation.to_json(),
+            "applied": [idea.to_json() for idea in ideas],
+            "realizations": [item.to_json() for item in realizations],
+            "decision_options": [item.to_json() for item in options],
+            "transitions": [item.to_json() for item in transitions],
+            "generation_group": generation.to_json(),
+        }, diagnostics
+    finally:
+        runtime_store.close()
+
+
+def migrate_research_idea_portfolio(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+    apply: bool = False,
+) -> tuple[dict[str, Any], list[Diagnostic]]:
+    runtime_store, diagnostics = open_workspace_runtime(context, env=env, read_only=not apply)
+    if runtime_store is None:
+        return _runtime_missing_payload("ideas.migrate-status", diagnostics), diagnostics
+    try:
+        schema_columns = {
+            str(row["name"])
+            for row in runtime_store.connection.execute("PRAGMA table_info(research_ideas)")
+        }
+        has_portfolio_columns = {"exploration_state", "decision_state", "evidence_state", "archive_state"}.issubset(schema_columns)
+        operation_id = f"research-idea-portfolio-migration-v1-{_slug(context.topic_workspace_id)}"
+        provenance_record_id = f"provenance:{operation_id}"
+        plan: list[dict[str, object]] = []
+        for idea in runtime_store.list_research_ideas(topic_workspace_id=context.topic_workspace_id, include_archived=True):
+            if idea.metadata.get("portfolio_state_version") == 1:
+                continue
+            legacy_status = idea.status
+            mapped_exploration, mapped_decision, mapped_evidence, mapped_archive = research_idea_facets_from_legacy_status(legacy_status)
+            current_exploration = idea.exploration_state if has_portfolio_columns else "unknown"
+            current_decision = idea.decision_state if has_portfolio_columns else "unknown"
+            current_evidence = idea.evidence_state if has_portfolio_columns else "unknown"
+            current_archive = idea.archive_state if has_portfolio_columns else "active"
+            target_exploration = current_exploration if current_exploration != "unknown" else mapped_exploration
+            target_decision = current_decision if current_decision != "unknown" else mapped_decision
+            target_evidence = current_evidence if current_evidence != "unknown" else mapped_evidence
+            target_archive = "archived" if mapped_archive == "archived" else current_archive
+            closure_reason = None
+            if legacy_status == "rejected":
+                closure_reason = "legacy_rejection"
+            elif legacy_status == "superseded":
+                closure_reason = "legacy_supersession"
+            compatibility_status = project_research_idea_compatibility_status(
+                exploration_state=target_exploration,
+                decision_state=target_decision,
+                evidence_state=target_evidence,
+                archive_state=target_archive,
+                closure_reason=closure_reason,
+                preserved_status=legacy_status,
+            )
+            item_diagnostics: list[dict[str, object]] = []
+            for field_name, value in (
+                ("exploration_state", target_exploration),
+                ("decision_state", target_decision),
+                ("evidence_state", target_evidence),
+            ):
+                if value == "unknown":
+                    item_diagnostics.append({"severity": "warning", "code": "idea_legacy_classification_unknown", "message": f"Legacy status {legacy_status} does not justify {field_name}.", "idea_id": idea.idea_id, "facet": field_name})
+            transitions: list[dict[str, object]] = []
+            for facet, previous, next_value in (
+                ("exploration_state", current_exploration, target_exploration),
+                ("decision_state", current_decision, target_decision),
+                ("evidence_state", current_evidence, target_evidence),
+                ("archive_state", current_archive, target_archive),
+            ):
+                if previous == next_value:
+                    continue
+                transition_id = f"idea-state-transition-{digest_json({'operation_id': operation_id, 'idea_id': idea.idea_id, 'facet': facet})[:16]}"
+                transitions.append(
+                    {
+                        "id": transition_id,
+                        "facet": facet,
+                        "previous_value": previous,
+                        "next_value": next_value,
+                        "reason_code": closure_reason if facet == "decision_state" and next_value == "closed" else "legacy_status_migration",
+                    }
+                )
+            plan.append(
+                {
+                    "idea_id": idea.idea_id,
+                    "original_status": legacy_status,
+                    "facets": {
+                        "exploration_state": target_exploration,
+                        "decision_state": target_decision,
+                        "evidence_state": target_evidence,
+                        "archive_state": target_archive,
+                        "visibility": idea.visibility,
+                    },
+                    "compatibility_status": compatibility_status,
+                    "closure_reason": closure_reason,
+                    "transitions": transitions,
+                    "diagnostics": item_diagnostics,
+                }
+            )
+        plan.sort(key=lambda item: str(item["idea_id"]))
+        if not apply:
+            return {
+                "ok": True,
+                "mutated": False,
+                "operation": "ideas.migrate-status",
+                "apply": False,
+                "operation_id": operation_id,
+                "plan": plan,
+                "affected_count": len(plan),
+                "diagnostics": [diagnostic for item in plan for diagnostic in cast(list[dict[str, object]], item["diagnostics"])],
+            }, diagnostics
+
+        existing_operation = runtime_store.get_research_idea_operation(operation_id, topic_workspace_id=context.topic_workspace_id)
+        if existing_operation is not None and not plan:
+            return {
+                "ok": True,
+                "mutated": False,
+                "replayed": True,
+                "operation": "ideas.migrate-status",
+                "apply": True,
+                "operation_id": operation_id,
+                "operation_record": existing_operation.to_json(),
+                "plan": [],
+                "applied": [],
+                "affected_count": 0,
+                "diagnostics": [],
+            }, diagnostics
+        if existing_operation is not None:
+            raise ResearchRecordError(
+                "Research Idea portfolio migration has an existing operation but still finds unmigrated rows.",
+                code="idea_portfolio_migration_inconsistent",
+                payload={"operation": existing_operation.to_json(), "plan": plan},
+            )
+
+        now = utc_timestamp()
+        provenance = RuntimeLifecycleRecord(
+            id=provenance_record_id,
+            record_kind="provenance_record",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            status="complete",
+            created_at=now,
+            updated_at=now,
+            lifecycle_refs={"operation_id": operation_id},
+            transition_metadata={"migration": "research-idea-portfolio-v1", "affected_idea_ids": ",".join(str(item["idea_id"]) for item in plan)},
+            provenance_refs=[_provenance_ref("research-idea-portfolio-migration", operation_id)],
+        )
+        operation = ResearchIdeaOperation(
+            id=f"idea-operation-{_slug(context.topic_workspace_id)}-{_slug(operation_id)}",
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            operation_id=operation_id,
+            idempotency_key=operation_id,
+            action_kind="ideas.migrate-status",
+            input_digest=digest_json(plan),
+            status="committed",
+            result={"affected_idea_ids": [str(item["idea_id"]) for item in plan]},
+            actor_ref="actor:isomer-migration",
+            metadata={"migration_version": 1},
+            created_at=now,
+            updated_at=now,
+            provenance_refs=[_provenance_ref("research-idea-operation", operation_id)],
+        )
+        applied: list[dict[str, object]] = []
+        try:
+            with runtime_store.connection:
+                runtime_store.upsert_lifecycle_record(provenance)
+                for item in plan:
+                    current_idea = runtime_store.get_research_idea(str(item["idea_id"]), topic_workspace_id=context.topic_workspace_id)
+                    if current_idea is None:
+                        raise ValueError(f"Research Idea disappeared during migration: {item['idea_id']}")
+                    facets = cast(dict[str, object], item["facets"])
+                    updated = replace(
+                        current_idea,
+                        status=str(item["compatibility_status"]),
+                        exploration_state=cast(ResearchIdeaExplorationState, facets["exploration_state"]),
+                        decision_state=cast(ResearchIdeaDecisionState, facets["decision_state"]),
+                        evidence_state=cast(ResearchIdeaEvidenceState, facets["evidence_state"]),
+                        archive_state=cast(ResearchIdeaArchiveState, facets["archive_state"]),
+                        metadata={
+                            **current_idea.metadata,
+                            "portfolio_state_version": 1,
+                            "portfolio_migration": {
+                                "operation_id": operation_id,
+                                "original_status": item["original_status"],
+                                "classified_at": now,
+                            },
+                        },
+                        updated_at=now,
+                    )
+                    idea_validation = runtime_store.validate_research_idea(updated)
+                    if _has_lineage_errors(idea_validation):
+                        raise ValueError(f"Migrated Research Idea failed validation: {current_idea.idea_id}")
+                    runtime_store.upsert_research_idea(updated, validate=False)
+                    for transition_payload in cast(list[dict[str, object]], item["transitions"]):
+                        transition = ResearchIdeaStateTransition(
+                            id=str(transition_payload["id"]),
+                            research_topic_id=context.research_topic.id,
+                            topic_workspace_id=context.topic_workspace_id,
+                            idea_id=current_idea.idea_id,
+                            facet=cast(Any, transition_payload["facet"]),
+                            previous_value=str(transition_payload["previous_value"]),
+                            next_value=str(transition_payload["next_value"]),
+                            operation_id=operation_id,
+                            actor_ref="actor:isomer-migration",
+                            reason_code=str(transition_payload["reason_code"]),
+                            rationale=f"Conservative classification from preserved legacy status {item['original_status']}.",
+                            provenance_record_refs=[provenance_record_id],
+                            metadata={"migration_version": 1, "original_status": item["original_status"]},
+                            transitioned_at=now,
+                            provenance_refs=[_provenance_ref("research-idea-state-transition", str(transition_payload["id"]))],
+                        )
+                        transition_validation = runtime_store.validate_research_idea_state_transition(transition, check_current=False)
+                        if _has_lineage_errors(transition_validation):
+                            raise ValueError(f"Migrated Research Idea transition failed validation: {transition.id}")
+                        runtime_store.upsert_research_idea_state_transition(transition, validate=False)
+                    applied.append(updated.to_json())
+                runtime_store.upsert_research_idea_operation(operation)
+        except (ValueError, sqlite3.Error) as exc:
+            raise ResearchRecordError(
+                f"Research Idea portfolio migration rolled back: {exc}",
+                code="idea_portfolio_migration_failed",
+                payload={"plan": plan, "diagnostics": [diagnostic for item in plan for diagnostic in cast(list[dict[str, object]], item["diagnostics"])]},
+            ) from exc
+        return {
+            "ok": True,
+            "mutated": bool(applied),
+            "operation": "ideas.migrate-status",
+            "apply": True,
+            "operation_id": operation_id,
+            "provenance_record_id": provenance_record_id,
+            "plan": plan,
+            "applied": applied,
+            "affected_count": len(applied),
+            "diagnostics": [diagnostic for item in plan for diagnostic in cast(list[dict[str, object]], item["diagnostics"])],
+        }, diagnostics
     finally:
         runtime_store.close()
 
@@ -1597,6 +2671,78 @@ def _write_body(
     else:
         _atomic_write_text(target, request.body or "")
     return target.resolve(strict=False), diagnostics
+
+
+def _request_with_resolved_idea_effects(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    request: ResearchRecordRequest,
+    preparation: StructuredPayloadPreparation | None,
+) -> ResearchRecordRequest:
+    payload_effects: dict[str, object] | None = None
+    if preparation is not None:
+        raw_effects = preparation.payload.get("research_idea_effects")
+        if raw_effects is not None:
+            if not isinstance(raw_effects, Mapping):
+                raise ResearchRecordError("research_idea_effects must be an object.", code="invalid_research_idea_effects")
+            payload_effects = {str(key): value for key, value in raw_effects.items()}
+    if request.idea_effects is not None and payload_effects is not None and request.idea_effects != payload_effects:
+        raise ResearchRecordError(
+            "CLI and structured-payload Research Idea effects differ.",
+            code="research_idea_effects_conflict",
+        )
+    selected_effects = request.idea_effects or payload_effects
+    required = request.idea_effects_required
+    profile_effects: Mapping[str, object] = {}
+    if request.format_profile_ref is not None:
+        registry = _artifact_format_registry(context, runtime_store)
+        profile, _resolution, _diagnostics = ArtifactFormatResolver(registry).resolve_profile(request.format_profile_ref)
+        if profile is not None:
+            raw_profile_effects = profile.metadata.get("idea_effects")
+            if isinstance(raw_profile_effects, Mapping):
+                profile_effects = raw_profile_effects
+                required = required or bool(raw_profile_effects.get("required"))
+    if required and selected_effects is None:
+        raise ResearchRecordError(
+            "The selected record profile promises canonical Research Idea effects, but research_idea_effects is missing.",
+            code="research_idea_effects_required",
+            payload={"format_profile_ref": request.format_profile_ref},
+        )
+    if selected_effects is None:
+        return replace(request, idea_effects_required=required)
+    if selected_effects.get("atomic") is not True:
+        raise ResearchRecordError("research_idea_effects must declare atomic=true.", code="research_idea_effects_not_atomic")
+    payload_family = _optional_metadata_string(preparation.payload.get("artifact_family")) if preparation is not None else None
+    effects_family = _optional_metadata_string(selected_effects.get("artifact_family"))
+    required_family = _optional_metadata_string(profile_effects.get("artifact_family"))
+    for expected_family in (payload_family, required_family):
+        if effects_family is not None and expected_family is not None and effects_family != expected_family:
+            raise ResearchRecordError(
+                f"Research Idea effects artifact family {effects_family!r} does not match {expected_family!r}.",
+                code="research_idea_effects_family_mismatch",
+            )
+    required_components = _string_list(profile_effects.get("required_components"))
+    for component in required_components:
+        value = selected_effects.get(component)
+        if not isinstance(value, list) or not value:
+            raise ResearchRecordError(
+                f"The selected profile requires a non-empty research_idea_effects.{component} array.",
+                code="research_idea_effects_component_missing",
+                payload={"format_profile_ref": request.format_profile_ref, "component": component},
+            )
+    source_path_prefix = _optional_metadata_string(profile_effects.get("source_path_prefix"))
+    if source_path_prefix is not None:
+        ideas = selected_effects.get("ideas")
+        if not isinstance(ideas, list) or any(
+            not isinstance(item, Mapping)
+            or not str(item.get("source_json_path") or "").startswith(source_path_prefix)
+            for item in ideas
+        ):
+            raise ResearchRecordError(
+                f"The selected profile requires exact idea paths under {source_path_prefix}.",
+                code="research_idea_effects_source_path_profile_mismatch",
+            )
+    return replace(request, idea_effects=selected_effects, idea_effects_required=required)
 
 
 def _prepare_structured_payload(
@@ -2202,6 +3348,33 @@ def _store_request_ideas(
     created_at: str,
     updated_at: str,
 ) -> dict[str, object]:
+    if request.idea_effects is not None:
+        if any(
+            value
+            for value in (
+                request.primary_idea,
+                request.idea_realizations,
+                request.idea_parents,
+                request.realizes_idea_id,
+            )
+        ):
+            raise ResearchRecordError(
+                "research_idea_effects cannot be combined with legacy per-idea write arguments.",
+                code="research_idea_effects_legacy_conflict",
+            )
+        return _store_canonical_idea_effects(
+            context,
+            runtime_store,
+            request,
+            record_id=record_id,
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+    if request.idea_effects_required:
+        raise ResearchRecordError(
+            "The selected profile requires canonical Research Idea effects.",
+            code="research_idea_effects_required",
+        )
     ideas: list[dict[str, object]] = []
     realizations: list[dict[str, object]] = []
     edges: list[dict[str, object]] = []
@@ -2293,6 +3466,536 @@ def _store_request_ideas(
     return {"ideas": ideas, "realizations": realizations, "edges": edges, "diagnostics": diagnostics}
 
 
+def _store_canonical_idea_effects(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    request: ResearchRecordRequest,
+    *,
+    record_id: str,
+    created_at: str,
+    updated_at: str,
+) -> dict[str, object]:
+    effects = request.idea_effects or {}
+    idea_inputs = _idea_effect_object_list(effects, "ideas", required=True)
+    transition_inputs = _idea_effect_object_list(effects, "transitions")
+    generation_inputs = _idea_effect_object_list(effects, "generation_groups")
+    lineage_inputs = _idea_effect_object_list(effects, "lineage_edges")
+    option_inputs = _idea_effect_object_list(effects, "decision_options")
+    structured = runtime_store.get_structured_payload(record_id)
+    if structured is None:
+        raise ResearchRecordError(
+            "Canonical Research Idea effects require a structured source payload.",
+            code="research_idea_effects_payload_missing",
+        )
+    source_payload, source_diagnostics = load_structured_payload(context, structured)
+    if not isinstance(source_payload, Mapping):
+        raise ResearchRecordError(
+            "Canonical Research Idea effects require an object-valued structured source payload.",
+            code="research_idea_effects_payload_invalid",
+            payload={"diagnostics": source_diagnostics},
+        )
+
+    input_digest = digest_json(
+        {
+            "record_id": record_id,
+            "payload_digest": structured.payload_digest,
+            "effects": effects,
+        }
+    )
+    operation_id = _optional_metadata_string(effects.get("operation_id")) or f"idea-effects-{input_digest[:16]}"
+    idempotency_key = _optional_metadata_string(effects.get("idempotency_key")) or f"record-idea-effects:{record_id}:{input_digest[:16]}"
+    existing_operation = runtime_store.get_research_idea_operation_by_idempotency_key(
+        idempotency_key,
+        topic_workspace_id=context.topic_workspace_id,
+    )
+    if existing_operation is not None:
+        if existing_operation.input_digest != input_digest:
+            raise ResearchRecordError(
+                f"Research Idea effect idempotency key has different input: {idempotency_key}",
+                code="research_idea_effects_idempotency_conflict",
+            )
+        return {
+            "replayed": True,
+            "operation": existing_operation.to_json(),
+            **existing_operation.result,
+            "diagnostics": source_diagnostics,
+        }
+    operation_collision = runtime_store.get_research_idea_operation(
+        operation_id,
+        topic_workspace_id=context.topic_workspace_id,
+    )
+    if operation_collision is not None and operation_collision.input_digest != input_digest:
+        raise ResearchRecordError(
+            f"Research Idea effect operation id has different input: {operation_id}",
+            code="research_idea_effects_operation_conflict",
+        )
+
+    actor_ref = _optional_metadata_string(effects.get("actor_ref")) or request.topic_actor_name or request.producer or request.skill
+    transition_first_values: dict[tuple[str, str], str] = {}
+    for index, item in enumerate(transition_inputs):
+        idea_id = _required_idea_effect_string(item, "idea_id", f"transitions[{index}]")
+        facet = _required_idea_effect_string(item, "facet", f"transitions[{index}]")
+        previous_value = _required_idea_effect_string(item, "previous_value", f"transitions[{index}]")
+        transition_first_values.setdefault((idea_id, facet), previous_value)
+
+    diagnostics: list[dict[str, object]] = list(source_diagnostics)
+    ideas: list[ResearchIdea] = []
+    realizations: list[ResearchIdeaRealization] = []
+    desired_state_by_idea: dict[str, dict[str, str]] = {}
+    existing_idea_ids: set[str] = set()
+    seen_idea_ids: set[str] = set()
+    seen_source_paths: set[str] = set()
+    for index, item in enumerate(idea_inputs):
+        location = f"ideas[{index}]"
+        idea_id = _required_idea_effect_string(item, "idea_id", location)
+        if idea_id in seen_idea_ids:
+            raise ResearchRecordError(f"Duplicate canonical idea id in Research Idea effects: {idea_id}", code="research_idea_effects_duplicate_idea")
+        seen_idea_ids.add(idea_id)
+        title = _required_idea_effect_string(item, "title", location)
+        summary = _required_idea_effect_string(item, "summary", location)
+        source_json_path = _required_idea_effect_string(item, "source_json_path", location)
+        if source_json_path in seen_source_paths:
+            raise ResearchRecordError(
+                f"Research Idea effects map more than one idea to {source_json_path}.",
+                code="research_idea_effects_duplicate_source_path",
+            )
+        seen_source_paths.add(source_json_path)
+        source_resolution = resolve_payload_source_fragment(
+            source_payload,
+            source_json_path,
+            format_profile_ref=structured.format_profile_ref,
+            idea_id=idea_id,
+            record_id=record_id,
+            severity="error",
+        )
+        diagnostics.extend(source_resolution.diagnostics)
+        if source_resolution.status != SOURCE_STATUS_EXACT or not isinstance(source_resolution.source_json, Mapping):
+            raise ResearchRecordError(
+                f"Research Idea {idea_id} must resolve to one exact source object.",
+                code="research_idea_effects_source_not_exact",
+                payload={"idea_id": idea_id, "source_json_path": source_json_path, "diagnostics": source_resolution.diagnostics},
+            )
+        aliases = sorted(set(_strict_string_list(item.get("aliases"), field=f"{location}.aliases")))
+        source_labels = _idea_source_labels(source_resolution.source_json)
+        if source_labels and source_labels.isdisjoint({idea_id, *aliases}):
+            raise ResearchRecordError(
+                f"Research Idea {idea_id} does not match its exact source-object identity.",
+                code="research_idea_effects_source_label_mismatch",
+                payload={"idea_id": idea_id, "aliases": aliases, "source_labels": sorted(source_labels)},
+            )
+        desired_state = {
+            "exploration_state": _required_idea_effect_string(item, "exploration_state", location),
+            "decision_state": _required_idea_effect_string(item, "decision_state", location),
+            "evidence_state": _required_idea_effect_string(item, "evidence_state", location),
+            "archive_state": _required_idea_effect_string(item, "archive_state", location),
+            "visibility": _required_idea_effect_string(item, "visibility", location),
+        }
+        desired_state_by_idea[idea_id] = desired_state
+        existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        if existing is not None:
+            existing_idea_ids.add(idea_id)
+        display_key: str | None
+        if existing is None:
+            initial_state = dict(desired_state)
+            for facet in desired_state:
+                first_value = transition_first_values.get((idea_id, facet))
+                if first_value is not None:
+                    initial_state[facet] = first_value
+            display_key = _optional_metadata_string(item.get("display_key")) or runtime_store.next_research_idea_display_key(context.topic_workspace_id)
+            base_metadata: dict[str, object] = {}
+            idea_created_at = created_at
+            provenance_refs = [_provenance_ref("research-idea", idea_id)]
+        else:
+            initial_state = {
+                "exploration_state": existing.exploration_state,
+                "decision_state": existing.decision_state,
+                "evidence_state": existing.evidence_state,
+                "archive_state": existing.archive_state,
+                "visibility": existing.visibility,
+            }
+            display_key = _optional_metadata_string(item.get("display_key")) or existing.display_key
+            base_metadata = dict(existing.metadata)
+            aliases = sorted(set([*existing.aliases, *aliases]))
+            idea_created_at = existing.created_at
+            provenance_refs = list(existing.provenance_refs)
+        closure_reason = _optional_metadata_string(item.get("closure_reason"))
+        status = project_research_idea_compatibility_status(
+            exploration_state=initial_state["exploration_state"],
+            decision_state=initial_state["decision_state"],
+            evidence_state=initial_state["evidence_state"],
+            archive_state=initial_state["archive_state"],
+            closure_reason=closure_reason,
+            preserved_status=existing.status if existing is not None else None,
+        )
+        idea_metadata = {
+            **base_metadata,
+            **dict(item),
+            "portfolio_state_version": 1,
+            "idea_effect_operation_id": operation_id,
+            "source_artifact_family": _optional_metadata_string(effects.get("artifact_family")) or source_payload.get("artifact_family"),
+        }
+        idea = _idea_record(
+            context,
+            idea_id=idea_id,
+            display_key=display_key,
+            title=title,
+            summary=summary,
+            family=_optional_metadata_string(item.get("family")) or _optional_metadata_string(effects.get("artifact_family")) or (existing.family if existing is not None else None),
+            status=status,
+            exploration_state=initial_state["exploration_state"],
+            decision_state=initial_state["decision_state"],
+            evidence_state=initial_state["evidence_state"],
+            archive_state=initial_state["archive_state"],
+            visibility=initial_state["visibility"],
+            aliases=aliases,
+            source_record_id=record_id,
+            source_json_path=source_json_path,
+            metadata=idea_metadata,
+            created_at=idea_created_at,
+            updated_at=updated_at,
+        )
+        idea = replace(idea, provenance_refs=provenance_refs)
+        idea_diagnostics = runtime_store.validate_research_idea(idea)
+        diagnostics.extend(idea_diagnostics)
+        if _has_lineage_errors(idea_diagnostics):
+            raise ResearchRecordError("Research Idea effects failed idea validation.", code="research_idea_effects_idea_invalid", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea(idea, validate=False)
+        ideas.append(idea)
+        realization = _idea_realization_record(
+            context,
+            idea_id=idea_id,
+            record_id=record_id,
+            source_json_path=source_json_path,
+            realization_stage=_optional_metadata_string(item.get("realization_stage")),
+            semantic_id=request.semantic_id,
+            latest=bool(item.get("latest", True)),
+            metadata={"source": "research_idea_effects", "operation_id": operation_id, **dict(item)},
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        realization_diagnostics = runtime_store.validate_research_idea_realization(realization)
+        realization_diagnostics.extend(_validate_realization_source(context, runtime_store, realization, report_missing_payload=True))
+        diagnostics.extend(realization_diagnostics)
+        if _has_lineage_errors(realization_diagnostics):
+            raise ResearchRecordError("Research Idea effects failed realization validation.", code="research_idea_effects_realization_invalid", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea_realization(realization, validate=False)
+        realizations.append(realization)
+
+    generation_groups: list[ResearchIdeaGenerationGroup] = []
+    for index, item in enumerate(generation_inputs):
+        location = f"generation_groups[{index}]"
+        generation_id = _required_idea_effect_string(item, "generation_id", location)
+        member_ids = _strict_string_list(item.get("member_idea_ids"), field=f"{location}.member_idea_ids", required=True)
+        parent_ids = _strict_string_list(item.get("parent_idea_ids"), field=f"{location}.parent_idea_ids")
+        if len(member_ids) != len(set(member_ids)) or len(parent_ids) != len(set(parent_ids)):
+            raise ResearchRecordError(f"{location} contains duplicate idea ids.", code="research_idea_effects_generation_duplicate")
+        for idea_id in [*member_ids, *parent_ids]:
+            if runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id) is None:
+                raise ResearchRecordError(f"{location} references a missing Research Idea: {idea_id}", code="research_idea_effects_generation_idea_missing")
+        existing_group = runtime_store.get_research_idea_generation_group(generation_id)
+        if existing_group is not None and existing_group.topic_workspace_id != context.topic_workspace_id:
+            raise ResearchRecordError(f"Generation group is outside this Topic Workspace: {generation_id}", code="research_idea_effects_generation_cross_topic")
+        decision_record_id = _optional_metadata_string(item.get("decision_record_id")) or request.decision_record_id
+        if decision_record_id is None and request.record_kind == "decision_record":
+            decision_record_id = record_id
+        group = ResearchIdeaGenerationGroup(
+            id=generation_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            purpose=_optional_metadata_string(item.get("purpose")),
+            parent_set_digest=_idea_parent_set_digest(parent_ids),
+            producer_skill=request.skill,
+            decision_record_id=decision_record_id,
+            metadata={**dict(item), "member_idea_ids": member_ids, "parent_idea_ids": parent_ids, "operation_id": operation_id},
+            created_at=existing_group.created_at if existing_group is not None else created_at,
+            updated_at=updated_at,
+            provenance_refs=existing_group.provenance_refs if existing_group is not None else [_provenance_ref("research-idea-generation-group", generation_id)],
+        )
+        runtime_store.upsert_research_idea_generation_group(group)
+        generation_groups.append(group)
+
+    edges: list[ResearchIdeaLineageEdge] = []
+    for index, item in enumerate(lineage_inputs):
+        location = f"lineage_edges[{index}]"
+        edge = _idea_lineage_edge(
+            context,
+            parent_idea_id=_required_idea_effect_string(item, "parent_idea_id", location),
+            child_idea_id=_required_idea_effect_string(item, "child_idea_id", location),
+            lineage_kind=_required_idea_effect_string(item, "lineage_kind", location),
+            parent_role=_optional_metadata_string(item.get("parent_role")),
+            generation_id=_optional_metadata_string(item.get("generation_id")),
+            decision_record_id=_optional_metadata_string(item.get("decision_record_id")) or request.decision_record_id,
+            rationale=_optional_metadata_string(item.get("rationale")),
+            status=_optional_metadata_string(item.get("status")) or "ready",
+            confidence=_optional_float(item.get("confidence")),
+            metadata={**dict(item), "operation_id": operation_id},
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        edge_diagnostics = runtime_store.validate_research_idea_lineage_edge(edge)
+        diagnostics.extend(edge_diagnostics)
+        if _has_lineage_errors(edge_diagnostics):
+            raise ResearchRecordError("Research Idea effects failed lineage validation.", code="research_idea_effects_lineage_invalid", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea_lineage_edge(edge, validate=False)
+        edges.append(edge)
+
+    options: list[ResearchIdeaDecisionOption] = []
+    option_outcomes: dict[str, set[str]] = {}
+    for index, item in enumerate(option_inputs):
+        location = f"decision_options[{index}]"
+        idea_id = _required_idea_effect_string(item, "idea_id", location)
+        outcome = _required_idea_effect_string(item, "outcome", location)
+        decision_record_id = _optional_metadata_string(item.get("decision_record_id")) or request.decision_record_id
+        if decision_record_id is None and request.record_kind == "decision_record":
+            decision_record_id = record_id
+        if decision_record_id is None:
+            raise ResearchRecordError(f"{location} requires a Decision Record id.", code="research_idea_effects_decision_record_missing")
+        option_digest = digest_json({"topic_workspace_id": context.topic_workspace_id, "decision_record_id": decision_record_id, "idea_id": idea_id})[:16]
+        option_id = f"idea-decision-option-{option_digest}"
+        existing_option = runtime_store.get_research_idea_decision_option(option_id)
+        ordinal_value = item.get("ordinal")
+        if ordinal_value is not None and (isinstance(ordinal_value, bool) or not isinstance(ordinal_value, int) or ordinal_value < 0):
+            raise ResearchRecordError(f"{location}.ordinal must be a non-negative integer.", code="research_idea_effects_option_ordinal_invalid")
+        option = ResearchIdeaDecisionOption(
+            id=option_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            decision_record_id=decision_record_id,
+            idea_id=idea_id,
+            outcome=cast(ResearchIdeaDecisionOptionOutcome, outcome),
+            operation_id=operation_id,
+            created_at=existing_option.created_at if existing_option is not None else created_at,
+            updated_at=updated_at,
+            option_role=_optional_metadata_string(item.get("option_role")),
+            ordinal=cast(int | None, ordinal_value),
+            generation_id=_optional_metadata_string(item.get("generation_id")),
+            rationale=_optional_metadata_string(item.get("rationale")),
+            consequence=_optional_metadata_string(item.get("consequence")),
+            actor_ref=_optional_metadata_string(item.get("actor_ref")) or actor_ref,
+            supporting_refs=_strict_string_list(item.get("supporting_refs"), field=f"{location}.supporting_refs"),
+            metadata={**dict(item), "source_record_id": record_id, "option_set_complete": True},
+            provenance_refs=existing_option.provenance_refs if existing_option is not None else [_provenance_ref("research-idea-decision-option", option_id)],
+        )
+        option_diagnostics = runtime_store.validate_research_idea_decision_option(option)
+        diagnostics.extend(option_diagnostics)
+        if _has_lineage_errors(option_diagnostics):
+            raise ResearchRecordError("Research Idea effects failed decision-option validation.", code="research_idea_effects_decision_option_invalid", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea_decision_option(option, validate=False)
+        options.append(option)
+        option_outcomes.setdefault(idea_id, set()).add(outcome)
+
+    transitions: list[ResearchIdeaStateTransition] = []
+    for index, item in enumerate(transition_inputs):
+        location = f"transitions[{index}]"
+        idea_id = _required_idea_effect_string(item, "idea_id", location)
+        if idea_id not in desired_state_by_idea:
+            raise ResearchRecordError(f"{location} must name an idea declared in the same effect set.", code="research_idea_effects_transition_idea_undeclared")
+        facet = _required_idea_effect_string(item, "facet", location)
+        previous_value = _required_idea_effect_string(item, "previous_value", location)
+        next_value = _required_idea_effect_string(item, "next_value", location)
+        if previous_value == next_value:
+            raise ResearchRecordError(f"{location} is a no-op transition.", code="research_idea_effects_transition_noop")
+        current = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        if current is None:
+            raise ResearchRecordError(f"{location} references a missing Research Idea.", code="research_idea_effects_transition_idea_missing")
+        decision_record_id = _optional_metadata_string(item.get("decision_record_id")) or request.decision_record_id
+        if decision_record_id is None and request.record_kind == "decision_record":
+            decision_record_id = record_id
+        transition_digest = digest_json(
+            {
+                "operation_id": operation_id,
+                "ordinal": index,
+                "idea_id": idea_id,
+                "facet": facet,
+                "previous_value": previous_value,
+                "next_value": next_value,
+            }
+        )[:16]
+        transition_id = f"idea-transition-{transition_digest}"
+        transition = ResearchIdeaStateTransition(
+            id=transition_id,
+            research_topic_id=context.research_topic.id,
+            topic_workspace_id=context.topic_workspace_id,
+            idea_id=idea_id,
+            facet=cast(ResearchIdeaFacet, facet),
+            previous_value=previous_value,
+            next_value=next_value,
+            operation_id=operation_id,
+            actor_ref=_optional_metadata_string(item.get("actor_ref")) or actor_ref or "unknown-actor",
+            rationale=_required_idea_effect_string(item, "rationale", location),
+            transitioned_at=_optional_metadata_string(item.get("transitioned_at")) or updated_at,
+            reason_code=_optional_metadata_string(item.get("reason_code")),
+            decision_record_id=decision_record_id,
+            gate_id=_optional_metadata_string(item.get("gate_id")),
+            evidence_item_refs=_strict_string_list(item.get("evidence_item_refs"), field=f"{location}.evidence_item_refs"),
+            artifact_refs=_strict_string_list(item.get("artifact_refs"), field=f"{location}.artifact_refs"),
+            finding_refs=_strict_string_list(item.get("finding_refs"), field=f"{location}.finding_refs"),
+            research_task_id=_optional_metadata_string(item.get("research_task_id")),
+            run_id=_optional_metadata_string(item.get("run_id")),
+            provenance_record_refs=_strict_string_list(item.get("provenance_record_refs"), field=f"{location}.provenance_record_refs"),
+            metadata={**dict(item), "source_record_id": record_id},
+            provenance_refs=[_provenance_ref("research-idea-state-transition", transition_id)],
+        )
+        transition_diagnostics = runtime_store.validate_research_idea_state_transition(transition)
+        diagnostics.extend(transition_diagnostics)
+        if _has_lineage_errors(transition_diagnostics):
+            raise ResearchRecordError("Research Idea effects failed transition validation.", code="research_idea_effects_transition_invalid", payload={"diagnostics": diagnostics})
+        next_state = {
+            "exploration_state": current.exploration_state,
+            "decision_state": current.decision_state,
+            "evidence_state": current.evidence_state,
+            "archive_state": current.archive_state,
+            "visibility": current.visibility,
+        }
+        next_state[facet] = next_value
+        next_idea = replace(
+            current,
+            exploration_state=cast(ResearchIdeaExplorationState, next_state["exploration_state"]),
+            decision_state=cast(ResearchIdeaDecisionState, next_state["decision_state"]),
+            evidence_state=cast(ResearchIdeaEvidenceState, next_state["evidence_state"]),
+            archive_state=cast(ResearchIdeaArchiveState, next_state["archive_state"]),
+            visibility=next_state["visibility"],
+            status=project_research_idea_compatibility_status(
+                exploration_state=next_state["exploration_state"],
+                decision_state=next_state["decision_state"],
+                evidence_state=next_state["evidence_state"],
+                archive_state=next_state["archive_state"],
+                closure_reason=transition.reason_code,
+                preserved_status=current.status,
+            ),
+            updated_at=transition.transitioned_at,
+        )
+        next_diagnostics = runtime_store.validate_research_idea(next_idea)
+        diagnostics.extend(next_diagnostics)
+        if _has_lineage_errors(next_diagnostics):
+            raise ResearchRecordError("Research Idea effects produced invalid current state.", code="research_idea_effects_transition_result_invalid", payload={"diagnostics": diagnostics})
+        runtime_store.upsert_research_idea(next_idea, validate=False)
+        runtime_store.upsert_research_idea_state_transition(transition, validate=False)
+        transitions.append(transition)
+
+    current_ideas: list[ResearchIdea] = []
+    for idea_id, desired_state in desired_state_by_idea.items():
+        current = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        if current is None:
+            raise ResearchRecordError(f"Research Idea effect disappeared during acceptance: {idea_id}", code="research_idea_effects_idea_missing")
+        observed_state = {
+            "exploration_state": current.exploration_state,
+            "decision_state": current.decision_state,
+            "evidence_state": current.evidence_state,
+            "archive_state": current.archive_state,
+            "visibility": current.visibility,
+        }
+        if observed_state != desired_state:
+            raise ResearchRecordError(
+                f"Research Idea effects do not transition {idea_id} to the declared current facets.",
+                code="research_idea_effects_partial_state",
+                payload={"idea_id": idea_id, "declared": desired_state, "observed": observed_state},
+            )
+        current_ideas.append(current)
+
+    required_outcomes = {
+        "selected": "selected",
+        "deferred": "deferred",
+        "closed": "closed",
+        "shortlisted": "shortlisted",
+    }
+    transition_targets = {
+        (transition.idea_id, transition.facet, transition.next_value)
+        for transition in transitions
+    }
+    for idea_id, desired_state in desired_state_by_idea.items():
+        decision_state = desired_state["decision_state"]
+        if idea_id not in existing_idea_ids and decision_state in required_outcomes and (idea_id, "decision_state", decision_state) not in transition_targets:
+            raise ResearchRecordError(
+                f"New Research Idea {idea_id} requires a justified transition to decision state {decision_state}.",
+                code="research_idea_effects_initial_decision_transition_missing",
+            )
+    for transition in transitions:
+        if transition.facet != "decision_state":
+            continue
+        expected_outcome = required_outcomes.get(transition.next_value)
+        if transition.next_value == "open" and transition.previous_value in {"closed", "deferred"}:
+            expected_outcome = "reopened"
+        if expected_outcome is not None and expected_outcome not in option_outcomes.get(transition.idea_id, set()):
+            raise ResearchRecordError(
+                f"Decision transition for {transition.idea_id} lacks a matching Decision Record option outcome: {expected_outcome}",
+                code="research_idea_effects_decision_option_missing",
+            )
+
+    result: dict[str, object] = {
+        "ideas": [item.to_json() for item in current_ideas],
+        "realizations": [item.to_json() for item in realizations],
+        "generation_groups": [item.to_json() for item in generation_groups],
+        "edges": [item.to_json() for item in edges],
+        "decision_options": [item.to_json() for item in options],
+        "transitions": [item.to_json() for item in transitions],
+    }
+    operation = ResearchIdeaOperation(
+        id=f"idea-operation-{_slug(context.topic_workspace_id)}-{_slug(operation_id)}",
+        research_topic_id=context.research_topic.id,
+        topic_workspace_id=context.topic_workspace_id,
+        operation_id=operation_id,
+        idempotency_key=idempotency_key,
+        action_kind="record_acceptance",
+        input_digest=input_digest,
+        status="committed",
+        result=result,
+        created_at=created_at,
+        updated_at=updated_at,
+        actor_ref=actor_ref,
+        metadata={"record_id": record_id, "format_profile_ref": request.format_profile_ref},
+        provenance_refs=[_provenance_ref("research-idea-operation", operation_id)],
+    )
+    runtime_store.upsert_research_idea_operation(operation)
+    return {"replayed": False, "operation": operation.to_json(), **result, "diagnostics": diagnostics}
+
+
+def _idea_effect_object_list(
+    effects: Mapping[str, object],
+    field: str,
+    *,
+    required: bool = False,
+) -> list[dict[str, object]]:
+    raw = effects.get(field)
+    if raw is None:
+        if required:
+            raise ResearchRecordError(f"research_idea_effects.{field} is required.", code="research_idea_effects_component_missing")
+        return []
+    if not isinstance(raw, list) or (required and not raw):
+        raise ResearchRecordError(f"research_idea_effects.{field} must be a non-empty array." if required else f"research_idea_effects.{field} must be an array.", code="research_idea_effects_component_invalid")
+    items: list[dict[str, object]] = []
+    for index, item in enumerate(raw):
+        if not isinstance(item, Mapping):
+            raise ResearchRecordError(f"research_idea_effects.{field}[{index}] must be an object.", code="research_idea_effects_component_invalid")
+        items.append({str(key): value for key, value in item.items()})
+    return items
+
+
+def _required_idea_effect_string(item: Mapping[str, object], field: str, location: str) -> str:
+    value = _optional_metadata_string(item.get(field))
+    if value is None:
+        raise ResearchRecordError(f"research_idea_effects.{location}.{field} is required.", code="research_idea_effects_field_missing")
+    return value
+
+
+def _strict_string_list(value: object, *, field: str, required: bool = False) -> list[str]:
+    if value is None:
+        if required:
+            raise ResearchRecordError(f"research_idea_effects.{field} is required.", code="research_idea_effects_field_missing")
+        return []
+    if not isinstance(value, list):
+        raise ResearchRecordError(f"research_idea_effects.{field} must be an array of strings.", code="research_idea_effects_field_invalid")
+    result: list[str] = []
+    for item in value:
+        selected = _optional_metadata_string(item)
+        if selected is None:
+            raise ResearchRecordError(f"research_idea_effects.{field} must contain non-empty strings.", code="research_idea_effects_field_invalid")
+        result.append(selected)
+    if required and not result:
+        raise ResearchRecordError(f"research_idea_effects.{field} must not be empty.", code="research_idea_effects_field_invalid")
+    return result
+
+
 def _idea_record(
     context: EffectiveTopicContext,
     *,
@@ -2302,6 +4005,10 @@ def _idea_record(
     summary: str,
     family: str | None,
     status: str,
+    exploration_state: str = "unknown",
+    decision_state: str = "unknown",
+    evidence_state: str = "unknown",
+    archive_state: str = "active",
     visibility: str,
     aliases: list[str],
     source_record_id: str | None,
@@ -2321,6 +4028,10 @@ def _idea_record(
         summary=summary,
         family=family,
         status=status,
+        exploration_state=cast(ResearchIdeaExplorationState, exploration_state),
+        decision_state=cast(ResearchIdeaDecisionState, decision_state),
+        evidence_state=cast(ResearchIdeaEvidenceState, evidence_state),
+        archive_state=cast(ResearchIdeaArchiveState, archive_state),
         visibility=visibility,
         aliases=sorted(set(aliases)),
         source_record_id=source_record_id,
@@ -2460,7 +4171,7 @@ def _validate_realization_source(
 
 def _idea_source_labels(source_json: Mapping[str, object]) -> set[str]:
     labels: set[str] = set()
-    for key in ("canonical_idea_id", "idea_id", "id", "label", "candidate_id"):
+    for key in ("canonical_idea_id", "idea_id", "direction_id", "proposal_id", "id", "label", "candidate_id"):
         value = source_json.get(key)
         if isinstance(value, str) and value.strip():
             labels.add(value.strip())
@@ -2510,6 +4221,121 @@ def _idea_import_plan_from_fragments(
             }
         )
     return plan
+
+
+def _legacy_kaoju_direction_migration_plan(
+    context: EffectiveTopicContext,
+    runtime_store: WorkspaceRuntimeStore,
+    record_id: str,
+    payload: Mapping[str, object],
+) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
+    sections = payload.get("sections") if isinstance(payload.get("sections"), Mapping) else {}
+    raw_proposals = sections.get("proposals") if isinstance(sections, Mapping) else None
+    proposals = raw_proposals if isinstance(raw_proposals, list) else []
+    raw_selections = sections.get("selections") if isinstance(sections, Mapping) else None
+    selections = raw_selections if isinstance(raw_selections, list) else []
+    confirmation = sections.get("confirmation") if isinstance(sections, Mapping) and isinstance(sections.get("confirmation"), Mapping) else {}
+    diagnostics: list[dict[str, object]] = []
+    if not proposals:
+        diagnostics.append({"severity": "error", "code": "legacy_direction_proposals_missing", "message": "Legacy Kaoju Direction Set contains no durable proposal objects.", "record_id": record_id})
+    selected_direction_ids: list[str] = []
+    selection_rationales: dict[str, str] = {}
+    for index, selection in enumerate(selections):
+        if isinstance(selection, str) and selection.strip():
+            selected_direction_ids.append(selection.strip())
+            continue
+        if isinstance(selection, Mapping):
+            selection_id = _optional_metadata_string(selection.get("id") or selection.get("direction_id"))
+            if selection_id is not None:
+                selected_direction_ids.append(selection_id)
+                rationale = _optional_metadata_string(selection.get("rationale"))
+                if rationale is not None:
+                    selection_rationales[selection_id] = rationale
+                continue
+        diagnostics.append({"severity": "error", "code": "legacy_direction_selection_invalid", "message": f"Legacy Direction Set selection {index} does not identify one proposal.", "record_id": record_id, "selection_index": index})
+    confirmation_accepted = bool(isinstance(confirmation, Mapping) and confirmation.get("status") == "accepted")
+    confirmation_actor = _optional_metadata_string(confirmation.get("actor_ref")) if isinstance(confirmation, Mapping) else None
+    actor_ref = confirmation_actor or "actor:isomer-migration"
+    if not confirmation_accepted:
+        diagnostics.append({"severity": "warning", "code": "legacy_direction_confirmation_unknown", "message": "Direction Set confirmation is not accepted; migration will leave every decision state unknown and will not create Decision Record option membership.", "record_id": record_id})
+    elif confirmation_actor is None:
+        diagnostics.append({"severity": "warning", "code": "legacy_direction_actor_unknown", "message": "Accepted Direction Set does not identify the confirming actor; migration provenance will use the Isomer migration actor.", "record_id": record_id})
+
+    plan: list[dict[str, object]] = []
+    observed_direction_ids: set[str] = set()
+    observed_idea_ids: set[str] = set()
+    direction_to_idea: dict[str, str] = {}
+    for index, raw_proposal in enumerate(proposals):
+        path = f"$.sections.proposals[{index}]"
+        if not isinstance(raw_proposal, Mapping):
+            diagnostics.append({"severity": "error", "code": "legacy_direction_proposal_invalid", "message": f"Direction proposal {index} is not an object.", "record_id": record_id, "source_json_path": path})
+            continue
+        direction_id = _optional_metadata_string(raw_proposal.get("id") or raw_proposal.get("direction_id"))
+        if direction_id is None:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_id_missing", "message": f"Direction proposal {index} has no stable direction id.", "record_id": record_id, "source_json_path": path})
+            direction_id = f"missing-{index + 1}"
+        elif direction_id in observed_direction_ids:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_id_duplicate", "message": f"Direction id is duplicated: {direction_id}", "record_id": record_id, "direction_id": direction_id})
+        observed_direction_ids.add(direction_id)
+        authored_idea_id = _optional_metadata_string(raw_proposal.get("idea_id"))
+        idea_id = authored_idea_id or f"kaoju-direction-{_slug(direction_id)}"
+        if idea_id in observed_idea_ids:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_idea_id_duplicate", "message": f"Canonical Research Idea id would be duplicated: {idea_id}", "record_id": record_id, "idea_id": idea_id})
+        observed_idea_ids.add(idea_id)
+        direction_to_idea[direction_id] = idea_id
+        title = _optional_metadata_string(raw_proposal.get("title"))
+        summary = _optional_metadata_string(raw_proposal.get("summary")) or _optional_metadata_string(raw_proposal.get("research_question"))
+        if title is None:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_title_missing", "message": f"Direction {direction_id} has no authored title.", "record_id": record_id, "source_json_path": path})
+        if summary is None:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_summary_missing", "message": f"Direction {direction_id} has no authored summary or research question.", "record_id": record_id, "source_json_path": path})
+        existing = runtime_store.get_research_idea(idea_id, topic_workspace_id=context.topic_workspace_id)
+        if existing is not None:
+            diagnostics.append({"severity": "error", "code": "legacy_direction_idea_collision", "message": f"Direction {direction_id} maps to an existing canonical Research Idea: {idea_id}", "record_id": record_id, "idea_id": idea_id, "existing_source_record_id": existing.source_record_id})
+        rationale = _optional_metadata_string(raw_proposal.get("disposition_rationale") or raw_proposal.get("rationale")) or selection_rationales.get(direction_id)
+        ambiguous_fields = ["exploration_state", "evidence_state"]
+        if direction_id not in selected_direction_ids or not confirmation_accepted:
+            ambiguous_fields.append("decision_state")
+        if rationale is None:
+            diagnostics.append({"severity": "warning", "code": "legacy_direction_rationale_unknown", "message": f"Direction {direction_id} has no authored disposition rationale; migration will preserve that omission.", "record_id": record_id, "idea_id": idea_id})
+        for facet in ambiguous_fields:
+            diagnostics.append({"severity": "warning", "code": "legacy_direction_classification_unknown", "message": f"Legacy Direction Set does not justify {facet} for {direction_id}.", "record_id": record_id, "idea_id": idea_id, "facet": facet})
+        plan.append(
+            {
+                "direction_id": direction_id,
+                "idea_id": idea_id,
+                "title": title or direction_id,
+                "summary": summary or "Missing authored proposal summary.",
+                "source_json_path": path,
+                "aliases": [direction_id],
+                "facets": {
+                    "exploration_state": "unknown",
+                    "decision_state": "selected" if confirmation_accepted and direction_id in selected_direction_ids else "unknown",
+                    "evidence_state": "unknown",
+                    "archive_state": "active",
+                    "visibility": "primary",
+                },
+                "decision_outcome": "selected" if direction_id in selected_direction_ids else "not_selected",
+                "rationale": rationale,
+                "ambiguous_fields": ambiguous_fields,
+                "lineage": [],
+            }
+        )
+    unknown_selections = sorted(set(selected_direction_ids) - observed_direction_ids)
+    for direction_id in unknown_selections:
+        diagnostics.append({"severity": "error", "code": "legacy_direction_selection_unknown", "message": f"Accepted selection does not resolve to a proposal: {direction_id}", "record_id": record_id, "direction_id": direction_id})
+    selected_idea_ids = [direction_to_idea[item] for item in selected_direction_ids if item in direction_to_idea] if confirmation_accepted else []
+    generation_id = f"idea-generation-kaoju-legacy-{digest_json({'topic_workspace_id': context.topic_workspace_id, 'record_id': record_id})[:16]}"
+    metadata = {
+        "generation_id": generation_id,
+        "selected_direction_ids": selected_direction_ids if confirmation_accepted else [],
+        "selected_idea_ids": selected_idea_ids,
+        "confirmation_accepted": confirmation_accepted,
+        "actor_ref": actor_ref,
+        "lineage_policy": "none_invented",
+        "option_set_complete": confirmation_accepted and not unknown_selections and bool(plan),
+    }
+    return plan, diagnostics, metadata
 
 
 def _idea_repair_plan(context: EffectiveTopicContext, runtime_store: WorkspaceRuntimeStore) -> list[dict[str, object]]:

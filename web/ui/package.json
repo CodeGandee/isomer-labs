@@ -12,6 +12,7 @@
     "test:idea-detail": "node tests/idea-detail-smoke.mjs",
     "test:idea-hover-preview": "node tests/idea-hover-preview-smoke.mjs",
     "test:idea-graph-controls": "node tests/idea-graph-controls-smoke.mjs",
+    "test:idea-portfolio": "node tests/idea-portfolio-smoke.mjs",
     "test:markdown-preview": "node tests/markdown-preview-style.mjs",
     "test:responsive": "node tests/responsive-layout-smoke.mjs"
   },

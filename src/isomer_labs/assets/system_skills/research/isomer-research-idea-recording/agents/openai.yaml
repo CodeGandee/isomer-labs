@@ -1,0 +1,10 @@
+metadata:
+  version: "0.3.0"
+
+interface:
+  display_name: "Research Idea Recording"
+  short_description: "Record canonical research idea portfolio state"
+  default_prompt: "Use $isomer-research-idea-recording to accept this idea-bearing output with canonical portfolio state and provenance."
+
+policy:
+  allow_implicit_invocation: true

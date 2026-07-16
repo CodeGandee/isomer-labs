@@ -17,7 +17,7 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
-Idea-recording reminder: review findings should not mutate idea state implicitly. If review routes a concept to rejection, follow-up, merge, or supersession, read `isomer-deepsci-shared` and realize the Research Idea with an exact object-valued source path, not the review report, issue list, TODO list, or rendered Markdown.
+Idea-recording reminder: invoke `$isomer-research-idea-recording` when an accepted review changes exploration, evidence, or decision facets or introduces a follow-up, merge, split, or superseding concept. Commit explicit transitions with terminal refs, exact object-valued realizations, complete considered options for review-driven decisions, and justified lineage for distinct concepts. Review reports, issue lists, TODO lists, and rendered Markdown are not Research Ideas by default.
 
 Review audits from evidence rather than author optimism. It builds an audit plan, benchmarks nearby literature and venue expectations, writes a skeptical review report, turns issues into a revision log, creates experiment TODOs only for real evidence gaps, and routes the next step.
 

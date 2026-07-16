@@ -1,0 +1,469 @@
+{
+  "topic_id": "portfolio-fixture",
+  "index_revision": "qidx:portfolio-fixture",
+  "canonical_ideas": [
+    {
+      "idea_id": "kaoju-selected-unexplored",
+      "display_key": "I-1",
+      "title": "Stage-aware pipeline",
+      "summary": "A Kaoju proposal selected before exploration starts.",
+      "exploration_state": "unexplored",
+      "decision_state": "selected",
+      "evidence_state": "unassessed",
+      "archive_state": "active",
+      "visibility": "primary",
+      "status": "selected",
+      "created_at": "2026-07-01T00:00:00Z",
+      "updated_at": "2026-07-01T00:00:00Z"
+    },
+    {
+      "idea_id": "deepsci-explored-deferred",
+      "display_key": "I-2",
+      "title": "Static cost model",
+      "summary": "A DeepSci concept explored and then deferred.",
+      "exploration_state": "explored",
+      "decision_state": "deferred",
+      "evidence_state": "supported",
+      "archive_state": "active",
+      "visibility": "primary",
+      "status": "deferred",
+      "created_at": "2026-07-02T00:00:00Z",
+      "updated_at": "2026-07-07T00:00:00Z"
+    },
+    {
+      "idea_id": "kaoju-refuted-open",
+      "display_key": "I-3",
+      "title": "Instruction-only predictor",
+      "summary": "An open direction whose current evidence is refuted.",
+      "exploration_state": "exploring",
+      "decision_state": "open",
+      "evidence_state": "refuted",
+      "archive_state": "active",
+      "visibility": "primary",
+      "status": "refuted",
+      "created_at": "2026-07-03T00:00:00Z",
+      "updated_at": "2026-07-08T00:00:00Z"
+    },
+    {
+      "idea_id": "deepsci-closed",
+      "display_key": "I-4",
+      "title": "Duplicate proxy",
+      "summary": "An explored concept closed as a duplicate.",
+      "exploration_state": "explored",
+      "decision_state": "closed",
+      "evidence_state": "mixed",
+      "archive_state": "active",
+      "visibility": "primary",
+      "status": "rejected",
+      "created_at": "2026-07-04T00:00:00Z",
+      "updated_at": "2026-07-09T00:00:00Z"
+    },
+    {
+      "idea_id": "legacy-unknown",
+      "display_key": "I-5",
+      "title": "Legacy direction",
+      "summary": "A migrated concept whose canonical facets remain unknown.",
+      "exploration_state": "unknown",
+      "decision_state": "unknown",
+      "evidence_state": "unknown",
+      "archive_state": "active",
+      "visibility": "primary",
+      "status": "candidate",
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    },
+    {
+      "idea_id": "kaoju-supporting-open",
+      "display_key": "I-6",
+      "title": "Supporting survey direction",
+      "summary": "A supporting proposal that remains open.",
+      "exploration_state": "unexplored",
+      "decision_state": "open",
+      "evidence_state": "unassessed",
+      "archive_state": "active",
+      "visibility": "supporting",
+      "status": "raw",
+      "created_at": "2026-07-06T00:00:00Z",
+      "updated_at": "2026-07-06T00:00:00Z"
+    },
+    {
+      "idea_id": "deepsci-archived-selected",
+      "display_key": "I-7",
+      "title": "Archived selected route",
+      "summary": "A selected route retained in the archive.",
+      "exploration_state": "explored",
+      "decision_state": "selected",
+      "evidence_state": "supported",
+      "archive_state": "archived",
+      "visibility": "primary",
+      "status": "archived",
+      "created_at": "2026-06-01T00:00:00Z",
+      "updated_at": "2026-07-10T00:00:00Z"
+    },
+    {
+      "idea_id": "hidden-internal",
+      "display_key": "I-8",
+      "title": "Hidden internal concept",
+      "summary": "A canonical idea excluded from non-hidden presets.",
+      "exploration_state": "unexplored",
+      "decision_state": "open",
+      "evidence_state": "unassessed",
+      "archive_state": "active",
+      "visibility": "hidden",
+      "status": "raw",
+      "created_at": "2026-07-07T00:00:00Z",
+      "updated_at": "2026-07-07T00:00:00Z"
+    }
+  ],
+  "canonical_idea_realizations": [
+    {
+      "id": "realization-kaoju-selected",
+      "idea_id": "kaoju-selected-unexplored",
+      "record_id": "kaoju-direction-set",
+      "source_json_path": "$.research_idea_effects.ideas[0]",
+      "semantic_id": "KAOJU:DIRECTION-SET",
+      "latest": true
+    },
+    {
+      "id": "realization-deepsci-deferred",
+      "idea_id": "deepsci-explored-deferred",
+      "record_id": "deepsci-frontier",
+      "source_json_path": "$.research_idea_effects.ideas[1]",
+      "semantic_id": "DEEPSCI:CANDIDATE-IDEA-FRONTIER",
+      "latest": true
+    }
+  ],
+  "canonical_idea_edges": [
+    {
+      "id": "edge-1",
+      "parent_idea_id": "kaoju-selected-unexplored",
+      "child_idea_id": "deepsci-explored-deferred",
+      "lineage_kind": "derived_from",
+      "status": "ready"
+    },
+    {
+      "id": "edge-2",
+      "parent_idea_id": "deepsci-explored-deferred",
+      "child_idea_id": "deepsci-closed",
+      "lineage_kind": "follow_up_to",
+      "status": "ready"
+    },
+    {
+      "id": "edge-3",
+      "parent_idea_id": "kaoju-selected-unexplored",
+      "child_idea_id": "kaoju-supporting-open",
+      "lineage_kind": "alternative_to",
+      "status": "ready"
+    }
+  ],
+  "canonical_idea_transitions": [
+    {
+      "id": "transition-selected",
+      "idea_id": "kaoju-selected-unexplored",
+      "facet": "decision_state",
+      "previous_value": "open",
+      "next_value": "selected",
+      "operation_id": "operation-direction-set",
+      "actor_ref": "topic-actor:lead",
+      "rationale": "Best fit for the research question.",
+      "decision_record_id": "decision-direction-set",
+      "transitioned_at": "2026-07-01T00:00:00Z"
+    },
+    {
+      "id": "transition-deferred",
+      "idea_id": "deepsci-explored-deferred",
+      "facet": "decision_state",
+      "previous_value": "open",
+      "next_value": "deferred",
+      "operation_id": "operation-direction-set",
+      "actor_ref": "topic-actor:lead",
+      "rationale": "Useful fallback but not the first route.",
+      "decision_record_id": "decision-direction-set",
+      "transitioned_at": "2026-07-01T00:00:00Z"
+    },
+    {
+      "id": "transition-closed",
+      "idea_id": "deepsci-closed",
+      "facet": "decision_state",
+      "previous_value": "open",
+      "next_value": "closed",
+      "operation_id": "operation-close-duplicate",
+      "actor_ref": "topic-actor:lead",
+      "reason_code": "duplication",
+      "rationale": "The concept duplicates the selected route.",
+      "decision_record_id": "decision-close-duplicate",
+      "transitioned_at": "2026-07-09T00:00:00Z"
+    }
+  ],
+  "canonical_idea_decision_options": [
+    {
+      "id": "option-selected",
+      "decision_record_id": "decision-direction-set",
+      "idea_id": "kaoju-selected-unexplored",
+      "outcome": "selected",
+      "operation_id": "operation-direction-set",
+      "ordinal": 0,
+      "rationale": "Best fit for the research question.",
+      "actor_ref": "topic-actor:lead",
+      "metadata": {"option_set_complete": true},
+      "created_at": "2026-07-01T00:00:00Z"
+    },
+    {
+      "id": "option-deferred",
+      "decision_record_id": "decision-direction-set",
+      "idea_id": "deepsci-explored-deferred",
+      "outcome": "deferred",
+      "operation_id": "operation-direction-set",
+      "ordinal": 1,
+      "rationale": "Useful fallback but not the first route.",
+      "actor_ref": "topic-actor:lead",
+      "metadata": {"option_set_complete": true},
+      "created_at": "2026-07-01T00:00:00Z"
+    }
+  ],
+  "expected_presets": {
+    "current": ["kaoju-selected-unexplored", "kaoju-refuted-open", "legacy-unknown"],
+    "all-proposed": ["kaoju-selected-unexplored", "deepsci-explored-deferred", "kaoju-refuted-open", "deepsci-closed", "legacy-unknown", "kaoju-supporting-open", "deepsci-archived-selected"],
+    "open-for-exploration": ["kaoju-selected-unexplored", "kaoju-refuted-open", "kaoju-supporting-open"],
+    "unexplored": ["kaoju-selected-unexplored", "kaoju-supporting-open"],
+    "exploring": ["kaoju-refuted-open"],
+    "explored": ["deepsci-explored-deferred", "deepsci-closed", "deepsci-archived-selected"],
+    "selected": ["kaoju-selected-unexplored", "deepsci-archived-selected"],
+    "deferred": ["deepsci-explored-deferred"],
+    "closed": ["deepsci-closed"],
+    "needs-classification": ["legacy-unknown"]
+  },
+  "expected_decision_context": {
+    "decision_record_id": "decision-direction-set",
+    "option_set_complete": true,
+    "options": [
+      ["kaoju-selected-unexplored", "selected"],
+      ["deepsci-explored-deferred", "deferred"]
+    ]
+  },
+  "expected_traversal": {
+    "root_idea_ids": ["kaoju-selected-unexplored"],
+    "direction": "descendants",
+    "complete_node_ids": ["kaoju-selected-unexplored", "deepsci-explored-deferred", "deepsci-closed", "kaoju-supporting-open"],
+    "complete_edge_ids": ["edge-1", "edge-2", "edge-3"],
+    "incomplete_limiting_bounds": ["max_depth"]
+  },
+  "kaoju_only": {
+    "topic_id": "kaoju-only-fixture",
+    "index_revision": "qidx:kaoju-only-fixture",
+    "canonical_ideas": [
+      {
+        "idea_id": "kaoju-only-selected",
+        "display_key": "I-1",
+        "title": "Stage-aware direction",
+        "summary": "An actor-selected Kaoju survey direction.",
+        "exploration_state": "unexplored",
+        "decision_state": "selected",
+        "evidence_state": "unassessed",
+        "archive_state": "active",
+        "visibility": "primary",
+        "status": "selected",
+        "created_at": "2026-07-11T00:00:00Z",
+        "updated_at": "2026-07-11T00:00:00Z"
+      },
+      {
+        "idea_id": "kaoju-only-open",
+        "display_key": "I-2",
+        "title": "Memory-traffic direction",
+        "summary": "A considered Kaoju direction that remains open.",
+        "exploration_state": "unexplored",
+        "decision_state": "open",
+        "evidence_state": "unassessed",
+        "archive_state": "active",
+        "visibility": "primary",
+        "status": "raw",
+        "created_at": "2026-07-11T00:00:00Z",
+        "updated_at": "2026-07-11T00:00:00Z"
+      },
+      {
+        "idea_id": "kaoju-only-deferred",
+        "display_key": "I-3",
+        "title": "Compiler-sensitive direction",
+        "summary": "An explored Kaoju direction deferred for later work.",
+        "exploration_state": "explored",
+        "decision_state": "deferred",
+        "evidence_state": "inconclusive",
+        "archive_state": "active",
+        "visibility": "primary",
+        "status": "deferred",
+        "created_at": "2026-07-11T00:00:00Z",
+        "updated_at": "2026-07-12T00:00:00Z"
+      },
+      {
+        "idea_id": "kaoju-only-closed",
+        "display_key": "I-4",
+        "title": "Duplicate proxy direction",
+        "summary": "A Kaoju direction closed as a duplicate.",
+        "exploration_state": "explored",
+        "decision_state": "closed",
+        "evidence_state": "refuted",
+        "archive_state": "active",
+        "visibility": "primary",
+        "status": "rejected",
+        "created_at": "2026-07-11T00:00:00Z",
+        "updated_at": "2026-07-13T00:00:00Z"
+      }
+    ],
+    "canonical_idea_realizations": [
+      {
+        "id": "kaoju-only-realization-selected",
+        "idea_id": "kaoju-only-selected",
+        "record_id": "kaoju-only-direction-set",
+        "source_json_path": "$.research_idea_effects.ideas[0]",
+        "semantic_id": "KAOJU:DIRECTION-SET",
+        "latest": true
+      },
+      {
+        "id": "kaoju-only-realization-open",
+        "idea_id": "kaoju-only-open",
+        "record_id": "kaoju-only-direction-set",
+        "source_json_path": "$.research_idea_effects.ideas[1]",
+        "semantic_id": "KAOJU:DIRECTION-SET",
+        "latest": true
+      },
+      {
+        "id": "kaoju-only-realization-deferred",
+        "idea_id": "kaoju-only-deferred",
+        "record_id": "kaoju-only-direction-set",
+        "source_json_path": "$.research_idea_effects.ideas[2]",
+        "semantic_id": "KAOJU:DIRECTION-SET",
+        "latest": true
+      },
+      {
+        "id": "kaoju-only-realization-closed",
+        "idea_id": "kaoju-only-closed",
+        "record_id": "kaoju-only-direction-set",
+        "source_json_path": "$.research_idea_effects.ideas[3]",
+        "semantic_id": "KAOJU:DIRECTION-SET",
+        "latest": true
+      }
+    ],
+    "canonical_idea_edges": [
+      {
+        "id": "kaoju-only-edge",
+        "parent_idea_id": "kaoju-only-open",
+        "child_idea_id": "kaoju-only-deferred",
+        "lineage_kind": "derived_from",
+        "status": "ready"
+      }
+    ],
+    "canonical_idea_transitions": [
+      {
+        "id": "kaoju-only-transition-selected",
+        "idea_id": "kaoju-only-selected",
+        "facet": "decision_state",
+        "previous_value": "open",
+        "next_value": "selected",
+        "operation_id": "kaoju-only-operation",
+        "actor_ref": "topic-actor:lead",
+        "rationale": "The actor selected this direction.",
+        "decision_record_id": "kaoju-only-direction-set",
+        "transitioned_at": "2026-07-11T00:00:00Z"
+      },
+      {
+        "id": "kaoju-only-transition-deferred",
+        "idea_id": "kaoju-only-deferred",
+        "facet": "decision_state",
+        "previous_value": "open",
+        "next_value": "deferred",
+        "operation_id": "kaoju-only-operation",
+        "actor_ref": "topic-actor:lead",
+        "rationale": "Keep this direction for a later pass.",
+        "decision_record_id": "kaoju-only-direction-set",
+        "transitioned_at": "2026-07-12T00:00:00Z"
+      },
+      {
+        "id": "kaoju-only-transition-closed",
+        "idea_id": "kaoju-only-closed",
+        "facet": "decision_state",
+        "previous_value": "open",
+        "next_value": "closed",
+        "operation_id": "kaoju-only-operation",
+        "actor_ref": "topic-actor:lead",
+        "reason_code": "duplication",
+        "rationale": "This direction duplicates the selected mechanism.",
+        "decision_record_id": "kaoju-only-direction-set",
+        "transitioned_at": "2026-07-13T00:00:00Z"
+      }
+    ],
+    "canonical_idea_decision_options": [
+      {
+        "id": "kaoju-only-option-selected",
+        "decision_record_id": "kaoju-only-direction-set",
+        "idea_id": "kaoju-only-selected",
+        "outcome": "selected",
+        "operation_id": "kaoju-only-operation",
+        "ordinal": 0,
+        "rationale": "The actor selected this direction.",
+        "actor_ref": "topic-actor:lead",
+        "metadata": {"option_set_complete": true},
+        "created_at": "2026-07-11T00:00:00Z"
+      },
+      {
+        "id": "kaoju-only-option-open",
+        "decision_record_id": "kaoju-only-direction-set",
+        "idea_id": "kaoju-only-open",
+        "outcome": "considered",
+        "operation_id": "kaoju-only-operation",
+        "ordinal": 1,
+        "rationale": "The actor kept this direction open.",
+        "actor_ref": "topic-actor:lead",
+        "metadata": {"option_set_complete": true},
+        "created_at": "2026-07-11T00:00:00Z"
+      },
+      {
+        "id": "kaoju-only-option-deferred",
+        "decision_record_id": "kaoju-only-direction-set",
+        "idea_id": "kaoju-only-deferred",
+        "outcome": "deferred",
+        "operation_id": "kaoju-only-operation",
+        "ordinal": 2,
+        "rationale": "Keep this direction for a later pass.",
+        "actor_ref": "topic-actor:lead",
+        "metadata": {"option_set_complete": true},
+        "created_at": "2026-07-12T00:00:00Z"
+      },
+      {
+        "id": "kaoju-only-option-closed",
+        "decision_record_id": "kaoju-only-direction-set",
+        "idea_id": "kaoju-only-closed",
+        "outcome": "closed",
+        "operation_id": "kaoju-only-operation",
+        "ordinal": 3,
+        "rationale": "This direction duplicates the selected mechanism.",
+        "actor_ref": "topic-actor:lead",
+        "metadata": {"option_set_complete": true},
+        "created_at": "2026-07-13T00:00:00Z"
+      }
+    ],
+    "expected_presets": {
+      "current": ["kaoju-only-selected", "kaoju-only-open"],
+      "all-proposed": ["kaoju-only-selected", "kaoju-only-open", "kaoju-only-deferred", "kaoju-only-closed"],
+      "open-for-exploration": ["kaoju-only-selected", "kaoju-only-open"],
+      "unexplored": ["kaoju-only-selected", "kaoju-only-open"],
+      "exploring": [],
+      "explored": ["kaoju-only-deferred", "kaoju-only-closed"],
+      "selected": ["kaoju-only-selected"],
+      "deferred": ["kaoju-only-deferred"],
+      "closed": ["kaoju-only-closed"],
+      "needs-classification": []
+    }
+  },
+  "legacy_unprojected": {
+    "records": [
+      {
+        "record_id": "legacy-kaoju-direction-set",
+        "semantic_id": "KAOJU:DIRECTION-SET",
+        "format_profile_ref": "isomer:research/record-format/profile/kaoju/direction-set/v1"
+      }
+    ],
+    "canonical_idea_realizations": [],
+    "diagnostic_code": "idea_bearing_record_unprojected",
+    "repair_action": "preview_kaoju_direction_set_migration"
+  }
+}

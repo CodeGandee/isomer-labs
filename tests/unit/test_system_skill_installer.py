@@ -114,6 +114,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertIn("isomer-op-entrypoint", [skill.name for skill in core.skills])
         self.assertIn("isomer-op-gui-mgr", [skill.name for skill in core.skills])
         self.assertIn("isomer-op-system-skill-mgr", [skill.name for skill in core.skills])
+        self.assertIn("isomer-research-idea-recording", [skill.name for skill in core.skills])
         self.assertNotIn("deepsci", core.selected_extensions)
         self.assertNotIn("kaoju", core.selected_extensions)
 
@@ -126,6 +127,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertEqual(("kaoju",), kaoju.selected_extensions)
         self.assertIn("core", kaoju.selected_groups)
         self.assertIn("isomer-kaoju-pipeline", [skill.name for skill in kaoju.skills])
+        self.assertIn("isomer-research-idea-recording", [skill.name for skill in kaoju.skills])
         self.assertNotIn("isomer-deepsci-pipeline", [skill.name for skill in kaoju.skills])
 
     def test_kaoju_extension_install_status_upgrade_and_uninstall(self) -> None:
@@ -142,6 +144,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((target.skill_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
         self.assertTrue((target.skill_root / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())
+        self.assertTrue((target.skill_root / "isomer-research-idea-recording" / "references" / "recording-contract.md").is_file())
         self.assertFalse((target.skill_root / "isomer-deepsci-pipeline").exists())
 
         status = inspect_system_skills(target, selection)

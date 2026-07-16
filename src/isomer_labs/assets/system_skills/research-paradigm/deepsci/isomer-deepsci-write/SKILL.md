@@ -17,7 +17,7 @@ Worker-output reminder: before writing JSON payload staging files, Markdown draf
 
 Lineage reminder: before accepted durable record writes that depend on prior durable records, follow `isomer-deepsci-shared` Artifact Lineage Recording. Pass canonical parents with `--parents-json` and `--lineage-kind`, use `--generation-id` for sibling candidate passes, keep query-index hints separate, and use `ext research records revise <record-id>` for content-changing accepted revisions.
 
-Idea-recording reminder: writing normally realizes papers and claims, not new ideas. If writing changes the accepted research concept, creates a follow-up idea, or marks an idea superseded, read `isomer-deepsci-shared` and realize the Research Idea with an exact object-valued source path, not a section draft, outline, claim ledger, or rendered Markdown.
+Idea-recording reminder: invoke `$isomer-research-idea-recording` only when accepted writing work changes a durable concept or its facets, or introduces a follow-up or superseding direction. Commit explicit transitions with terminal refs and exact object-valued realizations; add justified lineage only for a distinct concept. Section drafts, outlines, claim ledgers, and rendered Markdown are not Research Ideas by default.
 
 Write turns validated research evidence into paper-facing prose. It refreshes the paper contract, repairs weak outlines before drafting, separates claims from source material, plans displays before prose, and routes evidence gaps back to the skill that can fix them.
 

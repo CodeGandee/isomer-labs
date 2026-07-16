@@ -17,7 +17,7 @@ Use this skill with every Kaoju procedure or direct Kaoju stage invocation. Do n
 
 1. **Resolve current context**. Identify the Research Topic, Research Inquiry, Effective Topic Context, fresh Workspace Runtime state, active procedure, accepted input refs, intended evidence use, latest candidates, and duplicate or supersession posture.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage begin`; follow returned instructions within this skill, the user request, evidence, Gate, and owner constraints, while empty callback results continue normally and conflicts must be reported.
-3. **Resolve bindings through the extension query**. Read only the pages selected in **Reference Routing**. Before an accepted write, run `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`, then read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's concise `artifact-bindings.md`. The extension query is authoritative; local pages are bundle-local projections and procedures.
+3. **Resolve bindings through the extension query**. Read only the pages selected in **Reference Routing**. Before an accepted write, run `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`, then read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's concise `artifact-bindings.md`. If the output creates or changes a durable research concept, invoke `$isomer-research-idea-recording` and read `references/research-idea-recording.md`. The extension query is authoritative; local pages are bundle-local projections and procedures.
 4. **Discover durable state through the state DB**. Use `project artifacts latest|list|show` with the binding-defined scope key. Never scan the Topic Workspace filesystem to find a durable Artifact. Reject ambiguous current candidates and stale or corrupt content links.
 5. **Preflight target prerequisites**. Before target mutation, resolve accepted input refs, audit state, readiness, known producer routes, and required Gates. For a producible gap, apply `references/prerequisite-recovery.md`: pause an ordinary request before prerequisite mutation, or maintain a target-scoped dependency plan after explicit run-to authorization.
 6. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
@@ -68,6 +68,7 @@ Every Isomer-managed executable research stage uses the applicable Research Oper
 | Missing prerequisite classification, recovery choices, run-to authorization, and controller boundaries | `references/prerequisite-recovery.md` |
 | Topic Workspace, provider, environment, execution, and recording ownership | `references/external-owner-routing.md` |
 | Evidence derivation and update lineage | `references/lineage.md` |
+| Direction proposals, canonical portfolio effects, exact realizations, decisions, transitions, and idea guardrails | `$isomer-research-idea-recording` and `references/research-idea-recording.md` |
 | Terminal report fields and stop semantics | `references/terminal-report.md` |
 
 ## Rationalization Table
@@ -102,6 +103,7 @@ Every Isomer-managed executable research stage uses the applicable Research Oper
 - DO NOT treat a managed link as dataset identity.
 - DO NOT call an inquiry exhaustive because a search converged.
 - DO NOT start another macro procedure inside a bounded procedure or without explicit target-scoped run-to authorization at the prompt-level controller.
+- DO NOT call a Direction Set, source candidate, comparison row, claim, audit repair, or paper section a Research Idea without applying the durable-concept test and canonical recording contract.
 
 ## Chat Response
 

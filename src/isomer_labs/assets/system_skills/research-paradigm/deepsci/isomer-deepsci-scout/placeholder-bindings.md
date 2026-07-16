@@ -16,6 +16,10 @@ Every structured payload file must include non-empty top-level `title` and `summ
 
 When a durable record is produced from prior durable records, pass immediate parents through `--parents-json`, choose `--lineage-kind`, and add `--generation-id` plus `--generation-purpose` for sibling candidate passes. Use `revision_of` only through `ext research records revise <record-id>` when accepted content changes; use `--relationships-json`, `--files-json`, and `--index-hints-json` only for non-lineage query metadata.
 
+## Canonical idea metadata
+
+Invoke `$isomer-research-idea-recording` only when scout output explicitly promotes durable research concepts. Record the accepted concept set with explicit facets, exact object realizations, one generation, and justified parents. Search results, literature candidates, benchmark candidates, repositories, datasets, and comparator sources retain their existing types unless an actor explicitly promotes a distinct research direction.
+
 ## Query-index metadata
 
 When a structured payload has relationship facts, file outputs, or GUI facets, preserve them in the payload and pass explicit refs through `--relationships-json`, `--files-json`, and `--index-hints-json` when the producing skill knows them. Relationship metadata should name evidence, citations, file materialization, support links, summaries, routes, or other non-canonical refs; file metadata should name file role, semantic label, and source payload field or output pattern; facet metadata should leave ideas, route decisions, metrics, claims, artifact lists, and scalar facts in profile-backed payload sections so the query-index extractor can derive rows.

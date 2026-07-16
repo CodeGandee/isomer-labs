@@ -1,45 +1,105 @@
-The Kimi agent did not choose exports/kaoju-paper itself. It invoked export-template without --target, so isomer-cli selected its
-  hardcoded managed default:
+The current classification model has three main fields:
 
-  <topic-workspace>/exports/kaoju-paper/<paper-line>/vNNNN
+   Field         Purpose                                         Allowed values
+  ━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   family        Conceptual or methodological category           Free-form, such as interpretability, architecture, calibration, or
+                                                                 cost-model
+  ────────────  ──────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   status        Decision and lifecycle state                    raw, candidate, selected, active, deferred, rejected, supported,
+                                                                 refuted, superseded, archived
+  ────────────  ──────────────────────────────────────────────  ───────────────────────────────────────────────────────────────────────
+   visibility    Whether it belongs in the default Idea Graph    primary, supporting, hidden
 
-  That default is implemented in src/isomer_labs/kaoju/paper.py:214. The isomer-2 pane and the corresponding /home/huangzhe/.kimi-code/
-  sessions/wd_isomer-labs_e39046c41ca0/session_c10cd257-fec5-4a54-8773-dd3823815bdd/agents/main/wire.jsonl show that the agent omitted
-  --target.
+  Ideas also carry:
 
-  The current design distinguishes these locations:
+  - display_key: stable UI label such as I-1; not a classification.
+  - aliases: source-local labels such as R1 or C3; not stable classifications.
+  - generation_id: groups alternatives produced by the same idea-generation pass.
+  - lineage_kind: classifies conceptual relationships as derived_from, selected_from, merged_from, follow_up_to, alternative_to, or
+    subsumes.
 
-  Canonical MyST template
-      records/artifacts/...                         canonical managed state
-          |
-          +-- export-template
-                exports/kaoju-paper/.../vNNNN      actor-editable exchange copy
+  - metadata: arbitrary structured fields when a domain needs more classification dimensions.
 
-  intent/derived/...                               derived intent and environment specifications
+  The important limitation is that family currently has no controlled vocabulary. Agents can assign inconsistent labels such as
+  raw_ideas, serious_candidates, interpretability, or nearly anything else. Only status, visibility, and lineage kinds are validated.
 
-  The Kaoju skill explicitly treats manual template access as an export. src/isomer_labs/assets/system_skills/research-paradigm/kaoju/
-  isomer-kaoju-pipeline/commands/create-paper-template.md:9 says the export is versioned and derived, but is not canonical state. src/
-  isomer_labs/assets/system_skills/research-paradigm/kaoju/isomer-kaoju-pipeline/commands/manage-paper-template.md:5 then tells the agent
-  to use the actor target or managed default.
+  For the Flash Attention topic:
 
-  Your expectation of intent/derived comes from the earlier Kaoju design. The archived specification placed a canonical LaTeX template at
-  intent/derived/writing-template/<template-name>/. That requirement was later explicitly superseded by the MyST-first design, as
-  recorded in src/isomer_labs/assets/system_skills/research-paradigm/kaoju/isomer-kaoju-pipeline/resources/survey-process.v2.json:72.
+  - Canonical I-1 has family=interpretability, status=selected, and visibility=primary.
+  - The legacy records use raw_ideas and serious_candidates as families, but those are payload section names rather than a coherent
+    topic taxonomy.
+
+  A better taxonomy for that topic could use stable families such as analytical-model, hardware-mechanism, calibration, execution-path,
+  and validation, while leaving maturity and selection decisions in status.
 
 ---
 
-our intended protocol is:
-- `intent/derived/writing-template/<template-name>/` is the for exporting a MyST template so that user can edit it and then re-import it into the Kaoju pipeline. The exported template is not canonical state; it is a user-editable copy.
-- `.../writing-template/main/` is the MyST template that is considered as the currently used template for the Kaoju pipeline, if user does not name the template explicitly, it is where exports go by default.
-- `isomer-cli` should be able to list the named templates in db, and user can say "update <template-name> based on <exported-template-path>" to update the template in db, export to merge with the current template works similarly. The exported template is not canonical state; it is a user-editable copy.
-- if user says "update the paper template in db", "update the currently used paper template", or something that means updating the template inside the current artifacts db, without naming the template, specifying the template path, or specifying the export path, then the Kaoju agent should discover the target template in this order:
-    1. is it an exported template previously exported by the user, and then edited? If so, use that.
-    2. do we have `.../writing-template/main/` in the current topic dir? If so, use that.
-    3. if neither of the above, this is a confusing situation, and the Kaoju agent should ask the user to clarify which template to use.
-- template update is agentic work because we simply have no standard format of paper template, `isomer-cli` will not be able to take a template dir and update the template in db without the help of agent.
-- `isomer-cli` can be used for CRUD operations on the template in db, but keep the api to low level editing (like, editing the myst template inside db, or some json metadata, etc), and let the agent handle the high level logic of template construction, there is no way to convert an arbitrary user-edited template into a canonical template without the agent's help, as we do not restrict the user to a specific template schema. The principle is, we still want to avoid agent directly doing the template editing via SQL update, but we do not want to force a schema on the user either.
-- we do not want to complicate template revision management with versioning like git, just
-    - allow agent to use `isomer-cli` to update an existing template in db
-    - templates are named and can be listed in db, revision can be created explicitly by user or agent, like a snapshot
-    - support replacing the template in db with a known snapshot, but complicated merging should be done by agent, who constructing a new template from the snapshot and the current template in db, and then update the template in db with the new one.
-    - `template snapshot` is not a separate concept, it is just another named template in db, agent may choose specific naming convention to indicate that it is a snapshot.
+The database contains 11 idea rows: 1 canonical idea and 10 legacy facets. The legacy rows include duplicates from two research
+  passes.
+
+   Name                                         Summary                                      Kind
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   Stage-pipeline white-box predictor           Predict runtime as the maximum of Tensor     Legacy facet · serious_candidates
+                                                Core, HBM, SFU, and sync stage times;
+                                                label the saturating component and
+                                                blocking path.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Pure roofline predictor                      Runtime = max(FLOPs/TC_peak, bytes/          Legacy facet · raw_ideas
+                                                HBM_bw)
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Stage-pipeline predictor                     Decompose into TMA, MMA, softmax, store      Legacy facet · raw_ideas
+                                                and take the slowest stage plus pipeline
+                                                overhead.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Probabilistic occupancy predictor            Add occupancy, L2 hit-rate, and TMA          Legacy facet · raw_ideas
+                                                latency distributions.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   SASS-critical-path predictor                 Build from disassembled SASS instruction     Legacy facet · raw_ideas
+                                                latencies.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Pure roofline predictor                      Runtime = max(FLOPs/TC_peak, bytes/          Legacy facet · raw_ideas (second pass)
+                                                HBM_bw)
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Stage-pipeline predictor                     Decompose into TMA, MMA, softmax, store      Legacy facet · raw_ideas (second pass)
+                                                and take the slowest stage plus pipeline
+                                                overhead.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Probabilistic occupancy predictor            Add occupancy, L2 hit-rate, and TMA          Legacy facet · raw_ideas (second pass)
+                                                latency distributions.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   SASS-critical-path predictor                 Build from disassembled SASS instruction     Legacy facet · raw_ideas (second pass)
+                                                latencies.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   Stage-pipeline white-box predictor           Predict runtime as the maximum of Tensor     Legacy facet · serious_candidates (second
+                                                Core, HBM, SFU, and sync stage times;        pass)
+                                                label the saturating component and
+                                                blocking path.
+  ───────────────────────────────────────────  ───────────────────────────────────────────  ───────────────────────────────────────────
+   SASS-grounded interpretable runtime model    Replace fitted scaling and overhead          Canonical · interpretability · selected/
+   for Flash Attention 4                        parameters with values derived               primary
+                                                independently from SASS or compiler IR
+                                                and targeted microbenchmarks. Map each
+                                                dataflow node to an instruction class and
+                                                predict the target kernel without
+                                                executing it.
+
+  Only the final row is currently eligible for the default canonical Idea Graph. The other ten rows represent four raw candidates and
+  one serious candidate repeated across two research passes.
+
+  ---
+
+  our current classification of ideas is not ideal, it does not show what user wants to see in GUI, here is what user wonders when seeing GUI of idea graph:
+
+  - what ideas have been proposed?
+  - which ones are explored further?
+  - which ones are not yet explored?
+  - for the explored ones, which one is derived from which one?
+  - which ideas are selected for further development?
+  - which ideas are closed or deferred?
+
+  user may want:
+  - "I only want to see the ideas that are still open for exploration"
+  - "Let me check all the ideas that are derived from a specific idea"
+  - "Maybe some closed ideas are still worth looking at, let me see all the closed ideas and why"
+  - "Why this idea was selected over the others, let me see all the ideas that were considered and the reasoning behind the selection"
+  - "This idea is not good, I want to explore another idea, let me refer to the one I selected and tell the agent to explore it instead of the current one"

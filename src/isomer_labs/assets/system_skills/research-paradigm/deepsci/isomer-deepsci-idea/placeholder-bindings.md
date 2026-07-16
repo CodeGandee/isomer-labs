@@ -18,7 +18,7 @@ When a durable record is produced from prior durable records, pass immediate par
 
 ## Canonical idea metadata
 
-When a durable record creates, selects, rejects, defers, follows up, merges, or subsumes research concepts, write canonical Research Idea data with `isomer-cli --print-json ext research ideas`. Use semantic topic-scoped `idea_id` values, preserve source labels as aliases, realize the idea to the durable record with an exact object-valued `--source-json-path`, and use explicit idea lineage edges instead of relying on Markdown or extracted record facets.
+Invoke `$isomer-research-idea-recording` before accepting idea-bearing records. Prefer one atomic `research_idea_effects` declaration with semantic ids, explicit facets, exact realizations, generation membership, complete decision options, justified transitions with terminal refs, and concept lineage. When using canonical CLI writes, pass the exact idea-object path through `--source-json-path`. If the profile does not promise atomic effects, perform and verify the equivalent canonical CLI writes before completion.
 
 Valid Primary Idea source paths point at one idea object in an accepted payload, such as `$.sections.raw_ideas[0]`, `$.sections.serious_candidates[1]`, `$.sections.rejected_ideas[0]`, or a profile-declared selected idea object. Invalid paths include `$`, `$.sections.raw_ideas`, `$.sections.filter_notes`, `$.sections.route_context`, generated Markdown files, metrics, artifact lists, and other source-record context.
 

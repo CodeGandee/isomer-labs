@@ -926,6 +926,10 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(0, status, validated)
         self.assertEqual([], validated["diagnostics"])
 
+        status, rebuilt = self.run_records(root, ["index", "rebuild"])
+        self.assertEqual(0, status, rebuilt)
+        self.assertTrue(rebuilt["mutated"])
+
     def test_query_index_reports_openability_for_explicit_missing_file(self) -> None:
         root = self.make_project()
         status, created = self.run_records(
@@ -1221,6 +1225,166 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertEqual(["idea-child", "idea-parent"], sorted(row["idea_id"] for row in graph["nodes"]))
         self.assertEqual(["subsumes"], [row["lineage_kind"] for row in graph["edges"]])
 
+    def test_research_idea_portfolio_cli_transitions_queries_decisions_and_traverses(self) -> None:
+        root = self.make_project()
+        status, first = self.run_ideas(
+            root,
+            [
+                "upsert",
+                "--idea-id",
+                "idea-first",
+                "--title",
+                "First idea",
+                "--summary",
+                "The selected but unexplored first idea.",
+                "--exploration-state",
+                "unexplored",
+                "--decision-state",
+                "selected",
+                "--evidence-state",
+                "refuted",
+            ],
+        )
+        self.assertEqual(0, status, first)
+        self.assertEqual("selected", first["idea"]["status"])
+        status, second = self.run_ideas(
+            root,
+            [
+                "upsert",
+                "--idea-id",
+                "idea-second",
+                "--title",
+                "Second idea",
+                "--summary",
+                "An open alternative idea.",
+                "--exploration-state",
+                "unexplored",
+                "--decision-state",
+                "open",
+                "--evidence-state",
+                "unassessed",
+            ],
+        )
+        self.assertEqual(0, status, second)
+        status, decision = self.run_records(root, ["create", "--id", "decision-portfolio", "--record-kind", "decision_record", "--body", "Compare both ideas."])
+        self.assertEqual(0, status, decision)
+        for idea_id, outcome, ordinal in (("idea-first", "selected", "1"), ("idea-second", "not_selected", "2")):
+            status, option = self.run_ideas(
+                root,
+                [
+                    "decision-options",
+                    "upsert",
+                    "--decision-record-id",
+                    "decision-portfolio",
+                    "--idea-id",
+                    idea_id,
+                    "--outcome",
+                    outcome,
+                    "--actor",
+                    "actor:user",
+                    "--ordinal",
+                    ordinal,
+                    "--rationale",
+                    "Authored comparison outcome.",
+                ],
+            )
+            self.assertEqual(0, status, option)
+
+        transition_args = [
+            "transition",
+            "idea-second",
+            "--facet",
+            "decision_state",
+            "--expected-from",
+            "open",
+            "--to",
+            "shortlisted",
+            "--actor",
+            "actor:user",
+            "--rationale",
+            "Keep the alternative under active consideration.",
+            "--decision-record-id",
+            "decision-portfolio",
+        ]
+        status, transitioned = self.run_ideas(root, transition_args)
+        self.assertEqual(0, status, transitioned)
+        self.assertTrue(transitioned["mutated"])
+        self.assertEqual("shortlisted", transitioned["ideas"][0]["decision_state"])
+        status, replayed = self.run_ideas(root, transition_args)
+        self.assertEqual(0, status, replayed)
+        self.assertFalse(replayed["mutated"])
+        self.assertTrue(replayed["replayed"])
+
+        status, filtered = self.run_ideas(root, ["query", "--decision-state", "shortlisted"])
+        self.assertEqual(0, status, filtered)
+        self.assertEqual(["idea-second"], [item["idea_id"] for item in filtered["ideas"]])
+        self.assertEqual(["decision-portfolio"], sorted({item["decision_record_id"] for item in filtered["decision_options"]}))
+
+        status, context = self.run_ideas(root, ["decision-context", "--idea-id", "idea-first"])
+        self.assertEqual(0, status, context)
+        self.assertFalse(context["mutated"])
+        self.assertEqual(["decision-portfolio"], [item["id"] for item in context["decisions"]])
+        self.assertEqual(["idea-first", "idea-second"], sorted(item["idea_id"] for item in context["decisions"][0]["options"]))
+
+        status, edge = self.run_ideas(root, ["lineage", "add", "idea-first", "idea-second", "--lineage-kind", "derived_from"])
+        self.assertEqual(0, status, edge)
+        status, bounded = self.run_ideas(root, ["traverse", "--root-idea-id", "idea-first", "--direction", "descendants", "--max-depth", "0"])
+        self.assertEqual(0, status, bounded)
+        self.assertFalse(bounded["topology_complete"])
+        self.assertEqual(["max_depth"], bounded["limiting_bounds"])
+        status, complete = self.run_ideas(root, ["traverse", "--root-idea-id", "idea-first", "--direction", "descendants", "--max-depth", "2"])
+        self.assertEqual(0, status, complete)
+        self.assertTrue(complete["topology_complete"])
+        self.assertEqual(["idea-first", "idea-second"], [item["idea_id"] for item in complete["nodes"]])
+
+    def test_research_idea_legacy_status_migration_is_previewable_idempotent_and_atomic(self) -> None:
+        root = self.make_project()
+        status, created = self.run_ideas(root, ["upsert", "--idea-id", "legacy-raw", "--title", "Legacy raw", "--summary", "A legacy raw idea."])
+        self.assertEqual(0, status, created)
+        db_path = root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(db_path) as connection:
+            connection.execute(
+                "UPDATE research_ideas SET status = 'raw', exploration_state = 'unknown', decision_state = 'unknown', evidence_state = 'unknown', archive_state = 'active', metadata_json = '{}' WHERE idea_id = 'legacy-raw'"
+            )
+
+        status, preview = self.run_ideas(root, ["migrate-status"])
+        self.assertEqual(0, status, preview)
+        self.assertFalse(preview["mutated"])
+        self.assertEqual("unexplored", preview["plan"][0]["facets"]["exploration_state"])
+        self.assertEqual("open", preview["plan"][0]["facets"]["decision_state"])
+        status, preview_again = self.run_ideas(root, ["migrate-status"])
+        self.assertEqual(0, status, preview_again)
+        self.assertEqual(preview, preview_again)
+        with sqlite3.connect(db_path) as connection:
+            before_apply = connection.execute("SELECT exploration_state, decision_state, metadata_json FROM research_ideas WHERE idea_id = 'legacy-raw'").fetchone()
+        self.assertEqual(("unknown", "unknown", "{}"), before_apply)
+
+        status, migrated = self.run_ideas(root, ["migrate-status", "--apply"])
+        self.assertEqual(0, status, migrated)
+        self.assertTrue(migrated["mutated"])
+        self.assertEqual(1, migrated["affected_count"])
+        status, replayed = self.run_ideas(root, ["migrate-status", "--apply"])
+        self.assertEqual(0, status, replayed)
+        self.assertFalse(replayed["mutated"])
+        self.assertTrue(replayed["replayed"])
+
+        rollback_root = self.make_project()
+        status, created = self.run_ideas(rollback_root, ["upsert", "--idea-id", "broken-legacy", "--title", "Broken legacy", "--summary", "Migration should roll back."])
+        self.assertEqual(0, status, created)
+        rollback_db = rollback_root / "topic-workspaces" / "alpha" / "state.sqlite"
+        with sqlite3.connect(rollback_db) as connection:
+            connection.execute(
+                "UPDATE research_ideas SET title = '', status = 'selected', exploration_state = 'unknown', decision_state = 'unknown', evidence_state = 'unknown', metadata_json = '{}' WHERE idea_id = 'broken-legacy'"
+            )
+        status, failed = self.run_ideas(rollback_root, ["migrate-status", "--apply"])
+        self.assertEqual(1, status, failed)
+        self.assertEqual("idea_portfolio_migration_failed", failed["error"]["code"])
+        with sqlite3.connect(rollback_db) as connection:
+            state = connection.execute("SELECT decision_state, metadata_json FROM research_ideas WHERE idea_id = 'broken-legacy'").fetchone()
+            provenance_count = connection.execute("SELECT COUNT(*) FROM lifecycle_records WHERE id LIKE 'provenance:research-idea-portfolio-migration%'").fetchone()[0]
+        self.assertEqual(("unknown", "{}"), state)
+        self.assertEqual(0, provenance_count)
+
     def test_research_idea_display_keys_are_stable_and_explicitly_repaired(self) -> None:
         root = self.make_project()
         status, first = self.run_ideas(root, ["upsert", "--idea-id", "idea-one", "--title", "Idea One", "--summary", "Idea One summary."])
@@ -1381,3 +1545,249 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         status, repair = self.run_ideas(root, ["repair", "--apply"])
         self.assertEqual(0, status, repair)
         self.assertEqual([{"realization_id": realization["realization"]["id"], "source_json_path": "$.sections.raw_ideas[0]"}], repair["applied"])
+
+    def test_legacy_kaoju_direction_set_migration_is_previewable_conservative_and_idempotent(self) -> None:
+        root = self.make_project()
+        payload = self._direction_set_v2_payload("legacy")
+        payload.pop("research_idea_effects")
+        for proposal in payload["sections"]["proposals"]:
+            for field in ("idea_id", "source_json_path", "generation_id", "decision_outcome", "transition_required"):
+                proposal.pop(field, None)
+        payload_path = root / "direction-set-v1.json"
+        write(payload_path, json.dumps(payload, indent=2) + "\n")
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "legacy-direction-set",
+                "--record-kind",
+                "decision_record",
+                "--semantic-id",
+                "KAOJU:DIRECTION-SET",
+                "--format-profile",
+                "isomer:research/record-format/profile/kaoju/decision/direction-set/v1",
+                "--payload-file",
+                str(payload_path),
+            ],
+        )
+        self.assertEqual(0, status, created)
+
+        status, preview = self.run_ideas(root, ["migrate-kaoju-direction-set", "legacy-direction-set"])
+        self.assertEqual(0, status, preview)
+        self.assertFalse(preview["mutated"])
+        self.assertEqual(2, preview["affected_count"])
+        self.assertEqual([], [item["lineage"] for item in preview["plan"] if item["lineage"]])
+        self.assertEqual(
+            ["kaoju-direction-direction-stage", "kaoju-direction-direction-cost"],
+            [item["idea_id"] for item in preview["plan"]],
+        )
+        status, before = self.run_ideas(root, ["query"])
+        self.assertEqual(0, status, before)
+        self.assertEqual([], before["ideas"])
+
+        status, applied = self.run_ideas(root, ["migrate-kaoju-direction-set", "legacy-direction-set", "--apply"])
+        self.assertEqual(0, status, applied)
+        self.assertTrue(applied["mutated"])
+        self.assertEqual(2, len(applied["realizations"]))
+        self.assertEqual(2, len(applied["decision_options"]))
+        state_by_alias = {item["aliases"][0]: (item["exploration_state"], item["decision_state"], item["evidence_state"]) for item in applied["applied"]}
+        self.assertEqual(("unknown", "selected", "unknown"), state_by_alias["direction-stage"])
+        self.assertEqual(("unknown", "unknown", "unknown"), state_by_alias["direction-cost"])
+        status, decision = self.run_ideas(root, ["decision-context", "--decision-record-id", "legacy-direction-set"])
+        self.assertEqual(0, status, decision)
+        self.assertEqual(
+            [("kaoju-direction-direction-cost", "not_selected"), ("kaoju-direction-direction-stage", "selected")],
+            sorted((item["idea_id"], item["outcome"]) for item in decision["decisions"][0]["options"]),
+        )
+        status, graph = self.run_ideas(root, ["graph"])
+        self.assertEqual(0, status, graph)
+        self.assertEqual([], graph["edges"])
+
+        status, replay = self.run_ideas(root, ["migrate-kaoju-direction-set", "legacy-direction-set", "--apply"])
+        self.assertEqual(0, status, replay)
+        self.assertTrue(replay["replayed"])
+        self.assertFalse(replay["mutated"])
+
+    def test_kaoju_direction_set_v2_acceptance_records_complete_idea_effects_atomically(self) -> None:
+        root = self.make_project()
+        profile_ref = "isomer:research/record-format/profile/kaoju/decision/direction-set/v2"
+        payload = self._direction_set_v2_payload("portfolio")
+        payload_path = root / "direction-set-v2.json"
+        write(payload_path, json.dumps(payload, indent=2) + "\n")
+
+        status, created = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "direction-set-v2",
+                "--record-kind",
+                "decision_record",
+                "--semantic-id",
+                "KAOJU:DIRECTION-SET",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_path),
+            ],
+        )
+        self.assertEqual(0, status, created)
+        writes = created["idea_writes"]
+        self.assertEqual(2, len(writes["ideas"]))
+        self.assertEqual(2, len(writes["realizations"]))
+        self.assertEqual(1, len(writes["generation_groups"]))
+        self.assertEqual(2, len(writes["decision_options"]))
+        self.assertEqual(1, len(writes["transitions"]))
+        self.assertEqual("committed", writes["operation"]["status"])
+
+        status, ideas = self.run_ideas(root, ["query"])
+        self.assertEqual(0, status, ideas)
+        state_by_id = {item["idea_id"]: (item["exploration_state"], item["decision_state"], item["evidence_state"]) for item in ideas["ideas"]}
+        self.assertEqual(("unexplored", "selected", "unassessed"), state_by_id["portfolio-stage-pipeline"])
+        self.assertEqual(("unexplored", "open", "unassessed"), state_by_id["portfolio-cost-model"])
+
+        status, decision = self.run_ideas(root, ["decision-context", "--decision-record-id", "direction-set-v2"])
+        self.assertEqual(0, status, decision)
+        self.assertEqual(
+            [("portfolio-cost-model", "not_selected"), ("portfolio-stage-pipeline", "selected")],
+            sorted((item["idea_id"], item["outcome"]) for item in decision["decisions"][0]["options"]),
+        )
+
+    def test_promised_idea_effect_failure_rolls_back_record_and_every_canonical_write(self) -> None:
+        root = self.make_project()
+        profile_ref = "isomer:research/record-format/profile/kaoju/decision/direction-set/v2"
+        payload = self._direction_set_v2_payload("rollback")
+        payload["research_idea_effects"]["transitions"][0]["next_value"] = "deferred"
+        payload_path = root / "direction-set-invalid-effects.json"
+        write(payload_path, json.dumps(payload, indent=2) + "\n")
+
+        status, failed = self.run_records(
+            root,
+            [
+                "create",
+                "--id",
+                "direction-set-invalid-effects",
+                "--record-kind",
+                "decision_record",
+                "--semantic-id",
+                "KAOJU:DIRECTION-SET",
+                "--format-profile",
+                profile_ref,
+                "--payload-file",
+                str(payload_path),
+            ],
+        )
+        self.assertEqual(1, status, failed)
+        self.assertEqual("research_idea_effects_partial_state", failed["error"]["code"])
+        status, ideas = self.run_ideas(root, ["query"])
+        self.assertEqual(0, status, ideas)
+        self.assertEqual([], ideas["ideas"])
+        status, records = self.run_records(root, ["list"])
+        self.assertEqual(0, status, records)
+        self.assertNotIn("direction-set-invalid-effects", {item["id"] for item in records["records"]})
+
+    def _direction_set_v2_payload(self, prefix: str) -> dict[str, object]:
+        generation_id = f"{prefix}-proposal-generation"
+        actor_ref = "topic-actor:researcher"
+        proposals = [
+            {
+                "id": "direction-stage",
+                "idea_id": f"{prefix}-stage-pipeline",
+                "title": "Stage-pipeline runtime model",
+                "summary": "Model latency through explicit stage overlap and bottleneck transitions.",
+                "research_question": "Which pipeline stages dominate runtime?",
+                "boundary": "One GPU generation and supported attention shapes.",
+                "source_classes": ["paper", "repository", "measurement"],
+                "coverage_date": "2026-07-17",
+                "expected_depth": "white-box",
+                "deliverables": ["model", "validation"],
+                "empirical_feasibility": "available",
+                "source_json_path": "$.sections.proposals[0]",
+                "generation_id": generation_id,
+                "decision_outcome": "selected",
+                "disposition_rationale": "It offers the clearest interpretable validation target.",
+            },
+            {
+                "id": "direction-cost",
+                "idea_id": f"{prefix}-cost-model",
+                "title": "Instruction-cost runtime model",
+                "summary": "Predict latency from instruction-class costs and occupancy constraints.",
+                "research_question": "Can instruction costs explain runtime variation?",
+                "boundary": "Calibrated kernels and observable instruction categories.",
+                "source_classes": ["paper", "repository", "measurement"],
+                "coverage_date": "2026-07-17",
+                "expected_depth": "mechanistic",
+                "deliverables": ["model", "comparison"],
+                "empirical_feasibility": "available",
+                "source_json_path": "$.sections.proposals[1]",
+                "generation_id": generation_id,
+                "decision_outcome": "not_selected",
+                "disposition_rationale": "Keep it open as an alternative; this decision does not reject it.",
+            },
+        ]
+        idea_effects = {
+            "atomic": True,
+            "artifact_family": "kaoju",
+            "actor_ref": actor_ref,
+            "ideas": [
+                {
+                    "idea_id": proposal["idea_id"],
+                    "title": proposal["title"],
+                    "summary": proposal["summary"],
+                    "source_json_path": proposal["source_json_path"],
+                    "exploration_state": "unexplored",
+                    "decision_state": "selected" if proposal["decision_outcome"] == "selected" else "open",
+                    "evidence_state": "unassessed",
+                    "archive_state": "active",
+                    "visibility": "primary",
+                    "aliases": [proposal["id"]],
+                    "generation_id": generation_id,
+                    "decision_outcome": proposal["decision_outcome"],
+                    "disposition_rationale": proposal["disposition_rationale"],
+                }
+                for proposal in proposals
+            ],
+            "generation_groups": [
+                {
+                    "generation_id": generation_id,
+                    "purpose": "Actor-reviewed survey direction proposal set.",
+                    "member_idea_ids": [proposal["idea_id"] for proposal in proposals],
+                    "parent_idea_ids": [],
+                }
+            ],
+            "decision_options": [
+                {
+                    "idea_id": proposal["idea_id"],
+                    "outcome": proposal["decision_outcome"],
+                    "ordinal": index,
+                    "generation_id": generation_id,
+                    "rationale": proposal["disposition_rationale"],
+                    "actor_ref": actor_ref,
+                }
+                for index, proposal in enumerate(proposals)
+            ],
+            "transitions": [
+                {
+                    "idea_id": f"{prefix}-stage-pipeline",
+                    "facet": "decision_state",
+                    "previous_value": "open",
+                    "next_value": "selected",
+                    "actor_ref": actor_ref,
+                    "rationale": "The actor selected this direction for focused development.",
+                }
+            ],
+        }
+        return {
+            "title": "Direction Set",
+            "summary": "Actor-confirmed directions with canonical portfolio effects.",
+            "artifact_family": "kaoju",
+            "semantic_id": "KAOJU:DIRECTION-SET",
+            "artifact_type": "direction-set",
+            "sections": {
+                "proposals": proposals,
+                "selections": ["direction-stage"],
+                "confirmation": {"status": "accepted", "actor_ref": actor_ref},
+            },
+            "research_idea_effects": idea_effects,
+        }

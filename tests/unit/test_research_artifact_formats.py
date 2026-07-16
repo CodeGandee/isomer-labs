@@ -37,17 +37,21 @@ def _survey_contract_payload() -> dict[str, object]:
 
 
 class ResearchArtifactFormatProviderTests(TestCase):
-    def test_profile_ref_round_trip_and_rejects_unsupported_versions(self) -> None:
+    def test_profile_ref_round_trip_accepts_v2_and_rejects_unsupported_versions(self) -> None:
         ref = research_profile_ref("kaoju", "contract", "survey-contract")
         parsed = parse_research_profile_ref(ref)
         self.assertIsNotNone(parsed)
         assert parsed is not None
         self.assertEqual(("kaoju", "contract", "survey-contract", "v1"), (parsed.family, parsed.artifact_class, parsed.semantic_id, parsed.version))
-        self.assertIsNone(parse_research_profile_ref(ref.removesuffix("v1") + "v2"))
+        parsed_v2 = parse_research_profile_ref(ref.removesuffix("v1") + "v2")
+        self.assertIsNotNone(parsed_v2)
+        assert parsed_v2 is not None
+        self.assertEqual("v2", parsed_v2.version)
+        self.assertIsNone(parse_research_profile_ref(ref.removesuffix("v1") + "v3"))
 
     def test_catalog_profiles_resolve_with_declarative_metadata(self) -> None:
         provider = ResearchRecordFormatProvider()
-        self.assertEqual(47, len(provider.profile_refs()))
+        self.assertEqual(48, len(provider.profile_refs()))
         registry = ArtifactFormatRegistry()
         registry.register_provider(provider)
         profile, resolution, diagnostics = ArtifactFormatResolver(registry).resolve_profile(SURVEY_CONTRACT_REF)

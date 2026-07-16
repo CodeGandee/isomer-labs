@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 import re
 import sqlite3
-from typing import Callable, Mapping
+from typing import Callable, Mapping, cast
 
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
 from isomer_labs.core.path_utils import is_within, resolve_project_path
@@ -33,8 +34,16 @@ from isomer_labs.runtime.records import (
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
     READINESS_STATUSES,
+    RESEARCH_IDEA_ARCHIVE_STATES,
+    RESEARCH_IDEA_CLOSURE_REASONS,
+    RESEARCH_IDEA_DECISION_OPTION_OUTCOMES,
+    RESEARCH_IDEA_DECISION_STATES,
+    RESEARCH_IDEA_EVIDENCE_STATES,
+    RESEARCH_IDEA_EXPLORATION_STATES,
+    RESEARCH_IDEA_FACETS,
     RESEARCH_IDEA_LINEAGE_KINDS,
     RESEARCH_IDEA_LINEAGE_STATUSES,
+    RESEARCH_IDEA_OPERATION_STATUSES,
     RESEARCH_IDEA_STATUSES,
     RESEARCH_IDEA_VISIBILITIES,
     RESEARCH_RECORD_LINEAGE_KINDS,
@@ -67,9 +76,16 @@ from isomer_labs.runtime.records import (
     HandoffRecord,
     PathPlanRecord,
     ResearchIdea,
+    ResearchIdeaArchiveState,
+    ResearchIdeaDecisionState,
+    ResearchIdeaDecisionOption,
+    ResearchIdeaEvidenceState,
+    ResearchIdeaExplorationState,
     ResearchIdeaGenerationGroup,
     ResearchIdeaLineageEdge,
+    ResearchIdeaOperation,
     ResearchIdeaRealization,
+    ResearchIdeaStateTransition,
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
     ResetCheckpointRecord,
@@ -84,10 +100,12 @@ from isomer_labs.runtime.records import (
     TopicEnvironmentReadinessRecord,
     ValidationIssueRecord,
     WorkspaceRuntimeMetadata,
+    project_research_idea_compatibility_status,
     utc_timestamp,
 )
 from isomer_labs.runtime.sqlite import (
     RUNTIME_SCHEMA_TABLES,
+    _column_names,
     _create_schema,
     _dumps,
     _ensure_runtime_directories,
@@ -111,9 +129,12 @@ from isomer_labs.runtime.sqlite import (
     _row_to_path_plan,
     _row_to_readiness,
     _row_to_research_idea,
+    _row_to_research_idea_decision_option,
     _row_to_research_idea_generation_group,
     _row_to_research_idea_lineage_edge,
+    _row_to_research_idea_operation,
     _row_to_research_idea_realization,
+    _row_to_research_idea_state_transition,
     _row_to_research_record_generation_group,
     _row_to_research_record_lineage_edge,
     _row_to_reset_checkpoint,
@@ -881,16 +902,21 @@ class WorkspaceRuntimeStore:
             INSERT INTO research_ideas
                 (
                     id, research_topic_id, topic_workspace_id, idea_id, display_key, title, summary,
-                    family, status, visibility, aliases_json, source_record_id, source_json_path,
-                    metadata_json, created_at, updated_at, provenance_refs_json
+                    family, status, exploration_state, decision_state, evidence_state, archive_state,
+                    visibility, aliases_json, source_record_id, source_json_path, metadata_json,
+                    created_at, updated_at, provenance_refs_json
                 )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(topic_workspace_id, idea_id) DO UPDATE SET
                 display_key = COALESCE(excluded.display_key, research_ideas.display_key),
                 title = excluded.title,
                 summary = excluded.summary,
                 family = excluded.family,
                 status = excluded.status,
+                exploration_state = excluded.exploration_state,
+                decision_state = excluded.decision_state,
+                evidence_state = excluded.evidence_state,
+                archive_state = excluded.archive_state,
                 visibility = excluded.visibility,
                 aliases_json = excluded.aliases_json,
                 source_record_id = excluded.source_record_id,
@@ -909,6 +935,10 @@ class WorkspaceRuntimeStore:
                 record.summary,
                 record.family,
                 record.status,
+                record.exploration_state,
+                record.decision_state,
+                record.evidence_state,
+                record.archive_state,
                 record.visibility,
                 _dumps(record.aliases),
                 record.source_record_id,
@@ -951,8 +981,13 @@ class WorkspaceRuntimeStore:
             clauses.append("visibility = ?")
             params.append(visibility)
         if not include_archived:
-            clauses.append("status != ?")
-            params.append("archived")
+            columns = _column_names(self.connection, "research_ideas")
+            if "archive_state" in columns:
+                clauses.append("archive_state != ?")
+                params.append("archived")
+            else:
+                clauses.append("status != ?")
+                params.append("archived")
         if clauses:
             query += " WHERE " + " AND ".join(clauses)
         query += " ORDER BY created_at, idea_id"
@@ -1240,12 +1275,551 @@ class WorkspaceRuntimeStore:
         query += " ORDER BY created_at, parent_idea_id, child_idea_id, id"
         return [_row_to_research_idea_lineage_edge(row) for row in self.connection.execute(query, params)]
 
+    def upsert_research_idea_state_transition(
+        self,
+        record: ResearchIdeaStateTransition,
+        *,
+        validate: bool = True,
+    ) -> None:
+        diagnostics = self.validate_research_idea_state_transition(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_transition_error") for item in errors)
+            raise ValueError(f"Invalid Research Idea transition {record.id}: {codes}")
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_state_transitions
+                (
+                    id, research_topic_id, topic_workspace_id, idea_id, facet,
+                    previous_value, next_value, operation_id, actor_ref, reason_code,
+                    rationale, decision_record_id, gate_id, evidence_item_refs_json,
+                    artifact_refs_json, finding_refs_json, research_task_id, run_id,
+                    provenance_record_refs_json, metadata_json, transitioned_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                previous_value = excluded.previous_value,
+                next_value = excluded.next_value,
+                operation_id = excluded.operation_id,
+                actor_ref = excluded.actor_ref,
+                reason_code = excluded.reason_code,
+                rationale = excluded.rationale,
+                decision_record_id = excluded.decision_record_id,
+                gate_id = excluded.gate_id,
+                evidence_item_refs_json = excluded.evidence_item_refs_json,
+                artifact_refs_json = excluded.artifact_refs_json,
+                finding_refs_json = excluded.finding_refs_json,
+                research_task_id = excluded.research_task_id,
+                run_id = excluded.run_id,
+                provenance_record_refs_json = excluded.provenance_record_refs_json,
+                metadata_json = excluded.metadata_json,
+                transitioned_at = excluded.transitioned_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.idea_id,
+                record.facet,
+                record.previous_value,
+                record.next_value,
+                record.operation_id,
+                record.actor_ref,
+                record.reason_code,
+                record.rationale,
+                record.decision_record_id,
+                record.gate_id,
+                _dumps(record.evidence_item_refs),
+                _dumps(record.artifact_refs),
+                _dumps(record.finding_refs),
+                record.research_task_id,
+                record.run_id,
+                _dumps(record.provenance_record_refs),
+                _dumps(record.metadata),
+                record.transitioned_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_idea_state_transition(self, transition_id: str) -> ResearchIdeaStateTransition | None:
+        if not _table_exists(self.connection, "research_idea_state_transitions"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM research_idea_state_transitions WHERE id = ? LIMIT 1",
+            (transition_id,),
+        ).fetchone()
+        return _row_to_research_idea_state_transition(row) if row is not None else None
+
+    def list_research_idea_state_transitions(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        idea_id: str | None = None,
+        operation_id: str | None = None,
+        decision_record_id: str | None = None,
+    ) -> list[ResearchIdeaStateTransition]:
+        if not _table_exists(self.connection, "research_idea_state_transitions"):
+            return []
+        query = "SELECT * FROM research_idea_state_transitions"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("idea_id", idea_id),
+            ("operation_id", operation_id),
+            ("decision_record_id", decision_record_id),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY transitioned_at, id"
+        return [_row_to_research_idea_state_transition(row) for row in self.connection.execute(query, params)]
+
+    def upsert_research_idea_decision_option(
+        self,
+        record: ResearchIdeaDecisionOption,
+        *,
+        validate: bool = True,
+    ) -> None:
+        diagnostics = self.validate_research_idea_decision_option(record) if validate else []
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_decision_option_error") for item in errors)
+            raise ValueError(f"Invalid Research Idea decision option {record.id}: {codes}")
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_decision_options
+                (
+                    id, research_topic_id, topic_workspace_id, decision_record_id,
+                    idea_id, outcome, option_role, ordinal, generation_id, rationale,
+                    consequence, actor_ref, supporting_refs_json, operation_id,
+                    metadata_json, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(topic_workspace_id, decision_record_id, idea_id) DO UPDATE SET
+                outcome = excluded.outcome,
+                option_role = excluded.option_role,
+                ordinal = excluded.ordinal,
+                generation_id = excluded.generation_id,
+                rationale = excluded.rationale,
+                consequence = excluded.consequence,
+                actor_ref = excluded.actor_ref,
+                supporting_refs_json = excluded.supporting_refs_json,
+                operation_id = excluded.operation_id,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.decision_record_id,
+                record.idea_id,
+                record.outcome,
+                record.option_role,
+                record.ordinal,
+                record.generation_id,
+                record.rationale,
+                record.consequence,
+                record.actor_ref,
+                _dumps(record.supporting_refs),
+                record.operation_id,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_idea_decision_option(self, option_id: str) -> ResearchIdeaDecisionOption | None:
+        if not _table_exists(self.connection, "research_idea_decision_options"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM research_idea_decision_options WHERE id = ? LIMIT 1",
+            (option_id,),
+        ).fetchone()
+        return _row_to_research_idea_decision_option(row) if row is not None else None
+
+    def list_research_idea_decision_options(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        decision_record_id: str | None = None,
+        idea_id: str | None = None,
+        generation_id: str | None = None,
+    ) -> list[ResearchIdeaDecisionOption]:
+        if not _table_exists(self.connection, "research_idea_decision_options"):
+            return []
+        query = "SELECT * FROM research_idea_decision_options"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (
+            ("topic_workspace_id", topic_workspace_id),
+            ("decision_record_id", decision_record_id),
+            ("idea_id", idea_id),
+            ("generation_id", generation_id),
+        ):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at, COALESCE(ordinal, 2147483647), id"
+        return [_row_to_research_idea_decision_option(row) for row in self.connection.execute(query, params)]
+
+    def upsert_research_idea_operation(self, record: ResearchIdeaOperation) -> None:
+        diagnostics = self.validate_research_idea_operation(record)
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(str(item.get("code") or "idea_operation_error") for item in errors)
+            raise ValueError(f"Invalid Research Idea operation {record.operation_id}: {codes}")
+        existing = self.get_research_idea_operation_by_idempotency_key(
+            record.idempotency_key,
+            topic_workspace_id=record.topic_workspace_id,
+        )
+        if existing is not None and existing.input_digest != record.input_digest:
+            raise ValueError(f"Research Idea idempotency key has different input: {record.idempotency_key}")
+        self.connection.execute(
+            """
+            INSERT INTO research_idea_operations
+                (
+                    id, research_topic_id, topic_workspace_id, operation_id,
+                    idempotency_key, action_kind, input_digest, status, result_json,
+                    actor_ref, metadata_json, created_at, updated_at, provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(topic_workspace_id, operation_id) DO UPDATE SET
+                status = excluded.status,
+                result_json = excluded.result_json,
+                actor_ref = excluded.actor_ref,
+                metadata_json = excluded.metadata_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.operation_id,
+                record.idempotency_key,
+                record.action_kind,
+                record.input_digest,
+                record.status,
+                _dumps(record.result),
+                record.actor_ref,
+                _dumps(record.metadata),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_research_idea_operation(self, operation_id: str, *, topic_workspace_id: str | None = None) -> ResearchIdeaOperation | None:
+        if not _table_exists(self.connection, "research_idea_operations"):
+            return None
+        if topic_workspace_id is None:
+            row = self.connection.execute(
+                "SELECT * FROM research_idea_operations WHERE operation_id = ? LIMIT 1",
+                (operation_id,),
+            ).fetchone()
+        else:
+            row = self.connection.execute(
+                "SELECT * FROM research_idea_operations WHERE topic_workspace_id = ? AND operation_id = ? LIMIT 1",
+                (topic_workspace_id, operation_id),
+            ).fetchone()
+        return _row_to_research_idea_operation(row) if row is not None else None
+
+    def get_research_idea_operation_by_idempotency_key(
+        self,
+        idempotency_key: str,
+        *,
+        topic_workspace_id: str,
+    ) -> ResearchIdeaOperation | None:
+        if not _table_exists(self.connection, "research_idea_operations"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM research_idea_operations WHERE topic_workspace_id = ? AND idempotency_key = ? LIMIT 1",
+            (topic_workspace_id, idempotency_key),
+        ).fetchone()
+        return _row_to_research_idea_operation(row) if row is not None else None
+
+    def list_research_idea_operations(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        status: str | None = None,
+    ) -> list[ResearchIdeaOperation]:
+        if not _table_exists(self.connection, "research_idea_operations"):
+            return []
+        query = "SELECT * FROM research_idea_operations"
+        clauses: list[str] = []
+        params: list[object] = []
+        for column, value in (("topic_workspace_id", topic_workspace_id), ("status", status)):
+            if value is not None:
+                clauses.append(f"{column} = ?")
+                params.append(value)
+        if clauses:
+            query += " WHERE " + " AND ".join(clauses)
+        query += " ORDER BY created_at, operation_id"
+        return [_row_to_research_idea_operation(row) for row in self.connection.execute(query, params)]
+
+    def validate_research_idea_state_transition(
+        self,
+        record: ResearchIdeaStateTransition,
+        *,
+        check_current: bool = True,
+    ) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        allowed_values: dict[str, tuple[str, ...]] = {
+            "exploration_state": RESEARCH_IDEA_EXPLORATION_STATES,
+            "decision_state": RESEARCH_IDEA_DECISION_STATES,
+            "evidence_state": RESEARCH_IDEA_EVIDENCE_STATES,
+            "archive_state": RESEARCH_IDEA_ARCHIVE_STATES,
+            "visibility": RESEARCH_IDEA_VISIBILITIES,
+        }
+        if record.facet not in RESEARCH_IDEA_FACETS:
+            diagnostics.append(_lineage_diag("error", "idea_transition_facet_unsupported", f"Unsupported Research Idea transition facet: {record.facet}", transition_id=record.id))
+        else:
+            vocabulary = allowed_values[record.facet]
+            if record.previous_value not in vocabulary:
+                diagnostics.append(_lineage_diag("error", "idea_transition_previous_value_unsupported", f"Unsupported previous value for {record.facet}: {record.previous_value}", transition_id=record.id))
+            if record.next_value not in vocabulary:
+                diagnostics.append(_lineage_diag("error", "idea_transition_next_value_unsupported", f"Unsupported next value for {record.facet}: {record.next_value}", transition_id=record.id))
+        idea = self.get_research_idea(record.idea_id, topic_workspace_id=record.topic_workspace_id)
+        if idea is None:
+            diagnostics.append(_lineage_diag("error", "idea_transition_idea_missing", f"Research Idea transition references a missing idea: {record.idea_id}", transition_id=record.id, idea_id=record.idea_id))
+        elif idea.research_topic_id != record.research_topic_id:
+            diagnostics.append(_lineage_diag("error", "idea_transition_idea_cross_topic", f"Research Idea transition references an idea outside the Research Topic: {record.idea_id}", transition_id=record.id, idea_id=record.idea_id))
+        elif check_current and record.facet in allowed_values:
+            current = str(getattr(idea, record.facet))
+            if current != record.previous_value:
+                diagnostics.append(_lineage_diag("error", "idea_transition_expected_state_conflict", f"Research Idea {record.idea_id} has {record.facet}={current}, not expected {record.previous_value}.", transition_id=record.id, idea_id=record.idea_id, current_value=current))
+        if not record.operation_id.strip():
+            diagnostics.append(_lineage_diag("error", "idea_transition_operation_missing", "Research Idea transition requires an operation id.", transition_id=record.id))
+        if not record.actor_ref.strip():
+            diagnostics.append(_lineage_diag("error", "idea_transition_actor_missing", "Research Idea transition requires an actor ref.", transition_id=record.id))
+        if not record.rationale.strip():
+            diagnostics.append(_lineage_diag("error", "idea_transition_rationale_missing", "Research Idea transition requires a rationale.", transition_id=record.id))
+        if record.facet == "decision_state" and record.next_value == "closed":
+            if record.reason_code not in RESEARCH_IDEA_CLOSURE_REASONS:
+                diagnostics.append(_lineage_diag("error", "idea_closure_reason_missing", "A closed Research Idea transition requires a supported closure reason.", transition_id=record.id, idea_id=record.idea_id))
+            if record.decision_record_id is None and not record.provenance_record_refs:
+                diagnostics.append(_lineage_diag("error", "idea_closure_context_missing", "A closed Research Idea transition requires a Decision Record or Provenance Record ref.", transition_id=record.id, idea_id=record.idea_id))
+        for ref, kind, field_name in (
+            (record.decision_record_id, "decision_record", "decision_record_id"),
+            (record.gate_id, "gate", "gate_id"),
+            (record.research_task_id, "research_task", "research_task_id"),
+            (record.run_id, "run", "run_id"),
+        ):
+            if ref is not None:
+                diagnostics.extend(self._validate_research_idea_lifecycle_ref(ref, record, expected_kind=kind, field_name=field_name))
+        for refs, kind, field_name in (
+            (record.evidence_item_refs, "evidence_item", "evidence_item_refs"),
+            (record.artifact_refs, "artifact", "artifact_refs"),
+            (record.finding_refs, "finding", "finding_refs"),
+            (record.provenance_record_refs, "provenance_record", "provenance_record_refs"),
+        ):
+            for ref in refs:
+                diagnostics.extend(self._validate_research_idea_lifecycle_ref(ref, record, expected_kind=kind, field_name=field_name))
+        return diagnostics
+
+    def validate_research_idea_decision_option(self, record: ResearchIdeaDecisionOption) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        if record.outcome not in RESEARCH_IDEA_DECISION_OPTION_OUTCOMES:
+            diagnostics.append(_lineage_diag("error", "idea_decision_option_outcome_unsupported", f"Unsupported Research Idea decision option outcome: {record.outcome}", option_id=record.id))
+        if not record.operation_id.strip():
+            diagnostics.append(_lineage_diag("error", "idea_decision_option_operation_missing", "Research Idea decision option requires an operation id.", option_id=record.id))
+        idea = self.get_research_idea(record.idea_id, topic_workspace_id=record.topic_workspace_id)
+        if idea is None:
+            diagnostics.append(_lineage_diag("error", "idea_decision_option_idea_missing", f"Decision option references a missing Research Idea: {record.idea_id}", option_id=record.id, idea_id=record.idea_id))
+        elif idea.research_topic_id != record.research_topic_id:
+            diagnostics.append(_lineage_diag("error", "idea_decision_option_idea_cross_topic", f"Decision option references a Research Idea outside the Research Topic: {record.idea_id}", option_id=record.id, idea_id=record.idea_id))
+        diagnostics.extend(self._validate_research_idea_lifecycle_ref(record.decision_record_id, record, expected_kind="decision_record", field_name="decision_record_id"))
+        if record.generation_id is not None:
+            generation = self.get_research_idea_generation_group(record.generation_id)
+            if generation is None:
+                diagnostics.append(_lineage_diag("error", "idea_decision_option_generation_missing", f"Decision option generation group is missing: {record.generation_id}", option_id=record.id, generation_id=record.generation_id))
+            elif generation.research_topic_id != record.research_topic_id or generation.topic_workspace_id != record.topic_workspace_id:
+                diagnostics.append(_lineage_diag("error", "idea_decision_option_generation_cross_topic", f"Decision option generation group is outside the Topic Workspace: {record.generation_id}", option_id=record.id, generation_id=record.generation_id))
+        for ref in record.supporting_refs:
+            diagnostics.extend(self._validate_research_idea_lifecycle_ref(ref, record, expected_kind=None, field_name="supporting_refs"))
+        return diagnostics
+
+    def validate_research_idea_operation(self, record: ResearchIdeaOperation) -> list[dict[str, object]]:
+        diagnostics: list[dict[str, object]] = []
+        if record.status not in RESEARCH_IDEA_OPERATION_STATUSES:
+            diagnostics.append(_lineage_diag("error", "idea_operation_status_unsupported", f"Unsupported Research Idea operation status: {record.status}", operation_id=record.operation_id))
+        for field_name, value in (
+            ("operation_id", record.operation_id),
+            ("idempotency_key", record.idempotency_key),
+            ("action_kind", record.action_kind),
+            ("input_digest", record.input_digest),
+        ):
+            if not value.strip():
+                diagnostics.append(_lineage_diag("error", f"idea_operation_{field_name}_missing", f"Research Idea operation requires {field_name}.", operation_id=record.operation_id))
+        existing = self.get_research_idea_operation_by_idempotency_key(record.idempotency_key, topic_workspace_id=record.topic_workspace_id)
+        if existing is not None and existing.operation_id != record.operation_id:
+            diagnostics.append(_lineage_diag("error", "idea_operation_idempotency_conflict", f"Research Idea idempotency key is already used by {existing.operation_id}.", operation_id=record.operation_id, existing_operation_id=existing.operation_id))
+        return diagnostics
+
+    def apply_research_idea_mutation(
+        self,
+        *,
+        transitions: list[ResearchIdeaStateTransition],
+        decision_options: list[ResearchIdeaDecisionOption] | None = None,
+        operation: ResearchIdeaOperation | None = None,
+        manage_transaction: bool = True,
+    ) -> dict[str, object]:
+        """Validate and commit one correlated Research Idea mutation atomically."""
+
+        options = decision_options or []
+        if operation is not None:
+            existing = self.get_research_idea_operation_by_idempotency_key(
+                operation.idempotency_key,
+                topic_workspace_id=operation.topic_workspace_id,
+            )
+            if existing is not None:
+                if existing.input_digest != operation.input_digest:
+                    raise ValueError(f"Research Idea idempotency key has different input: {operation.idempotency_key}")
+                return {
+                    "replayed": True,
+                    "operation": existing.to_json(),
+                    "ideas": [],
+                    "transitions": [item.to_json() for item in self.list_research_idea_state_transitions(topic_workspace_id=existing.topic_workspace_id, operation_id=existing.operation_id)],
+                    "decision_options": [item.to_json() for item in self.list_research_idea_decision_options(topic_workspace_id=existing.topic_workspace_id) if item.operation_id == existing.operation_id],
+                }
+
+        diagnostics: list[dict[str, object]] = []
+        current_ideas: dict[str, ResearchIdea] = {}
+        state_by_idea: dict[str, dict[str, str]] = {}
+        closure_reason_by_idea: dict[str, str | None] = {}
+        updated_at_by_idea: dict[str, str] = {}
+        operation_ids = {item.operation_id for item in transitions} | {item.operation_id for item in options}
+        if operation is not None:
+            operation_ids.add(operation.operation_id)
+        if len(operation_ids) > 1:
+            diagnostics.append(_lineage_diag("error", "idea_mutation_operation_mismatch", "All transitions, decision options, and the idempotency record must share one operation id.", operation_ids=sorted(operation_ids)))
+        for transition in transitions:
+            diagnostics.extend(self.validate_research_idea_state_transition(transition, check_current=False))
+            idea = current_ideas.get(transition.idea_id)
+            if idea is None:
+                idea = self.get_research_idea(transition.idea_id, topic_workspace_id=transition.topic_workspace_id)
+                if idea is None:
+                    continue
+                current_ideas[transition.idea_id] = idea
+                state_by_idea[transition.idea_id] = {
+                    "exploration_state": idea.exploration_state,
+                    "decision_state": idea.decision_state,
+                    "evidence_state": idea.evidence_state,
+                    "archive_state": idea.archive_state,
+                    "visibility": idea.visibility,
+                }
+            current_value = state_by_idea[transition.idea_id].get(transition.facet)
+            if current_value is not None and current_value != transition.previous_value:
+                diagnostics.append(_lineage_diag("error", "idea_transition_expected_state_conflict", f"Research Idea {transition.idea_id} has {transition.facet}={current_value}, not expected {transition.previous_value}.", transition_id=transition.id, idea_id=transition.idea_id, current_value=current_value))
+                continue
+            state_by_idea[transition.idea_id][transition.facet] = transition.next_value
+            updated_at_by_idea[transition.idea_id] = max(updated_at_by_idea.get(transition.idea_id, transition.transitioned_at), transition.transitioned_at)
+            if transition.facet == "decision_state" and transition.next_value == "closed":
+                closure_reason_by_idea[transition.idea_id] = transition.reason_code
+        for option in options:
+            diagnostics.extend(self.validate_research_idea_decision_option(option))
+        if operation is not None:
+            diagnostics.extend(self.validate_research_idea_operation(operation))
+
+        updated_ideas: list[ResearchIdea] = []
+        for idea_id, idea in current_ideas.items():
+            state = state_by_idea[idea_id]
+            status = project_research_idea_compatibility_status(
+                exploration_state=cast(ResearchIdeaExplorationState, state["exploration_state"]),
+                decision_state=cast(ResearchIdeaDecisionState, state["decision_state"]),
+                evidence_state=cast(ResearchIdeaEvidenceState, state["evidence_state"]),
+                archive_state=cast(ResearchIdeaArchiveState, state["archive_state"]),
+                closure_reason=closure_reason_by_idea.get(idea_id),
+                preserved_status=idea.status,
+            )
+            updated = replace(
+                idea,
+                exploration_state=cast(ResearchIdeaExplorationState, state["exploration_state"]),
+                decision_state=cast(ResearchIdeaDecisionState, state["decision_state"]),
+                evidence_state=cast(ResearchIdeaEvidenceState, state["evidence_state"]),
+                archive_state=cast(ResearchIdeaArchiveState, state["archive_state"]),
+                visibility=state["visibility"],
+                status=status,
+                updated_at=updated_at_by_idea.get(idea_id, idea.updated_at),
+            )
+            diagnostics.extend(self.validate_research_idea(updated))
+            updated_ideas.append(updated)
+        errors = [item for item in diagnostics if item.get("severity") == "error"]
+        if errors:
+            codes = ", ".join(sorted({str(item.get("code") or "idea_mutation_error") for item in errors}))
+            raise ValueError(f"Research Idea mutation failed validation: {codes}")
+
+        transaction = self.connection if manage_transaction else nullcontext()
+        with transaction:
+            for idea in updated_ideas:
+                self.upsert_research_idea(idea, validate=False)
+            for transition in transitions:
+                self.upsert_research_idea_state_transition(transition, validate=False)
+            for option in options:
+                self.upsert_research_idea_decision_option(option, validate=False)
+            if operation is not None:
+                self.upsert_research_idea_operation(operation)
+        return {
+            "replayed": False,
+            "operation": operation.to_json() if operation is not None else None,
+            "ideas": [item.to_json() for item in updated_ideas],
+            "transitions": [item.to_json() for item in transitions],
+            "decision_options": [item.to_json() for item in options],
+            "diagnostics": diagnostics,
+        }
+
+    def _validate_research_idea_lifecycle_ref(
+        self,
+        ref: str,
+        owner: ResearchIdeaStateTransition | ResearchIdeaDecisionOption,
+        *,
+        expected_kind: str | None,
+        field_name: str,
+    ) -> list[dict[str, object]]:
+        lifecycle = self.get_lifecycle_record(ref)
+        owner_id = owner.id
+        if lifecycle is None:
+            return [_lineage_diag("error", "idea_durable_ref_missing", f"Research Idea {field_name} ref is missing: {ref}", owner_id=owner_id, field=field_name, ref=ref)]
+        if lifecycle.research_topic_id != owner.research_topic_id or lifecycle.topic_workspace_id != owner.topic_workspace_id:
+            return [_lineage_diag("error", "idea_durable_ref_cross_topic", f"Research Idea {field_name} ref is outside the Topic Workspace: {ref}", owner_id=owner_id, field=field_name, ref=ref)]
+        if expected_kind is not None and lifecycle.record_kind != expected_kind:
+            return [_lineage_diag("error", "idea_durable_ref_kind_mismatch", f"Research Idea {field_name} ref {ref} is {lifecycle.record_kind}, expected {expected_kind}.", owner_id=owner_id, field=field_name, ref=ref)]
+        return []
+
     def validate_research_idea(self, record: ResearchIdea) -> list[dict[str, object]]:
         diagnostics: list[dict[str, object]] = []
         if record.status not in RESEARCH_IDEA_STATUSES:
             diagnostics.append(_lineage_diag("error", "idea_status_unsupported", f"Unsupported idea status: {record.status}", idea_id=record.idea_id))
         if record.visibility not in RESEARCH_IDEA_VISIBILITIES:
             diagnostics.append(_lineage_diag("error", "idea_visibility_unsupported", f"Unsupported idea visibility: {record.visibility}", idea_id=record.idea_id))
+        for field_name, value, vocabulary in (
+            ("exploration_state", record.exploration_state, RESEARCH_IDEA_EXPLORATION_STATES),
+            ("decision_state", record.decision_state, RESEARCH_IDEA_DECISION_STATES),
+            ("evidence_state", record.evidence_state, RESEARCH_IDEA_EVIDENCE_STATES),
+            ("archive_state", record.archive_state, RESEARCH_IDEA_ARCHIVE_STATES),
+        ):
+            if value not in vocabulary:
+                diagnostics.append(_lineage_diag("error", f"idea_{field_name}_unsupported", f"Unsupported Research Idea {field_name}: {value}", idea_id=record.idea_id))
+        projected_status = project_research_idea_compatibility_status(
+            exploration_state=record.exploration_state,
+            decision_state=record.decision_state,
+            evidence_state=record.evidence_state,
+            archive_state=record.archive_state,
+            preserved_status=record.status,
+        )
+        if record.status != projected_status:
+            diagnostics.append(_lineage_diag("error", "idea_compatibility_status_conflict", f"Deprecated Research Idea status {record.status} conflicts with canonical facet projection {projected_status}.", idea_id=record.idea_id, projected_status=projected_status))
         if not record.title.strip():
             diagnostics.append(_lineage_diag("error", "idea_title_missing", f"Research Idea has no title: {record.idea_id}", idea_id=record.idea_id))
         if not record.summary.strip():
@@ -1339,6 +1913,12 @@ class WorkspaceRuntimeStore:
             diagnostics.extend(self.validate_research_idea_realization(realization))
         for edge in self.list_research_idea_lineage_edges(topic_workspace_id=topic_workspace_id, include_archived=True):
             diagnostics.extend(self.validate_research_idea_lineage_edge(edge))
+        for transition in self.list_research_idea_state_transitions(topic_workspace_id=topic_workspace_id):
+            diagnostics.extend(self.validate_research_idea_state_transition(transition, check_current=False))
+        for option in self.list_research_idea_decision_options(topic_workspace_id=topic_workspace_id):
+            diagnostics.extend(self.validate_research_idea_decision_option(option))
+        for operation in self.list_research_idea_operations(topic_workspace_id=topic_workspace_id):
+            diagnostics.extend(self.validate_research_idea_operation(operation))
         return diagnostics
 
     def _research_idea_lineage_creates_cycle(self, record: ResearchIdeaLineageEdge) -> bool:

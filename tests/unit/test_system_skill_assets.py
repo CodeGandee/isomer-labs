@@ -26,7 +26,7 @@ from isomer_labs.kaoju.contracts import load_contract
 class SystemSkillAssetTests(unittest.TestCase):
     def test_packaged_root_contains_distributable_skillset_only(self) -> None:
         root = system_skills_root()
-        for name in ("manifest.toml", "README.md", "misc", "operator", "research-paradigm", "service"):
+        for name in ("manifest.toml", "README.md", "misc", "operator", "research", "research-paradigm", "service"):
             self.assertTrue(root.joinpath(name).exists(), name)
         self.assertFalse(root.joinpath("dev").exists())
 
@@ -44,6 +44,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("operator/isomer-op-toolbox-mgr", paths)
         self.assertNotIn("operator/isomer-op-toolbox-creator", paths)
         self.assertIn("service/isomer-srv-houmao-interop", paths)
+        self.assertIn("research/isomer-research-idea-recording", paths)
         self.assertNotIn(old_houmao_interop_path, paths)
         self.assertIn("research-paradigm/deepsci/isomer-deepsci-write", paths)
         self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", paths)
@@ -194,6 +195,8 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertFalse((target / "operator" / old_houmao_interop_name).exists())
             self.assertTrue((target / "service" / "isomer-srv-houmao-interop" / "SKILL.md").is_file())
             self.assertTrue((target / "service" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
+            self.assertTrue((target / "research" / "isomer-research-idea-recording" / "SKILL.md").is_file())
+            self.assertTrue((target / "research" / "isomer-research-idea-recording" / "references" / "recording-contract.md").is_file())
             self.assertFalse((target / "research-paradigm").exists())
             self.assertFalse((target / "dev").exists())
 
@@ -211,6 +214,10 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "evidence-contract.md").is_file())
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
             self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-recording.md").is_file())
+            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "research-idea-recording.md").is_file())
+            neutral_recording = target / "research" / "isomer-research-idea-recording" / "SKILL.md"
+            self.assertTrue(neutral_recording.is_file())
+            self.assertNotIn("isomer-deepsci", neutral_recording.read_text(encoding="utf-8"))
             binding_pages = tuple(kaoju.glob("isomer-kaoju-*/artifact-bindings.md"))
             self.assertEqual(13, len(binding_pages))
             self.assertFalse((kaoju / "contracts").exists())
@@ -222,6 +229,19 @@ class SystemSkillAssetTests(unittest.TestCase):
                 self.assertNotIn("../contracts", text, path)
                 self.assertNotIn("contracts/bindings.v2.json", text, path)
             self.assertFalse((target / "research-paradigm" / "deepsci").exists())
+
+    def test_research_idea_recording_contract_is_producer_neutral_and_facet_first(self) -> None:
+        skill = resolve_system_skill("research/isomer-research-idea-recording")
+        skill_text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        contract = skill.joinpath("references", "recording-contract.md").read_text(encoding="utf-8")
+        self.assertIn("$isomer-research-idea-recording", skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8"))
+        self.assertIn("research_idea_effects", contract)
+        self.assertIn("exploration_state", contract)
+        self.assertIn("decision options", contract.lower())
+        self.assertIn("exact object-valued JSON path", contract)
+        self.assertIn("Accepted-Output Verification", contract)
+        self.assertNotIn("idea status changes require", skill_text.lower())
+        self.assertNotIn("isomer-deepsci", skill_text)
 
     def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:
         skill = resolve_system_skill("operator/isomer-op-gui-mgr")

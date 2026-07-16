@@ -100,6 +100,8 @@ class ProjectWebGuiTests(unittest.TestCase):
         path: str,
         *,
         request_headers: dict[str, str] | None = None,
+        method: str = "GET",
+        request_body: bytes = b"",
     ) -> tuple[int, dict[str, str], bytes]:
         messages: list[dict[str, object]] = []
         parsed = urlsplit(path)
@@ -110,7 +112,7 @@ class ProjectWebGuiTests(unittest.TestCase):
             if received:
                 await asyncio.Event().wait()
             received = True
-            return {"type": "http.request", "body": b"", "more_body": False}
+            return {"type": "http.request", "body": request_body, "more_body": False}
 
         async def send(message: dict[str, object]) -> None:
             messages.append(message)
@@ -119,7 +121,7 @@ class ProjectWebGuiTests(unittest.TestCase):
             "type": "http",
             "asgi": {"version": "3.0"},
             "http_version": "1.1",
-            "method": "GET",
+            "method": method,
             "scheme": "http",
             "path": parsed.path,
             "raw_path": parsed.path.encode(),
@@ -151,6 +153,17 @@ class ProjectWebGuiTests(unittest.TestCase):
     def asgi_get(self, app: object, path: str, *, headers: dict[str, str] | None = None) -> tuple[int, dict[str, str]]:
         status, headers, _body = self.asgi_get_response(app, path, request_headers=headers)
         return status, headers
+
+    def asgi_post_response(self, app: object, path: str, payload: dict[str, object]) -> tuple[int, dict[str, str], bytes]:
+        return asyncio.run(
+            self.asgi_get_response_async(
+                app,
+                path,
+                method="POST",
+                request_body=json.dumps(payload).encode("utf-8"),
+                request_headers={"content-type": "application/json"},
+            )
+        )
 
     def create_indexed_idea_record(
         self,
@@ -1021,6 +1034,218 @@ class ProjectWebGuiTests(unittest.TestCase):
             connection.execute("UPDATE research_ideas SET display_key = ? WHERE idea_id = ?", ("I1", "idea-parent"))
         legacy_graph = read_model.topic_graph("alpha", graph_scope="idea-lineage", renderer="auto")
         self.assertTrue(any(item["code"] == "idea_display_key_legacy_format" and item["display_key"] == "I1" for item in legacy_graph["diagnostics"]))
+
+    def test_portfolio_decision_and_traversal_reads_are_revision_aware_and_non_mutating(self) -> None:
+        root = self.make_project()
+        for idea_id, title in (("idea-a", "First option"), ("idea-b", "Second option")):
+            status, output = self.run_main(
+                [
+                    "--print-json",
+                    "ext",
+                    "research",
+                    "ideas",
+                    "upsert",
+                    "--project",
+                    str(root),
+                    "--topic",
+                    "alpha",
+                    "--idea-id",
+                    idea_id,
+                    "--title",
+                    title,
+                    "--summary",
+                    f"Summary for {title}.",
+                    "--exploration-state",
+                    "unexplored",
+                    "--decision-state",
+                    "open",
+                    "--evidence-state",
+                    "unassessed",
+                ],
+                cwd=root,
+            )
+            self.assertEqual(0, status, output)
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "records",
+                "create",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--id",
+                "decision-options",
+                "--record-kind",
+                "decision_record",
+                "--body",
+                "Compare both options.",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        for ordinal, (idea_id, outcome) in enumerate((("idea-a", "selected"), ("idea-b", "not_selected"))):
+            status, output = self.run_main(
+                [
+                    "--print-json",
+                    "ext",
+                    "research",
+                    "ideas",
+                    "decision-options",
+                    "upsert",
+                    "--project",
+                    str(root),
+                    "--topic",
+                    "alpha",
+                    "--decision-record-id",
+                    "decision-options",
+                    "--idea-id",
+                    idea_id,
+                    "--outcome",
+                    outcome,
+                    "--actor",
+                    "actor:user",
+                    "--ordinal",
+                    str(ordinal),
+                    "--rationale",
+                    "The actor compared both recorded options.",
+                    "--metadata-json",
+                    '{"option_set_complete":true}',
+                ],
+                cwd=root,
+            )
+            self.assertEqual(0, status, output)
+
+        read_model = self.read_model(root)
+        before = read_model.topic_graph("alpha", graph_scope="idea-lineage", preset="all-proposed")
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "ideas",
+                "transition",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "idea-a",
+                "--facet",
+                "decision_state",
+                "--expected-from",
+                "open",
+                "--to",
+                "selected",
+                "--actor",
+                "actor:user",
+                "--rationale",
+                "The first option best fits the topic.",
+                "--decision-record-id",
+                "decision-options",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "ideas",
+                "lineage",
+                "add",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "idea-a",
+                "idea-b",
+                "--lineage-kind",
+                "derived_from",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+
+        after = read_model.topic_graph("alpha", graph_scope="idea-lineage", preset="all-proposed")
+        self.assertNotEqual(before["index_revision"], after["index_revision"])
+        selected = next(node for node in after["nodes"] if node["idea_id"] == "idea-a")
+        self.assertEqual(("unexplored", "selected", "unassessed"), (selected["exploration_state"], selected["decision_state"], selected["evidence_state"]))
+
+        decision_context = read_model.idea_decision_context("alpha", "idea-a")
+        self.assertTrue(decision_context["ok"], decision_context)
+        self.assertFalse(decision_context["mutated"])
+        self.assertEqual(["idea-a", "idea-b"], [option["idea_id"] for option in decision_context["decisions"][0]["options"]])
+        self.assertTrue(decision_context["decisions"][0]["option_set_complete"])
+        self.assertEqual(after["index_revision"], decision_context["index_revision"])
+
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "ideas",
+                "decision-options",
+                "upsert",
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+                "--decision-record-id",
+                "decision-options",
+                "--idea-id",
+                "idea-b",
+                "--outcome",
+                "not_selected",
+                "--actor",
+                "actor:user",
+                "--ordinal",
+                "1",
+                "--rationale",
+                "Updated comparison reasoning in the same read cycle.",
+                "--metadata-json",
+                '{"option_set_complete":true}',
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        after_option_update = read_model.topic_graph("alpha", graph_scope="idea-lineage", preset="all-proposed")
+        self.assertNotEqual(after["index_revision"], after_option_update["index_revision"])
+
+        traversal = read_model.idea_traversal("alpha", root_idea_ids=["idea-a", "missing"], direction="descendants", max_depth=0)
+        self.assertTrue(traversal["ok"], traversal)
+        self.assertFalse(traversal["mutated"])
+        self.assertFalse(traversal["topology_complete"])
+        self.assertEqual(["max_depth"], traversal["limiting_bounds"])
+        self.assertEqual(["missing"], traversal["unresolved_roots"])
+        self.assertIsNotNone(traversal["continuation"])
+
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/ideas/idea-a/decisions")
+        self.assertEqual(200, status)
+        self.assertFalse(json.loads(body)["mutated"])
+        status, _headers, body = self.asgi_get_response(app, "/api/topics/alpha/ideas/traverse?root_idea_id=idea-a&direction=descendants")
+        self.assertEqual(200, status)
+        self.assertEqual(["idea-a", "idea-b"], [item["idea_id"] for item in json.loads(body)["nodes"]])
+        status, _headers, body = self.asgi_post_response(
+            app,
+            "/api/topics/alpha/ideas/steer",
+            {
+                "action": "explore",
+                "target_idea_id": "idea-b",
+                "actor_ref": "actor:user",
+                "idempotency_key": "web-steering",
+                "expected_index_revision": after_option_update["index_revision"],
+                "expected_states": {"idea-b": {"exploration_state": "unexplored", "decision_state": "open"}},
+                "user_prompt": "Explore the second option through the bounded web action.",
+                "dispatch": False,
+            },
+        )
+        self.assertEqual(200, status)
+        steering = json.loads(body)
+        self.assertEqual(("accepted", "pending", True), (steering["status"], steering["dispatch_status"], steering["canonical_accepted"]))
 
     def test_file_backed_record_content_opens_through_semantic_record_descriptor(self) -> None:
         root = self.make_project()

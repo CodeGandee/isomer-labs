@@ -13,6 +13,8 @@ Pipeline execution is a complex process. Before executing any pipeline task, use
 
 Route one accepted survey intent to its bounded owner, preserve Gates and durable checkpoints, and stop at the selected terminal boundary. This skill never performs a focused owner's research or operational work.
 
+When a procedure creates or changes durable research concepts, invoke `$isomer-research-idea-recording` and apply the Kaoju mapping reference exposed by `$isomer-kaoju-shared`. A pipeline checkpoint or terminal report cannot substitute for missing canonical idea effects.
+
 ## When to Use
 
 Use as the single public router for the ten current survey intents, retained compatibility procedures, and grouped managers. Call a focused Kaoju skill directly only when the caller already selected its bounded stage and supplies verified predecessors.

@@ -84,20 +84,20 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         status: str = "ready",
     ) -> dict[str, object]:
         payload_path = self.root / "inputs" / f"{record_id}.json"
+        selected_sections = json.loads(json.dumps(sections))
+        payload: dict[str, object] = {
+            "title": record_id.replace("-", " ").title(),
+            "summary": f"Accepted {semantic_id} fixture.",
+            "artifact_family": "kaoju",
+            "semantic_id": semantic_id,
+            "artifact_type": load_binding_registry()[semantic_id].artifact_type,
+            "sections": selected_sections,
+        }
+        if semantic_id == "KAOJU:DIRECTION-SET":
+            payload["research_idea_effects"] = self.direction_idea_effects(selected_sections, record_id)
         write(
             payload_path,
-            json.dumps(
-                {
-                    "title": record_id.replace("-", " ").title(),
-                    "summary": f"Accepted {semantic_id} fixture.",
-                    "artifact_family": "kaoju",
-                    "semantic_id": semantic_id,
-                    "artifact_type": load_binding_registry()[semantic_id].artifact_type,
-                    "sections": sections,
-                },
-                indent=2,
-            )
-            + "\n",
+            json.dumps(payload, indent=2) + "\n",
         )
         arguments = [
             "put",
@@ -117,6 +117,60 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         command_status, result = self.artifact(*arguments)
         self.assertEqual(0, command_status, result)
         return result
+
+    def direction_idea_effects(self, sections: dict[str, object], record_id: str) -> dict[str, object]:
+        proposals = sections["proposals"]
+        assert isinstance(proposals, list)
+        selected = {str(value) for value in sections["selections"]}  # type: ignore[union-attr]
+        generation_id = f"{record_id}-proposal-generation"
+        actor_ref = "topic-actor:researcher"
+        ideas: list[dict[str, object]] = []
+        options: list[dict[str, object]] = []
+        transitions: list[dict[str, object]] = []
+        for index, proposal in enumerate(proposals):
+            assert isinstance(proposal, dict)
+            direction_id = str(proposal["id"])
+            idea_id = f"kaoju-direction-{direction_id}"
+            outcome = "selected" if direction_id in selected else "not_selected"
+            rationale = "The actor selected this direction." if outcome == "selected" else "Keep this unselected direction open for later exploration."
+            source_json_path = f"$.sections.proposals[{index}]"
+            proposal.update(
+                {
+                    "idea_id": idea_id,
+                    "summary": f"Investigate {str(proposal['title']).lower()} as a durable survey direction.",
+                    "source_json_path": source_json_path,
+                    "generation_id": generation_id,
+                    "decision_outcome": outcome,
+                    "disposition_rationale": rationale,
+                    "transition_required": outcome == "selected",
+                }
+            )
+            ideas.append(
+                {
+                    "idea_id": idea_id,
+                    "title": proposal["title"],
+                    "summary": proposal["summary"],
+                    "source_json_path": source_json_path,
+                    "exploration_state": "unexplored",
+                    "decision_state": "selected" if outcome == "selected" else "open",
+                    "evidence_state": "unassessed",
+                    "archive_state": "active",
+                    "visibility": "primary",
+                    "aliases": [direction_id],
+                }
+            )
+            options.append({"idea_id": idea_id, "outcome": outcome, "ordinal": index, "generation_id": generation_id, "rationale": rationale, "actor_ref": actor_ref})
+            if outcome == "selected":
+                transitions.append({"idea_id": idea_id, "facet": "decision_state", "previous_value": "open", "next_value": "selected", "actor_ref": actor_ref, "rationale": rationale})
+        return {
+            "atomic": True,
+            "artifact_family": "kaoju",
+            "actor_ref": actor_ref,
+            "ideas": ideas,
+            "generation_groups": [{"generation_id": generation_id, "member_idea_ids": [item["idea_id"] for item in ideas], "parent_idea_ids": []}],
+            "decision_options": options,
+            "transitions": transitions,
+        }
 
     def direction_sections(self) -> dict[str, object]:
         proposals = []

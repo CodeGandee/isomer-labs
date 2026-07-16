@@ -11,6 +11,8 @@ Audit diagnoses whether the requested survey conclusions are supported by accept
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:AUDIT-REPORT` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
+Portfolio reminder: audit findings, defects, claim statuses, repair routes, and readiness decisions are not Research Ideas. If an accepted audit directly assesses an existing direction's evidence, invoke `$isomer-research-idea-recording` and record an explicit evidence transition with the Audit Report and affected evidence refs. The audit never changes decision state or silently creates a repair concept.
+
 ## When to Use
 
 Use before synthesis, when a Survey Delta is proposed, or when evidence drift or comparability is questioned. Do not use this skill to discover missing works, repair code, rerun experiments, relabel evidence, or write final conclusions.

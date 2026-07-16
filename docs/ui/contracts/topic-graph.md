@@ -56,7 +56,9 @@ The deterministic performance fixture contains 400 nodes and 579 edges, includin
 
 ## Node Fields
 
-Each node must include `id`, `record_id`, `material_kind`, `density_class`, and `title`. Useful optional fields include `summary`, `status`, `producer`, `skill`, `created_at`, `updated_at`, `idea_id`, `display_key`, `visibility`, `source`, `detail_refs`, and `renderer_hints`. Canonical Research Idea nodes use `display_key` as their short GUI label in the `I-<index>` format when the Workspace Runtime has been repaired to the current display-key shape.
+Each node must include `id`, `record_id`, `material_kind`, `density_class`, and `title`. A canonical Research Idea node also includes `idea_id`, `exploration_state`, `decision_state`, `evidence_state`, `archive_state`, `visibility`, `needs_classification`, `backend_selected`, `decision_summary`, `transition_refs`, and lazy `detail_refs`. Useful optional fields include `summary`, deprecated compatibility `status`, `producer`, `skill`, `created_at`, `updated_at`, `display_key`, `source`, and `renderer_hints`. Canonical Research Idea nodes use `display_key` as their short GUI label in the `I-<index>` format when the Workspace Runtime has been repaired to the current display-key shape.
+
+Portfolio behavior uses the canonical facets, never compatibility `status`. See [Research Idea Portfolio](idea-portfolio.md) for fixed presets, explicit filter composition, facet counts, canonical-versus-browser selection, and legacy fallback rules.
 
 Project Web no longer serves `artifact-overview`, `experiment-records`, or `paper-revisions` graph scopes. Requests for those scopes return `unsupported_graph_scope`.
 

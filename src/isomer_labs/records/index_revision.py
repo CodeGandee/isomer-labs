@@ -82,6 +82,34 @@ def _index_revision_table_state(engine: Engine, context: EffectiveTopicContext) 
                     "max_changed_at": row[max_label],
                 }
             )
+        for table_name, timestamp_column_name in (
+            ("research_ideas", "updated_at"),
+            ("research_idea_realizations", "updated_at"),
+            ("research_idea_lineage_edges", "updated_at"),
+            ("research_idea_generation_groups", "updated_at"),
+            ("research_idea_state_transitions", "transitioned_at"),
+            ("research_idea_decision_options", "updated_at"),
+            ("research_idea_operations", "updated_at"),
+        ):
+            if not _table_exists(connection, table_name):
+                state.append({"table": table_name, "exists": False, "count": 0, "max_changed_at": None})
+                continue
+            row = connection.execute(
+                text(
+                    f"SELECT COUNT(*) AS row_count, MAX({timestamp_column_name}) AS max_changed_at "
+                    f"FROM {table_name} WHERE topic_workspace_id = :topic_workspace_id"
+                ),
+                {"topic_workspace_id": context.topic_workspace_id},
+            ).mappings().one()
+            state.append(
+                {
+                    "table": table_name,
+                    "exists": True,
+                    "count": int(row["row_count"]),
+                    "max_changed_at": row["max_changed_at"],
+                    "content_digest": _table_content_digest(connection, table_name, context.topic_workspace_id),
+                }
+            )
     return state
 
 
@@ -90,3 +118,14 @@ def _table_exists(connection: Any, table_name: str) -> bool:
         text("SELECT name FROM sqlite_master WHERE type = 'table' AND name = :name"),
         {"name": table_name},
     ).fetchone() is not None
+
+
+def _table_content_digest(connection: Any, table_name: str, topic_workspace_id: str) -> str:
+    """Digest compact canonical tables so same-second in-place updates invalidate reads."""
+
+    rows = connection.execute(
+        text(f'SELECT * FROM "{table_name}" WHERE topic_workspace_id = :topic_workspace_id ORDER BY id'),
+        {"topic_workspace_id": topic_workspace_id},
+    ).mappings()
+    encoded = json.dumps([dict(row) for row in rows], sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()[:20]

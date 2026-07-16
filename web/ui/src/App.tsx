@@ -1170,6 +1170,11 @@ export function IdeaDetailPanel({ topicId, ideaId }: { topicId: string; ideaId: 
         </div>
       </div>
       <div className="idea-status-row">
+        {(["exploration_state", "decision_state", "evidence_state", "archive_state", "visibility"] as const).map((facet) => detail.data?.idea?.[facet] ? (
+          <StatusBadge key={facet} tone={facet === "decision_state" && detail.data?.idea?.[facet] === "selected" ? "success" : "default"}>
+            {facet.replace("_state", "").replace("_", " ")}: {String(detail.data.idea[facet])}
+          </StatusBadge>
+        ) : null)}
         {sourceTruncated ? <StatusBadge tone="warning">source JSON over default cap</StatusBadge> : null}
         {digestNotice ? <StatusBadge tone="info">{digestNotice}</StatusBadge> : null}
         <LinkButton

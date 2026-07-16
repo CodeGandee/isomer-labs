@@ -101,8 +101,67 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
     def artifact(self, *arguments: str) -> tuple[int, dict[str, object]]:
         return self.run_cli("project", "--root", str(self.root), "artifacts", *arguments, "--topic", "alpha")
 
-    def direction_payload(self, name: str, title: str) -> Path:
+    def direction_payload(self, name: str, title: str, *, initial: bool = True) -> Path:
         path = self.root / name
+        actor_ref = "topic-actor:test"
+        generation_id = f"generation-{Path(name).stem}"
+        proposal_specs = [
+            ("d1", "direction-systems", title, "Which systems mechanisms are supported by primary evidence?", "Systems evidence through 2026-07-14", ["paper", "technical_report", "framework_doc", "repository", "dataset"], "section-level", ["reading-list", "source-digests"], "requires-environment-work", "selected", "The actor selected the systems direction."),
+            ("d2", "direction-comparative", "Comparative mechanisms", "How do mechanisms differ?", "Primary papers", ["paper", "technical_report"], "full-text", ["comparison"], "unknown", "not_selected", "Keep this direction open as an alternative."),
+            ("d3", "direction-lineage", "Implementation lineage", "Which code implements the reported methods?", "Verified repositories", ["paper", "repository"], "code-level", ["source-digests"], "available", "not_selected", "Keep this direction open for later exploration."),
+        ]
+        proposals = []
+        for index, (direction_id, idea_id, proposal_title, question, boundary, sources, depth, deliverables, feasibility, outcome, rationale) in enumerate(proposal_specs):
+            proposals.append(
+                {
+                    "id": direction_id,
+                    "idea_id": idea_id,
+                    "title": proposal_title,
+                    "summary": f"Investigate {proposal_title.lower()} as a durable survey direction.",
+                    "research_question": question,
+                    "boundary": boundary,
+                    "source_classes": sources,
+                    "coverage_date": "2026-07-14",
+                    "expected_depth": depth,
+                    "deliverables": deliverables,
+                    "empirical_feasibility": feasibility,
+                    "source_json_path": f"$.sections.proposals[{index}]",
+                    "generation_id": generation_id,
+                    "decision_outcome": outcome,
+                    "disposition_rationale": rationale,
+                    "transition_required": initial and outcome == "selected",
+                }
+            )
+        effects = {
+            "atomic": True,
+            "artifact_family": "kaoju",
+            "actor_ref": actor_ref,
+            "ideas": [
+                {
+                    "idea_id": proposal["idea_id"],
+                    "title": proposal["title"],
+                    "summary": proposal["summary"],
+                    "source_json_path": proposal["source_json_path"],
+                    "exploration_state": "unexplored",
+                    "decision_state": "selected" if proposal["decision_outcome"] == "selected" else "open",
+                    "evidence_state": "unassessed",
+                    "archive_state": "active",
+                    "visibility": "primary",
+                    "aliases": [proposal["id"]],
+                }
+                for proposal in proposals
+            ],
+            "generation_groups": [{"generation_id": generation_id, "member_idea_ids": [proposal["idea_id"] for proposal in proposals], "parent_idea_ids": []}],
+            "decision_options": [
+                {"idea_id": proposal["idea_id"], "outcome": proposal["decision_outcome"], "ordinal": index, "generation_id": generation_id, "rationale": proposal["disposition_rationale"], "actor_ref": actor_ref}
+                for index, proposal in enumerate(proposals)
+            ],
+            "transitions": (
+                [{"idea_id": "direction-systems", "facet": "decision_state", "previous_value": "open", "next_value": "selected", "actor_ref": actor_ref, "rationale": "The actor selected this direction."}]
+                if initial
+                else []
+            ),
+        }
         path.write_text(
             json.dumps(
                 {
@@ -112,44 +171,11 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
                     "semantic_id": "KAOJU:DIRECTION-SET",
                     "artifact_type": "direction-set",
                     "sections": {
-                        "proposals": [
-                            {
-                                "id": "d1",
-                                "title": title,
-                                "research_question": "Which systems mechanisms are supported by primary evidence?",
-                                "boundary": "Systems evidence through 2026-07-14",
-                                "source_classes": ["paper", "technical_report", "framework_doc", "repository", "dataset"],
-                                "coverage_date": "2026-07-14",
-                                "expected_depth": "section-level",
-                                "deliverables": ["reading-list", "source-digests"],
-                                "empirical_feasibility": "requires-environment-work",
-                            },
-                            {
-                                "id": "d2",
-                                "title": "Comparative mechanisms",
-                                "research_question": "How do mechanisms differ?",
-                                "boundary": "Primary papers",
-                                "source_classes": ["paper", "technical_report"],
-                                "coverage_date": "2026-07-14",
-                                "expected_depth": "full-text",
-                                "deliverables": ["comparison"],
-                                "empirical_feasibility": "unknown",
-                            },
-                            {
-                                "id": "d3",
-                                "title": "Implementation lineage",
-                                "research_question": "Which code implements the reported methods?",
-                                "boundary": "Verified repositories",
-                                "source_classes": ["paper", "repository"],
-                                "coverage_date": "2026-07-14",
-                                "expected_depth": "code-level",
-                                "deliverables": ["source-digests"],
-                                "empirical_feasibility": "available",
-                            },
-                        ],
+                        "proposals": proposals,
                         "selections": ["d1"],
-                        "confirmation": {"status": "accepted", "actor_ref": "topic-actor:test"},
+                        "confirmation": {"status": "accepted", "actor_ref": actor_ref},
                     },
+                    "research_idea_effects": effects,
                 }
             ),
             encoding="utf-8",
@@ -212,7 +238,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, replay)
         self.assertTrue(replay["idempotent_replay"])
 
-        revised_payload = self.direction_payload("direction-v2.json", "Systems and compilers")
+        revised_payload = self.direction_payload("direction-v2.json", "Systems and compilers", initial=False)
         status, revised = self.artifact(
             "revise",
             "directions-v1",
@@ -229,6 +255,10 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, latest)
         self.assertEqual(["directions-v2"], [item["record_id"] for item in latest["records"]])
 
+        legacy_payload = self.root / "legacy-direction-set-v1.json"
+        legacy_data = json.loads(payload.read_text(encoding="utf-8"))
+        legacy_data.pop("research_idea_effects", None)
+        legacy_payload.write_text(json.dumps(legacy_data), encoding="utf-8")
         for record_id in ("legacy-directions-a", "legacy-directions-b"):
             status, legacy = self.run_cli(
                 "ext",
@@ -248,7 +278,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
                 "--format-profile",
                 "isomer:research/record-format/profile/kaoju/decision/direction-set/v1",
                 "--payload-file",
-                str(payload),
+                str(legacy_payload),
             )
             self.assertEqual(0, status, legacy)
         status, ambiguous = self.artifact("latest", "KAOJU:DIRECTION-SET")

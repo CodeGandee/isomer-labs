@@ -9,7 +9,7 @@ description: Use when a Kaoju request needs a bounded Survey Contract, clarifica
 
 Turn the user's survey question into an explicit contract before discovery or execution changes its scope. Ambiguity that changes cost, evidence strength, or comparability must become a user-visible decision.
 
-Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:DIRECTION-SET`, `KAOJU:SURVEY-CONTRACT`, or `KAOJU:COMPARISON-INTENT` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
+Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. For `KAOJU:DIRECTION-SET`, invoke `$isomer-research-idea-recording` and read the Kaoju mapping reference exposed by `$isomer-kaoju-shared`. Use `KAOJU:DIRECTION-SET`, `KAOJU:SURVEY-CONTRACT`, or `KAOJU:COMPARISON-INTENT` exactly. If a binding or required surface is unavailable, return a storage blocker; never invent a path, profile, canonical Markdown file, or untracked JSON state.
 
 ## When to Use
 
@@ -21,8 +21,8 @@ Use at the start of a survey procedure, when a prior contract no longer fits, or
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Inspect ambiguity**. Identify unclear boundaries, source classes, time horizon, seed role, inclusion rules, desired depth, deliverables, resources, and Gates.
 4. **Clarify when requested or material**. Use the A/B/C/D clarification contract, mark exactly one suggested option, then ask whether to clarify more or proceed.
-5. **Propose and confirm directions when requested**. Propose three directions by default. Give each a stable id, scoped question, boundary, source classes, coverage date, expected depth, deliverables, and empirical-feasibility annotation. Mark one suggestion, accept multiple selections and custom directions, and revise or reject proposals until the actor explicitly confirms the set. Current host capability may annotate feasibility but cannot filter or rank directions by itself.
-6. **Persist the confirmed set**. Put or revise one `KAOJU:DIRECTION-SET` in its topic scope with proposals, selections, custom inputs, rejected or revised entries, actor confirmation, and lineage. Never conflate it with a frozen Survey Contract.
+5. **Propose and confirm directions when requested**. Propose three directions by default. Give each a stable source-local direction id, canonical semantic `idea_id`, title, summary, scoped question, boundary, source classes, coverage date, expected depth, deliverables, empirical-feasibility annotation, exact proposal path, one shared generation id, authored option outcome, disposition rationale, and closure reason when applicable. Mark one suggestion, accept multiple selections and custom directions, and revise proposals until the actor explicitly confirms the set. Current host capability may annotate feasibility but cannot filter or rank directions by itself.
+6. **Persist the confirmed set atomically**. Resolve the active v2 binding and put or revise one `KAOJU:DIRECTION-SET` in its topic scope. Include `research_idea_effects` with every proposal concept, exact realization, generation membership, Decision Record option, and justified transition. A merely unselected proposal remains open. Verify all returned canonical refs and validation before checkpointing; never conflate the Direction Set with a Research Idea or frozen Survey Contract.
 7. **Freeze the contract**. Optionally derive one combined or per-direction Survey Contract with question, boundary, source classes, coverage date, inclusion and exclusion rules, evidence contract, resources, Gate posture, outputs, and stop conditions.
 8. **Add empirical intent when applicable**. For actual-run comparison, create the Comparison Intent Document and wait for a Proceed Decision before preparation or Runs.
 9. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-frame --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
@@ -44,7 +44,7 @@ Resolve `KAOJU:DIRECTION-SET`, `KAOJU:SURVEY-CONTRACT`, and `KAOJU:COMPARISON-IN
 
 ## Reference Routing
 
-Use `$isomer-kaoju-shared` for interaction, evidence, Artifact, owner-routing, lineage, and terminal contracts. Use `$isomer-kaoju-workspace-mgr` when readiness evidence is missing or stale.
+Use `$isomer-kaoju-shared` for interaction, evidence, Artifact, owner-routing, lineage, terminal, and Kaoju-to-portfolio mapping contracts. Use `$isomer-research-idea-recording` for canonical idea facets, exact realizations, decisions, transitions, generation membership, verification, and migration posture. Use `$isomer-kaoju-workspace-mgr` when readiness evidence is missing or stale.
 
 ## Foundational Principle
 

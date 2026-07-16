@@ -1,6 +1,7 @@
 # Operation-Set Outputs Are Not Automatically Recorded in the Research Database
 
 **Discovered**: 2026-07-16
+**Last confirmed**: 2026-07-17
 **Topic**: flash-attention-4-whitebox-runtime-model
 **Severity**: process/intent
 **Status**: open
@@ -17,6 +18,17 @@ During active research on the Flash Attention 4 white-box runtime model, several
 - `20260716-sass-grounded-research/sass_grounded_references.md`
 
 These artifacts were left as plain files in the Topic Actor output tree. They were **not** created as durable `ext research records` with canonical lineage at the time they were produced. A separate manual pass was required to import them into the research database and wire lineage edges after the fact.
+
+## What this is
+
+This is a workflow-contract and skill-intent failure at the operation-set persistence boundary. The operation completed when its files and terminal summary existed, even though no terminal gate required the agent to create durable records, attach immediate parents, link applicable Research Ideas, and verify the stored result. The database and CLI already support those actions, so this is not primarily a database-write or GUI-rendering defect.
+
+The failure has two distinct layers:
+
+1. Research-relevant operation-set files were not persisted as durable research records when produced.
+2. Creating records and record-to-record lineage does not automatically create canonical Research Ideas or idea-to-idea lineage. The Idea Graph reads canonical `research_ideas` and `research_idea_lineage_edges` once any canonical idea exists; it does not mix in extracted legacy idea facets.
+
+The second layer explains why importing the missing outputs can repair the Records and record-lineage views while the Idea Graph still shows only one node. At confirmation time, this topic contained one canonical Research Idea, one realization, no canonical idea-lineage edges, and ten extracted legacy idea facets from earlier idea-slate records.
 
 ## Why this is a problem
 
@@ -36,6 +48,23 @@ Any operation set that produces a research-relevant artifact should, by default,
 5. Each record must carry `--parents-json` lineage to its immediate durable predecessors.
 
 The default should be opt-out, not opt-in. If an operation set genuinely produces only disposable scratch output, the agent should explicitly record that decision.
+
+## Recovery performed
+
+The manual recovery created or confirmed these durable records:
+
+| Operation set | Record kind | Semantic id | Record id |
+| --- | --- | --- | --- |
+| Idea exploration report | `artifact` | `DEEPSCI:ANALYSIS-CAMPAIGN-SUMMARY` | `artifact-DEEPSCI-ANALYSIS-CAMPAIGN-SUMMARY-7ab990596bcc` |
+| GPU microbenchmarks, first pass | `evidence_item` | `DEEPSCI:EXPERIMENT-RESULT` | `evidence_item-DEEPSCI-EXPERIMENT-RESULT-3349842e3d1a` |
+| Optimized GPU microbenchmarks | `evidence_item` | `DEEPSCI:EXPERIMENT-RESULT` | `evidence_item-DEEPSCI-EXPERIMENT-RESULT-1efa1724538c` |
+| Predictor validation, 12.774x result | `evidence_item` | `DEEPSCI:EXPERIMENT-RESULT` | `evidence_item-DEEPSCI-EXPERIMENT-RESULT-6fe490f02531` |
+| Dataflow predictor code | `artifact` | `DEEPSCI:IMPLEMENTATION-CHANGE-MAP` | `artifact-DEEPSCI-IMPLEMENTATION-CHANGE-MAP-c4af0935da74` |
+| SASS reference note | `artifact` | `DEEPSCI:RESEARCH-NOTE` | `artifact-DEEPSCI-RESEARCH-NOTE-36be5f056187` |
+
+The selected hypothesis `artifact-DEEPSCI-SELECTED-HYPOTHESIS-6ff8d6824fa3` is the common ancestor. The recovered record chain connects idea exploration to the first microbenchmarks with `follow_up_to`, the first microbenchmarks to the optimized pass with `revision_of`, the optimized pass and idea exploration to predictor validation with `derived_from`, predictor validation to the dataflow predictor with `derived_from`, and the dataflow predictor to the SASS note with `derived_from`. The SASS note is also a realization of Research Idea `I-1` / `sass-grounded-interpretable-model` at the `exploration` stage.
+
+This recovery repairs durable record storage and record lineage. It does not by itself promote the candidate ideas embedded in earlier raw-idea-slate and candidate-frontier payloads into canonical Research Ideas or construct their idea lineage.
 
 ## Recommended fixes
 

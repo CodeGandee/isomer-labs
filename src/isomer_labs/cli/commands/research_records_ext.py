@@ -537,6 +537,8 @@ def register_research_record_ext_commands(app: click.Group) -> None:
 
 def _record_request_options(*, require_kind: bool, include_id: bool) -> Any:
     def decorator(command: Any) -> Any:
+        command = click.option("--require-idea-effects", is_flag=True, help="Reject the record unless canonical Research Idea effects are supplied and committed atomically.")(command)
+        command = click.option("--idea-effects-json", default=None, help="Producer-neutral canonical Research Idea effects object. Structured payloads may supply research_idea_effects instead.")(command)
         command = click.option("--primary-idea-json", default=None, help="Canonical primary idea object realized by this record.")(command)
         command = click.option("--idea-parents-json", default=None, help="Canonical idea parent edges as a JSON array of objects.")(command)
         command = click.option("--idea-realizations-json", default=None, help="Canonical idea realizations as a JSON array of objects.")(command)
@@ -682,6 +684,12 @@ def _request_from_values(values: dict[str, Any]) -> ResearchRecordRequest:
         idea_realizations=parse_json_object_list(values.get("idea_realizations_json"), field_name="idea-realizations-json"),
         idea_parents=parse_json_object_list(values.get("idea_parents_json"), field_name="idea-parents-json"),
         primary_idea=parse_json_object(values.get("primary_idea_json"), field_name="primary-idea-json"),
+        idea_effects=(
+            parse_json_object(values.get("idea_effects_json"), field_name="idea-effects-json")
+            if values.get("idea_effects_json") is not None
+            else None
+        ),
+        idea_effects_required=bool(values.get("require_idea_effects")),
     )
 
 

@@ -11,6 +11,8 @@ Write the strongest survey conclusion supported by accepted evidence and no stro
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:RELATED-WORK-CATALOG`, `KAOJU:CLAIM-STATUS-TABLE`, `KAOJU:FIELD-SUMMARY`, and `KAOJU:KAOJU-DOSSIER` exactly. Return a storage blocker rather than inventing a path, profile, canonical Markdown file, or untracked JSON.
 
+Portfolio reminder: claims, catalog entries, summaries, tables, contradictions, unresolved questions, and reading paths retain their existing types. Invoke `$isomer-research-idea-recording` only when accepted synthesis directly establishes that focused direction exploration is complete, justifies an evidence assessment, or explicitly proposes a new durable concept. Cite terminal synthesis and evidence refs and preserve decision state.
+
 ## When to Use
 
 Use only after audit accepts the evidence for synthesis or narrows the claims explicitly. Do not use this skill to fill evidence gaps, discover new sources, execute code, repair Runs, or bypass a not-ready Audit Report.

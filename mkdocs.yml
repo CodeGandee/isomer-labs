@@ -38,6 +38,7 @@ nav:
       - Topic Workspaces: manual/topic-workspaces.md
       - Workspace Runtime: manual/workspace-runtime.md
       - Research Records: manual/research-records.md
+      - Research Idea Portfolio: manual/research-idea-portfolio.md
       - Project Web GUI: manual/project-web.md
       - Houmao Adapter: manual/houmao-adapter.md
       - Troubleshooting: manual/troubleshooting.md
@@ -57,6 +58,11 @@ nav:
       - Display Paths: ui/contracts/display-paths.md
       - Topic Overview: ui/contracts/topic-overview.md
       - Topic Graph: ui/contracts/topic-graph.md
+      - Research Idea Portfolio: ui/contracts/idea-portfolio.md
+      - Idea Timeline: ui/contracts/idea-timeline.md
       - Idea Detail: ui/contracts/idea-detail.md
+      - Research Idea Decision Context: ui/contracts/idea-decision-context.md
+      - Research Idea Traversal: ui/contracts/idea-traversal.md
+      - Research Idea Steering: ui/contracts/idea-steering.md
       - Record Inspection: ui/contracts/record-inspection.md
       - Diagnostics: ui/contracts/diagnostics.md

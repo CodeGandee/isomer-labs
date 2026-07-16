@@ -156,6 +156,107 @@ def _validate_direction_set(payload: Mapping[str, Any], diagnostics: list[Contra
         diagnostics.append(ContractDiagnostic("direction_confirmation_missing", "Accepted direction state requires explicit actor confirmation.", "sections.confirmation"))
     if len(proposals) < 3:
         diagnostics.append(ContractDiagnostic("direction_default_short", "The default proposal set targets three directions; record why fewer were useful.", "sections.proposals", "warning"))
+    effects = payload.get("research_idea_effects")
+    if effects is not None:
+        _validate_direction_set_idea_effects(proposals, selections, effects, diagnostics)
+
+
+def _validate_direction_set_idea_effects(
+    proposals: Sequence[Any],
+    selections: Sequence[Any],
+    raw_effects: object,
+    diagnostics: list[ContractDiagnostic],
+) -> None:
+    if not isinstance(raw_effects, Mapping):
+        diagnostics.append(ContractDiagnostic("direction_idea_effects_invalid", "Direction Set Research Idea effects must be an object.", "research_idea_effects"))
+        return
+    if raw_effects.get("atomic") is not True:
+        diagnostics.append(ContractDiagnostic("direction_idea_effects_not_atomic", "Direction Set Research Idea effects must declare atomic=true.", "research_idea_effects.atomic"))
+    effect_ideas = _sequence(raw_effects.get("ideas"))
+    generation_groups = _sequence(raw_effects.get("generation_groups"))
+    decision_options = _sequence(raw_effects.get("decision_options"))
+    transitions = _sequence(raw_effects.get("transitions"))
+    if not all((effect_ideas, generation_groups, decision_options)):
+        diagnostics.append(ContractDiagnostic("direction_idea_effects_incomplete", "Direction Set v2 requires ideas, one generation group, and decision options; include transitions for every changed facet.", "research_idea_effects"))
+        return
+
+    proposal_by_idea: dict[str, Mapping[str, Any]] = {}
+    generation_ids: set[str] = set()
+    for index, raw_proposal in enumerate(proposals):
+        if not isinstance(raw_proposal, Mapping):
+            continue
+        location = f"sections.proposals/{index}"
+        for field in ("idea_id", "summary", "source_json_path", "generation_id", "decision_outcome", "disposition_rationale"):
+            if not raw_proposal.get(field):
+                diagnostics.append(ContractDiagnostic("direction_idea_field_missing", f"Direction Set v2 proposal requires {field}.", f"{location}/{field}"))
+        idea_id = raw_proposal.get("idea_id")
+        if isinstance(idea_id, str) and idea_id:
+            if idea_id in proposal_by_idea:
+                diagnostics.append(ContractDiagnostic("direction_idea_id_duplicate", f"Duplicate canonical idea id: {idea_id}", f"{location}/idea_id"))
+            proposal_by_idea[idea_id] = raw_proposal
+        expected_path = f"$.sections.proposals[{index}]"
+        if raw_proposal.get("source_json_path") != expected_path:
+            diagnostics.append(ContractDiagnostic("direction_idea_source_path_invalid", f"Direction proposal must name its exact object path: {expected_path}", f"{location}/source_json_path"))
+        generation_id = raw_proposal.get("generation_id")
+        if isinstance(generation_id, str) and generation_id:
+            generation_ids.add(generation_id)
+        if raw_proposal.get("decision_outcome") == "closed" and not raw_proposal.get("closure_reason"):
+            diagnostics.append(ContractDiagnostic("direction_closure_reason_missing", "A closed direction requires a closure reason.", f"{location}/closure_reason"))
+    if len(generation_ids) != 1:
+        diagnostics.append(ContractDiagnostic("direction_generation_inconsistent", "All proposals in one Direction Set must share one proposal-generation id.", "sections.proposals"))
+
+    effect_idea_by_id = {
+        str(item.get("idea_id")): item
+        for item in effect_ideas
+        if isinstance(item, Mapping) and item.get("idea_id")
+    }
+    if set(effect_idea_by_id) != set(proposal_by_idea):
+        diagnostics.append(ContractDiagnostic("direction_idea_effect_membership_mismatch", "Canonical idea effects must cover every proposal exactly once.", "research_idea_effects.ideas"))
+    for idea_id, proposal in proposal_by_idea.items():
+        effect = effect_idea_by_id.get(idea_id)
+        if effect is None:
+            continue
+        direction_id = proposal.get("id")
+        aliases = _sequence(effect.get("aliases"))
+        if direction_id not in aliases:
+            diagnostics.append(ContractDiagnostic("direction_alias_missing", f"Canonical idea {idea_id} must retain direction id {direction_id!r} as an alias.", "research_idea_effects.ideas"))
+        if effect.get("source_json_path") != proposal.get("source_json_path"):
+            diagnostics.append(ContractDiagnostic("direction_idea_effect_path_mismatch", f"Canonical idea {idea_id} does not use the proposal's exact object path.", "research_idea_effects.ideas"))
+
+    expected_members = set(proposal_by_idea)
+    valid_generation = False
+    for item in generation_groups:
+        if not isinstance(item, Mapping):
+            continue
+        if item.get("generation_id") in generation_ids and set(str(value) for value in _sequence(item.get("member_idea_ids"))) == expected_members:
+            valid_generation = True
+    if not valid_generation:
+        diagnostics.append(ContractDiagnostic("direction_generation_membership_mismatch", "The proposal generation group must list every proposal idea exactly once.", "research_idea_effects.generation_groups"))
+
+    options_by_idea = {
+        str(item.get("idea_id")): item
+        for item in decision_options
+        if isinstance(item, Mapping) and item.get("idea_id")
+    }
+    selected_ids = {str(value) for value in selections}
+    for idea_id, proposal in proposal_by_idea.items():
+        option = options_by_idea.get(idea_id)
+        if option is None or option.get("outcome") != proposal.get("decision_outcome") or not option.get("rationale"):
+            diagnostics.append(ContractDiagnostic("direction_decision_option_mismatch", f"Direction {idea_id} requires one matching authored decision option and rationale.", "research_idea_effects.decision_options"))
+        direction_id = str(proposal.get("id") or "")
+        if direction_id in selected_ids and proposal.get("decision_outcome") != "selected":
+            diagnostics.append(ContractDiagnostic("direction_selected_outcome_mismatch", f"Selected direction {direction_id} must use the selected option outcome.", "sections.selections"))
+
+    transition_pairs = {
+        (str(item.get("idea_id")), str(item.get("facet")), str(item.get("next_value")))
+        for item in transitions
+        if isinstance(item, Mapping)
+    }
+    for idea_id, proposal in proposal_by_idea.items():
+        outcome = str(proposal.get("decision_outcome") or "")
+        expected_state = {"selected": "selected", "shortlisted": "shortlisted", "deferred": "deferred", "closed": "closed", "reopened": "open"}.get(outcome)
+        if proposal.get("transition_required") is True and expected_state is not None and (idea_id, "decision_state", expected_state) not in transition_pairs:
+            diagnostics.append(ContractDiagnostic("direction_decision_transition_missing", f"Direction {idea_id} lacks the justified decision-state transition for outcome {outcome}.", "research_idea_effects.transitions"))
 
 
 def _validate_reading_list(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:

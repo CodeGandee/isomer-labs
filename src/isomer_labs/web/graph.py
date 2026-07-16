@@ -10,7 +10,8 @@ from isomer_labs.models import EffectiveTopicContext
 
 from .graph_edges import idea_graph_edges
 from .graph_projection import project_graph_neighborhood, projection_input_error
-from .idea_graph import canonical_idea_edges, canonical_idea_groups, canonical_idea_nodes
+from .idea_graph import canonical_idea_edges, canonical_idea_groups, canonical_idea_nodes, idea_display_key_diagnostics
+from .idea_portfolio import apply_portfolio_predicate, portfolio_metadata
 
 GRAPH_SCOPES = {"idea-lineage"}
 RENDERERS = {"auto", "react-flow", "sigma"}
@@ -35,6 +36,14 @@ def build_topic_graph_view(
     hop_radius: int | None = None,
     direction: str = "both",
     edge_mode: str = "induced",
+    preset: str = "current",
+    exploration_state: str | None = None,
+    decision_state: str | None = None,
+    evidence_state: str | None = None,
+    archive_state: str | None = None,
+    visibility: str | None = None,
+    generation_id: str | None = None,
+    decision_record_id: str | None = None,
 ) -> dict[str, Any]:
     """Build a renderer-neutral graph view from query-index export data."""
 
@@ -65,6 +74,8 @@ def build_topic_graph_view(
     canonical_idea_realizations = _rows(export_payload, "canonical_idea_realizations")
     canonical_idea_edge_rows = _rows(export_payload, "canonical_idea_edges")
     canonical_idea_generation_groups = _rows(export_payload, "canonical_idea_generation_groups")
+    canonical_idea_transitions = _rows(export_payload, "canonical_idea_transitions")
+    canonical_idea_decision_options = _rows(export_payload, "canonical_idea_decision_options")
     routes = _rows(export_payload, "routes")
     metrics = _rows(export_payload, "metrics")
     claims = _rows(export_payload, "claims")
@@ -73,12 +84,14 @@ def build_topic_graph_view(
     projection_diagnostics: list[dict[str, Any]] = []
 
     if canonical_ideas:
-        projection_diagnostics.extend(_idea_display_key_diagnostics(canonical_ideas))
+        projection_diagnostics.extend(idea_display_key_diagnostics(canonical_ideas))
         nodes, record_node_ids = canonical_idea_nodes(
             canonical_ideas,
             canonical_idea_realizations,
             topic_id=context.research_topic.id,
             include_secondary=include_secondary,
+            transitions=canonical_idea_transitions,
+            decision_options=canonical_idea_decision_options,
         )
     else:
         projection_diagnostics.append(_diag("warning", "idea_graph_heuristic_fallback", "Canonical Research Ideas are absent; using extracted record idea facets as a heuristic graph."))
@@ -102,11 +115,65 @@ def build_topic_graph_view(
             diagnostics=projection_diagnostics,
         )
 
+    source_nodes = list(nodes)
+    source_graph_edges = list(graph_edges)
+    portfolio_result: dict[str, Any] | None = None
+    if canonical_ideas:
+        portfolio_result = apply_portfolio_predicate(
+            nodes,
+            preset=preset,
+            exploration_state=exploration_state,
+            decision_state=decision_state,
+            evidence_state=evidence_state,
+            archive_state=archive_state,
+            visibility=visibility,
+            generation_id=generation_id,
+            decision_record_id=decision_record_id,
+            include_secondary=include_secondary,
+        )
+        projection_diagnostics.extend(portfolio_result["diagnostics"])
+        if not portfolio_result["ok"]:
+            payload = _base_payload(context, graph_scope, export_payload, renderer_hint=_renderer_hint(graph_scope, renderer))
+            payload.update(
+                {
+                    "ok": False,
+                    "nodes": [],
+                    "edges": [],
+                    "groups": [],
+                    "facets": {"counts": {}, "portfolio": {}},
+                    "portfolio": {},
+                    "topology_complete": False,
+                    "source_node_count": len(source_nodes),
+                    "source_edge_count": len(source_graph_edges),
+                    "visible_node_count": 0,
+                    "visible_edge_count": 0,
+                    "total_node_count": 0,
+                    "total_edge_count": 0,
+                    "projection": None,
+                    "paging": {"cursor": None, "next_cursor": None, "truncated": False},
+                    "error": portfolio_result["error"],
+                    "diagnostics": diagnostics + projection_diagnostics,
+                }
+            )
+            return payload
+        nodes = portfolio_result["nodes"]
+    else:
+        projection_diagnostics.append(_diag("warning", "idea_portfolio_incomplete", "Canonical portfolio presets are unavailable while the graph uses heuristic idea extraction; migrate or repair the missing canonical Research Ideas."))
+
+    if status is not None and canonical_ideas:
+        projection_diagnostics.append(_diag("warning", "compatibility_status_filter_deprecated", "The status filter uses a deprecated compatibility projection; use canonical portfolio facet filters instead."))
     nodes = _filter_nodes(nodes, status=status, producer=producer, time_range=time_range, search=search)
     allowed_node_ids = {str(node["id"]) for node in nodes}
     graph_edges = [edge for edge in graph_edges if edge["source"] in allowed_node_ids and edge["target"] in allowed_node_ids]
-    source_node_count = len(nodes)
-    source_edge_count = len(graph_edges)
+    visible_node_count = len(nodes)
+    visible_edge_count = len(graph_edges)
+    source_node_count = len(source_nodes)
+    source_edge_count = len(source_graph_edges)
+    omitted_cross_boundary_edge_count = sum(
+        1
+        for edge in source_graph_edges
+        if (edge["source"] in allowed_node_ids) != (edge["target"] in allowed_node_ids)
+    )
     projection: dict[str, Any] | None = None
     if seed_node_ids or hop_radius is not None:
         projected = project_graph_neighborhood(
@@ -141,6 +208,8 @@ def build_topic_graph_view(
         nodes = projected["nodes"]
         graph_edges = projected["edges"]
         projection = {**projected["projection"], "source_index_revision": export_payload.get("index_revision")}
+        visible_node_count = len(nodes)
+        visible_edge_count = len(graph_edges)
 
     groups = (canonical_idea_groups(nodes, graph_edges, canonical_idea_generation_groups) + _groups(nodes, graph_edges, [])) if graph_scope == "idea-lineage" and canonical_ideas else _groups(nodes, graph_edges, edges)
     facets = _facets(ideas=ideas, routes=routes, metrics=metrics, claims=claims, facts=facts, files=files, filters={
@@ -151,6 +220,18 @@ def build_topic_graph_view(
         "search": search,
         "include_secondary": include_secondary,
     })
+    portfolio = {}
+    if portfolio_result is not None:
+        portfolio = portfolio_metadata(
+            result=portfolio_result,
+            source_nodes=source_nodes,
+            visible_nodes=nodes,
+            source_edge_count=source_edge_count,
+            visible_edge_count=visible_edge_count,
+            omitted_cross_boundary_edge_count=omitted_cross_boundary_edge_count,
+            topology_complete=True,
+        )
+        facets["portfolio"] = portfolio
 
     offset = _cursor_offset(cursor)
     selected_limit = limit or DEFAULT_GRAPH_TRANSFER_LIMIT
@@ -171,9 +252,14 @@ def build_topic_graph_view(
             "edges": paged_edges,
             "groups": groups,
             "facets": facets,
+            "portfolio": portfolio,
             "topology_complete": topology_complete,
-            "total_node_count": source_node_count,
-            "total_edge_count": source_edge_count,
+            "source_node_count": source_node_count,
+            "source_edge_count": source_edge_count,
+            "visible_node_count": visible_node_count,
+            "visible_edge_count": visible_edge_count,
+            "total_node_count": total_nodes,
+            "total_edge_count": visible_edge_count,
             "projection": projection,
             "paging": {"cursor": cursor, "next_cursor": next_cursor, "truncated": truncated},
             "diagnostics": diagnostics + projection_diagnostics,
@@ -540,28 +626,6 @@ def _node_haystack(node: Mapping[str, Any]) -> str:
         node.get("material_kind"),
     ]
     return " ".join(str(value).lower() for value in fields if value is not None)
-
-
-def _idea_display_key_diagnostics(ideas: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    diagnostics: list[dict[str, Any]] = []
-    for idea in ideas:
-        idea_id = str(idea.get("idea_id") or idea.get("id") or "").strip()
-        display_key = str(idea.get("display_key") or "").strip()
-        if not idea_id:
-            continue
-        if not display_key:
-            diagnostics.append(_diag("warning", "idea_display_key_missing", f"Research Idea has no GUI display key: {idea_id}", idea_id=idea_id))
-        elif display_key.startswith("I") and not display_key.startswith("I-"):
-            diagnostics.append(
-                _diag(
-                    "warning",
-                    "idea_display_key_legacy_format",
-                    f"Research Idea display key needs explicit migration: {display_key}",
-                    idea_id=idea_id,
-                    display_key=display_key,
-                )
-            )
-    return diagnostics
 
 
 def _groups(nodes: list[dict[str, Any]], graph_edges: list[dict[str, Any]], raw_edges: list[dict[str, Any]]) -> list[dict[str, Any]]:

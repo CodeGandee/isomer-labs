@@ -31,9 +31,12 @@ from isomer_labs.runtime.records import (
     HandoffRecord,
     PathPlanRecord,
     ResearchIdea,
+    ResearchIdeaDecisionOption,
     ResearchIdeaGenerationGroup,
     ResearchIdeaLineageEdge,
+    ResearchIdeaOperation,
     ResearchIdeaRealization,
+    ResearchIdeaStateTransition,
     ResearchRecordGenerationGroup,
     ResearchRecordLineageEdge,
     ResetCheckpointRecord,
@@ -46,6 +49,7 @@ from isomer_labs.runtime.records import (
     TopicEnvironmentReadinessRecord,
     WorkspaceRuntimeMetadata,
     _provenance_ref,
+    research_idea_facets_from_legacy_status,
 )
 
 def _dumps(value: object) -> str:
@@ -239,6 +243,9 @@ LINEAGE_RUNTIME_SCHEMA_TABLES = (
     "research_idea_realizations",
     "research_idea_generation_groups",
     "research_idea_lineage_edges",
+    "research_idea_state_transitions",
+    "research_idea_decision_options",
+    "research_idea_operations",
 )
 ADAPTER_RUNTIME_SCHEMA_TABLES = (
     "adapter_handoff_dispatch_records",
@@ -514,6 +521,10 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             summary TEXT NOT NULL,
             family TEXT,
             status TEXT NOT NULL,
+            exploration_state TEXT NOT NULL DEFAULT 'unknown',
+            decision_state TEXT NOT NULL DEFAULT 'unknown',
+            evidence_state TEXT NOT NULL DEFAULT 'unknown',
+            archive_state TEXT NOT NULL DEFAULT 'active',
             visibility TEXT NOT NULL,
             aliases_json TEXT NOT NULL,
             source_record_id TEXT,
@@ -616,6 +627,89 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_idea_lineage_edges (topic_workspace_id, lineage_kind);
         CREATE INDEX IF NOT EXISTS idx_research_idea_lineage_edges_generation
             ON research_idea_lineage_edges (topic_workspace_id, generation_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_state_transitions (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            facet TEXT NOT NULL,
+            previous_value TEXT NOT NULL,
+            next_value TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            actor_ref TEXT NOT NULL,
+            reason_code TEXT,
+            rationale TEXT NOT NULL,
+            decision_record_id TEXT,
+            gate_id TEXT,
+            evidence_item_refs_json TEXT NOT NULL,
+            artifact_refs_json TEXT NOT NULL,
+            finding_refs_json TEXT NOT NULL,
+            research_task_id TEXT,
+            run_id TEXT,
+            provenance_record_refs_json TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            transitioned_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_idea
+            ON research_idea_state_transitions (topic_workspace_id, idea_id, transitioned_at);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_operation
+            ON research_idea_state_transitions (topic_workspace_id, operation_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_decision
+            ON research_idea_state_transitions (topic_workspace_id, decision_record_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_decision_options (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            decision_record_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            outcome TEXT NOT NULL,
+            option_role TEXT,
+            ordinal INTEGER,
+            generation_id TEXT,
+            rationale TEXT,
+            consequence TEXT,
+            actor_ref TEXT,
+            supporting_refs_json TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, decision_record_id, idea_id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_decision
+            ON research_idea_decision_options (topic_workspace_id, decision_record_id, ordinal);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_idea
+            ON research_idea_decision_options (topic_workspace_id, idea_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_generation
+            ON research_idea_decision_options (topic_workspace_id, generation_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_operations (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            action_kind TEXT NOT NULL,
+            input_digest TEXT NOT NULL,
+            status TEXT NOT NULL,
+            result_json TEXT NOT NULL,
+            actor_ref TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, operation_id),
+            UNIQUE(topic_workspace_id, idempotency_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_research_idea_operations_status
+            ON research_idea_operations (topic_workspace_id, status, updated_at);
 
         CREATE TABLE IF NOT EXISTS research_record_files (
             id TEXT PRIMARY KEY,
@@ -1051,6 +1145,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
     _ensure_research_idea_summary_schema(connection)
     _ensure_research_record_ideas_summary_schema(connection)
     _ensure_research_idea_display_key_schema(connection)
+    _ensure_research_idea_portfolio_schema(connection)
 
 
 def _ensure_research_idea_summary_schema(connection: sqlite3.Connection) -> None:
@@ -1071,6 +1166,10 @@ def _ensure_research_idea_summary_schema(connection: sqlite3.Connection) -> None
             summary TEXT NOT NULL,
             family TEXT,
             status TEXT NOT NULL,
+            exploration_state TEXT NOT NULL DEFAULT 'unknown',
+            decision_state TEXT NOT NULL DEFAULT 'unknown',
+            evidence_state TEXT NOT NULL DEFAULT 'unknown',
+            archive_state TEXT NOT NULL DEFAULT 'active',
             visibility TEXT NOT NULL,
             aliases_json TEXT NOT NULL,
             source_record_id TEXT,
@@ -1094,15 +1193,21 @@ def _ensure_research_idea_summary_schema(connection: sqlite3.Connection) -> None
         INSERT OR REPLACE INTO research_ideas_summary_migration
             (
                 id, research_topic_id, topic_workspace_id, idea_id, display_key, title, summary,
-                family, status, visibility, aliases_json, source_record_id, source_json_path,
-                metadata_json, created_at, updated_at, provenance_refs_json
+                family, status, exploration_state, decision_state, evidence_state, archive_state,
+                visibility, aliases_json, source_record_id, source_json_path, metadata_json,
+                created_at, updated_at, provenance_refs_json
             )
         SELECT
             id, research_topic_id, topic_workspace_id, idea_id,
             {"display_key" if "display_key" in columns else "NULL"} AS display_key,
             title,
             COALESCE({summary_expr}, NULLIF(TRIM(title), ''), idea_id) AS summary,
-            family, status, visibility, aliases_json, source_record_id, source_json_path,
+            family, status,
+            {"exploration_state" if "exploration_state" in columns else "'unknown'"} AS exploration_state,
+            {"decision_state" if "decision_state" in columns else "'unknown'"} AS decision_state,
+            {"evidence_state" if "evidence_state" in columns else "'unknown'"} AS evidence_state,
+            {"archive_state" if "archive_state" in columns else "'active'"} AS archive_state,
+            visibility, aliases_json, source_record_id, source_json_path,
             metadata_json, created_at, updated_at, provenance_refs_json
         FROM research_ideas
         """
@@ -1212,6 +1317,109 @@ def _ensure_research_idea_display_key_schema(connection: sqlite3.Connection) -> 
             ON research_idea_display_keys (research_topic_id, topic_workspace_id);
         CREATE INDEX IF NOT EXISTS idx_research_idea_display_keys_idea
             ON research_idea_display_keys (topic_workspace_id, idea_id);
+        """
+    )
+
+
+def _ensure_research_idea_portfolio_schema(connection: sqlite3.Connection) -> None:
+    """Apply the additive Research Idea portfolio migration in place."""
+
+    if not _table_exists(connection, "research_ideas"):
+        return
+    columns = _column_names(connection, "research_ideas")
+    additions = {
+        "exploration_state": "TEXT NOT NULL DEFAULT 'unknown'",
+        "decision_state": "TEXT NOT NULL DEFAULT 'unknown'",
+        "evidence_state": "TEXT NOT NULL DEFAULT 'unknown'",
+        "archive_state": "TEXT NOT NULL DEFAULT 'active'",
+    }
+    for column, declaration in additions.items():
+        if column not in columns:
+            connection.execute(f"ALTER TABLE research_ideas ADD COLUMN {column} {declaration}")
+    connection.executescript(
+        """
+        CREATE INDEX IF NOT EXISTS idx_research_ideas_portfolio
+            ON research_ideas (topic_workspace_id, archive_state, decision_state, exploration_state, evidence_state, visibility);
+
+        CREATE TABLE IF NOT EXISTS research_idea_state_transitions (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            facet TEXT NOT NULL,
+            previous_value TEXT NOT NULL,
+            next_value TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            actor_ref TEXT NOT NULL,
+            reason_code TEXT,
+            rationale TEXT NOT NULL,
+            decision_record_id TEXT,
+            gate_id TEXT,
+            evidence_item_refs_json TEXT NOT NULL,
+            artifact_refs_json TEXT NOT NULL,
+            finding_refs_json TEXT NOT NULL,
+            research_task_id TEXT,
+            run_id TEXT,
+            provenance_record_refs_json TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            transitioned_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_idea
+            ON research_idea_state_transitions (topic_workspace_id, idea_id, transitioned_at);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_operation
+            ON research_idea_state_transitions (topic_workspace_id, operation_id);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_transitions_decision
+            ON research_idea_state_transitions (topic_workspace_id, decision_record_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_decision_options (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            decision_record_id TEXT NOT NULL,
+            idea_id TEXT NOT NULL,
+            outcome TEXT NOT NULL,
+            option_role TEXT,
+            ordinal INTEGER,
+            generation_id TEXT,
+            rationale TEXT,
+            consequence TEXT,
+            actor_ref TEXT,
+            supporting_refs_json TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, decision_record_id, idea_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_decision
+            ON research_idea_decision_options (topic_workspace_id, decision_record_id, ordinal);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_idea
+            ON research_idea_decision_options (topic_workspace_id, idea_id, created_at);
+        CREATE INDEX IF NOT EXISTS idx_research_idea_decision_options_generation
+            ON research_idea_decision_options (topic_workspace_id, generation_id);
+
+        CREATE TABLE IF NOT EXISTS research_idea_operations (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            operation_id TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL,
+            action_kind TEXT NOT NULL,
+            input_digest TEXT NOT NULL,
+            status TEXT NOT NULL,
+            result_json TEXT NOT NULL,
+            actor_ref TEXT,
+            metadata_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, operation_id),
+            UNIQUE(topic_workspace_id, idempotency_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_research_idea_operations_status
+            ON research_idea_operations (topic_workspace_id, status, updated_at);
         """
     )
 
@@ -1576,6 +1784,7 @@ def _row_to_research_record_lineage_edge(row: sqlite3.Row) -> ResearchRecordLine
 
 def _row_to_research_idea(row: sqlite3.Row) -> ResearchIdea:
     columns = set(row.keys())
+    legacy_facets = research_idea_facets_from_legacy_status(str(row["status"]))
     return ResearchIdea(
         id=row["id"],
         research_topic_id=row["research_topic_id"],
@@ -1593,6 +1802,10 @@ def _row_to_research_idea(row: sqlite3.Row) -> ResearchIdea:
         metadata=_loads_object_dict(row["metadata_json"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
+        exploration_state=row["exploration_state"] if "exploration_state" in columns else legacy_facets[0],
+        decision_state=row["decision_state"] if "decision_state" in columns else legacy_facets[1],
+        evidence_state=row["evidence_state"] if "evidence_state" in columns else legacy_facets[2],
+        archive_state=row["archive_state"] if "archive_state" in columns else legacy_facets[3],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
     )
 
@@ -1645,6 +1858,75 @@ def _row_to_research_idea_lineage_edge(row: sqlite3.Row) -> ResearchIdeaLineageE
         rationale=row["rationale"],
         status=row["status"],
         confidence=row["confidence"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_state_transition(row: sqlite3.Row) -> ResearchIdeaStateTransition:
+    return ResearchIdeaStateTransition(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        idea_id=row["idea_id"],
+        facet=row["facet"],
+        previous_value=row["previous_value"],
+        next_value=row["next_value"],
+        operation_id=row["operation_id"],
+        actor_ref=row["actor_ref"],
+        reason_code=row["reason_code"],
+        rationale=row["rationale"],
+        decision_record_id=row["decision_record_id"],
+        gate_id=row["gate_id"],
+        evidence_item_refs=_loads_list(row["evidence_item_refs_json"]),
+        artifact_refs=_loads_list(row["artifact_refs_json"]),
+        finding_refs=_loads_list(row["finding_refs_json"]),
+        research_task_id=row["research_task_id"],
+        run_id=row["run_id"],
+        provenance_record_refs=_loads_list(row["provenance_record_refs_json"]),
+        metadata=_loads_object_dict(row["metadata_json"]),
+        transitioned_at=row["transitioned_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_decision_option(row: sqlite3.Row) -> ResearchIdeaDecisionOption:
+    return ResearchIdeaDecisionOption(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        decision_record_id=row["decision_record_id"],
+        idea_id=row["idea_id"],
+        outcome=row["outcome"],
+        option_role=row["option_role"],
+        ordinal=row["ordinal"],
+        generation_id=row["generation_id"],
+        rationale=row["rationale"],
+        consequence=row["consequence"],
+        actor_ref=row["actor_ref"],
+        supporting_refs=_loads_list(row["supporting_refs_json"]),
+        operation_id=row["operation_id"],
+        metadata=_loads_object_dict(row["metadata_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_research_idea_operation(row: sqlite3.Row) -> ResearchIdeaOperation:
+    return ResearchIdeaOperation(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        operation_id=row["operation_id"],
+        idempotency_key=row["idempotency_key"],
+        action_kind=row["action_kind"],
+        input_digest=row["input_digest"],
+        status=row["status"],
+        result=_loads_object_dict(row["result_json"]),
+        actor_ref=row["actor_ref"],
         metadata=_loads_object_dict(row["metadata_json"]),
         created_at=row["created_at"],
         updated_at=row["updated_at"],

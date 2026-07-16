@@ -5,7 +5,7 @@ These models describe UI read contracts, not canonical Workspace Runtime storage
 
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -58,9 +58,47 @@ class TopicGraphNodeContract(GuiContractModel):
     status: str | None = None
     idea_id: str | None = None
     display_key: str | None = None
+    exploration_state: Literal["unknown", "unexplored", "exploring", "explored"] | None = None
+    decision_state: Literal["unknown", "open", "shortlisted", "selected", "deferred", "closed"] | None = None
+    evidence_state: Literal["unknown", "unassessed", "inconclusive", "supported", "mixed", "refuted"] | None = None
+    archive_state: Literal["active", "archived"] | None = None
+    visibility: Literal["primary", "supporting", "hidden"] | None = None
+    needs_classification: list[str] = Field(default_factory=list)
+    decision_summary: dict[str, Any] | None = None
+    transition_refs: list[str] = Field(default_factory=list)
     source: dict[str, Any] | None = None
     detail_refs: dict[str, Any] | None = None
     renderer_hints: dict[str, Any] | None = None
+
+
+class CanonicalIdeaPortfolioNodeContract(TopicGraphNodeContract):
+    """Required fields for a canonical portfolio node, separate from legacy fallback nodes."""
+
+    idea_id: str
+    exploration_state: Literal["unknown", "unexplored", "exploring", "explored"]
+    decision_state: Literal["unknown", "open", "shortlisted", "selected", "deferred", "closed"]
+    evidence_state: Literal["unknown", "unassessed", "inconclusive", "supported", "mixed", "refuted"]
+    archive_state: Literal["active", "archived"]
+    visibility: Literal["primary", "supporting", "hidden"]
+    detail_refs: dict[str, Any]
+
+
+class IdeaPortfolioPresetContract(GuiContractModel):
+    id: Literal["current", "all-proposed", "open-for-exploration", "unexplored", "exploring", "explored", "selected", "deferred", "closed", "needs-classification"]
+    label: str
+    description: str
+    predicate: dict[str, Any]
+
+
+class IdeaPortfolioMetadataContract(GuiContractModel):
+    preset: IdeaPortfolioPresetContract
+    available_presets: list[IdeaPortfolioPresetContract]
+    explicit_filters: dict[str, list[str]]
+    applied_predicate: dict[str, Any]
+    source_counts: dict[str, Any]
+    visible_counts: dict[str, Any]
+    omitted_cross_boundary_edge_count: int
+    source_topology_complete: bool
 
 
 class TopicGraphEdgeContract(GuiContractModel):
@@ -121,6 +159,11 @@ class TopicGraphResponseContract(GuiContractModel):
     topology_complete: bool = False
     total_node_count: int = 0
     total_edge_count: int = 0
+    source_node_count: int = 0
+    source_edge_count: int = 0
+    visible_node_count: int = 0
+    visible_edge_count: int = 0
+    portfolio: dict[str, Any] = Field(default_factory=dict)
     paging: TopicGraphPagingContract | None = None
     projection: TopicGraphProjectionContract | None = None
     error: ErrorContract | None = None
@@ -156,6 +199,75 @@ class IdeaDetailResponseContract(GuiContractModel):
     latest_record: dict[str, Any] | None = None
     idea_content: dict[str, Any] | None = None
     source_provenance: dict[str, Any] | None = None
+    error: ErrorContract | None = None
+
+
+class IdeaDecisionContextResponseContract(GuiContractModel):
+    ok: bool
+    mutated: Literal[False]
+    topic_id: str
+    topic_workspace_id: str
+    operation: str
+    idea_id: str | None = None
+    decision_record_id: str | None = None
+    decisions: list[dict[str, Any]]
+    ideas: list[dict[str, Any]]
+    transitions: list[dict[str, Any]]
+    reopen_history: list[dict[str, Any]] = Field(default_factory=list)
+    index_revision: str | None = None
+    diagnostics: list[DiagnosticContract]
+    error: ErrorContract | None = None
+
+
+class IdeaTraversalResponseContract(GuiContractModel):
+    ok: bool
+    mutated: Literal[False]
+    topic_id: str
+    topic_workspace_id: str
+    operation: str
+    roots: list[str]
+    resolved_roots: list[str]
+    unresolved_roots: list[str]
+    direction: Literal["ancestors", "descendants"]
+    relation_kinds: list[str]
+    nodes: list[dict[str, Any]]
+    edges: list[dict[str, Any]]
+    topology_complete: bool
+    limiting_bounds: list[str]
+    maximum_observed_depth: int
+    counts: dict[str, int]
+    bounds: dict[str, int]
+    continuation: dict[str, Any] | None
+    index_revision: str | None = None
+    diagnostics: list[DiagnosticContract]
+    error: ErrorContract | None = None
+
+
+class IdeaSteeringResponseContract(GuiContractModel):
+    ok: bool
+    mutated: bool
+    status: Literal["accepted", "conflict", "gate_required", "blocked"]
+    topic_id: str | None = None
+    topic_workspace_id: str | None = None
+    operation_id: str | None = None
+    replayed: bool = False
+    canonical_accepted: bool = False
+    decision_record_ref: str | None = None
+    research_inquiry_ref: str | None = None
+    research_task_ref: str | None = None
+    provenance_record_ref: str | None = None
+    handoff_ref: str | None = None
+    transition_refs: list[str] = Field(default_factory=list)
+    decision_option_refs: list[str] = Field(default_factory=list)
+    resulting_ideas: list[dict[str, Any]] = Field(default_factory=list)
+    current_ideas: list[dict[str, Any]] = Field(default_factory=list)
+    new_index_revision: str | None = None
+    current_index_revision: str | None = None
+    pending_index_revision: bool | None = None
+    dispatch_status: str | None = None
+    dispatch_retry_ref: str | None = None
+    dispatch: dict[str, Any] | None = None
+    diagnostics: list[DiagnosticContract]
     error: ErrorContract | None = None
 
 

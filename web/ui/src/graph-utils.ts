@@ -14,6 +14,13 @@ export type IdeaFlowNodeData = {
   display_key?: string | null;
   producer?: string | null;
   skill?: string | null;
+  exploration_state?: string | null;
+  decision_state?: string | null;
+  evidence_state?: string | null;
+  archive_state?: string | null;
+  visibility?: string | null;
+  backend_selected?: boolean;
+  needs_classification?: string[];
 };
 
 export function ideaNodeVisibleLabel(node: Pick<TopicGraphView["nodes"][number], "display_key" | "idea_id" | "status" | "title">): string {
@@ -46,7 +53,13 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
       "idea-flow-node",
       `material-${flowClassToken(node.material_kind || "artifact")}`,
       `status-${flowClassToken(node.status || "unknown")}`,
-      node.selected ? "backend-selected" : "",
+      `exploration-${flowClassToken(node.exploration_state || "unknown")}`,
+      `decision-${flowClassToken(node.decision_state || "unknown")}`,
+      `evidence-${flowClassToken(node.evidence_state || "unknown")}`,
+      `archive-${flowClassToken(node.archive_state || "active")}`,
+      `visibility-${flowClassToken(node.visibility || "primary")}`,
+      node.backend_selected || node.selected ? "backend-selected" : "",
+      node.needs_classification?.length ? "needs-classification" : "",
     ].filter(Boolean).join(" "),
     position: { x: 40 + (index % 3) * 300, y: 40 + Math.floor(index / 3) * 160 },
     data: {
@@ -60,6 +73,13 @@ export function toFlowNodes(graph: TopicGraphView): Node<IdeaFlowNodeData>[] {
       display_key: node.display_key,
       producer: node.producer,
       skill: node.skill,
+      exploration_state: node.exploration_state,
+      decision_state: node.decision_state,
+      evidence_state: node.evidence_state,
+      archive_state: node.archive_state,
+      visibility: node.visibility,
+      backend_selected: node.backend_selected || Boolean(node.selected),
+      needs_classification: node.needs_classification,
     },
     style: {
       fontSize: 12,
@@ -99,6 +119,12 @@ export function graphContentSignature(graph: TopicGraphView): string {
       idea_id: node.idea_id || null,
       display_key: node.display_key || null,
       visibility: node.visibility || null,
+      exploration_state: node.exploration_state || null,
+      decision_state: node.decision_state || null,
+      evidence_state: node.evidence_state || null,
+      archive_state: node.archive_state || null,
+      backend_selected: Boolean(node.backend_selected || node.selected),
+      needs_classification: node.needs_classification || [],
     })).sort((left, right) => left.id.localeCompare(right.id)),
     edges: graph.edges.map((edge) => ({
       id: edge.id,

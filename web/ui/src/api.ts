@@ -1,7 +1,10 @@
 import {
   ProjectResponseSchema,
   ProjectExplorerResponseSchema,
+  IdeaDecisionContextResponseSchema,
   IdeaDetailResponseSchema,
+  IdeaSteeringResponseSchema,
+  IdeaTraversalResponseSchema,
   OpenableItemDescriptorSchema,
   RecordDetailResponseSchema,
   RecordRenderResponseSchema,
@@ -14,6 +17,7 @@ import {
   TopicsResponseSchema,
   ViewerDescriptorSchema,
   type GraphScope,
+  type ResearchIdeaSteeringRequest,
   type RendererChoice,
 } from "./types";
 
@@ -30,6 +34,14 @@ export type GraphFilters = {
   hopRadius?: number;
   direction?: "incoming" | "outgoing" | "both";
   edgeMode?: "induced" | "traversal";
+  preset?: string;
+  explorationState?: string;
+  decisionState?: string;
+  evidenceState?: string;
+  archiveState?: string;
+  visibility?: string;
+  generationId?: string;
+  decisionRecordId?: string;
 };
 
 async function fetchJson(path: string, init?: RequestInit): Promise<unknown> {
@@ -137,6 +149,14 @@ export async function getTopicGraph(topicId: string, graphScope: GraphScope, ren
         hop_radius: filters.hopRadius,
         direction: filters.direction,
         edge_mode: filters.edgeMode,
+        preset: filters.preset,
+        exploration_state: filters.explorationState,
+        decision_state: filters.decisionState,
+        evidence_state: filters.evidenceState,
+        archive_state: filters.archiveState,
+        visibility: filters.visibility,
+        generation_id: filters.generationId,
+        decision_record_id: filters.decisionRecordId,
       })}`,
     ),
   );
@@ -163,6 +183,52 @@ export async function getIdeaDetail(topicId: string, ideaId: string, options: { 
         include_source_json: options.includeSourceJson,
       })}`,
     ),
+  );
+}
+
+export async function getIdeaDecisionContext(topicId: string, ideaId: string) {
+  return IdeaDecisionContextResponseSchema.parse(
+    await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/ideas/${encodeURIComponent(ideaId)}/decisions`),
+  );
+}
+
+export async function getDecisionContext(topicId: string, decisionRecordId: string) {
+  return IdeaDecisionContextResponseSchema.parse(
+    await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/idea-decisions/${encodeURIComponent(decisionRecordId)}`),
+  );
+}
+
+export async function traverseIdeas(
+  topicId: string,
+  options: {
+    rootIdeaIds: string[];
+    direction: "ancestors" | "descendants";
+    relationKinds?: string[];
+    maxDepth?: number;
+    maxNodes?: number;
+    maxEdges?: number;
+  },
+) {
+  return IdeaTraversalResponseSchema.parse(
+    await fetchJson(
+      `/api/topics/${encodeURIComponent(topicId)}/ideas/traverse${params({
+        root_idea_id: options.rootIdeaIds,
+        direction: options.direction,
+        relation_kind: options.relationKinds,
+        max_depth: options.maxDepth,
+        max_nodes: options.maxNodes,
+        max_edges: options.maxEdges,
+      })}`,
+    ),
+  );
+}
+
+export async function steerIdea(topicId: string, request: ResearchIdeaSteeringRequest) {
+  return IdeaSteeringResponseSchema.parse(
+    await fetchJson(`/api/topics/${encodeURIComponent(topicId)}/ideas/steer`, {
+      method: "POST",
+      body: JSON.stringify(request),
+    }),
   );
 }
 

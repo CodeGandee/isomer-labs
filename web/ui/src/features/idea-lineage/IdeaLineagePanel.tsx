@@ -2,13 +2,13 @@ import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, S
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import React, { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { getIdeaDetail, getTopicGraph } from "../../api";
+import { getIdeaDecisionContext, getIdeaDetail, getTopicGraph, traverseIdeas } from "../../api";
 import { GraphSummary } from "../graph/GraphPanels";
 import { openRecordFromNode } from "../graph/open-record";
 import { ideaNodeVisibleLabel, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
 import { buildJsonMarkdownPreview } from "../../markdown-doc";
 import { useGuiTheme } from "../../theme-provider";
-import type { GraphScope, TopicGraphView } from "../../types";
+import type { GraphScope, TopicGraphNode, TopicGraphView } from "../../types";
 import { DEFAULT_HOVER_PREVIEW_DELAY_MS, useGuiSettings } from "../../ui-settings";
 import { isGraphScope } from "../../workbench-history";
 import { Input } from "@/components/ui/input";
@@ -30,12 +30,16 @@ import { IdeaGraphControls } from "./IdeaGraphControls";
 import { layoutFingerprint } from "./layout-protocol";
 import type { IdeaGraphLayoutConfiguration } from "./layout-registry";
 import { IdeaGraphLayoutWorkerClient } from "./layout-worker-client";
+import { IdeaDecisionContextPanel } from "../idea-portfolio/IdeaDecisionContextPanel";
+import { IdeaSteeringDialog } from "../idea-portfolio/IdeaSteeringDialog";
+import { PortfolioControls } from "../idea-portfolio/PortfolioControls";
+import { applyIdeaPortfolioView, persistIdeaPortfolioView, restoreIdeaPortfolioView, type IdeaPortfolioViewState } from "../idea-portfolio/idea-portfolio";
 
 const NODE_DOUBLE_CLICK_MS = 500;
 const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
 const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
-const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: false, limit: 1000 };
+const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: true, limit: 5000, preset: "all-proposed" };
 const LazyIdeaHoverMarkdownView = React.lazy(() =>
   import("../../markdown-view").then((module) => ({ default: module.MarkdownView })),
 );
@@ -66,6 +70,10 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
   const { hoverPreviewDelayMs = DEFAULT_HOVER_PREVIEW_DELAY_MS } = useGuiSettings();
   const reactFlowColorMode: ColorMode = themeMode === "system" ? "system" : resolvedThemeMode;
   const [searchText, setSearchText] = useState("");
+  const [portfolioState, setPortfolioState] = useState<IdeaPortfolioViewState>(() => restoreIdeaPortfolioView(topicId || "", "graph"));
+  const [traversalView, setTraversalView] = useState<{ rootIdeaIds: string[]; direction: "ancestors" | "descendants" } | null>(null);
+  const [decisionIdeaId, setDecisionIdeaId] = useState<string | null>(null);
+  const [steeringAction, setSteeringAction] = useState<{ action: "explore" | "explore_instead"; targetIdeaId: string } | null>(null);
   const [baseNodes, setBaseNodes] = useState<IdeaFlowNode[]>([]);
   const [baseEdges, setBaseEdges] = useState<ReturnType<typeof toFlowEdges>>([]);
   const [lowZoom, setLowZoom] = useState(false);
@@ -96,32 +104,76 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
       }),
     [store],
   );
+
+  useEffect(() => {
+    setPortfolioState(restoreIdeaPortfolioView(topicId || "", "graph"));
+    setTraversalView(null);
+    setDecisionIdeaId(null);
+    setSteeringAction(null);
+  }, [topicId]);
+
+  useEffect(() => {
+    if (topicId) {
+      persistIdeaPortfolioView(topicId, "graph", portfolioState);
+    }
+  }, [portfolioState, topicId]);
+
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, "react-flow", "overview", IDEA_LINEAGE_OVERVIEW_FILTERS.limit],
     queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, "react-flow", IDEA_LINEAGE_OVERVIEW_FILTERS),
     enabled: Boolean(topicId),
   });
+  const portfolioGraph = useMemo(() => applyIdeaPortfolioView(graph.data, portfolioState), [graph.data, portfolioState]);
+  const traversal = useQuery({
+    queryKey: ["topic", topicId, "ideas", "traverse", traversalView?.rootIdeaIds, traversalView?.direction, focus.relationKinds],
+    queryFn: () => traverseIdeas(topicId || "", {
+      rootIdeaIds: traversalView?.rootIdeaIds || [],
+      direction: traversalView?.direction || "descendants",
+      relationKinds: focus.relationKinds,
+      maxDepth: 8,
+      maxNodes: 500,
+      maxEdges: 1000,
+    }),
+    enabled: Boolean(topicId && traversalView),
+  });
+  const traversalGraph = useMemo(
+    () => traversalView && traversal.data?.ok ? projectGraphToIdeaIds(portfolioGraph, traversal.data.nodes.map((node) => String(node.idea_id || "")).filter(Boolean)) : portfolioGraph,
+    [portfolioGraph, traversal.data, traversalView],
+  );
+  const decisionContext = useQuery({
+    queryKey: ["topic", topicId, "idea", decisionIdeaId, "decision-context"],
+    queryFn: () => getIdeaDecisionContext(topicId || "", decisionIdeaId || ""),
+    enabled: Boolean(topicId && decisionIdeaId),
+  });
   const backendFocusGraph = useQuery({
     queryKey: ["topic", topicId, "graph", selectedGraphScope, "react-flow", "focus", selectedNodeIds, focus.hopRadius, focus.direction, focus.relationKinds, focus.edgeMode],
     queryFn: () => getTopicGraph(topicId || "", selectedGraphScope, "react-flow", {
-      includeSecondary: false,
+      includeSecondary: true,
       seedNodeIds: selectedNodeIds,
       hopRadius: focus.hopRadius,
       direction: focus.direction,
       relationKind: focus.relationKinds.join(",") || undefined,
       edgeMode: focus.edgeMode,
+      preset: portfolioState.preset,
+      explorationState: portfolioState.explorationState,
+      decisionState: portfolioState.decisionState,
+      evidenceState: portfolioState.evidenceState,
+      archiveState: portfolioState.archiveState,
+      visibility: portfolioState.visibility,
+      generationId: portfolioState.generationId,
+      decisionRecordId: portfolioState.decisionRecordId,
     }),
-    enabled: Boolean(topicId && focus.enabled && selectedNodeIds.length > 0 && graph.data && graph.data.topology_complete !== true),
+    enabled: Boolean(topicId && focus.enabled && selectedNodeIds.length > 0 && traversalGraph && traversalGraph.topology_complete !== true),
   });
   const focusedGraph = useMemo(() => {
-    if (!graph.data || !focus.enabled) {
-      return graph.data;
+    if (!traversalGraph || !focus.enabled) {
+      return traversalGraph;
     }
-    if (graph.data.topology_complete === true) {
-      return projectIdeaGraphNeighborhood(graph.data, selectedNodeIds, focus);
+    if (traversalGraph.topology_complete === true) {
+      return projectIdeaGraphNeighborhood(traversalGraph, selectedNodeIds, focus);
     }
     return backendFocusGraph.data;
-  }, [backendFocusGraph.data, focus, graph.data, selectedNodeIds]);
+  }, [backendFocusGraph.data, focus, selectedNodeIds, traversalGraph]);
   const filteredGraph = useMemo(() => filterIdeaLineageGraphForSearch(focusedGraph, searchText), [focusedGraph, searchText]);
 
   useEffect(() => () => interactionBoundary.dispose(), [interactionBoundary]);
@@ -288,10 +340,10 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
       store.dispatch({ type: "graphDataLoaded", nodeIds: [] });
       return;
     }
-    if (graph.data?.ok && !graph.data.error) {
-      store.dispatch({ type: "graphDataLoaded", nodeIds: graph.data.nodes.map((node) => node.id) });
+    if (portfolioGraph?.ok && !portfolioGraph.error) {
+      store.dispatch({ type: "graphDataLoaded", nodeIds: portfolioGraph.nodes.map((node) => node.id) });
     }
-  }, [graph.data, store, topicId]);
+  }, [portfolioGraph, store, topicId]);
 
   useEffect(() => {
     if (!filteredGraph?.ok || filteredGraph.error) {
@@ -326,9 +378,26 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
     store.dispatch({ type: "openIntentConsumed", intentId: openIntent.intentId });
   }, [filteredGraph, openIntent, store, topicId]);
 
+  const selectedIdeaNodes = useMemo(
+    () => selectedNodeIds.map((nodeId) => graph.data?.nodes.find((node) => node.id === nodeId)).filter((node): node is TopicGraphNode => Boolean(node?.idea_id)),
+    [graph.data?.nodes, selectedNodeIds],
+  );
+  const steeringTarget = steeringAction ? graph.data?.nodes.find((node) => node.idea_id === steeringAction.targetIdeaId) : undefined;
+  const steeringReplacements = steeringAction?.action === "explore_instead" ? selectedIdeaNodes.filter((node) => node.idea_id !== steeringAction.targetIdeaId) : [];
+
   return (
     <section className="panel-body idea-graph-panel">
       <IdeaLineageSearch value={searchText} onChange={setSearchText} />
+      <PortfolioControls graph={portfolioGraph} state={portfolioState} onChange={setPortfolioState} />
+      {traversalView ? (
+        <div className="idea-traversal-banner" role="status">
+          <span>
+            Showing {traversalView.direction} for {traversalView.rootIdeaIds.join(", ")}.
+            {traversal.data && !traversal.data.topology_complete ? ` Incomplete at ${traversal.data.limiting_bounds.join(", ")}.` : ""}
+          </span>
+          <ToolbarButton type="button" onClick={() => setTraversalView(null)}>Return to portfolio</ToolbarButton>
+        </div>
+      ) : null}
       <IdeaGraphControls graph={focusedGraph} onPreview={previewLayout} store={store} />
       <ReactFlowProvider>
           <div
@@ -372,7 +441,7 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
             />
           </div>
         </ReactFlowProvider>
-      <GraphSummary graph={filteredGraph} isLoading={graph.isLoading || backendFocusGraph.isLoading} />
+      <GraphSummary graph={filteredGraph} isLoading={graph.isLoading || backendFocusGraph.isLoading || traversal.isLoading} />
       {selectedNodeIds.length > 0 ? (
         <div className="selected-node-actions">
           <span>{selectedNodeIds.length} selected</span>
@@ -383,12 +452,31 @@ function IdeaGraphPanelWithStore({ topicId, graphScope = "idea-lineage", store }
                 <span className="idea-graph-selection-chip" key={nodeId}>
                   {String(sourceNode?.title || nodeId)}
                   <ToolbarButton aria-label={`Open ${String(sourceNode?.title || nodeId)}`} onClick={() => openFlowNode(nodeId)} type="button">Open</ToolbarButton>
+                  {sourceNode?.idea_id ? <ToolbarButton aria-label={`Show ancestry for ${sourceNode.title}`} onClick={() => setTraversalView({ rootIdeaIds: [String(sourceNode.idea_id)], direction: "ancestors" })} type="button">Ancestry</ToolbarButton> : null}
+                  {sourceNode?.idea_id ? <ToolbarButton aria-label={`Show descendants for ${sourceNode.title}`} onClick={() => setTraversalView({ rootIdeaIds: [String(sourceNode.idea_id)], direction: "descendants" })} type="button">Descendants</ToolbarButton> : null}
+                  {sourceNode?.idea_id ? <ToolbarButton aria-label={`Review decisions for ${sourceNode.title}`} onClick={() => setDecisionIdeaId(String(sourceNode.idea_id))} type="button">Why?</ToolbarButton> : null}
+                  {sourceNode?.idea_id && sourceNode.steering_eligibility?.eligible !== false ? <ToolbarButton aria-label={`Explore ${sourceNode.title}`} onClick={() => setSteeringAction({ action: "explore", targetIdeaId: String(sourceNode.idea_id) })} type="button">Explore</ToolbarButton> : null}
+                  {sourceNode?.idea_id && selectedIdeaNodes.length > 1 && sourceNode.steering_eligibility?.eligible !== false ? <ToolbarButton aria-label={`Explore ${sourceNode.title} instead`} onClick={() => setSteeringAction({ action: "explore_instead", targetIdeaId: String(sourceNode.idea_id) })} type="button">Explore instead</ToolbarButton> : null}
                   <ToolbarButton aria-label={`Remove ${String(sourceNode?.title || nodeId)} from selection`} onClick={() => store.dispatch({ type: "selectionRemoved", nodeId })} type="button">×</ToolbarButton>
                 </span>
               );
             })}
           </div>
         </div>
+      ) : null}
+      {decisionIdeaId ? <IdeaDecisionContextPanel response={decisionContext.data} isLoading={decisionContext.isLoading} error={decisionContext.error} onClose={() => setDecisionIdeaId(null)} /> : null}
+      {steeringAction && steeringTarget ? (
+        <IdeaSteeringDialog
+          topicId={topicId || ""}
+          action={steeringAction.action}
+          target={steeringTarget}
+          replacements={steeringReplacements}
+          indexRevision={graph.data?.index_revision}
+          onClose={() => setSteeringAction(null)}
+          onAccepted={() => {
+            void graph.refetch();
+          }}
+        />
       ) : null}
     </section>
   );
@@ -452,7 +540,14 @@ const IdeaFlowCard = memo(function IdeaFlowCard({ data }: NodeProps<IdeaFlowNode
   return (
     <div className="idea-flow-card">
       <Handle aria-hidden="true" position={Position.Left} type="target" />
-      <span>{data.label}</span>
+      <span className="idea-flow-label">{data.label}</span>
+      <span className="idea-flow-facets" aria-label="Idea states">
+        <small title="Exploration state">{data.exploration_state || "unknown"}</small>
+        <small title="Decision state">{data.decision_state || "unknown"}</small>
+        <small title="Evidence state">{data.evidence_state || "unknown"}</small>
+        {data.archive_state === "archived" ? <small title="Archive state">archived</small> : null}
+        {data.visibility === "supporting" ? <small title="Visibility">supporting</small> : null}
+      </span>
       <Handle aria-hidden="true" position={Position.Right} type="source" />
     </div>
   );
@@ -485,7 +580,12 @@ export function buildIdeaNodeHoverMarkdown(data: IdeaFlowNodeData): string {
     lines.push("", summary);
   }
   const facts = [
-    ["Status", data.status],
+    ["Exploration", data.exploration_state],
+    ["Decision", data.decision_state],
+    ["Evidence", data.evidence_state],
+    ["Archive", data.archive_state],
+    ["Visibility", data.visibility],
+    ["Compatibility status", data.status],
     ["Kind", data.material_kind],
     ["Idea", data.idea_id],
     ["Record", data.record_id],
@@ -588,4 +688,21 @@ function sameOpenIntent(left: IdeaLineageOpenIntent | null, right: IdeaLineageOp
 
 function sameStrings(left: string[], right: string[]) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function projectGraphToIdeaIds(graph: TopicGraphView | undefined, ideaIds: string[]): TopicGraphView | undefined {
+  if (!graph) {
+    return graph;
+  }
+  const acceptedIdeas = new Set(ideaIds);
+  const nodes = graph.nodes.filter((node) => node.idea_id && acceptedIdeas.has(String(node.idea_id)));
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return {
+    ...graph,
+    nodes,
+    edges: graph.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
+    groups: graph.groups
+      .map((group) => ({ ...group, node_ids: group.node_ids.filter((nodeId) => nodeIds.has(nodeId)) }))
+      .filter((group) => group.node_ids.length > 0),
+  };
 }

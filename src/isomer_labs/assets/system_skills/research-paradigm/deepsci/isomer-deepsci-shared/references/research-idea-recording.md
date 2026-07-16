@@ -1,30 +1,13 @@
-# Research Idea Recording
+# DeepSci Research Idea Mapping
 
-Use canonical Research Idea records when a durable research concept is created, selected, rejected, deferred, supported, refuted, followed up, merged, or subsumed. Record concept identity with `isomer-cli --print-json ext research ideas upsert`, link durable records with `isomer-cli --print-json ext research ideas realize`, and add idea-level relationships with `isomer-cli --print-json ext research ideas lineage add`.
+Use the independently installed `$isomer-research-idea-recording` skill as the authoritative contract. Read its `references/recording-contract.md` before accepting any DeepSci output that creates, classifies, selects, defers, closes, reopens, explores, supports, refutes, revises, derives, merges, or archives a durable concept. This page only maps DeepSci profiles to that contract; it does not redefine canonical vocabulary.
 
-Keep idea lineage separate from artifact lineage. Artifact lineage answers which records produced a record; idea lineage answers which concepts produced a concept.
+Raw Idea Slate entries use `$.sections.raw_ideas[<index>]`. Candidate Frontier entries use `$.sections.serious_candidates[<index>]` or `$.sections.candidate_ideas[<index>]`. Rejected and deferred ledgers use the exact rejected or deferred idea item. Selected Hypothesis, Selected Idea Draft, outline seed, follow-up, analysis, and optimization profiles use their declared single idea object or exact idea-bearing list item. Pass that exact object path through `--source-json-path`; for example, `$.sections.filter_notes` is context and must not be recorded as an Idea Realization. Context sections, filter notes, route notes, rationale sections, metrics, result lists, and rendered Markdown are not Idea Realizations.
 
-Use stable semantic topic-scoped `idea_id` values such as `idea-combined-analytical-predictor`. Preserve source-local labels such as `R1`, `R8`, `C1`, or `C3` with `--alias` or realization metadata, not as the canonical id unless the label is itself durable and semantic.
+Before accepting a raw slate or candidate pass, record every durable concept with semantic `idea_id`, exact realization, explicit known facets, one sibling generation, and justified parent edges. Before accepting a selection or route decision, record the Decision Record and every considered option with outcome and rationale, then apply the justified transitions with the same operation correlation. `not_selected` alone leaves an idea open.
 
-Use `visibility=primary` only for user-facing top-level ideas that should appear in the default idea map. Use `visibility=supporting` or `visibility=hidden` for route decisions, implementation details, ablation terms, claims, and other material that should appear only after expansion or in a detail tab.
+Analysis, experiment, optimize, scout, and review outputs update exploration or evidence only when accepted terminal result refs such as an Artifact, Evidence Item, Finding, Research Task, or Run justify the change. Cite those refs on the transition. Evidence does not select, defer, or close a concept. Create a new Research Idea and an explicit `follow_up_to`, `derived_from`, `merged_from`, `alternative_to`, or `subsumes` edge only when the output changes the concept; ordinary wording, boundary-detail, or evidence revisions retain identity and add a realization.
 
-Every Idea Realization that points at a structured source record must use `--source-json-path` for one object-valued payload fragment that contains the idea itself. Do not point a Primary Idea realization at the whole payload, a list of ideas, rendered Markdown, route notes, filter notes, artifact lists, metrics, or other source-record context.
+Use `research_idea_effects` in an idea-bearing structured payload when its profile promises canonical effects. Otherwise use the canonical CLI operations before declaring acceptance. Do not use a status-only write, a Markdown completion claim, query-index extraction, or a later import as a substitute.
 
-Use profile-aware idea sections as source paths: raw idea slate entries use `$.sections.raw_ideas[<index>]`, candidate frontiers use `$.sections.serious_candidates[<index>]` or `$.sections.candidate_ideas[<index>]`, rejected/deferred ideas use the matching rejected or deferred idea item, and selected/draft/outline records use the profile's single idea object under `$.sections` or a declared selected idea section. Source context such as `$.sections.filter_notes`, `$.sections.route_context`, `$.sections.rationale`, and `$.sections.collapse_rationale` may support provenance but must not be the source JSON path for the idea preview.
-
-Before writing ideas from an existing source record, prefer `isomer-cli --print-json ext research ideas import-from-record <record-id>` to inspect the exact source paths. Use `isomer-cli --print-json ext research ideas validate` after manual writes, and use `isomer-cli --print-json ext research ideas repair` for source-path repair plans; only use `--update-payloads` when the user or task explicitly allows managed payload edits.
-
-Use these idea lineage kinds:
-
-- `derived_from`: a child idea follows from one parent idea.
-- `selected_from`: a selected idea came from candidate ideas or drafts.
-- `merged_from`: a child idea combines several parent ideas.
-- `follow_up_to`: a child idea continues a prior idea after evidence, analysis, or route choice.
-- `alternative_to`: an idea is an explicit alternative to another idea.
-- `subsumes`: one idea intentionally covers another idea's mechanism, ablation, or test role.
-
-Do not create idea-level `revision_of` edges. When accepted record revisions change wording, evidence, or detail without changing the concept, update the same Research Idea in place and add or refresh Idea Realizations.
-
-When one pass produces sibling candidates, create one generation group with `ext research ideas generation upsert`, then attach child edges to that `generation_id`. A generation group does not imply `subsumes`; record `subsumes` only when the agent, operator, or decision record explicitly says one idea covers another.
-
-Experiment and analysis evidence may show that an idea status is stale, supported, refuted, narrowed, or superseded, but status changes require an explicit idea write. Do not let query-index extraction, Markdown prose, or a result payload mutate idea status implicitly.
+Finish by inspecting returned canonical refs, querying the affected idea facets and Decision Record option set, resolving exact realization paths, and running `isomer-cli --print-json ext research ideas validate`.

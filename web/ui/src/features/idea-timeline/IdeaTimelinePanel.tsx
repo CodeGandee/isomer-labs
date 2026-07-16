@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, RefreshCw } from "lucide-react";
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { getRecentErrors, getTopicGraph, type GraphFilters } from "../../api";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getIdeaDecisionContext, getRecentErrors, getTopicGraph, type GraphFilters } from "../../api";
 import { workbenchCommands$ } from "../../events";
 import { GraphSummary } from "../graph/GraphPanels";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { StatusBadge, ToolbarButton } from "@/components/workbench-controls";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +17,10 @@ import {
   type IdeaTimelineSortDirection,
   type IdeaTimelineSortKey,
 } from "./idea-timeline";
+import { IdeaDecisionContextPanel } from "../idea-portfolio/IdeaDecisionContextPanel";
+import { IdeaSteeringDialog } from "../idea-portfolio/IdeaSteeringDialog";
+import { PortfolioControls } from "../idea-portfolio/PortfolioControls";
+import { applyIdeaPortfolioView, persistIdeaPortfolioView, restoreIdeaPortfolioView, type IdeaPortfolioViewState } from "../idea-portfolio/idea-portfolio";
 
 const ENTRY_COUNTS = ["25", "50", "100", "all"] as const;
 type EntryCount = (typeof ENTRY_COUNTS)[number];
@@ -27,24 +30,49 @@ const COLUMN_LABELS: Record<IdeaTimelineSortKey, string> = {
   display_key: "Key",
   title: "Idea Title",
   parents: "Parents",
-  status: "Status",
+  exploration: "Exploration",
+  decision: "Decision",
+  evidence: "Evidence",
+  archive: "Archive",
+  visibility: "Visibility",
 };
 
 export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
-  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: false });
+  const [filters, setFilters] = useState<GraphFilters>({ includeSecondary: true });
+  const [portfolioState, setPortfolioState] = useState<IdeaPortfolioViewState>(() => restoreIdeaPortfolioView(topicId, "timeline"));
   const [sortKey, setSortKey] = useState<IdeaTimelineSortKey>("created_at");
   const [sortDirection, setSortDirection] = useState<IdeaTimelineSortDirection>("asc");
   const [entryCount, setEntryCount] = useState<EntryCount>("50");
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [selectionWarning, setSelectionWarning] = useState<string | null>(null);
+  const [decisionIdeaId, setDecisionIdeaId] = useState<string | null>(null);
+  const [steeringIdeaId, setSteeringIdeaId] = useState<string | null>(null);
   const lastTapRef = useRef<{ ideaId: string; at: number } | null>(null);
   const { ideaTimelinePrimaryColor, ideaTimelineRowColorsEnabled, ideaTimelineSupportingColor } = useGuiSettings();
 
   const graph = useQuery({
     queryKey: ["topic", topicId, "graph", "idea-lineage", "timeline"],
-    queryFn: () => getTopicGraph(topicId, "idea-lineage", "auto", { includeSecondary: true }),
+    queryFn: () => getTopicGraph(topicId, "idea-lineage", "auto", { includeSecondary: true, preset: "all-proposed", limit: 5000 }),
     enabled: Boolean(topicId),
   });
+  const portfolioGraph = useMemo(() => applyIdeaPortfolioView(graph.data, portfolioState), [graph.data, portfolioState]);
+  const decisionContext = useQuery({
+    queryKey: ["topic", topicId, "idea", decisionIdeaId, "decision-context"],
+    queryFn: () => getIdeaDecisionContext(topicId, decisionIdeaId || ""),
+    enabled: Boolean(topicId && decisionIdeaId),
+  });
+
+  useEffect(() => {
+    setPortfolioState(restoreIdeaPortfolioView(topicId, "timeline"));
+    setDecisionIdeaId(null);
+    setSteeringIdeaId(null);
+  }, [topicId]);
+
+  useEffect(() => {
+    if (topicId) {
+      persistIdeaPortfolioView(topicId, "timeline", portfolioState);
+    }
+  }, [portfolioState, topicId]);
   const recentErrors = useQuery({
     queryKey: ["topic", topicId, "recent-errors", "idea-timeline"],
     queryFn: () => getRecentErrors(topicId, 10),
@@ -52,10 +80,10 @@ export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
   });
 
   const rows = useMemo(() => {
-    const built = graph.data ? buildIdeaTimelineRows(graph.data) : [];
+    const built = portfolioGraph ? buildIdeaTimelineRows(portfolioGraph) : [];
     const filtered = filterIdeaTimelineRows(built, filters);
     return sortIdeaTimelineRows(filtered, sortKey, sortDirection);
-  }, [filters, graph.data, sortDirection, sortKey]);
+  }, [filters, portfolioGraph, sortDirection, sortKey]);
   const visibleRows = useMemo(() => (entryCount === "all" ? rows : rows.slice(0, Number(entryCount))), [entryCount, rows]);
 
   React.useEffect(() => {
@@ -97,9 +125,13 @@ export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
     "--idea-timeline-primary-row": ideaTimelinePrimaryColor,
     "--idea-timeline-supporting-row": ideaTimelineSupportingColor,
   } as React.CSSProperties;
+  const selectedRow = rows.find((row) => row.ideaId === selectedIdeaId);
+  const selectedNode = selectedIdeaId ? graph.data?.nodes.find((node) => node.idea_id === selectedIdeaId) : undefined;
+  const steeringNode = steeringIdeaId ? graph.data?.nodes.find((node) => node.idea_id === steeringIdeaId) : undefined;
 
   return (
     <section className="panel-body idea-timeline-panel">
+      <PortfolioControls graph={portfolioGraph} state={portfolioState} onChange={setPortfolioState} />
       <div className="idea-timeline-toolbar">
         <TimelineFilters filters={filters} onChange={setFilters} />
         <div className="toolbar">
@@ -132,7 +164,11 @@ export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
               <SortableHead column="display_key" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
               <SortableHead column="title" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
               <SortableHead column="parents" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
-              <SortableHead column="status" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHead column="exploration" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHead column="decision" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHead column="evidence" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHead column="archive" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
+              <SortableHead column="visibility" sortKey={sortKey} sortDirection={sortDirection} onSort={onSort} />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -157,7 +193,14 @@ export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
                   </div>
                 </TableCell>
                 <TableCell>{row.parents.length ? row.parents.map((parent) => parent.displayKey).join(", ") : ""}</TableCell>
-                <TableCell>{row.status ? <StatusBadge>{row.status}</StatusBadge> : null}</TableCell>
+                <TableCell><StatusBadge>{row.explorationState}</StatusBadge></TableCell>
+                <TableCell><StatusBadge tone={row.backendSelected ? "success" : "default"}>{row.decisionState}</StatusBadge></TableCell>
+                <TableCell><StatusBadge>{row.evidenceState}</StatusBadge></TableCell>
+                <TableCell><StatusBadge>{row.archiveState}</StatusBadge></TableCell>
+                <TableCell>
+                  <StatusBadge>{row.visibility}</StatusBadge>
+                  {row.needsClassification.length ? <StatusBadge tone="warning">needs classification</StatusBadge> : null}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -165,13 +208,34 @@ export function IdeaTimelinePanel({ topicId }: { topicId: string }) {
         {!graph.isLoading && visibleRows.length === 0 ? <div className="empty-state">No ideas match the current filters.</div> : null}
       </div>
       <div className="idea-timeline-footer">
-        <GraphSummary graph={graph.data} isLoading={graph.isLoading} />
+        <GraphSummary graph={portfolioGraph} isLoading={graph.isLoading} />
         <StatusBadge>{visibleRows.length} / {rows.length} rows</StatusBadge>
         {selectedIdeaId ? <StatusBadge tone="info">selected {selectedIdeaId}</StatusBadge> : null}
+        {selectedNode ? (
+          <div className="idea-timeline-actions">
+            <ToolbarButton type="button" onClick={() => selectedRow && openIdea(selectedRow)} disabled={!selectedRow}>Open</ToolbarButton>
+            <ToolbarButton type="button" onClick={() => setDecisionIdeaId(selectedIdeaId)}>Why?</ToolbarButton>
+            <ToolbarButton type="button" disabled={selectedNode.steering_eligibility?.eligible === false} onClick={() => setSteeringIdeaId(selectedIdeaId)}>Explore this idea</ToolbarButton>
+          </div>
+        ) : null}
         {selectionWarning ? <StatusBadge tone="warning">{selectionWarning}</StatusBadge> : null}
         {(graph.data?.diagnostics || []).some((diagnostic) => diagnostic.severity === "warning" || diagnostic.severity === "error") ? <StatusBadge tone="warning">diagnostics available</StatusBadge> : null}
         {(recentErrors.data?.errors || []).length ? <StatusBadge tone="warning">{recentErrors.data?.errors.length} recent errors</StatusBadge> : null}
       </div>
+      {decisionIdeaId ? <IdeaDecisionContextPanel response={decisionContext.data} isLoading={decisionContext.isLoading} error={decisionContext.error} onClose={() => setDecisionIdeaId(null)} /> : null}
+      {steeringNode ? (
+        <IdeaSteeringDialog
+          topicId={topicId}
+          action="explore"
+          target={steeringNode}
+          replacements={[]}
+          indexRevision={graph.data?.index_revision}
+          onClose={() => setSteeringIdeaId(null)}
+          onAccepted={() => {
+            void graph.refetch();
+          }}
+        />
+      ) : null}
     </section>
   );
 }
@@ -185,10 +249,6 @@ function TimelineFilters({ filters, onChange }: { filters: GraphFilters; onChang
         value={filters.search || ""}
         onChange={(event) => onChange({ ...filters, search: event.target.value })}
       />
-      <label className="checkbox">
-        <Checkbox aria-label="Show supporting records" checked={Boolean(filters.includeSecondary)} onCheckedChange={(checked) => onChange({ ...filters, includeSecondary: checked === true })} />
-        Supporting Records
-      </label>
     </div>
   );
 }

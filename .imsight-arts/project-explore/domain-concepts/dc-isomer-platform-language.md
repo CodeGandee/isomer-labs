@@ -135,8 +135,32 @@ A typed connection between Research Inquiries under a Research Topic, such as de
 _Avoid_: Research Branch, route, experiment route, path, Git branch unless referring to an actual Git branch
 
 **Research Idea**:
-A durable topic-scoped concept that an agent or operator may develop, compare, select, reject, defer, support, or refute during a Research Topic. A Research Idea has a stable semantic `idea_id`, status, visibility, aliases for source-local labels such as `R1` or `C3`, and links to the records that express it.
+A durable topic-scoped concept that an agent or operator may develop, compare, investigate, select, defer, close, support, refute, reopen, or archive during a Research Topic. A Research Idea has a stable semantic `idea_id`, independent exploration, decision, evidence, archive, and visibility facets, aliases for source-local labels such as `R1` or `C3`, and links to the records that express it. The deprecated single `status` value is a compatibility projection and is not canonical state.
 _Avoid_: one extracted phrase, route decision, record id, Artifact, Research Inquiry
+
+**Research Idea Exploration State**:
+The independent Research Idea facet that records whether focused work is `unknown`, `unexplored`, `exploring`, or `explored`. It does not imply selection or evidence support.
+_Avoid_: decision outcome, evidence verdict, Run status
+
+**Research Idea Decision State**:
+The independent Research Idea facet that records whether portfolio disposition is `unknown`, `open`, `shortlisted`, `selected`, `deferred`, or `closed`. A closed state requires a closure reason and rationale that distinguish rejection, supersession, duplication, invalidation, user closure, legacy closure, or another authored cause. Non-selection in one Decision Record does not by itself defer or close an idea.
+_Avoid_: exploration progress, evidence verdict, browser selection
+
+**Research Idea Evidence State**:
+The independent Research Idea facet that records whether evidence assessment is `unknown`, `unassessed`, `inconclusive`, `supported`, `mixed`, or `refuted`. Evidence support does not select an idea, and refutation does not close one.
+_Avoid_: Decision Record outcome, Research Claim body, automatic closure
+
+**Research Idea Archive State**:
+The independent Research Idea facet that records whether the canonical idea is `active` or `archived`. Archival preserves exploration, decision, evidence, visibility, lineage, realization, and decision history.
+_Avoid_: deletion, closure, hidden visibility
+
+**Research Idea State Transition**:
+A durable topic-scoped record of one explicit change to a Research Idea exploration, decision, evidence, archive, or visibility facet. It records previous and next values, actor, rationale, reason code when applicable, timestamp, operation id, and relevant Decision Record, Gate, Evidence Item, Artifact, Finding, Research Task, Run, or Provenance Record refs. Transitions from one accepted action share an operation id and commit atomically with their required decision context.
+_Avoid_: inferred state change, browser filter, overwritten current value without history
+
+**Research Idea Decision Option**:
+The durable membership of one Research Idea in the option set authored for one Decision Record. It records the outcome or role, ordering when meaningful, rationale, consequence, generation ref when applicable, supporting refs, and operation id. Decision option membership is independent of Idea Generation Group membership and Idea Lineage.
+_Avoid_: generation sibling inference, graph selection, implicit rejected alternative
 
 **Primary Idea**:
 A Research Idea whose visibility marks it for the default high-level idea map. Primary Idea is a presentation role on Research Idea, not a separate entity, so raw time-parent ideas, candidate branches, and follow-up ideas can share one canonical model.

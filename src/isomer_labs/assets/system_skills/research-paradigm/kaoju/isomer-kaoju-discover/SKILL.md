@@ -11,6 +11,8 @@ Find relevant work through recorded routes and preserve the difference between a
 
 Before accepting durable output, read the shared artifact semantics and recording rules plus this skill's `artifact-bindings.md`. Use `KAOJU:DISCOVERY-LEDGER`, `KAOJU:RELATED-WORK-DELTA`, and `KAOJU:CURATED-INTAKE-DELTA` exactly. Return a storage blocker instead of inventing a path, profile, direct Markdown state, or untracked JSON.
 
+Portfolio reminder: papers, reports, repositories, datasets, models, search routes, reading-list entries, and related-work candidates are survey material, not Research Ideas. Invoke `$isomer-research-idea-recording` only when an actor explicitly promotes a distinct durable direction or when starting focused work justifies an `exploring` transition on an existing Direction Set idea with an exact Research Task ref.
+
 ## When to Use
 
 Use for broad landscape discovery, priority handling of user-nominated sources, or expansion from named seed works. Do not use this skill to claim full-text inspection, execute code, download large materials, or synthesize final conclusions.

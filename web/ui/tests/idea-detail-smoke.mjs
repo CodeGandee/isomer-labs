@@ -1,8 +1,8 @@
 import { chromium } from "playwright";
 
-const baseUrl = process.env.ISOMER_WEB_BASE_URL || "http://127.0.0.1:8765";
+const baseUrl = process.env.ISOMER_WEB_BASE_URL || "http://127.0.0.1:8766";
 const topicId = process.env.ISOMER_WEB_TOPIC || "flash-attention-4-whitebox-runtime-model";
-const ideaId = process.env.ISOMER_WEB_IDEA || "idea-occupancy-correction";
+const ideaId = process.env.ISOMER_WEB_IDEA || "stage-pipeline-predictor";
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
@@ -35,6 +35,7 @@ try {
   await page.waitForSelector(".research-shell", { timeout: 30000 });
   await page.waitForSelector(".idea-detail-panel", { timeout: 45000 });
   await page.waitForSelector(".markdown-view", { timeout: 45000 });
+  await page.waitForFunction(() => (document.querySelector(".idea-detail-panel .markdown-view")?.textContent || "").length > 100, null, { timeout: 45000 });
 
   const title = await page.locator(".idea-detail-panel .detail-heading h3").first().innerText();
   const markdownText = await page.locator(".idea-detail-panel .markdown-view").first().innerText();
@@ -47,8 +48,8 @@ try {
   await page.waitForTimeout(500);
   await page.getByRole("button", { name: "Close" }).click({ timeout: 15000, force: true });
   await page.getByRole("button", { name: "Copy Markdown" }).click({ timeout: 15000, force: true });
-  await page.waitForTimeout(500);
-  const copyStatusVisible = await page.locator(".copy-status").count();
+  await page.getByRole("status", { name: "Markdown copied." }).waitFor({ timeout: 15000 });
+  const copyStatusVisible = await page.getByRole("status", { name: "Markdown copied." }).count();
 
   const result = {
     topicId,

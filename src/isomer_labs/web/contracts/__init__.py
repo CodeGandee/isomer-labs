@@ -1,9 +1,15 @@
 """Permissive Project Web GUI data contracts."""
 
 from .models import (
+    CanonicalIdeaPortfolioNodeContract,
     DiagnosticContract,
     GuiContractModel,
+    IdeaDecisionContextResponseContract,
     IdeaDetailResponseContract,
+    IdeaSteeringResponseContract,
+    IdeaTraversalResponseContract,
+    IdeaPortfolioMetadataContract,
+    IdeaPortfolioPresetContract,
     RecordDetailResponseContract,
     RecordFacetsResponseContract,
     RecordFilesResponseContract,
@@ -18,9 +24,15 @@ from .models import (
 )
 
 __all__ = [
+    "CanonicalIdeaPortfolioNodeContract",
     "DiagnosticContract",
     "GuiContractModel",
+    "IdeaDecisionContextResponseContract",
     "IdeaDetailResponseContract",
+    "IdeaSteeringResponseContract",
+    "IdeaTraversalResponseContract",
+    "IdeaPortfolioMetadataContract",
+    "IdeaPortfolioPresetContract",
     "RecordDetailResponseContract",
     "RecordFacetsResponseContract",
     "RecordFilesResponseContract",
