@@ -152,7 +152,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, result)
         return result
 
-    def paper_inputs(self) -> dict[str, str]:
+    def paper_inputs(self, template_ref: str = "paper-template-seed") -> dict[str, str]:
         self.put_structured(
             "KAOJU:AUDIT-REPORT",
             "audit-ready",
@@ -271,104 +271,110 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             "paper-draft-1",
             "isomer-kaoju-write",
             draft,
-            relationships={"paper_structure": "paper-structure-1", "paper_template": "paper-template-seed", "citation_map": "citation-map-1"},
+            relationships={"paper_structure": "paper-structure-1", "paper_template": template_ref, "citation_map": "citation-map-1"},
             scope="paper-main",
         )
         return {"structure": "paper-structure-1", "draft": "paper-draft-1", "citation": "citation-map-1", "source": "source-digest-1", "display": "paper-display-1", "audit": "audit-ready"}
 
     def test_myst_template_exchange_derivation_tex_build_and_publication_gate(self) -> None:
-        refs = self.paper_inputs()
+        prepared = self.root / "inputs/named-paper-template"
+        write(
+            prepared / "paper/index.md",
+            """
+            # {{title}}
+
+            ## Abstract
+            {{abstract}}
+
+            ## Introduction
+            {{introduction}}
+
+            ## Background
+            {{background}}
+
+            ## Related Work
+            {{related work}}
+
+            ## Method Comparison
+            {{method comparison}}
+
+            ## Discussion
+            {{discussion}}
+
+            ## Conclusion
+            {{conclusion}}
+
+            ## References
+            {{references}}
+            """,
+        )
+        write(prepared / "myst.yml", "project:\n  title: Integration template\n")
+        metadata_path = self.root / "inputs/template-metadata.json"
+        write(metadata_path, '{"entrypoint":"paper/index.md","use_guidance":"Use the paper entrypoint."}\n')
+        status, created_template = self.paper(
+            "template",
+            "create",
+            "--name",
+            "main",
+            "--from",
+            str(prepared),
+            "--metadata-file",
+            str(metadata_path),
+            "--actor",
+            "agent:integration",
+        )
+        self.assertEqual(0, status, created_template)
+        refs = self.paper_inputs(str(created_template["stable_ref"]))
         source_path = self.root / "inputs/paper-structure.md"
         status, validation = self.paper("validate", str(source_path))
         self.assertEqual(0, status, validation)
         self.assertEqual([], [item for item in validation["diagnostics"] if item["severity"] == "error"])
 
-        export_one = self.root / "actor/template-export-1"
-        status, exported = self.paper(
-            "export-template",
-            "--source-ref",
-            refs["structure"],
-            "--paper-line",
-            "paper-main",
-            "--draft-ref",
-            refs["draft"],
-            "--citation-map-ref",
-            refs["citation"],
-            "--source-digest-ref",
-            refs["source"],
-            "--display-ref",
-            refs["display"],
-            "--target",
-            str(export_one),
-        )
+        status, exported = self.paper("template", "export", "--actor", "agent:integration")
         self.assertEqual(0, status, exported)
-        manifest = json.loads((export_one / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(refs["structure"], manifest["source_template_ref"])
-        self.assertEqual([refs["display"]], manifest["display_refs"])
-        self.assertTrue(str(manifest["base_digest"]).startswith("sha256:"))
+        export_path = Path(str(exported["target"]))
+        self.assertEqual(self.root / "topic-workspaces/alpha/intent/derived/writing-template/main", export_path)
+        export_metadata = json.loads((export_path / ".isomer-template-export.json").read_text(encoding="utf-8"))
+        self.assertEqual("main", export_metadata["template_name"])
+        self.assertEqual(created_template["stable_ref"], export_metadata["canonical_ref"])
 
-        revised_structure = self.root / "inputs/paper-structure-v2.md"
-        revised_structure.write_text(source_path.read_text(encoding="utf-8").replace("{{discussion}}", "{{discussion}}\n"), encoding="utf-8")
-        status, revised = self.artifact(
-            "revise",
-            refs["structure"],
-            str(revised_structure),
-            "--producer",
-            "isomer-kaoju-write",
-            "--scope-key",
-            "paper-main",
-            "--id",
-            "paper-structure-2",
-            "--relationships-json",
-            '[{"role":"paper_contract","target_ref":"paper-contract-1"}]',
-        )
-        self.assertEqual(0, status, revised)
-        status, stale = self.paper("apply-template", str(export_one))
+        exported_entrypoint = export_path / "paper/index.md"
+        exported_entrypoint.write_text(exported_entrypoint.read_text(encoding="utf-8") + "\n## Appendix Details\n{{appendix details}}\n", encoding="utf-8")
+        status, edited = self.paper("template", "exports")
+        self.assertEqual(0, status, edited)
+        self.assertEqual("edited", edited["exports"][0]["posture"])
+        status, refused = self.paper("template", "export", "--actor", "agent:integration")
         self.assertEqual(1, status)
-        self.assertEqual("paper_template_stale_base", stale["error"]["code"])
-        status, no_template = self.artifact("latest", "KAOJU:PAPER-TEMPLATE-MYST", "--scope-key", "paper-main")
-        self.assertEqual(0, status, no_template)
-        self.assertEqual([], no_template["records"])
+        self.assertEqual("template_export_edited", refused["error"]["code"])
 
-        export_two = self.root / "actor/template-export-2"
-        status, exported_two = self.paper(
-            "export-template",
+        candidate = self.root / "actor/agent-prepared-template"
+        write(candidate / "paper/index.md", exported_entrypoint.read_text(encoding="utf-8"))
+        write(candidate / "myst.yml", (export_path / "myst.yml").read_text(encoding="utf-8"))
+        status, updated_template = self.paper(
+            "template",
+            "update",
+            "--name",
+            "main",
+            "--from",
+            str(candidate),
+            "--expected-state",
+            str(created_template["state_token"]),
+            "--actor",
+            "agent:integration",
             "--source-ref",
-            "paper-structure-2",
-            "--paper-line",
-            "paper-main",
-            "--draft-ref",
-            refs["draft"],
-            "--citation-map-ref",
-            refs["citation"],
-            "--source-digest-ref",
-            refs["source"],
-            "--display-ref",
-            refs["display"],
-            "--target",
-            str(export_two),
+            refs["structure"],
+            "--change-summary",
+            "Reconcile the user-edited appendix into a clean template tree.",
         )
-        self.assertEqual(0, status, exported_two)
-        template_file = export_two / "paper-template.md"
-        original = template_file.read_text(encoding="utf-8")
-        template_file.write_text(original + "\n{{unregistered-placeholder}}\n", encoding="utf-8")
-        status, invalid = self.paper("apply-template", str(export_two))
-        self.assertEqual(1, status)
-        self.assertEqual("paper_template_invalid", invalid["error"]["code"])
-
-        without_appendix = original.split("## Appendix Details", 1)[0].rstrip() + "\n"
-        template_file.write_text(without_appendix, encoding="utf-8")
-        status, orphaned = self.paper("apply-template", str(export_two))
-        self.assertEqual(1, status)
-        self.assertEqual("paper_template_orphan_confirmation_required", orphaned["error"]["code"])
-        status, applied = self.paper("apply-template", "--confirm-orphans", str(export_two))
-        self.assertEqual(0, status, applied)
-        self.assertIn("appendix details", applied["orphaned_sections"])
+        self.assertEqual(0, status, updated_template)
+        status, observed = self.paper("template", "export", "--name", "main", "--target", str(export_path), "--observe", "--actor", "agent:integration")
+        self.assertEqual(0, status, observed)
+        self.assertFalse(observed["canonical"])
 
         status, markdown = self.paper(
             "derive-markdown",
             "--source-ref",
-            str(applied["draft_ref"]),
+            refs["draft"],
             "--paper-line",
             "paper-main",
         )
@@ -378,9 +384,9 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         status, initialized = self.paper(
             "init-tex",
             "--draft-ref",
-            str(applied["draft_ref"]),
+            refs["draft"],
             "--template-myst-ref",
-            str(applied["template_ref"]),
+            str(updated_template["stable_ref"]),
             "--paper-line",
             "paper-main",
             "--citation-ref",
@@ -392,9 +398,9 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         status, initialized_again = self.paper(
             "init-tex",
             "--draft-ref",
-            str(applied["draft_ref"]),
+            refs["draft"],
             "--template-myst-ref",
-            str(applied["template_ref"]),
+            str(updated_template["stable_ref"]),
             "--paper-line",
             "paper-main",
             "--citation-ref",

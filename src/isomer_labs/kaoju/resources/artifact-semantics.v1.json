@@ -543,15 +543,28 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
       "category": "MyST-First Paper",
-      "meaning": "canonical actor-editable MyST structure template.",
+      "meaning": "one stable mutable named canonical MyST-oriented template tree.",
       "minimum_content": [
-        "canonical actor-editable MyST structure template."
+        "a checksummed managed directory tree with a path-safe template name, opaque state token, and bounded authored metadata."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
         "isomer-kaoju-write"
       ],
-      "update_intent": "Revise the current scoped record when accepted state changes."
+      "update_intent": "Atomically replace the stable named record without an automatic content revision or saved copy."
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT",
+      "category": "MyST-First Paper",
+      "meaning": "lightweight mutable-template mutation evidence without prior template bytes.",
+      "minimum_content": [
+        "template name, stable ref, actor, operation, source refs, time, and before-and-after state tokens and tree digests."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Append one evidence record for each accepted named-template mutation."
     },
     {
       "semantic_id": "KAOJU:PAPER-DRAFT-MYST",
@@ -612,9 +625,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-EXPORT",
       "category": "MyST-First Paper",
-      "meaning": "versioned actor-editable template exchange directory.",
+      "meaning": "registered non-canonical working-directory observation for a stable named template.",
       "minimum_content": [
-        "versioned actor-editable template exchange directory."
+        "stable template ref, name, state token, canonical and exported tree digests, observed path, time, and actor provenance."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -625,9 +638,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-MANIFEST",
       "category": "MyST-First Paper",
-      "meaning": "source revision, base digest, tied draft, paper line, and export policy.",
+      "meaning": "named-template export identity, state token, tree digests, path, time, and actor provenance.",
       "minimum_content": [
-        "source revision, base digest, tied draft, paper line, and export policy."
+        "stable source ref, template name, state token, canonical and exported tree digests, observed path, time, and actor."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [

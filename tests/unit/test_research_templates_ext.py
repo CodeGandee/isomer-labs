@@ -82,91 +82,70 @@ class ResearchTemplatesExtensionTests(unittest.TestCase):
         status, output = self.run_main(["--print-json", "ext", "research", "templates", *args, "--project", str(root), "--topic", "alpha"], cwd=root)
         return status, json.loads(output)
 
-    def test_create_default_main_template_and_record(self) -> None:
-        root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {
-                "ok": True,
-                "engine": "tectonic",
-                "fallback": False,
-                "fallback_reason": None,
-                "attempts": [],
-                "preview_pdf": str(root / "topic-workspaces" / "alpha" / "intent" / "derived" / "writing-template" / "main" / "preview.pdf"),
-            }
-            status, created = self.run_templates(root, ["create"])
-        self.assertEqual(0, status, created)
-        self.assertTrue(created.get("ok"), created)
-        template_dir = Path(root / "topic-workspaces" / "alpha" / "intent" / "derived" / "writing-template" / "main")
-        self.assertTrue((template_dir / "main.tex").exists())
-        self.assertTrue((template_dir / "references.bib").exists())
-        self.assertTrue((template_dir / "README.md").exists())
-        record = created["record"]
-        assert isinstance(record, dict)
-        self.assertEqual(TEMPLATE_SEMANTIC_ID, record["transition_metadata"]["semantic_id"])
+    def seed_legacy_template(self, root: Path, name: str = DEFAULT_TEMPLATE_NAME) -> Path:
+        template_dir = root / "topic-workspaces" / "alpha" / "intent" / "derived" / "writing-template" / name
+        write(template_dir / "main.tex", "legacy template\n")
+        write(template_dir / "README.md", f"# Writing Template: {name}\n")
+        status, output = self.run_main(
+            [
+                "--print-json",
+                "ext",
+                "research",
+                "records",
+                "create",
+                "--id",
+                f"legacy-writing-template-{name}",
+                "--record-kind",
+                "artifact",
+                "--semantic-id",
+                TEMPLATE_SEMANTIC_ID,
+                "--body",
+                "legacy template record",
+                "--metadata-json",
+                json.dumps({"template_name": name, "venue": "legacy", "paper_type": "survey"}),
+                "--project",
+                str(root),
+                "--topic",
+                "alpha",
+            ],
+            cwd=root,
+        )
+        self.assertEqual(0, status, output)
+        return template_dir
 
-    def test_create_named_template_and_list_shows_default(self) -> None:
+    def test_mutating_commands_are_disabled_without_side_effects(self) -> None:
         root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {"ok": True, "engine": "tectonic", "fallback": False, "fallback_reason": None, "attempts": [], "preview_pdf": ""}
-            status, _ = self.run_templates(root, ["create", "--name", "neurips"])
-            self.assertEqual(0, status)
-            status, listed = self.run_templates(root, ["list"])
-        self.assertEqual(0, status, listed)
-        records = listed["records"]
-        self.assertEqual(1, len(records))
-        self.assertFalse(records[0].get("is_default"))
-        status, main_created = self.run_templates(root, ["create", "--name", DEFAULT_TEMPLATE_NAME])
-        self.assertEqual(0, status, main_created)
+        invocations = (["create", "--name", "main"], ["refresh", "--name", "main"], ["compile", "--name", "main"], ["remove", "--name", "main", "--delete-files"])
+        for arguments in invocations:
+            with self.subTest(command=arguments[0]):
+                status, payload = self.run_templates(root, list(arguments))
+                self.assertEqual(1, status, payload)
+                self.assertEqual("legacy_template_mutation_disabled", payload["error"]["code"])
+                self.assertFalse(payload["mutated"])
+        self.assertFalse((root / "topic-workspaces" / "alpha" / "intent" / "derived" / "writing-template" / "main").exists())
+
+    def test_legacy_list_and_show_remain_available(self) -> None:
+        root = self.make_project()
+        self.seed_legacy_template(root, "iclr")
         status, listed = self.run_templates(root, ["list"])
         self.assertEqual(0, status, listed)
-        defaults = [r for r in listed["records"] if r.get("is_default")]
-        self.assertEqual(1, len(defaults))
+        self.assertEqual(1, listed["count"])
+        self.assertEqual("iclr", listed["records"][0]["transition_metadata"]["template_name"])
 
-    def test_show_returns_file_tree_and_readme(self) -> None:
-        root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {"ok": True, "engine": "tectonic", "fallback": False, "fallback_reason": None, "attempts": [], "preview_pdf": ""}
-            status, _ = self.run_templates(root, ["create", "--name", "iclr", "--venue", "iclr"])
-            self.assertEqual(0, status)
-            status, shown = self.run_templates(root, ["show", "--name", "iclr"])
+        status, shown = self.run_templates(root, ["show", "--name", "iclr"])
         self.assertEqual(0, status, shown)
         self.assertIn("main.tex", shown["file_tree"])
         self.assertIn("Writing Template: iclr", shown["readme"])
 
-    def test_refresh_creates_descendant_record(self) -> None:
+    def test_disabled_remove_preserves_legacy_record_and_files(self) -> None:
         root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {"ok": True, "engine": "tectonic", "fallback": False, "fallback_reason": None, "attempts": [], "preview_pdf": ""}
-            status, created = self.run_templates(root, ["create", "--name", "refreshable"])
-            self.assertEqual(0, status)
-            first_id = created["record"]["id"]
-            status, refreshed = self.run_templates(root, ["refresh", "--name", "refreshable"])
-        self.assertEqual(0, status, refreshed)
-        self.assertEqual(first_id, refreshed["revision_of_record_id"])
-
-    def test_compile_revises_record_status(self) -> None:
-        root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {"ok": True, "engine": "tectonic", "fallback": False, "fallback_reason": None, "attempts": [], "preview_pdf": ""}
-            status, created = self.run_templates(root, ["create", "--name", "recompilable"])
-            self.assertEqual(0, status)
-            compile_mock.return_value = {"ok": False, "engine": None, "fallback": False, "attempts": [], "preview_pdf": None}
-            status, compiled = self.run_templates(root, ["compile", "--name", "recompilable"])
-        self.assertEqual(1, status, compiled)
-        self.assertEqual("failed", compiled["preview_build"]["ok"])
-
-    def test_remove_archives_record_and_can_delete_files(self) -> None:
-        root = self.make_project()
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {"ok": True, "engine": "tectonic", "fallback": False, "fallback_reason": None, "attempts": [], "preview_pdf": ""}
-            status, created = self.run_templates(root, ["create", "--name", "removable"])
-        self.assertEqual(0, status)
-        template_dir = Path(root / "topic-workspaces" / "alpha" / "intent" / "derived" / "writing-template" / "removable")
-        self.assertTrue(template_dir.exists())
+        template_dir = self.seed_legacy_template(root, "removable")
         status, removed = self.run_templates(root, ["remove", "--name", "removable", "--delete-files"])
-        self.assertEqual(0, status, removed)
-        self.assertEqual("archived", removed["record"]["status"])
-        self.assertFalse(template_dir.exists())
+        self.assertEqual(1, status, removed)
+        self.assertEqual("legacy_template_mutation_disabled", removed["error"]["code"])
+        self.assertTrue((template_dir / "main.tex").is_file())
+        status, shown = self.run_templates(root, ["show", "--name", "removable"])
+        self.assertEqual(0, status, shown)
 
     def test_domain_failure_is_text_by_default_and_non_mutating(self) -> None:
         root = self.make_project()
@@ -320,17 +299,7 @@ class ResearchTemplatesExtensionTests(unittest.TestCase):
             cwd=root,
         )
         self.assertEqual(0, status, output)
-        with patch("isomer_labs.cli.commands.research_templates_ext._compile_preview") as compile_mock:
-            compile_mock.return_value = {
-                "ok": True,
-                "engine": "tectonic",
-                "fallback": False,
-                "fallback_reason": None,
-                "attempts": [],
-                "preview_pdf": "",
-            }
-            status, created = self.run_templates(root, ["create"])
-        self.assertEqual(0, status, created)
+        self.seed_legacy_template(root)
         with patch("isomer_labs.records.store.list_records", side_effect=AssertionError("template list scanned lifecycle records")):
             status, listed = self.run_templates(root, ["list"])
         self.assertEqual(0, status, listed)
@@ -405,9 +374,9 @@ class ResearchExtensionErrorExamplesTests(unittest.TestCase):
 
     def test_templates_unknown_command_shows_templates_examples(self) -> None:
         examples = self._examples_for(["ext", "research", "templates"])
-        self.assertTrue(any("ext research templates create" in example for example in examples))
         self.assertTrue(any("ext research templates list" in example for example in examples))
         self.assertTrue(any("ext research templates show" in example for example in examples))
+        self.assertTrue(any("ext kaoju paper template list" in example for example in examples))
 
     def test_records_unknown_command_shows_records_examples(self) -> None:
         examples = self._examples_for(["ext", "research", "records"])

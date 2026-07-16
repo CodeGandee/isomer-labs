@@ -25,11 +25,11 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 
 The entry skill exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
 
-Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` creates canonical MyST state. Grouped object operations remain under `manage-survey`, `manage-dataset`, and `manage-paper-template`.
+Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` constructs a mutable named canonical MyST-oriented tree. Grouped object operations remain under `manage-survey`, `manage-dataset`, and `manage-paper-template`.
 
 ## Durable State and CLI Boundaries
 
-The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover durable state only through `project artifacts latest|list|show` and persist through typed `put` or `revise`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-candidate resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, or scan directories as a fallback.
+The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover ordinary durable state through typed query surfaces and persist ordinary bindings through typed `put` or `revise`. Mutable named templates use only `ext kaoju paper template`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-state resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, scan directories as a fallback, edit SQL, or mutate managed content directly.
 
 `isomer-cli project runs` owns resumable procedure checkpoints. The acting user or agent runs prompt-sensitive repository commands outside Isomer, verifies the resulting source and immutable identity, then uses `project repos register` for topology and typed Artifacts for research provenance. `project service-requests` records and synchronously dispatches Service Team work. Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
 
@@ -39,6 +39,9 @@ Houmao may implement Service Dispatch Forms, launch, mailboxes, or inspection be
 
 ```text
 accepted audit and synthesis
+            |
+ named template main or explicit name
+     stable ref + observed digest
             |
    paper-structure-myst
             |
@@ -68,7 +71,7 @@ If the user chooses “run to the PDF target,” the current agent maintains a p
 
 ## Migration
 
-Legacy `KAOJU:SURVEY-MANUSCRIPT` and `KAOJU:WRITING-TEMPLATE` records remain readable but are never promoted automatically into canonical MyST state. Historical `ext research templates` inspection and repair remain supported; new paper work uses `ext kaoju paper`. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
+Legacy `KAOJU:SURVEY-MANUSCRIPT` and `KAOJU:WRITING-TEMPLATE` records remain readable but are never promoted automatically into canonical MyST state. Legacy `ext research templates` mutation is disabled; new paper templates use the flat mutable namespace under `ext kaoju paper template`. Each name owns one stable record and arbitrary managed directory tree. Ordinary updates require the current opaque state token, replace that tree without automatic history, and emit lightweight audit evidence. Users preserve a state only by explicitly copying it to another ordinary name. Stable working copies resolve beneath `topic.paper.template_exchange_root`, defaulting to `intent/derived/writing-template/<name>/`, and remain non-canonical until an agent-prepared explicit update succeeds. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
 
 ## Installation
 

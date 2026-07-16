@@ -55,10 +55,20 @@
       "remove"
     ],
     "manage-paper-template": [
+      "list",
+      "show",
+      "create",
+      "copy",
+      "update",
+      "replace",
+      "merge",
+      "file",
+      "metadata",
       "export",
-      "apply",
-      "inspect",
-      "status"
+      "observe",
+      "archive",
+      "delete",
+      "migrate"
     ]
   },
   "supersession": {

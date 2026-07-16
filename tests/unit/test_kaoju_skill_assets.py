@@ -59,6 +59,31 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("Topic Workspace owner", dataset)
         self.assertIn("never alter or delete the external target", dataset)
 
+        paper = (commands / "manage-paper-template.md").read_text(encoding="utf-8")
+        for action in ("list", "show", "create", "copy", "update", "replace", "merge", "file put", "file remove", "metadata patch", "export", "observe", "archive", "delete"):
+            self.assertIn(f"`{action}`", paper)
+        self.assertNotIn("snapshot", paper.casefold())
+
+    def test_paper_template_unnamed_update_discovery_order_is_explicit(self) -> None:
+        commands = KAOJU_ROOT / "isomer-kaoju-pipeline" / "commands"
+        manager = (commands / "manage-paper-template.md").read_text(encoding="utf-8")
+        explicit = manager.index("When the request supplies a template name")
+        exports = manager.index("template exports")
+        one_edited = manager.index("exactly one eligible export")
+        ambiguous = manager.index("several exports are edited")
+        topic_main = manager.index("inspect its `main/` child")
+        clarification = manager.index("If neither source exists")
+        self.assertEqual(sorted((explicit, exports, one_edited, ambiguous, topic_main, clarification)), [explicit, exports, one_edited, ambiguous, topic_main, clarification])
+        self.assertIn("even when the artifacts database has no template named `main`", manager)
+        self.assertIn("Do not select an unrelated database record", manager)
+
+        writer = (KAOJU_ROOT / "isomer-kaoju-write" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("use exactly one eligible edited registered export", writer)
+        self.assertIn("regardless of database `main`", writer)
+        self.assertIn("if neither exists, ask the user for a source", writer)
+        self.assertIn("Isomer CLI owns name safety", writer)
+        self.assertIn("it does not construct or merge a template for you", writer)
+
     def test_shared_contract_references_are_complete_and_linked(self) -> None:
         shared = KAOJU_ROOT / "isomer-kaoju-shared"
         expected = {

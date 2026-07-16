@@ -1336,20 +1336,50 @@
       "record_kind": "artifact",
       "profile_ref": null,
       "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [],
+      "revision_mode": "mutable_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "template_name"
+      },
+      "latest_selection_policy": "mutable_named",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT",
+      "artifact_type": "paper-template-mutation-audit",
+      "record_kind": "view_manifest",
+      "profile_ref": null,
+      "semantic_label": "topic.records.views",
       "content_mode": "ordinary_file",
       "producer": "isomer-kaoju-write",
       "consumers": [
         "isomer-kaoju-write"
       ],
       "relationships": [
-        "paper_structure"
+        "paper_template"
       ],
-      "revision_mode": "current_state",
+      "revision_mode": "append_only",
       "scope_key_policy": {
         "mode": "required",
-        "dimension": "paper_line"
+        "dimension": "template_name"
       },
-      "latest_selection_policy": "scoped_current",
+      "latest_selection_policy": "append_only",
       "validation": {
         "required": true,
         "contract": "file-integrity"
@@ -1358,7 +1388,7 @@
         "statuses": [
           "ready"
         ],
-        "gate": "human"
+        "gate": "none"
       },
       "status": "active"
     },
@@ -1511,13 +1541,12 @@
         "isomer-kaoju-write"
       ],
       "relationships": [
-        "paper_template",
-        "paper_draft"
+        "paper_template"
       ],
       "revision_mode": "append_only",
       "scope_key_policy": {
         "mode": "required",
-        "dimension": "export_target"
+        "dimension": "template_name"
       },
       "latest_selection_policy": "append_only",
       "validation": {
@@ -1545,12 +1574,12 @@
       ],
       "relationships": [
         "template_export",
-        "source_revision"
+        "paper_template"
       ],
       "revision_mode": "append_only",
       "scope_key_policy": {
         "mode": "required",
-        "dimension": "export_target"
+        "dimension": "template_name"
       },
       "latest_selection_policy": "append_only",
       "validation": {

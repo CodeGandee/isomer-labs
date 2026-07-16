@@ -259,7 +259,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         tree = self.root / "template-export"
         write(tree / "template.md", "# Survey\n")
         write(tree / "notes.txt", "human notes\n")
-        relationships = '[{"role":"paper_template","target_record_id":"template-v1"},{"role":"paper_draft","target_record_id":"draft-v1"}]'
+        relationships = '[{"role":"paper_template","target_record_id":"template-v1"}]'
         status, created = self.artifact(
             "put",
             "KAOJU:PAPER-TEMPLATE-EXPORT",
@@ -267,7 +267,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             "--producer",
             "isomer-kaoju-write",
             "--scope-key",
-            "paper-main:export-1",
+            "main",
             "--relationships-json",
             relationships,
             "--id",
@@ -302,7 +302,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
                 "--producer",
                 "isomer-kaoju-write",
                 "--scope-key",
-                "paper-main:failed-export",
+                "main",
                 "--relationships-json",
                 relationships,
                 "--id",

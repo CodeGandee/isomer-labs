@@ -1,6 +1,6 @@
 # MyST Manuscript Structure
 
-The paper separates a reader-facing narrative from an auditable evidence view. Both are authored in canonical MyST and linked through typed roles, directives, citations, display refs, and source refs.
+The paper separates a reader-facing narrative from an auditable evidence view. Both are authored in canonical MyST and linked through typed roles, directives, citations, display refs, and source refs. Paper use resolves an explicitly named mutable template or canonical `main` and records its stable ref and observed tree digest.
 
 ## Adaptive Profiles
 
@@ -18,4 +18,4 @@ Record the profile id, rationale, section order, section jobs, required evidence
 
 ## Derivation Boundary
 
-Review Markdown is deterministic and non-canonical. TeX initialization parses the accepted MyST revision, records unsupported constructs, and creates a compatibility fingerprint. Direct TeX inspection may repair presentation and TeX syntax, but a content repair returns to canonical MyST.
+The named template can contain arbitrary MyST, configuration, includes, assets, and guidance without a universal entrypoint. The agent interprets the tree and its bounded authored metadata. Review Markdown is deterministic and non-canonical. TeX initialization parses accepted MyST state, records the selected template name, stable ref, observed digest and unsupported constructs, and creates a compatibility fingerprint. Direct TeX inspection may repair presentation and TeX syntax, but a content repair returns to canonical MyST.

@@ -9,15 +9,20 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 ### Added
 
 - Added read-only dynamic target planning for unregistered grouped `topic.repos.*` labels and `project repos register <repo-label> --path <existing-path>` for non-executing Topic Workspace topology registration.
+- Added `topic.paper.template_exchange_root`, low-level `ext kaoju paper template` named-tree CRUD, optimistic state tokens, lightweight mutation audits, stable working-copy export status, explicit named copy and replacement, and legacy template migration inspection.
 
 ### Changed
 
 - Defaulted `system-skills install` to Project scope when `--scope` is omitted. The default uses the exact current working directory, user-wide installation still requires `--scope user`, and status, upgrade, and uninstall remain scope-explicit.
 - Moved Canonical External Repository acquisition and verification to user-controlled or agent-controlled commands outside Isomer. Kaoju now records the registered semantic label, externally observed immutable identity, selected method, sanitized command evidence, source relationship, access and license posture, limitations, and blockers.
+- Changed canonical Kaoju MyST templates to one stable mutable managed directory record per exact path-safe name. Templates accept arbitrary safe trees and bounded agent-authored entrypoint, use-guidance, and extension metadata without imposing a universal template schema. Paper derivation records the selected name, stable ref, and observed tree digest.
+- Changed manual template exchange to stable non-canonical `intent/derived/writing-template/<name>/` working directories with reserved identity metadata, digest-based edited detection, clean refresh, and agent-owned reconciliation. Unnamed database updates now use the exact one-edited-export, current Topic Workspace `main/`, then user-clarification discovery order.
 
 ### Breaking
 
 - Removed `project repos acquire`, the `repository_acquisition` Research Operation Extension Point, and the fixed Kaoju repository acquisition service without aliases or compatibility fallback. Migrate repository workflows to: query a candidate with `project paths default`, acquire with user-supplied or agent-selected external commands, verify the source and immutable identity externally, register the existing directory with `project repos register`, then write typed provenance records.
+- Replaced paper-line-scoped ordinary-file `KAOJU:PAPER-TEMPLATE-MYST` revisions with template-name-scoped mutable managed trees. Ordinary updates now replace the same stable record, retain no automatic old-content history, and never create another name. Preserve a state explicitly with an ordinary `create --from-template` copy before destructive change.
+- Retired mutating `ext kaoju paper export-template`, `ext kaoju paper apply-template`, and legacy `ext research templates` operations. Use `ext kaoju paper template` for low-level named CRUD and export, and use the Kaoju agent to interpret or merge arbitrary user-edited directories.
 
 ## [0.3.0] - 2026-07-15
 

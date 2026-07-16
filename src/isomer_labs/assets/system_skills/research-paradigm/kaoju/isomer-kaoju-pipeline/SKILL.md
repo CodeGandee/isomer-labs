@@ -62,7 +62,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | `comparative-pass` | Frame, trial, compare, audit | `commands/comparative-pass.md` |
 | `audit-survey-pass` | Audit, then synthesize if accepted | `commands/audit-survey-pass.md` |
 | `paper-pass` | `draft-paper`, then optional `build-paper-pdf` | `commands/paper-pass.md` |
-| `create-paper-template` | Write a canonical MyST structure and template, then optionally export | `commands/create-paper-template.md` |
+| `create-paper-template` | Construct a mutable named MyST-oriented template tree, then optionally export | `commands/create-paper-template.md` |
 
 ## Grouped Managers
 
@@ -70,7 +70,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | --- | --- | --- |
 | `manage-survey` | `list`, `show`, `status`, `export` | `commands/manage-survey.md` |
 | `manage-dataset` | `register`, `list`, `show`, `refresh`, `remove` | `commands/manage-dataset.md` |
-| `manage-paper-template` | `export`, `apply`, `inspect`, `status` | `commands/manage-paper-template.md` |
+| `manage-paper-template` | `list`, `show`, `create`, `copy`, `update`, `replace`, `merge`, `file`, `metadata`, `export`, `observe`, `archive`, `delete`, `migrate` | `commands/manage-paper-template.md` |
 
 ## Reference Routing
 
@@ -95,6 +95,8 @@ Resolve `KAOJU:PROCEED-DECISION` and `KAOJU:SURVEY-TERMINAL-REPORT` through `ext
 - DO NOT use a directory scan when the state DB query is empty or ambiguous.
 - DO NOT route wiki work to an external skill checkout.
 - DO NOT treat TeX or PDF as canonical paper state.
+- DO NOT use generic Artifact revise, direct SQL, or managed-file edits for mutable named templates.
+- DO NOT select a source for an unnamed database-template update outside the one-edited-export, topic `main/`, then user-clarification order.
 - DO NOT infer run-to authorization from an ordinary `do <task>` request or make it global or session-wide.
 - DO NOT skip required audits or Gates, merge prerequisite Runs, or continue after the named target.
 

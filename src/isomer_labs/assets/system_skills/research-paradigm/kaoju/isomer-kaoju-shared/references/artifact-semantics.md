@@ -55,13 +55,14 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 
 - `KAOJU:PAPER-CONTRACT`: accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy.
 - `KAOJU:PAPER-STRUCTURE-MYST`: canonical typed section jobs and display plan in MyST.
-- `KAOJU:PAPER-TEMPLATE-MYST`: canonical actor-editable MyST structure template.
+- `KAOJU:PAPER-TEMPLATE-MYST`: one stable mutable named canonical MyST-oriented template tree.
+- `KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT`: lightweight named-template mutation evidence without prior template bytes.
 - `KAOJU:PAPER-DRAFT-MYST`: canonical grounded paper draft in MyST.
 - `KAOJU:PAPER-DRAFT-MD`: deterministic non-canonical Markdown derivation.
 - `KAOJU:PAPER-DISPLAY`: file-backed figure or table content referenced from MyST by a typed stable ref.
 - `KAOJU:CITATION-MAP`: citation roles, source refs, locators, claim links, display links, and evidence status.
-- `KAOJU:PAPER-TEMPLATE-EXPORT`: versioned actor-editable template exchange directory.
-- `KAOJU:PAPER-TEMPLATE-MANIFEST`: source revision, base digest, tied draft, paper line, and export policy.
+- `KAOJU:PAPER-TEMPLATE-EXPORT`: registered non-canonical working-directory observation for a stable named template.
+- `KAOJU:PAPER-TEMPLATE-MANIFEST`: named-template export identity, state token, tree digests, path, time, and actor provenance.
 - `KAOJU:PAPER-REVISION-LOG`: append-only canonical paper changes, evidence effects, and actor decisions.
 - `KAOJU:PAPER-TEMPLATE-TEX`: derived TeX template tree and compatibility fingerprint.
 - `KAOJU:PAPER-DRAFT-TEX`: derived TeX draft tree, citations, included files, and conversion diagnostics.

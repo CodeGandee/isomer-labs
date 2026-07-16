@@ -68,7 +68,7 @@ The Topic Workspace owns the topic Pixi environment. Dependencies for research c
 
 The Topic Workspace also owns the research storage layout:
 
-- `intent/` stores the topic overview, environment gate, actor definitions, and derived setup gates.
+- `intent/` stores the topic overview, environment gate, actor definitions, derived setup gates, and non-canonical user-editable Kaoju template working copies under `intent/derived/writing-template/<name>/`.
 - `records/` stores durable research records, artifacts, evidence items, decisions, view manifests, and the SQLite index used by the GUI.
 - `runtime/` stores Workspace Runtime state, adapter payloads, launch material, and resumable execution state.
 - `repos/topic-main/` is the topic-owned development repository for code-bearing work.

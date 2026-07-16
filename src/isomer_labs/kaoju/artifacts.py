@@ -90,8 +90,15 @@ class KaojuArtifactService:
         idempotency_key: str | None = None,
         external: bool = False,
         repository_evidence: Mapping[str, Any] | None = None,
+        metadata: Mapping[str, object] | None = None,
     ) -> dict[str, object]:
         binding = self._binding(semantic_id)
+        if binding.revision_mode == "mutable_state":
+            raise KaojuServiceError(
+                "artifact_mutable_service_required",
+                f"{semantic_id} uses mutable named state and must be created through its owner service.",
+                ("Use 'isomer-cli ext kaoju paper template create' so name uniqueness, state tokens, managed-tree replacement, and audit evidence remain consistent.",),
+            )
         self._authorize(binding, producer)
         self._validate_status(binding, status)
         self._validate_scope(binding, scope_key)
@@ -119,6 +126,7 @@ class KaojuArtifactService:
             relationships=relationships or [],
             idempotency_key=idempotency_key,
             contract_diagnostics=contract_diagnostics,
+            authored_metadata=metadata,
         )
         try:
             payload, diagnostics = create_record(self.context, request, env=self.env, cwd=self.cwd)
@@ -159,7 +167,7 @@ class KaojuArtifactService:
         if not isinstance(semantic_id, str):
             raise KaojuServiceError("artifact_binding_missing", f"Record {record_id} has no semantic binding.")
         binding = self._binding(semantic_id)
-        if binding.revision_mode in {"append_only", "immutable"}:
+        if binding.revision_mode in {"append_only", "immutable", "mutable_state"}:
             raise KaojuServiceError("artifact_revision_forbidden", f"{semantic_id} uses {binding.revision_mode} behavior; create a distinct record instead.")
         self._authorize(binding, producer)
         self._validate_relationships(binding, relationships or [])
@@ -250,7 +258,7 @@ class KaojuArtifactService:
             raise KaojuServiceError("workspace_runtime_missing", "Workspace Runtime is unavailable.", tuple(item.message for item in diagnostics))
         changes: builtins.list[dict[str, str]] = []
         skipped: builtins.list[dict[str, object]] = []
-        fields = ("direction_id", "source_id", "paper_line", "export_target", "environment_id", "trial_id", "survey_id")
+        fields = ("direction_id", "source_id", "paper_line", "template_name", "export_target", "environment_id", "trial_id", "survey_id")
         try:
             for record in store.list_lifecycle_records():
                 if record.topic_workspace_id != self.context.topic_workspace_id or record.transition_metadata.get("scope_key"):
@@ -380,8 +388,10 @@ class KaojuArtifactService:
         relationships: Sequence[dict[str, object]],
         idempotency_key: str | None,
         contract_diagnostics: Sequence[ContractDiagnostic],
+        authored_metadata: Mapping[str, object] | None = None,
     ) -> ResearchRecordRequest:
         metadata: dict[str, object] = {
+            **dict(authored_metadata or {}),
             "artifact_type": binding.artifact_type,
             "content_mode": binding.content_mode,
             "artifact_content": content.metadata(),

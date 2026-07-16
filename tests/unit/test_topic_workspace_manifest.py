@@ -122,6 +122,7 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("topic.intent.actor_definitions", compatibility_aliases()["topic_intent_actor_definitions"])
         self.assertEqual("topic.env.topic_setup_target_spec", compatibility_aliases()["topic_env_topic_setup_target_spec"])
         self.assertEqual("topic.env.actor_env_gates", compatibility_aliases()["topic_env_actor_env_gates"])
+        self.assertEqual("topic.paper.template_exchange_root", compatibility_aliases()["topic_paper_template_exchange_root"])
         self.assertEqual("topic.workspace.summary", compatibility_aliases()["topic_workspace_summary"])
         private_surface = catalog()["agent.private_artifacts"]
         self.assertEqual("agent", private_surface.owner)
@@ -147,6 +148,11 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual("file", summary_surface.path_kind)
         self.assertEqual("topic", summary_surface.owner)
         self.assertEqual("durable", summary_surface.durability)
+        exchange_surface = catalog()["topic.paper.template_exchange_root"]
+        self.assertEqual("topic_durable_dir", exchange_surface.storage_profile)
+        self.assertEqual("directory", exchange_surface.path_kind)
+        self.assertEqual("topic", exchange_surface.owner)
+        self.assertEqual("durable", exchange_surface.durability)
         readonly_projection = catalog()["topic.repos.main.projections.readonly"]
         self.assertEqual("topic_repo_readonly_projection_dir", readonly_projection.storage_profile)
         self.assertEqual("topic_read", readonly_projection.sharing)
@@ -516,6 +522,41 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual(context.topic_workspace_path / "source" / "main" / "isomer-managed" / "topic-owned" / "readonly" / "extern", readonly.path)
         self.assertEqual(context.topic_workspace_path / "source" / "main" / "isomer-managed" / "tracked" / "manifests" / "extern-projections.toml", manifest.path)
 
+    def test_template_exchange_root_default_override_and_source(self) -> None:
+        context = self.make_context()
+
+        default, default_diagnostics = resolve_semantic_binding(context, "topic.paper.template_exchange_root", env={})
+
+        self.assertEqual([], default_diagnostics)
+        self.assertIsNotNone(default)
+        assert default is not None
+        self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "writing-template", default.path)
+        self.assertEqual("default_profile", default.source)
+        self.assertEqual("topic_durable_dir", default.catalog.storage_profile)
+
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.paper.template_exchange_root"
+            path = "user-editable/templates"
+            storage_profile = "topic_durable_dir"
+            status = "active"
+            """,
+        )
+        overridden, override_diagnostics = resolve_semantic_binding(context, "topic.paper.template_exchange_root", env={})
+
+        self.assertEqual([], override_diagnostics)
+        self.assertIsNotNone(overridden)
+        assert overridden is not None
+        self.assertEqual(context.topic_workspace_path / "user-editable" / "templates", overridden.path)
+        self.assertEqual("topic_workspace_manifest", overridden.source)
+        self.assertIn("topic-workspace.toml", str(overridden.source_detail))
+
     def test_unknown_topic_main_sublabel_is_reserved(self) -> None:
         context = self.make_context()
         write(
@@ -578,7 +619,7 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
 
         manifest, created, diagnostics = materialize_default_manifest(
             context,
-            labels=("topic.intent.overview", "topic.env.topic_setup_target_spec", "topic.workspace.summary"),
+            labels=("topic.intent.overview", "topic.env.topic_setup_target_spec", "topic.workspace.summary", "topic.paper.template_exchange_root"),
             agent_name=None,
         )
 
@@ -587,8 +628,10 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIn(context.topic_workspace_path / "intent" / "src", created)
         self.assertIn(context.topic_workspace_path / "intent" / "derived", created)
         self.assertIn(context.topic_workspace_path, created)
+        self.assertIn(context.topic_workspace_path / "intent" / "derived" / "writing-template", created)
         self.assertTrue((context.topic_workspace_path / "intent" / "src").is_dir())
         self.assertTrue((context.topic_workspace_path / "intent" / "derived").is_dir())
+        self.assertTrue((context.topic_workspace_path / "intent" / "derived" / "writing-template").is_dir())
         self.assertFalse((context.topic_workspace_path / "intent" / "src" / "topic-overview.md").exists())
         self.assertFalse((context.topic_workspace_path / "intent" / "derived" / "isomer-env-gate.md").exists())
         self.assertFalse((context.topic_workspace_path / "isomer-topic-workspace-summary.md").exists())

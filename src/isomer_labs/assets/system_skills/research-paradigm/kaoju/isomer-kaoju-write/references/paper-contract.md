@@ -7,9 +7,9 @@ The paper contract fixes the publication boundary and paper line before drafting
 - Target reader, venue or paper type, survey questions, scope, temporal cutoff, and contribution posture.
 - Accepted Audit Report, synthesis, Source Digest, Claim-Evidence Ledger, display, and Run refs that form the evidence boundary.
 - Paper-line scope and adaptive typed structure profile with its selection rationale.
-- Canonical MyST structure, template, draft, citation-map, and revision-log refs.
+- Canonical MyST structure, draft, citation-map, and revision-log refs plus the selected mutable template name, stable ref, and observed tree digest.
 - Required section jobs, citation roles, typed display and source-ref placeholders, limitations, and compiler-owned numbering.
-- Template exchange policy, actor target policy, optimistic-concurrency policy, and orphan-confirmation policy.
+- Named-template creation and destructive-update policy, explicit ordinary-copy policy, expected-state concurrency policy, arbitrary-tree agent-assessment policy, and stable non-canonical export policy.
 - MyST-to-Markdown and MyST-to-TeX derivation policy, compatibility fingerprint inputs, and unsupported-construct policy.
 - `document_build` policy, permitted TeX engines and fallback rationale, repair classification, output form, quality checks, and publication Gate.
 

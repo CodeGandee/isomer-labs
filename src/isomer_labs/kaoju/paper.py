@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from contextlib import contextmanager
 import hashlib
 from importlib import metadata
 import io
 import json
-import os
 from pathlib import Path
 import re
 import shutil
@@ -28,7 +26,6 @@ from isomer_labs.kaoju.execution import ExecutionAdapterCommandRequest, command_
 from isomer_labs.models import EffectiveTopicContext
 
 
-PAPER_MANIFEST_VERSION = "isomer-kaoju-paper-template-manifest.v1"
 REQUIRED_PAPER_SECTIONS = (
     "title",
     "abstract",
@@ -197,169 +194,18 @@ class KaojuPaperService:
         target_policy: str,
         display_refs: Sequence[str] = (),
     ) -> dict[str, object]:
-        source_path, source_record = self._record_file(source_ref, expected={"KAOJU:PAPER-STRUCTURE-MYST", "KAOJU:PAPER-TEMPLATE-MYST"})
-        self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
-        self._record_file(citation_map_ref, expected={"KAOJU:CITATION-MAP"})
-        for source_digest_ref in source_digest_refs:
-            self._record_file(source_digest_ref, expected={"KAOJU:SOURCE-DIGEST"})
-        for display_ref in display_refs:
-            self._record_file(display_ref, expected={"KAOJU:PAPER-DISPLAY"})
-        source_text = source_path.read_text(encoding="utf-8")
-        placeholders = sorted(set(PLACEHOLDER_RE.findall(source_text)))
-        diagnostics = validate_myst(source_text, allowed_placeholders=placeholders, source_refs=source_digest_refs, display_refs=display_refs)
-        if _errors(diagnostics):
-            raise KaojuServiceError("paper_template_source_invalid", "Canonical MyST source failed validation before export.", tuple(diagnostic.message for diagnostic in _errors(diagnostics)))
-
-        revision = self._next_export_revision(paper_line)
-        selected_target = target.resolve(strict=False) if target is not None else self.context.topic_workspace_path / "exports" / "kaoju-paper" / _slug(paper_line) / f"v{revision:04d}"
-        if target_policy not in {"create", "update", "overwrite"}:
-            raise KaojuServiceError("paper_target_policy_invalid", "Target policy must be create, update, or overwrite.")
-        self._validate_export_target(selected_target, target_policy)
-        base_digest = checksum_file(source_path)
-        manifest = {
-            "schema_version": PAPER_MANIFEST_VERSION,
-            "template_id": f"paper-template-{_slug(paper_line)}",
-            "source_template_ref": source_ref,
-            "source_semantic_id": _semantic_id(source_record),
-            "source_revision": source_record.get("updated_at"),
-            "base_digest": base_digest,
-            "exported_digest": base_digest,
-            "source_digest_refs": list(source_digest_refs),
-            "display_refs": list(display_refs),
-            "citation_map_ref": citation_map_ref,
-            "paper_line": paper_line,
-            "paper_draft_ref": draft_ref,
-            "export_revision": revision,
-            "export_directory": str(selected_target),
-            "template_file": "paper-template.md",
-            "manifest_file": "manifest.json",
-            "exported_at": _utc_now(),
-            "required_sections": list(REQUIRED_PAPER_SECTIONS),
-            "allowed_placeholders": placeholders,
-            "grounded_sections": _section_names(self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})[0].read_text(encoding="utf-8")),
-            "apply_command_hint": f"isomer-cli ext kaoju paper apply-template {selected_target}",
-        }
-        self._write_export_target(selected_target, source_text, manifest, policy=target_policy)
-
-        export_id = f"artifact-paper-template-export-{uuid.uuid4().hex[:12]}"
-        export_scope = f"paper:{paper_line}:template-export"
-        export_result = self.artifacts.put(
-            "KAOJU:PAPER-TEMPLATE-EXPORT",
-            selected_target,
-            producer="isomer-kaoju-write",
-            scope_key=export_scope,
-            record_id=export_id,
-            relationships=_relationships(paper_template=source_ref, paper_draft=draft_ref),
-            idempotency_key=f"paper-template-export:{paper_line}:{revision}:{base_digest}",
-            external=True,
+        raise KaojuServiceError(
+            "paper_template_command_retired",
+            "The versioned flat template export workflow is retired. Use the named 'ext kaoju paper template export' service.",
+            ("Export canonical main or an explicit named template through the mutable named-template service.",),
         )
-        with self._temporary_directory("paper-manifest-") as temporary:
-            payload_path = temporary / "paper-template-manifest.json"
-            _write_json(payload_path, _structured_payload("KAOJU:PAPER-TEMPLATE-MANIFEST", "Paper template export manifest", "Versioned MyST template exchange state.", {"export": manifest, "base": {"source_ref": source_ref, "digest": base_digest}, "files": ["paper-template.md", "manifest.json"], "placeholders": placeholders}))
-            manifest_result = self.artifacts.put(
-                "KAOJU:PAPER-TEMPLATE-MANIFEST",
-                payload_path,
-                producer="isomer-kaoju-write",
-                scope_key=export_scope,
-                relationships=_relationships(template_export=export_id, source_revision=source_ref),
-                idempotency_key=f"paper-template-manifest:{paper_line}:{revision}:{base_digest}",
-            )
-        return {
-            "ok": True,
-            "mutated": True,
-            "operation": "paper.export-template",
-            "target": str(selected_target),
-            "export_revision": revision,
-            "base_digest": base_digest,
-            "export_ref": _record_id(export_result),
-            "manifest_ref": _record_id(manifest_result),
-            "diagnostics": [diagnostic.to_json() for diagnostic in diagnostics],
-            "affected_refs": [_record_id(export_result), _record_id(manifest_result)],
-        }
 
     def apply_template(self, export_directory: Path, *, confirm_orphans: bool = False) -> dict[str, object]:
-        target = export_directory.resolve(strict=False)
-        manifest_path = target / "manifest.json"
-        template_path = target / "paper-template.md"
-        manifest = _load_json(manifest_path)
-        if manifest.get("schema_version") != PAPER_MANIFEST_VERSION:
-            raise KaojuServiceError("paper_manifest_invalid", "Template export manifest has an unsupported schema version.")
-        for field in ("source_template_ref", "source_semantic_id", "base_digest", "paper_line", "paper_draft_ref", "citation_map_ref"):
-            if not isinstance(manifest.get(field), str) or not manifest.get(field):
-                raise KaojuServiceError("paper_manifest_invalid", f"Template export manifest requires {field}.")
-        if Path(str(manifest.get("export_directory"))).resolve(strict=False) != target:
-            raise KaojuServiceError("paper_manifest_target_mismatch", "Manifest export_directory does not match the selected target.")
-        source_ref = str(manifest["source_template_ref"])
-        source_path, _source_record = self._record_file(source_ref, expected={str(manifest["source_semantic_id"])})
-        current_ref = self._latest_ref(str(manifest["source_semantic_id"]), str(manifest["paper_line"]))
-        if current_ref is not None and current_ref != source_ref:
-            raise KaojuServiceError("paper_template_stale_base", f"Template export base {source_ref} is stale; current revision is {current_ref}.", ("Re-export the current template.",))
-        if checksum_file(source_path) != manifest["base_digest"]:
-            raise KaojuServiceError("paper_template_stale_base", "Canonical source digest changed after export.", ("Re-export the current template.",))
-        if not template_path.is_file():
-            raise KaojuServiceError("paper_template_file_missing", f"Edited MyST template is missing: {template_path}")
-        edited = template_path.read_text(encoding="utf-8")
-        diagnostics = validate_myst(
-            edited,
-            required_sections=_strings(manifest.get("required_sections")),
-            allowed_placeholders=_strings(manifest.get("allowed_placeholders")),
-            source_refs=_strings(manifest.get("source_digest_refs")),
-            display_refs=_strings(manifest.get("display_refs")),
+        raise KaojuServiceError(
+            "paper_template_command_retired",
+            "The flat template apply workflow is retired. Use the Kaoju agent to prepare a clean candidate and call named template update with the current state token.",
+            ("Inspect both arbitrary trees with the Kaoju agent before low-level replacement or merge.",),
         )
-        for source_digest_ref in _strings(manifest.get("source_digest_refs")):
-            try:
-                self._record_file(source_digest_ref, expected={"KAOJU:SOURCE-DIGEST"})
-            except KaojuServiceError:
-                diagnostics.append(PaperDiagnostic("myst_source_ref_missing", f"Manifest source ref is unavailable: {source_digest_ref}", 1))
-        for display_ref in _strings(manifest.get("display_refs")):
-            try:
-                self._record_file(display_ref, expected={"KAOJU:PAPER-DISPLAY"})
-            except KaojuServiceError:
-                diagnostics.append(PaperDiagnostic("myst_display_ref_missing", f"Manifest display ref is unavailable: {display_ref}", 1))
-        if _errors(diagnostics):
-            raise KaojuServiceError("paper_template_invalid", "Edited MyST template failed validation; canonical state was not changed.", tuple(f"line {diagnostic.line}: {diagnostic.message}" for diagnostic in _errors(diagnostics)))
-        edited_sections = set(_section_names(edited))
-        orphaned = sorted(set(_strings(manifest.get("grounded_sections"))) - edited_sections)
-        required_normalized = {_normalize_heading(value) for value in _strings(manifest.get("required_sections"))}
-        orphaned = [value for value in orphaned if _normalize_heading(value) not in required_normalized]
-        if orphaned and not confirm_orphans:
-            raise KaojuServiceError("paper_template_orphan_confirmation_required", f"Edited template orphans grounded sections: {', '.join(orphaned)}.", ("Review the orphaned content and retry with explicit confirmation.",))
-
-        paper_line = str(manifest["paper_line"])
-        source_semantic = str(manifest["source_semantic_id"])
-        template_result = self._upsert_current(
-            "KAOJU:PAPER-TEMPLATE-MYST",
-            template_path,
-            paper_line,
-            relationships=_relationships(paper_structure=source_ref),
-        )
-        template_ref = _record_id(template_result)
-        old_draft_path, _old_draft_record = self._record_file(str(manifest["paper_draft_ref"]), expected={"KAOJU:PAPER-DRAFT-MYST"})
-        regenerated = _fill_template_from_draft(edited, old_draft_path.read_text(encoding="utf-8"))
-        with self._temporary_directory("paper-apply-") as temporary:
-            draft_path = temporary / "paper-draft.md"
-            draft_path.write_text(regenerated, encoding="utf-8")
-            draft_result = self._upsert_current(
-                "KAOJU:PAPER-DRAFT-MYST",
-                draft_path,
-                paper_line,
-                relationships=_relationships(paper_structure=source_ref, paper_template=template_ref, citation_map=str(manifest["citation_map_ref"])),
-            )
-            draft_ref = _record_id(draft_result)
-            log_path = temporary / "paper-revision-log.json"
-            _write_json(log_path, _structured_payload("KAOJU:PAPER-REVISION-LOG", "Paper template apply", "Append-only paper template application and regeneration event.", {"revisions": [{"actor": "topic-actor", "reason": "manual-template-apply", "input_revision": source_ref, "template_revision": template_ref, "output_revision": draft_ref, "orphaned_sections": orphaned, "confirmed_orphans": confirm_orphans, "validation": [diagnostic.to_json() for diagnostic in diagnostics], "source_semantic_id": source_semantic}]}))
-            log_result = self.artifacts.put("KAOJU:PAPER-REVISION-LOG", log_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_revision=draft_ref))
-        return {
-            "ok": True,
-            "mutated": True,
-            "operation": "paper.apply-template",
-            "template_ref": template_ref,
-            "draft_ref": draft_ref,
-            "revision_log_ref": _record_id(log_result),
-            "orphaned_sections": orphaned,
-            "diagnostics": [diagnostic.to_json() for diagnostic in diagnostics],
-            "affected_refs": [template_ref, draft_ref, _record_id(log_result)],
-        }
 
     def derive_markdown(self, *, source_ref: str, paper_line: str, output: Path | None = None) -> dict[str, object]:
         source_path, _record = self._record_file(source_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
@@ -394,13 +240,17 @@ class KaojuPaperService:
         citation_refs: Sequence[str],
     ) -> dict[str, object]:
         draft_path, _draft_record = self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
-        self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"})
+        template_path, template_record = self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"}, allow_directory=True)
+        template_metadata_value = template_record.get("transition_metadata")
+        template_metadata = template_metadata_value if isinstance(template_metadata_value, dict) else {}
+        template_name = template_metadata.get("template_name") if isinstance(template_metadata.get("template_name"), str) else None
+        template_digest = template_metadata.get("tree_digest") if isinstance(template_metadata.get("tree_digest"), str) else checksum_file(template_path)
         text = draft_path.read_text(encoding="utf-8")
         myst_diagnostics = validate_myst(text)
         if _errors(myst_diagnostics):
             raise KaojuServiceError("paper_myst_invalid", "Canonical MyST draft failed validation before TeX initialization.", tuple(diagnostic.message for diagnostic in _errors(myst_diagnostics)))
         constructs = sorted(set(DIRECTIVE_RE.findall(text)) | ({"table"} if "|" in text else set()) | ({"citation"} if CITATION_RE.search(text) else set()))
-        fingerprint_payload = {"venue": venue, "document_class": document_class, "toolchain_policy": toolchain_policy, "required_constructs": constructs}
+        fingerprint_payload = {"venue": venue, "document_class": document_class, "toolchain_policy": toolchain_policy, "required_constructs": constructs, "source_template_ref": template_myst_ref, "source_template_name": template_name, "source_template_observed_digest": template_digest}
         fingerprint = _digest_json(fingerprint_payload)
         existing_template_ref = self._latest_ref("KAOJU:PAPER-TEMPLATE-TEX", paper_line)
         reused = False
@@ -415,14 +265,14 @@ class KaojuPaperService:
                 template_tree = temporary / "template"
                 template_tree.mkdir()
                 (template_tree / "template.tex").write_text(_tex_template(document_class, venue), encoding="utf-8")
-                _write_json(template_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "template", "compatibility_fingerprint": fingerprint, "fingerprint_dimensions": fingerprint_payload, "source_ref": template_myst_ref, "source_checksum": checksum_file(self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"})[0]), "tool": "isomer-myst-initializer.v1", "included_files": ["template.tex"]})
+                _write_json(template_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "template", "compatibility_fingerprint": fingerprint, "fingerprint_dimensions": fingerprint_payload, "source_ref": template_myst_ref, "source_template_name": template_name, "source_observed_digest": template_digest, "tool": "isomer-myst-initializer.v1", "included_files": ["template.tex"]})
                 template_result = self._upsert_current("KAOJU:PAPER-TEMPLATE-TEX", template_tree, paper_line, relationships=_relationships(paper_template_myst=template_myst_ref))
                 template_ref = _record_id(template_result)
             draft_tree = temporary / "draft"
             draft_tree.mkdir()
             converted, conversion_diagnostics = _myst_to_tex(text)
             (draft_tree / "main.tex").write_text(_tex_document(document_class, venue, converted), encoding="utf-8")
-            _write_json(draft_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "draft", "compatibility_fingerprint": fingerprint, "source_ref": draft_ref, "source_checksum": checksum_file(draft_path), "template_ref": template_ref, "citation_inputs": list(citation_refs), "included_files": ["main.tex"], "conversion_diagnostics": [diagnostic.to_json() for diagnostic in conversion_diagnostics], "agent_inspection": {"status": "required", "reason": "mechanical initialization does not establish build readiness"}})
+            _write_json(draft_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "draft", "compatibility_fingerprint": fingerprint, "source_ref": draft_ref, "source_checksum": checksum_file(draft_path), "template_ref": template_ref, "source_template_ref": template_myst_ref, "source_template_name": template_name, "source_template_observed_digest": template_digest, "citation_inputs": list(citation_refs), "included_files": ["main.tex"], "conversion_diagnostics": [diagnostic.to_json() for diagnostic in conversion_diagnostics], "agent_inspection": {"status": "required", "reason": "mechanical initialization does not establish build readiness"}})
             draft_result = self._upsert_current("KAOJU:PAPER-DRAFT-TEX", draft_tree, paper_line, relationships=_relationships(paper_draft_myst=draft_ref, paper_template_tex=template_ref))
         all_diagnostics = [*myst_diagnostics, *conversion_diagnostics]
         return {
@@ -430,6 +280,9 @@ class KaojuPaperService:
             "mutated": True,
             "operation": "paper.init-tex",
             "template_ref": template_ref,
+            "source_template_ref": template_myst_ref,
+            "source_template_name": template_name,
+            "source_template_observed_digest": template_digest,
             "template_reused": reused,
             "draft_ref": _record_id(draft_result),
             "compatibility_fingerprint": fingerprint,
@@ -531,43 +384,6 @@ class KaojuPaperService:
             return self.artifacts.put(semantic_id, content, producer="isomer-kaoju-write", scope_key=scope_key, relationships=relationships)
         return self.artifacts.revise(current, content, producer="isomer-kaoju-write", scope_key=scope_key, relationships=relationships)
 
-    def _next_export_revision(self, paper_line: str) -> int:
-        payload = self.artifacts.list(semantic_id="KAOJU:PAPER-TEMPLATE-EXPORT", scope_key=f"paper:{paper_line}:template-export")
-        records = payload.get("records")
-        return len(records) + 1 if isinstance(records, list) else 1
-
-    def _validate_export_target(self, target: Path, policy: str) -> None:
-        if not target.exists():
-            return
-        if not target.is_dir():
-            raise KaojuServiceError("paper_export_target_invalid", f"Paper export target is not a directory: {target}")
-        entries = list(target.iterdir())
-        recognized = (target / "manifest.json").is_file() and _safe_schema(target / "manifest.json") == PAPER_MANIFEST_VERSION
-        if policy == "create":
-            raise KaojuServiceError("paper_export_target_exists", f"Paper export target already exists: {target}", ("Choose update, overwrite, or a different target.",))
-        if entries and not recognized:
-            raise KaojuServiceError("paper_export_target_unrecognized", f"Non-empty paper export target is not recognized: {target}", ("Choose another target or explicitly clear it outside this command.",))
-
-    def _write_export_target(self, target: Path, text: str, manifest: dict[str, object], *, policy: str) -> None:
-        target.parent.mkdir(parents=True, exist_ok=True)
-        staged = Path(tempfile.mkdtemp(prefix=f".{target.name}.paper-export-", dir=target.parent))
-        try:
-            (staged / "paper-template.md").write_text(text, encoding="utf-8")
-            _write_json(staged / "manifest.json", manifest)
-            if not target.exists():
-                os.replace(staged, target)
-                return
-            for name in ("paper-template.md", "manifest.json"):
-                os.replace(staged / name, target / name)
-            if policy == "overwrite":
-                for name in ("paper-template.yaml",):
-                    candidate = target / name
-                    if candidate.exists():
-                        candidate.unlink()
-        finally:
-            if staged.exists():
-                shutil.rmtree(staged)
-
     def _directory_member_json(self, record_id: str, name: str) -> dict[str, object]:
         manifest_path, _record = self._record_file(record_id, expected={"KAOJU:PAPER-TEMPLATE-TEX"}, allow_directory=True)
         member = manifest_path.parent / name
@@ -647,30 +463,6 @@ def _compile_log(toolchain: str, fallback: str | None, observation: Mapping[str,
     return json.dumps({"schema_version": "isomer-kaoju-paper-compile-log.v1", "toolchain": toolchain, "fallback_rationale": fallback, "command_request": request, "status": observation.get("status"), "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "stdout": observation.get("stdout"), "stderr": observation.get("stderr")}, indent=2, sort_keys=True) + "\n"
 
 
-def _fill_template_from_draft(template: str, draft: str) -> str:
-    sections = _section_bodies(draft)
-    def replacement(match: re.Match[str]) -> str:
-        key = match.group(1)
-        if key.startswith(("figure:", "table:", "source:")):
-            return match.group(0)
-        return sections.get(_normalize_heading(key), f"<!-- citation-needed: no grounded content for {key} -->")
-    return PLACEHOLDER_RE.sub(replacement, template).rstrip() + "\n"
-
-
-def _section_bodies(text: str) -> dict[str, str]:
-    matches = list(HEADING_RE.finditer(text))
-    result: dict[str, str] = {}
-    for index, match in enumerate(matches):
-        start = match.end()
-        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        result[_normalize_heading(match.group(2))] = text[start:end].strip()
-    return result
-
-
-def _section_names(text: str) -> list[str]:
-    return [_normalize_heading(match.group(2)) for match in HEADING_RE.finditer(text)]
-
-
 def _structured_payload(semantic_id: str, title: str, summary: str, sections: dict[str, object]) -> dict[str, object]:
     return {"title": title, "summary": summary, "artifact_family": "kaoju", "semantic_id": semantic_id, "artifact_type": load_binding_registry()[semantic_id].artifact_type, "sections": sections}
 
@@ -707,18 +499,6 @@ def _load_json(path: Path) -> dict[str, object]:
     if not isinstance(value, dict):
         raise KaojuServiceError("paper_manifest_invalid", "Paper manifest must be a JSON object.")
     return value
-
-
-def _safe_schema(path: Path) -> str | None:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return None
-    return str(value.get("schema_version")) if isinstance(value, dict) else None
-
-
-def _strings(value: object) -> list[str]:
-    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
 
 
 def _errors(diagnostics: Sequence[PaperDiagnostic]) -> list[PaperDiagnostic]:
@@ -759,14 +539,6 @@ def _tex_escape(value: str, *, preserve_commands: bool = False) -> str:
     if not preserve_commands:
         replacements.update({"\\": "\\textbackslash{}", "{": "\\{", "}": "\\}"})
     return "".join(replacements.get(character, character) for character in value)
-
-
-def _slug(value: str) -> str:
-    return re.sub(r"[^a-zA-Z0-9._-]+", "-", value).strip("-") or "main"
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def myst_parser_version() -> str:

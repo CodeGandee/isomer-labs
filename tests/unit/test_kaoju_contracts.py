@@ -44,7 +44,7 @@ class KaojuContractTests(unittest.TestCase):
 
         bindings = load_binding_registry()
         semantics = load_semantic_registry()
-        self.assertEqual(61, len(bindings))
+        self.assertEqual(62, len(bindings))
         self.assertEqual(set(bindings), set(semantics))
         self.assertEqual((), resource_coverage_diagnostics())
         for semantic_id in bindings:
@@ -79,6 +79,29 @@ class KaojuContractTests(unittest.TestCase):
             describe_binding("DEEPSCI:SURVEY-CONTRACT")
         with self.assertRaises(KeyError):
             describe_binding("KAOJU:UNKNOWN-CONTRACT")
+
+    def test_named_template_bindings_define_mutable_state_and_exchange_evidence(self) -> None:
+        bindings = load_binding_registry()
+        template = bindings["KAOJU:PAPER-TEMPLATE-MYST"]
+        self.assertEqual("directory_manifest", template.content_mode)
+        self.assertEqual("mutable_state", template.revision_mode)
+        self.assertEqual("template_name", template.scope_key_policy["dimension"])
+        self.assertEqual("mutable_named", template.latest_selection_policy)
+        self.assertEqual((), template.relationships)
+
+        audit = bindings["KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT"]
+        self.assertEqual("append_only", audit.revision_mode)
+        self.assertEqual("ordinary_file", audit.content_mode)
+        self.assertEqual(("paper_template",), audit.relationships)
+        for semantic_id in ("KAOJU:PAPER-TEMPLATE-EXPORT", "KAOJU:PAPER-TEMPLATE-MANIFEST"):
+            binding = bindings[semantic_id]
+            self.assertEqual("template_name", binding.scope_key_policy["dimension"])
+            self.assertIn("paper_template", binding.relationships)
+
+        schema = self.resource_json("bindings.v2.schema.json")
+        binding_schema = schema["$defs"]["binding"]
+        self.assertIn("mutable_state", binding_schema["properties"]["revision_mode"]["enum"])
+        self.assertIn("mutable_named", binding_schema["properties"]["latest_selection_policy"]["enum"])
 
     def test_structured_bindings_resolve_and_non_structured_bindings_are_explicit(self) -> None:
         provider = ResearchRecordFormatProvider()

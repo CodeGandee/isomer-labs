@@ -111,6 +111,7 @@
         "revision_mode": {
           "enum": [
             "current_state",
+            "mutable_state",
             "append_only",
             "immutable"
           ]
@@ -137,6 +138,7 @@
                 "direction",
                 "source",
                 "paper_line",
+                "template_name",
                 "export_target",
                 "environment",
                 "trial",
@@ -149,6 +151,7 @@
           "enum": [
             "topic_current",
             "scoped_current",
+            "mutable_named",
             "append_only",
             "immutable_ref"
           ]
