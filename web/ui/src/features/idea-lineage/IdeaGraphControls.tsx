@@ -95,7 +95,7 @@ export function IdeaGraphControls({ store, graph, onPreview }: { store: IdeaLine
   };
 
   return (
-    <details className="idea-graph-controls" open>
+    <details className="idea-graph-controls">
       <summary>Graph Controls</summary>
       <div className="idea-graph-controls-grid">
         <fieldset className="idea-graph-control-section">

@@ -162,9 +162,16 @@ describe("Idea graph panel interactions", () => {
     expect(await screen.findByTestId("graph-node-idea:idea-1")).toBeTruthy();
   });
 
-  it("keeps graph controls local to the Idea Graph panel", async () => {
+  it("keeps graph controls local, initially closed, and user-expandable", async () => {
     renderWithQuery(<IdeaGraphPanel topicId="alpha" />);
-    expect(await screen.findByText("Graph Controls")).toBeTruthy();
+    const summary = await screen.findByText("Graph Controls");
+    const controls = summary.closest("details");
+    expect(controls).toBeTruthy();
+    expect(controls?.open).toBe(false);
+
+    fireEvent.click(summary);
+
+    expect(controls?.open).toBe(true);
     expect(screen.getByRole("group", { name: "Focus" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Layout" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Preview Layout" })).toBeTruthy();

@@ -20,7 +20,11 @@ try {
   await page.waitForSelector(".idea-graph-controls", { timeout: 30000 });
   await page.waitForSelector(".react-flow__node", { timeout: 30000 });
 
+  const graphControls = page.locator(".idea-graph-controls");
   const graphControlsVisible = await page.getByText("Graph Controls", { exact: true }).isVisible();
+  const graphControlsInitiallyOpen = await graphControls.evaluate((element) => element.open);
+  await graphControls.locator("summary").click();
+  const graphControlsExpanded = await graphControls.evaluate((element) => element.open);
   const nodeCount = await page.locator(".react-flow__node").count();
   await page.locator(".react-flow__node").nth(0).click({ force: true });
   if (nodeCount > 1) {
@@ -50,9 +54,9 @@ try {
   await page.waitForSelector(".idea-detail-panel, .detail-viewer", { timeout: 30000 });
   const detailOpened = await page.locator(".idea-detail-panel, .detail-viewer").first().isVisible();
 
-  const result = { graphControlsVisible, nodeCount, selectedCount, selectionChips, focusCounts, storedPreset: Boolean(storedPreset?.includes("Browser smoke grid")), responsiveControlsVisible, mobileOverflow, detailOpened, pageErrors };
+  const result = { graphControlsVisible, graphControlsInitiallyOpen, graphControlsExpanded, nodeCount, selectedCount, selectionChips, focusCounts, storedPreset: Boolean(storedPreset?.includes("Browser smoke grid")), responsiveControlsVisible, mobileOverflow, detailOpened, pageErrors };
   console.log(JSON.stringify(result, null, 2));
-  if (!graphControlsVisible || nodeCount < 1 || selectedCount < 1 || selectionChips !== selectedCount || !focusCounts.includes("Visible") || !storedPreset?.includes("Browser smoke grid") || !responsiveControlsVisible || mobileOverflow || !detailOpened || pageErrors.length) {
+  if (!graphControlsVisible || graphControlsInitiallyOpen || !graphControlsExpanded || nodeCount < 1 || selectedCount < 1 || selectionChips !== selectedCount || !focusCounts.includes("Visible") || !storedPreset?.includes("Browser smoke grid") || !responsiveControlsVisible || mobileOverflow || !detailOpened || pageErrors.length) {
     process.exitCode = 1;
   }
 } finally {
