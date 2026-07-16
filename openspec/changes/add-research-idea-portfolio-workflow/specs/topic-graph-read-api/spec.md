@@ -113,6 +113,29 @@ The Topic Graph read API SHALL provide bounded read-only ancestor and descendant
 - **THEN** it uses canonical Idea Lineage Edges and does not infer authority from record lineage or generated Markdown
 - **AND** it reports `mutated: false` and writes no graph, filter, selection, or layout state to Workspace Runtime
 
+### Requirement: Canonical Portfolio Read Models Are Paradigm Independent
+The Topic Graph read API SHALL combine all topic-scoped canonical Research Ideas into one portfolio regardless of producing research paradigm, artifact family, or installed extension set.
+
+#### Scenario: Kaoju-only topic is read
+- **WHEN** a Topic Workspace contains canonical Research Ideas realized by Kaoju Direction Set proposals and no DeepSci extension or DeepSci records
+- **THEN** Idea Graph and Idea Timeline read models return those directions with the same facets, decision summaries, lineage, detail refs, presets, and steering eligibility used for every canonical Research Idea
+- **AND** the response does not require a Kaoju-specific graph mode or payload parser
+
+#### Scenario: Mixed DeepSci and Kaoju topic is read
+- **WHEN** one topic contains canonical Research Ideas realized by both DeepSci records and Kaoju Direction Sets
+- **THEN** the canonical read model returns the union of eligible topic-scoped ideas and canonical Idea Lineage Edges under one source revision and applied predicate
+- **AND** entering canonical graph mode because one family has ideas does not suppress canonical ideas from another family
+
+#### Scenario: Legacy idea-bearing record lacks canonical projection
+- **WHEN** the topic contains a legacy Direction Set or another idea-bearing record whose promised canonical Research Idea effects are absent
+- **THEN** the read model or index diagnostics identify the unprojected record and the previewable migration or repair route
+- **AND** the API does not parse the paradigm payload into authoritative transient GUI nodes or silently claim that the canonical portfolio is complete
+
+#### Scenario: Paradigm-specific realization detail is opened
+- **WHEN** a user opens the detail for a Research Idea realized by a Kaoju proposal or another paradigm-specific record
+- **THEN** the list response remains lightweight and the detail route resolves the exact canonical Idea Realization and source object on demand
+- **AND** portfolio filtering and graph topology do not depend on loading the source payload
+
 ### Requirement: Portfolio Read Models Preserve Revision Semantics
 Canonical Research Idea state, decision membership, and lineage changes SHALL participate in topic index revision and read-model invalidation.
 

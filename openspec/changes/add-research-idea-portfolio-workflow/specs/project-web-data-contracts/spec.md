@@ -112,3 +112,18 @@ Contract tests SHALL prove that Python read models and TypeScript Project Web pr
 #### Scenario: Decision and traversal fixtures are evaluated
 - **WHEN** tests validate considered option sets, closure history, reopening history, ancestors, descendants, and incomplete traversal
 - **THEN** Python schemas and TypeScript consumers preserve stable ids, completeness, mutation state, and diagnostics
+
+#### Scenario: Kaoju-only portfolio fixture is evaluated
+- **WHEN** Python and TypeScript tests evaluate a topic containing only canonical Research Ideas realized by a Kaoju Direction Set
+- **THEN** the shared graph, timeline, preset, decision-context, realization-detail, and steering contracts validate without a Kaoju-specific client schema
+- **AND** every durable proposal appears with the actor-authored selected, open, deferred, or closed meaning
+
+#### Scenario: Mixed-paradigm portfolio fixture is evaluated
+- **WHEN** Python and TypeScript tests evaluate one topic containing DeepSci-realized and Kaoju-realized canonical Research Ideas
+- **THEN** both implementations return the same union of eligible idea ids, edges, facet counts, decision summaries, and topology completeness for the same predicate and revision
+- **AND** neither implementation chooses one artifact family as the authoritative source scope
+
+#### Scenario: Unprojected legacy Kaoju fixture is evaluated
+- **WHEN** a legacy Direction Set lacks canonical Research Idea effects
+- **THEN** backend and TypeScript contracts preserve the incomplete-portfolio diagnostic and migration or repair metadata
+- **AND** Project Web does not validate transient payload-parsed direction nodes as canonical ideas

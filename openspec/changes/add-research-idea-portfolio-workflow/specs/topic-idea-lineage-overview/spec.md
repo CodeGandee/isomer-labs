@@ -33,6 +33,34 @@ Project Web SHALL let users inspect what Research Ideas were proposed, how far e
 - **THEN** Project Web shows each idea with unknown exploration, decision, or evidence facets and identifies the unknown fields
 - **AND** it does not hide or silently remap those ideas
 
+### Requirement: Project Web Shows Kaoju Directions Through the Canonical Portfolio
+Project Web SHALL present Kaoju survey-direction proposals through the same canonical Research Idea components, presets, lineage, decision review, detail, and steering flows used for every supported research paradigm.
+
+#### Scenario: User opens a Kaoju-only topic
+- **WHEN** a topic contains an actor-confirmed Kaoju Direction Set whose proposals have canonical Research Idea effects and contains no DeepSci ideas
+- **THEN** Idea Graph and Idea Timeline show every eligible direction proposal with its canonical facets, selected or non-selected decision outcome, exact realization detail, and lineage
+- **AND** Project Web does not require DeepSci installation, a Kaoju-specific view, or heuristic extraction
+
+#### Scenario: User opens a mixed-paradigm topic
+- **WHEN** a topic contains canonical Research Ideas produced by both Kaoju and DeepSci
+- **THEN** the same portfolio view shows the union under one applied predicate, source count, index revision, and topology-completeness contract
+- **AND** filtering by lifecycle state, decision, lineage, or text behaves independently of producing paradigm
+
+#### Scenario: User reviews a Kaoju direction decision
+- **WHEN** the user opens decision context for a Kaoju direction selected from an actor-confirmed Direction Set
+- **THEN** Project Web shows the Direction Set Decision Record, every authored proposal option, each outcome, rationale, actor, timestamp, and current canonical facets
+- **AND** an option that was not selected but remained open is not displayed as rejected, deferred, or closed
+
+#### Scenario: User opens a Kaoju direction realization
+- **WHEN** the user opens source detail from a Kaoju-derived Research Idea
+- **THEN** Project Web lazily displays the exact proposal object and its Direction Set context through canonical detail refs
+- **AND** it does not parse the Direction Set in the graph or timeline list component
+
+#### Scenario: Legacy Kaoju projection is missing
+- **WHEN** a legacy Direction Set has no canonical Research Idea projection
+- **THEN** Project Web shows an incomplete-portfolio diagnostic and supported migration or repair action from backend metadata
+- **AND** it does not silently omit the known gap or create authoritative browser-only ideas
+
 ### Requirement: Idea Graph and Timeline Share Portfolio Semantics
 Project Web SHALL apply the same preset and facet vocabulary in Idea Graph and Idea Timeline while keeping their independent presentation and layout state.
 

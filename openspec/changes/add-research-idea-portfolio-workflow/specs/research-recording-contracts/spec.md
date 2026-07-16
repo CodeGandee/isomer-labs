@@ -8,6 +8,11 @@ Idea-bearing structured research record writes SHALL persist canonical Research 
 - **THEN** the write records each canonical Research Idea, its exact object-valued Idea Realization path, known visibility and state facets, generation membership, and provenance in the same accepted operation
 - **AND** it does not rely on later Markdown parsing or GUI facet extraction to create those ideas
 
+#### Scenario: Kaoju Direction Set is accepted
+- **WHEN** an accepted idea-bearing Kaoju Direction Set declares durable survey-direction proposals and an actor-confirmed option set
+- **THEN** the write records every proposal as a canonical Research Idea with an exact proposal-object realization, proposal-generation membership, explicit decision option outcome, and all justified state transitions in the same accepted operation
+- **AND** the Direction Set remains the Decision Record and survey workflow Artifact rather than becoming a Research Idea itself
+
 #### Scenario: Candidate is investigated
 - **WHEN** an accepted analysis, experiment, or focused exploration record establishes that work began or completed for a Research Idea
 - **THEN** the producer explicitly records the justified exploration transition and links the record, Research Task, Run, Evidence Item, Finding, or Provenance Record refs that support it
@@ -63,14 +68,19 @@ The recording API SHALL commit an accepted structured record and the canonical R
 Packaged and source Research Idea-producing system skills SHALL instruct agents to record canonical portfolio state and verify durable refs before declaring their idea-bearing outputs accepted.
 
 #### Scenario: Idea-producing skill records output
-- **WHEN** a DeepSci or other system skill produces a raw slate, candidate frontier, pre-idea draft, selected hypothesis, selected idea, rejected or deferred ledger, route decision, analysis follow-up, optimization line, or paper-facing idea seed
+- **WHEN** a DeepSci, Kaoju, or other system skill produces a raw slate, candidate frontier, survey-direction set, pre-idea draft, selected hypothesis, selected idea, rejected or deferred ledger, route decision, analysis follow-up, optimization line, or paper-facing idea seed
 - **THEN** its workflow names the required Research Idea upsert, exact realization, lineage, generation, transition, and decision-option operations for that output
 - **AND** it requires the operation result refs in the accepted terminal report or equivalent durable output
 
 #### Scenario: Shared guidance owns common intent
 - **WHEN** several system skills need the same Research Idea recording rules
-- **THEN** they route to one shared Research Idea Recording reference and add only profile-specific mappings
-- **AND** copied skill text does not redefine canonical state vocabulary independently
+- **THEN** they route to one paradigm-neutral Research Idea Recording reference that is installed independently of optional research-paradigm extensions and add only profile-specific mappings
+- **AND** Kaoju does not depend on DeepSci being installed and copied skill text does not redefine canonical state vocabulary independently
+
+#### Scenario: Paradigm-specific candidate is classified
+- **WHEN** a research-paradigm skill handles a source, work, method, claim, route, paper structure, task, or other object that its local vocabulary calls a candidate
+- **THEN** the shared guidance requires a durable concept test before creating a Research Idea and preserves the object's existing canonical type when that test fails
+- **AND** only explicit profile-specific mappings can promise automatic Research Idea effects
 
 #### Scenario: Skill cannot record promised effects
 - **WHEN** an idea-producing skill cannot complete or validate required canonical idea writes
