@@ -60,6 +60,12 @@ MyST is the only canonical paper source. Figures and tables are separate file-ba
 
 A reset is a checkpoint decision, not a filesystem cleanup. The pipeline queries the state DB and retains accepted selected directions, direction-scoped reading lists, approved source digests, canonical paper revisions, wiki manifests, exact Pixi environment refs, and immutable trial results unless the actor explicitly archives or revises them. It resumes at the first incomplete stage after validating content links, current scope, pending Gates, blockers, Service Requests, and prior Run terminal state. Failed and rejected attempts remain visible; a later repair never overwrites their evidence or verdict.
 
+## Prerequisite Recovery Example
+
+Suppose the user asks, “Build the survey PDF,” but the Topic has no accepted audit, synthesis, or canonical MyST draft. The ordinary request pauses before those producers run. The response identifies the missing refs, recommends audit followed by any bounded repair, synthesis, drafting, and local PDF construction, then offers four choices: run to the PDF target, execute only the next prerequisite, inspect or choose another route, or stop.
+
+If the user chooses “run to the PDF target,” the current agent maintains a prompt-scoped dependency plan. Audit, each required repair, a fresh audit, synthesis, drafting, and PDF construction retain separate procedure Runs, callbacks, checkpoints, Artifacts, and terminal reports. The controller consumes routine in-closure recovery routes only after refreshing durable state. It still pauses for evidence-scope choices, structure acceptance, unexpected dependencies or resource use, build authorization, the publication Gate, and any external publication or submission. Once the validated local PDF target completes, traversal stops; it does not publish or start later recommended work.
+
 ## Migration
 
 Legacy `KAOJU:SURVEY-MANUSCRIPT` and `KAOJU:WRITING-TEMPLATE` records remain readable but are never promoted automatically into canonical MyST state. Historical `ext research templates` inspection and repair remain supported; new paper work uses `ext kaoju paper`. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.

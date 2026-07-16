@@ -228,10 +228,165 @@ EXPECTED_KAOJU_SHARED_REFERENCES = frozenset(
         "external-owner-routing.md",
         "interaction-and-gates.md",
         "lineage.md",
+        "prerequisite-recovery.md",
         "source-identity.md",
         "survey-artifacts.md",
         "terminal-report.md",
     }
+)
+
+PREREQUISITE_RECOVERY_CONTRACTS = (
+    (
+        Path("kaoju/isomer-kaoju-pipeline/SKILL.md"),
+        (
+            "Preflight target prerequisites",
+            "ordinary target request",
+            "Run to the target",
+            "Execute the next prerequisite only",
+            "Inspect or choose another route",
+            "before prerequisite mutation",
+            "Only after explicit target-scoped run-to authorization",
+            "native planning tool",
+            "separate bounded procedure Run",
+            "Run-to does not satisfy a Gate",
+            "stops after that target",
+        ),
+        (
+            "$isomer-kaoju-shared",
+            "shared Prerequisite Recovery reference",
+            "global or session-wide",
+            "merge prerequisite Runs",
+            "continue after the named target",
+        ),
+    ),
+    (
+        Path("kaoju/isomer-kaoju-shared/SKILL.md"),
+        (
+            "Preflight target prerequisites",
+            "pause an ordinary request before prerequisite mutation",
+            "explicit run-to authorization",
+            "prompt-level controller",
+        ),
+        ("references/prerequisite-recovery.md",),
+    ),
+    (
+        Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+        (
+            "Preflight target prerequisites",
+            "ordinary target request",
+            "Run to the target",
+            "Execute the next prerequisite only",
+            "Inspect or choose another route",
+            "before invoking a producer",
+            "Only after explicit target-scoped run-to authorization",
+            "native planning tool",
+            "external controller",
+            "Never add a loop or backward edge",
+            "stops after the named target",
+        ),
+        (
+            "$isomer-deepsci-shared",
+            "shared Prerequisite Recovery reference",
+            "global or session-wide",
+            "merge prerequisite Runs",
+            "continue after the named target",
+        ),
+    ),
+    (
+        Path("deepsci/isomer-deepsci-shared/SKILL.md"),
+        (
+            "Preflight target prerequisites",
+            "pause an ordinary request before producer mutation",
+            "explicit target-scoped run-to authorization",
+            "never inherits their mutation authority",
+        ),
+        ("references/prerequisite-recovery.md",),
+    ),
+)
+
+PREREQUISITE_RECOVERY_REFERENCE_TERMS = {
+    Path("kaoju/isomer-kaoju-shared/references/prerequisite-recovery.md"): (
+        "## Workflow",
+        "ordinary `do <task>`",
+        "Run to the target",
+        "Execute the next prerequisite only",
+        "Inspect or choose another route",
+        "Stop",
+        "prompt-scoped and target-scoped",
+        "not global, session-wide",
+        "separate Research Tasks",
+        "nondelegable",
+        "terminal report",
+        "Do not continue",
+    ),
+    Path("kaoju/isomer-kaoju-shared/references/terminal-report.md"): (
+        "known in-scope producer route",
+        "unavailable external state change",
+        "explicitly authorized prompt-level run-to controller",
+        "separate procedure Run",
+    ),
+    Path("deepsci/isomer-deepsci-shared/references/prerequisite-recovery.md"): (
+        "## Workflow",
+        "ordinary `do <task>`",
+        "Run to the target",
+        "Execute the next prerequisite only",
+        "Inspect or choose another route",
+        "Stop",
+        "prompt-scoped and target-scoped",
+        "not global, session-wide",
+        "latest-context preflight",
+        "Worker Output Policy",
+        "callbacks",
+        "placeholder bindings",
+        "single-pass and linear",
+        "separate Runs",
+        "Do not continue beyond the original target",
+    ),
+    Path("deepsci/isomer-deepsci-pipeline/references/transition-rules.md"): (
+        "known in-scope focused skill or pass can produce or repair it",
+        "unavailable external state change",
+        "run to the target",
+        "execute the next prerequisite only",
+        "inspect or choose another route",
+        "explicit target-scoped run-to authorization",
+        "separate Run",
+        "nondelegable human Gate",
+    ),
+    Path("deepsci/isomer-deepsci-pipeline/references/terminal-report-template.md"): (
+        "`paused` prerequisite recovery",
+        "unavailable external state change",
+        "explicitly authorized target-scoped run-to controller",
+        "separate focused-skill or pass Run",
+        "separate terminal reports",
+        "stops after the target",
+    ),
+}
+
+PREREQUISITE_RECOVERY_FORBIDDEN_PATTERNS = (
+    (
+        "implicit prerequisite authorization from an ordinary request",
+        re.compile(r"\bordinary (?:`do <task>` |target )?request (?:authorizes|permits).{0,80}prerequisite", re.I),
+    ),
+    (
+        "unqualified always-automate guidance",
+        re.compile(r"\balways (?:automate|execute|run).{0,40}prerequisite", re.I),
+    ),
+    (
+        "global or session-wide run-to mode",
+        re.compile(r"\brun-to (?:is|becomes|acts as).{0,50}(?:global|session-wide|yes-to-all)", re.I),
+    ),
+    (
+        "merged prerequisite and target Run guidance",
+        re.compile(r"\b(?:merge|combine).{0,50}(?:prerequisite|target).{0,80}(?:one|single|same) Run\b", re.I),
+    ),
+    (
+        "skipped Gate guidance",
+        re.compile(r"\b(?:skip|bypass).{0,50}\b(?:Gate|Gates|audit|audits)\b", re.I),
+    ),
+    (
+        "continuation after the named target",
+        re.compile(r"\bcontinue after the (?:named|original) target\b", re.I),
+    ),
 )
 
 STALE_TERMS = {
@@ -2173,6 +2328,95 @@ def validate_kaoju_resource_and_shared_routing(
             add(diagnostics, repo_root, binding_page, 1, "RPS024", "producer binding projection is oversized and competes with extension query authority")
 
 
+def _h2_section_text(lines: tuple[str, ...], heading: str) -> str | None:
+    start = find_h2(lines, heading)
+    if start is None:
+        return None
+    end = next(
+        (
+            index
+            for index, line in enumerate(lines[start:], start=start + 1)
+            if (match := HEADING_RE.match(line)) and len(match.group(1)) <= 2
+        ),
+        len(lines) + 1,
+    )
+    return "\n".join(lines[start - 1 : end - 1])
+
+
+def _is_prerequisite_rejection_line(line: str) -> bool:
+    lowered = line.casefold()
+    return any(
+        marker in lowered
+        for marker in (
+            "do not",
+            "does not",
+            "must not",
+            "never",
+            "without",
+            "only after",
+            "not global",
+            "not a global",
+            "not session-wide",
+            "not a session-wide",
+        )
+    )
+
+
+def validate_prerequisite_recovery_guidance(
+    target: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    """Enforce prompt-scoped prerequisite recovery across research pipelines."""
+
+    active_families = {family for family in ("deepsci", "kaoju") if (target / family).exists()}
+    checked_paths: set[Path] = set()
+
+    for relative, workflow_terms, document_terms in PREREQUISITE_RECOVERY_CONTRACTS:
+        if relative.parts[0] not in active_families:
+            continue
+        path = target / relative
+        checked_paths.add(path)
+        if not path.exists():
+            add(diagnostics, repo_root, path, 1, "RPS031", f"required prerequisite-recovery guidance '{relative.as_posix()}' is missing")
+            continue
+        lines = read_lines(path)
+        text = "\n".join(lines)
+        workflow_text = _h2_section_text(lines, "Workflow")
+        if workflow_text is None:
+            add(diagnostics, repo_root, path, 1, "RPS031", "prerequisite recovery must be part of the numbered ## Workflow, not only troubleshooting guidance")
+        else:
+            for term in workflow_terms:
+                if term not in workflow_text:
+                    add(diagnostics, repo_root, path, find_h2(lines, "Workflow") or 1, "RPS031", f"numbered prerequisite-recovery workflow must document '{term}'")
+        for term in document_terms:
+            if term not in text:
+                add(diagnostics, repo_root, path, 1, "RPS031", f"prerequisite-recovery guidance must document '{term}'")
+
+    for relative, required_terms in PREREQUISITE_RECOVERY_REFERENCE_TERMS.items():
+        if relative.parts[0] not in active_families:
+            continue
+        path = target / relative
+        checked_paths.add(path)
+        if not path.exists():
+            add(diagnostics, repo_root, path, 1, "RPS031", f"required prerequisite-recovery reference '{relative.as_posix()}' is missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in required_terms:
+            if term not in text:
+                add(diagnostics, repo_root, path, 1, "RPS031", f"prerequisite-recovery reference must document '{term}'")
+
+    for path in sorted(checked_paths):
+        if not path.exists():
+            continue
+        for line_number, line in enumerate(read_lines(path), start=1):
+            for label, pattern in PREREQUISITE_RECOVERY_FORBIDDEN_PATTERNS:
+                if pattern.search(line) and not _is_prerequisite_rejection_line(line):
+                    add(diagnostics, repo_root, path, line_number, "RPS031", f"prerequisite-recovery guidance contains {label}")
+            if re.match(r"^\s*(?:[-*]\s*)?(?:Do not|Never) (?:select|start|choose|invoke|run).{0,40}another (?:macro )?(?:procedure|pass|skill)\.?\s*$", line, re.I):
+                add(diagnostics, repo_root, path, line_number, "RPS031", "prerequisite-recovery guidance contains unqualified never-chain wording")
+
+
 def _markdown_table(lines: tuple[str, ...], required_header: str) -> tuple[list[str], list[tuple[int, list[str]]]]:
     for index, line in enumerate(lines):
         if not line.startswith("|"):
@@ -2543,6 +2787,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_artifact_bindings(kaoju_root, repo_root, diagnostics, family_by_key["kaoju"])
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
         validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
+    validate_prerequisite_recovery_guidance(target, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     validate_repository_command_boundary(target, repo_root, diagnostics)
     return sorted(set(diagnostics))

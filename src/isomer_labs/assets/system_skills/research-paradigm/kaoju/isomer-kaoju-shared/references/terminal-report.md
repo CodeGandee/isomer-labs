@@ -18,6 +18,6 @@ Every bounded procedure or stage records:
 | `blockers` | Unresolved conditions and affected outputs. |
 | `resume_point` | Accepted refs, starting stage, required decision or state change; omit only for complete work with no continuation. |
 
-`paused` means continuation is possible after a user decision, Gate, or chosen boundary. `blocked` means the requested bounded result cannot proceed without an external state change. `complete` means the selected procedure met its accepted stop conditions, not that the whole field is exhausted.
+`paused` means continuation is possible after a user decision, Gate, chosen boundary, or known in-scope producer route. `blocked` means the requested bounded result cannot proceed without an unavailable external state change. `complete` means the selected procedure met its accepted stop conditions, not that the whole field is exhausted.
 
-Do not select or start another macro procedure in the terminal report.
+Do not select or start another macro procedure in the terminal report. The report may name a producer or repair route and the original target resume point. After the report is recorded, an explicitly authorized prompt-level run-to controller may validate its refs, refresh durable state, and consume that route as a separate procedure Run inside the target closure.

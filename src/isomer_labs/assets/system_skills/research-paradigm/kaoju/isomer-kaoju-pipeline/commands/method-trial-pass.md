@@ -9,7 +9,7 @@
 5. **Run the trial**. Use `$isomer-kaoju-trial` to preserve upstream-faithful, adapted, repaired, failed, blocked, and probe Runs separately. Invoke `$isomer-kaoju-reproduce` only when the accepted conclusion is genuine reproduction and its stronger fidelity contract can be met.
 6. **Audit**. Use `$isomer-kaoju-audit` to check identity, execution fidelity, input basis, evaluator, raw outputs, patches, and claim calibration.
 7. **Synthesize**. If audit accepts the evidence, use `$isomer-kaoju-synthesize` to add the Method Trial Artifact and Findings to the survey.
-8. **Stop**. Return first-hand numbers, limitations, and the pipeline terminal report.
+8. **Stop**. Return first-hand numbers, limitations, and this bounded procedure's terminal report. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute one bounded method-trial plan while preserving audit before synthesis.
 

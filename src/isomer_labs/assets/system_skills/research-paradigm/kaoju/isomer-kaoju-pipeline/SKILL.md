@@ -23,13 +23,15 @@ Use as the single public router for the ten current survey intents, retained com
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Load the checked contract**. Run `isomer-cli --print-json ext kaoju process show` and treat its versioned process data as the exact skill, intent, compatibility, and manager inventory. Do not invent a public command or read a package path directly.
 4. **Route one intent**. Select the exact command page below. This skill coordinates stages but does not search, interpret evidence, mutate environments, execute trials, author canonical paper content, or write wiki files itself.
-5. **Begin a Run**. Use `isomer-cli project runs begin` with the procedure id, control mode, input refs, expected outputs, and first stage.
-6. **Honor clarification and Gates**. Ask one material choice at a time, preserve custom and multiple selections, and stop at every required human, publication, or network-exposure Gate.
-7. **Dispatch focused owners**. Invoke only the skills and typed CLI services named by the command page. Operational support mutation uses a recorded Service Request and managed research execution uses an Execution Adapter Command Request. Repository acquisition and identity verification are the explicit exception: the acting user or agent runs prompt-sensitive commands externally, verifies the result, and only then invokes semantic registration and typed Artifact operations.
-8. **Checkpoint each stage**. Record completed refs, pending Gate, blockers, Service Requests, terminal status, and the first incomplete stage as the resume hint.
-9. **Audit before synthesis or paper writing**. Accepted claim-bearing output never bypasses the audit boundary.
-10. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-11. **Return one terminal report**. Report `complete`, `paused`, or `blocked`; accepted refs; Run, Gate, Service Request, and blocker refs; limitations; and resume point. Do not choose another macro intent autonomously.
+5. **Preflight target prerequisites**. Resolve the command page's accepted inputs, audit state, readiness, known producer routes, and Gates before beginning the target Run. If a producer can satisfy a gap and the user gave only an ordinary target request, return `paused` and present Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop before prerequisite mutation.
+6. **Plan authorized run-to recovery**. Only after explicit target-scoped run-to authorization, maintain an internal dependency plan with the native planning tool. The current agent acts as prompt-level controller, invokes each prerequisite as a separate bounded procedure Run, refreshes durable state after each terminal report, resumes the original target when ready, and stops after that target.
+7. **Begin the selected procedure Run**. Use `isomer-cli project runs begin` with the procedure id, control mode, input refs, expected outputs, and first stage. Never merge prerequisite and target procedures into one Run.
+8. **Honor clarification and Gates**. Ask one material choice at a time, preserve custom and multiple selections, and stop at every required human, publication, or network-exposure Gate. Run-to does not satisfy a Gate.
+9. **Dispatch focused owners**. Invoke only the skills and typed CLI services named by the command page. Operational support mutation uses a recorded Service Request and managed research execution uses an Execution Adapter Command Request. Repository acquisition and identity verification are the explicit exception: the acting user or agent runs prompt-sensitive commands externally, verifies the result, and only then invokes semantic registration and typed Artifact operations.
+10. **Checkpoint each stage**. Record completed refs, pending Gate, blockers, Service Requests, terminal status, and the first incomplete stage as the resume hint.
+11. **Audit before synthesis or paper writing**. Accepted claim-bearing output never bypasses the audit boundary.
+12. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-pipeline --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+13. **Return one terminal report**. Report `complete`, `paused`, or `blocked`; accepted refs; Run, Gate, Service Request, and blocker refs; limitations; and resume point. A bounded procedure does not choose another macro intent. An explicitly authorized prompt-level controller may consume an in-closure recovery route only after this report is recorded.
 
 If the task does not map cleanly to these steps, refine the existing plan into a step-by-step plan from this skill's constraints, then execute it.
 
@@ -72,7 +74,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 
 ## Reference Routing
 
-Use `$isomer-kaoju-shared` for Artifact, evidence, interaction, Gate, owner-routing, and terminal contracts. Use `$isomer-kaoju-workspace-mgr` when readiness is missing or stale, and load only the selected command page plus its named focused owners.
+Use `$isomer-kaoju-shared` for Artifact, evidence, interaction, Gate, owner-routing, terminal, and prerequisite-recovery contracts. The shared Prerequisite Recovery reference defines ordinary pause, target-scoped run-to authorization, separate procedure Runs, and nondelegable boundaries. Use `$isomer-kaoju-workspace-mgr` when readiness is missing or stale, and load only the selected command page plus its named focused owners.
 
 ## Artifact Operations
 
@@ -93,6 +95,8 @@ Resolve `KAOJU:PROCEED-DECISION` and `KAOJU:SURVEY-TERMINAL-REPORT` through `ext
 - DO NOT use a directory scan when the state DB query is empty or ambiguous.
 - DO NOT route wiki work to an external skill checkout.
 - DO NOT treat TeX or PDF as canonical paper state.
+- DO NOT infer run-to authorization from an ordinary `do <task>` request or make it global or session-wide.
+- DO NOT skip required audits or Gates, merge prerequisite Runs, or continue after the named target.
 
 ## Chat Response
 

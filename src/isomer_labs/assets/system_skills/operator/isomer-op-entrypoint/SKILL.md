@@ -25,8 +25,10 @@ When this skill is invoked, execute the following steps in order.
 4. **Establish formal Agent Team intent before specialization**. Select `isomer-op-topic-team-specialize` only when the user explicitly invokes that skill or a named specialization route, or when the prompt or authoritative Project context establishes a formal Agent Team target. Name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence used. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish Agent Team intent.
 5. **Classify exactly one route**. Use [references/routing-rules.md](references/routing-rules.md), [references/system-skill-index.md](references/system-skill-index.md), and [references/extension-skill-index.md](references/extension-skill-index.md) to select one owner skill, extension skill, or CLI family.
 6. **Check owner boundaries**. Confirm the selected route owns the requested work, service skills are only bounded support unless explicitly invoked, misc helpers are explicit helper routes, and retired operator compatibility skills are not active routes.
-7. **Proceed with the selected route**. Unless the user asked only for route explanation, load the selected owner skill or reference, follow its workflow, or run the selected CLI command family with the required read-only or mutation posture. Do not stop after only listing candidate routes.
-8. **Report the entrypoint result** using **Essential Output** by default and **Complete Output** when requested.
+7. **Preflight target prerequisites**. Before target mutation, let the selected owner resolve its required artifacts, accepted inputs, readiness evidence, and known producer routes. See [references/prerequisite-recovery.md](references/prerequisite-recovery.md).
+8. **Route prerequisite recovery**. If a producible prerequisite is missing and run-to is not explicitly authorized, stop before prerequisite mutation, report `paused`, and offer run-to-target, next-prerequisite-only, alternate-route, and stop choices. If run-to is authorized, use the native planning tool to execute the target-scoped dependency closure through its owners and resume the original target. See [references/prerequisite-recovery.md](references/prerequisite-recovery.md).
+9. **Proceed with the selected route**. Unless the user asked only for route explanation, load the selected owner skill or reference, follow its workflow, or run the selected CLI command family with the required read-only or mutation posture. Do not stop after only listing candidate routes. During authorized run-to, preserve each owner's separate mutation, Run, checkpoint, Gate, and terminal-report boundaries.
+10. **Report the entrypoint result** using **Essential Output** by default and **Complete Output** when requested. Stop run-to after the original target completes or at a nondelegable boundary; do not continue into later recommended work.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan from this skill, the route references, current user request, available Project context, owner boundaries, and blockers, then execute the plan or stop on a concrete blocker.
 
@@ -36,6 +38,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | --- | --- |
 | [references/input-surfaces.md](references/input-surfaces.md) | Resolve prompts, files, Project roots, topics, actors, agents, templates, and explicit skill or CLI requests. |
 | [references/routing-rules.md](references/routing-rules.md) | Select route kind, handle read-only explanation, decide when to proceed, and preserve safety boundaries. |
+| [references/prerequisite-recovery.md](references/prerequisite-recovery.md) | Preflight target inputs, present recovery choices, execute authorized run-to traversal, classify paused versus blocked state, and preserve nondelegable boundaries. |
 | [references/system-skill-index.md](references/system-skill-index.md) | Route operator, service, and misc system skill requests. |
 | [references/extension-skill-index.md](references/extension-skill-index.md) | Route DeepSci extension skill requests and readiness blockers. |
 | [references/cli-index.md](references/cli-index.md) | Route Isomer CLI command-family requests and safe discovery commands. |
@@ -46,11 +49,11 @@ Default to **Essential Output** in chat. Use **Complete Output** when the user a
 
 ### Essential Output
 
-Lead with whether the request was routed, executed, explained, blocked, or left unchanged. Explain in natural language how you understood the goal, name the selected skill or CLI family, and cite only the context that materially affected routing. Summarize important changes or inspection results, then state any blocker and the next action.
+Lead with whether the request was routed, executed, explained, paused for prerequisite recovery, blocked, or left unchanged. Explain in natural language how you understood the goal, name the selected skill or CLI family, and cite only the context that materially affected routing. For paused prerequisite recovery, state that the target was not executed, name the missing inputs, recommended next step, four recovery choices, and target resume point. For completed run-to traversal, lead with the original target outcome and summarize material prerequisite owner work, Runs or refs, and preserved Gates.
 
 ### Complete Output
 
-Group the complete explanation by routing alternatives and rationale, commands and their mutation posture, selected Project or research context, extension readiness, bounded service delegation, and any retired routes excluded from consideration.
+Group the complete explanation by routing alternatives and rationale, commands and their mutation posture, selected Project or research context, extension readiness, prerequisite dependency plan and authorization posture, bounded owner and service delegation, and any retired routes excluded from consideration.
 
 When this skill proceeds through another owner skill, compose the final answer around the user-visible outcome. Do not concatenate or merge the parent and child skills' field inventories.
 
@@ -85,6 +88,9 @@ When this skill proceeds through another owner skill, compose the final answer a
 - DO NOT skip the latest-context preflight or worker-output policy checks required by the selected research route.
 - DO NOT repeat the full CLI help text inside this skill; name the command family and inspect CLI help or owner skill guidance when details are needed.
 - DO NOT treat generated links, worker-local files, chat memory, or old rendered Markdown as durable research truth before the selected DeepSci skill's latest-context and recording rules accept them.
+- DO NOT infer run-to authorization from an ordinary `do <task>` request.
+- DO NOT classify a missing input with an available in-scope producer as a terminal blocker.
+- DO NOT merge prerequisite owner Runs or continue after the named target solely because another action is recommended.
 ## Chat Response
 
 Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

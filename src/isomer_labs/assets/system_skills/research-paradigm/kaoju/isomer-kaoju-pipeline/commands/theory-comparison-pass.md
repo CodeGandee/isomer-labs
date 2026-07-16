@@ -8,7 +8,7 @@
 4. **Build the theory matrix**. Record exact evidence or `not stated`, `not applicable`, `unclear`, or `disputed` in every cell.
 5. **Audit**. Use `$isomer-kaoju-audit` to check identity, dimension basis, source depth, locator coverage, and unsupported inference.
 6. **Synthesize**. If audit accepts the evidence, use `$isomer-kaoju-synthesize` to integrate the Theory Comparison Artifact into the survey.
-7. **Stop**. Return the pipeline terminal report; do not start empirical Runs.
+7. **Stop**. Return this bounded procedure's terminal report; do not start empirical Runs internally. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route as a separate procedure Run after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute a source-grounded comparison plan while preserving audit before synthesis.
 

@@ -2,7 +2,7 @@
 
 ## Workflow
 
-1. Resolve the Research Topic, accepted Audit Report and synthesis refs, paper-line scope, target reader or venue, and requested stopping point.
+1. Resolve the Research Topic, accepted Audit Report and synthesis refs, paper-line scope, target reader or venue, and requested stopping point. A missing or not-ready audit with a known producer or repair owner yields `paused` prerequisite recovery and an exact paper-pass resume point.
 2. Route the canonical drafting stages to `draft-paper` and `$isomer-kaoju-write`. Require adaptive typed structure, MyST template and draft, citation map, revision log, and structured MyST validation.
 3. When actor template editing is requested, compose `manage-paper-template`; reject stale, invalid, or unconfirmed orphaning edits without canonical mutation.
 4. Derive review Markdown only when requested and label it non-canonical.
@@ -17,4 +17,4 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Gates, Blockers, and Resume
 
-A missing or not-ready audit blocks drafting. A stale or invalid template export causes no mutation. TeX syntax and presentation repair may proceed only inside the approved build policy; material content, dependency, toolchain, or interpretation repair requires a revised plan and human Gate. Resume at the first incomplete draft, exchange, conversion, inspection, build, validation, or publication stage.
+A missing or not-ready audit pauses drafting when an audit or repair route is available; reserve `blocked` for an unavailable external state change. A stale or invalid template export causes no mutation. TeX syntax and presentation repair may proceed only inside the approved build policy; material content, dependency, toolchain, or interpretation repair requires a revised plan and human Gate. Resume at the first incomplete audit, repair, draft, exchange, conversion, inspection, build, validation, or publication stage.

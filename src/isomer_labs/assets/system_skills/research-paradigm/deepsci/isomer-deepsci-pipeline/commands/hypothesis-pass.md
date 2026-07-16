@@ -14,7 +14,7 @@ Run a selected hypothesis through experiment and analysis.
 
 When this subcommand is invoked, execute the following steps in order.
 
-1. **Check entry context**. Ensure `DEEPSCI:RESEARCH-FRAME` and `DEEPSCI:COMPARATOR-CONTRACT` are available from the caller context.
+1. **Check entry context**. Ensure `DEEPSCI:RESEARCH-FRAME` and `DEEPSCI:COMPARATOR-CONTRACT` are available from the caller context. If a known focused skill can produce or repair either input, return `paused` prerequisite recovery with its producer route and the `ideate` resume point; do not invoke the producer inside this recipe.
 2. **Execute stages sequentially**. Invoke each stage skill with automatic artifact handoffs. Use the **Recipe** table above for stage order, inputs, outputs, and transition conditions.
 3. **Apply transition rules**. After each stage, use `references/transition-rules.md` to decide continue, pause, or block.
 4. **Produce the terminal report**. Write ``DEEPSCI:PIPELINE-TERMINAL-REPORT`` using `references/terminal-report-template.md`.

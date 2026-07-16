@@ -14,6 +14,10 @@ Use this template for the durable `DEEPSCI:PIPELINE-TERMINAL-REPORT` artifact pr
 | `blocker` | object or null | The blocker record, when status is `blocked`. |
 | `resume_point` | string or null | Stage id where execution should resume, when status is `paused` or `blocked`. |
 
+For `paused` prerequisite recovery, record the missing input and known producer in the relevant stage entry, and set `resume_point` to the original target stage. For `blocked`, name the unavailable external state change. The report ends the bounded pass and never invokes its recommendation.
+
+After the report is stored, an explicitly authorized target-scoped run-to controller may validate its refs, invoke the recommended producer as a separate focused-skill or pass Run, refresh latest context, and resume the original target. The controller preserves callbacks, Worker Output Policy, placeholder bindings, quality Gates, and separate terminal reports, and it stops after the target or at a nondelegable boundary.
+
 ## Stage entry fields
 
 Each item in `stages_run` must contain:

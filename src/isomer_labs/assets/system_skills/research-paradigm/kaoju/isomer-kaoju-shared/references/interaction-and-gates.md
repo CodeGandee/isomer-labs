@@ -21,6 +21,12 @@ Empirical comparison requires an accepted Comparison Intent Document and a Proce
 
 Use existing Gate owners for credentials, private or restricted data, material license uncertainty, large downloads, costly builds, external side effects, accelerators, or resource use beyond the accepted boundary. A rejected or unavailable Gate yields `paused` or `blocked`; it never becomes implicit permission.
 
+Run-to authorization does not satisfy a human Gate. The prompt-level controller may traverse routine in-scope prerequisites, but it pauses before every required Gate and returns the decision, target, accepted refs, and resume point. A material alternative or changed research meaning also requires a fresh user choice.
+
+## Prerequisite Recovery
+
+Before target mutation, classify a missing input with a known in-scope producer as `paused` and use `prerequisite-recovery.md`. An ordinary target request receives the four recovery choices before any producer procedure starts. Explicit target-scoped run-to authorization lets the controller consume routine procedure terminal reports, but every procedure remains bounded and records a separate Run.
+
 ## Resume
 
 Resume is context, not a procedure. Accept durable input refs, verify their current identity and audit state, state the starting stage, and preserve previous failures and decisions.

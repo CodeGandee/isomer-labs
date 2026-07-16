@@ -1006,6 +1006,7 @@ WELCOME_TOOL_PACK_ALLOWED_MARKERS = (
 ENTRYPOINT_REFERENCES = (
     "input-surfaces.md",
     "routing-rules.md",
+    "prerequisite-recovery.md",
     "system-skill-index.md",
     "extension-skill-index.md",
     "cli-index.md",
@@ -1190,6 +1191,20 @@ ENTRYPOINT_REQUIRED_SKILL_TERMS = (
     "Establish formal Agent Team intent before specialization",
     "generic topic preparation",
     "missing Agent Workspaces",
+    "Preflight target prerequisites",
+    "Route prerequisite recovery",
+    "run-to-target",
+    "next-prerequisite-only",
+    "nondelegable boundary",
+)
+
+ENTRYPOINT_WORKFLOW_REQUIRED_TERMS = (
+    "Preflight target prerequisites",
+    "Route prerequisite recovery",
+    "run-to-target",
+    "native planning tool",
+    "separate mutation, Run, checkpoint, Gate, and terminal-report boundaries",
+    "nondelegable boundary",
 )
 
 ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
@@ -1214,6 +1229,18 @@ ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
         "## Topic Team Specialization Examples",
         "`prepare the topic <topic-name>` with no formal Agent Team target",
         "contextually selected formal Agent Team",
+    ),
+    "prerequisite-recovery.md": (
+        "Run to the target",
+        "Execute the next prerequisite only",
+        "Inspect or choose another route",
+        "Stop",
+        "ordinary `do <task>`",
+        "native planning tool",
+        "Use `paused`",
+        "Use `blocked`",
+        "Nondelegable Boundaries",
+        "separate Research Tasks, Runs, terminal reports",
     ),
     "system-skill-index.md": (
         "Operator Skills",
@@ -3691,9 +3718,17 @@ def validate_entrypoint_module(repo_root: Path) -> list[Diagnostic]:
             add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} workflow must use numbered steps")
         if "does not map cleanly" not in text:
             add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} must include a freeform fallback")
+        workflow_end = next(
+            (index for index, line in enumerate(lines[workflow_index + 1 :], start=workflow_index + 1) if line.startswith("## ")),
+            len(lines),
+        )
+        workflow_text = "\n".join(lines[workflow_index:workflow_end])
         for route_term in ("Parse the task input", "Classify exactly one route", "Proceed with the selected route"):
             if route_term not in text:
                 add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} workflow must include '{route_term}'")
+        for required_term in ENTRYPOINT_WORKFLOW_REQUIRED_TERMS:
+            if required_term not in workflow_text:
+                add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS013", f"{ENTRYPOINT_SKILL} numbered workflow must document '{required_term}'")
 
     references_dir = skill_dir / "references"
     allowed_reference_names = set(ENTRYPOINT_REFERENCES)

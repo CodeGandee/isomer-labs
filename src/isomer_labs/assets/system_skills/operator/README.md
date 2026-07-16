@@ -35,6 +35,10 @@ Use this flow when a user asks the operator to create, diagnose, or prepare an I
 
 Use `isomer-op-entrypoint` when the user gives a concrete Isomer task, prompt, file, topic, actor, agent, DeepSci request, or CLI-shaped action and wants the Project Operator to choose the correct surface.
 
+The entrypoint preflights the selected target before mutation. An ordinary task with a known producible missing input returns paused prerequisite recovery and offers run to the target, execute the next prerequisite only, inspect or choose another route, and stop. Explicit run-to authorization is prompt-scoped and target-scoped; it is not a CLI command, global or session preference, Project setting, or Run-level Control Mode. The controller preserves owner mutation authority, separate Runs and terminal reports, and every human Gate, then stops after the named target.
+
+This general prerequisite-recovery posture is distinct from a skill-specific procedural `run-to` subcommand such as Topic Creator's `run-to finalize`. The entrypoint coordinates owners; it does not flatten their workflows or turn their commands into new CLI surface.
+
 1. The entrypoint parses the input surface, such as a topic brief, existing topic id, Topic Actor name, Agent Name, Domain Agent Team Template, research-stage request, JSON payload, record request, or CLI command family.
 2. It uses read-only context discovery such as `isomer-cli project self queries`, `isomer-cli project validate`, `isomer-cli project topics list`, `isomer-cli project context show`, or Workspace Path Resolution when context is missing.
 3. It selects one route and proceeds by default: an owner operator skill, a DeepSci extension skill, or an Isomer CLI command family.

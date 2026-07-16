@@ -29,9 +29,11 @@ When this skill is invoked, execute the following steps in order.
 2. **Run the latest context preflight**. Before accepting durable inputs or emitting durable records, load or create a `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` for the active Research Topic. Compare prompt memory, chat memory, prior prose, and worker-local files against durable records. Report conflicts instead of silently overwriting durable state.
 3. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-pipeline --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 4. **Validate the recipe context**. Build `DEEPSCI:PIPELINE-RECIPE-CONTEXT` from the named pass, optional starting stage, input artifacts, parameters, and budget or checkpoint preferences.
-5. **Invoke the pass subcommand**. Execute the workflow in `commands/<pass-name>.md`. Let the subcommand load its recipe, run the stages, and produce `DEEPSCI:PIPELINE-TERMINAL-REPORT`.
-6. **Return the terminal report**. Surface the report to the caller or external controller; do not choose the next macro action.
-7. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-pipeline --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
+5. **Preflight target prerequisites**. Resolve the recipe's accepted inputs and their known focused-skill or pass producers before target mutation. If an ordinary target request has a producible gap, return `paused` and present Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop before invoking a producer.
+6. **Plan authorized run-to recovery**. Only after explicit target-scoped run-to authorization, let the current agent act as the external controller and maintain an internal dependency plan with the native planning tool. Invoke prerequisites as separate focused-skill or pass executions, validate their terminal reports, refresh current state, and resume the original target when ready. Never add a loop or backward edge to a recipe.
+7. **Invoke the pass subcommand**. Execute the workflow in `commands/<pass-name>.md`. Let the subcommand load its single-pass linear recipe, run the stages, and produce its own `DEEPSCI:PIPELINE-TERMINAL-REPORT` without merging prerequisite Runs.
+8. **Return the terminal report**. Surface the report to the caller or external controller; the bounded pass does not choose the next macro action. With explicit run-to authorization, the current agent may consume an in-closure recommended route only after recording this report, and it stops after the named target or at a nondelegable Gate.
+9. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-deepsci-pipeline --stage end`. Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 
 If the user's task does not map cleanly to these steps, refine the existing plan into a step-by-step plan from this skill, its subcommands, and the user's request, then execute the plan.
 
@@ -55,6 +57,7 @@ If the user's task does not map cleanly to these steps, refine the existing plan
 - Storage bindings: `placeholder-bindings.md`
 - Transition rules: `references/transition-rules.md`
 - Terminal report template: `references/terminal-report-template.md`
+- Prerequisite recovery: use `$isomer-deepsci-shared` and its shared Prerequisite Recovery reference
 
 ## Worker Output Policy
 
@@ -88,7 +91,7 @@ This skill can end only when one of the following is durably true:
 
 ## Operational Notes
 
-- Looping is external control.
+- Looping and run-to traversal are external control. A recipe remains single-pass.
 
 ## Guardrails
 
@@ -98,6 +101,8 @@ This skill can end only when one of the following is durably true:
 - DO NOT bind source paths, filenames, or source harness outputs as final Isomer storage contracts.
 - DO NOT ask the user routine technical questions before checking durable local evidence.
 - DO NOT hide blocked states behind vague progress language.
+- DO NOT infer run-to authorization from an ordinary `do <task>` request or make it global or session-wide.
+- DO NOT merge prerequisite Runs, skip callbacks or Gates, continue after the named target, or treat run-to as a Run-level Control Mode.
 
 ## Chat Response
 

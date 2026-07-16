@@ -8,7 +8,7 @@
 4. **Examine**. Use `$isomer-kaoju-examine` to create Source Digests and Claim-Evidence Ledger entries at exact locators.
 5. **Audit**. Use `$isomer-kaoju-audit` to check coverage, identity, provenance, depth, and claim traceability.
 6. **Synthesize**. If the Audit Report is accepted, use `$isomer-kaoju-synthesize` to produce the Related-Work Catalog, Field Summary, Claim Status Table, and remaining frontier.
-7. **Stop**. Return the pipeline terminal report without selecting another procedure.
+7. **Stop**. Return this bounded procedure's terminal report without selecting another procedure internally. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute a bounded stage plan from these skills while preserving audit before synthesis.
 

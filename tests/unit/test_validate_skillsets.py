@@ -1118,8 +1118,11 @@ class SkillsetValidatorTests(unittest.TestCase):
             3. Classify exactly one route.
             4. Establish formal Agent Team intent before specialization.
             5. Check owner boundaries because service skills are only bounded support.
-            6. Proceed with the selected route.
-            7. Report the entrypoint result.
+            6. Preflight target prerequisites before target mutation.
+            7. Route prerequisite recovery with run-to-target, next-prerequisite-only, alternate-route, and stop choices. After explicit authorization, use the native planning tool.
+            8. Proceed with the selected route while preserving separate mutation, Run, checkpoint, Gate, and terminal-report boundaries across owners.
+            9. Stop at each nondelegable boundary.
+            10. Report the entrypoint result.
 
             If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan, then execute the plan.
 
@@ -1190,6 +1193,19 @@ class SkillsetValidatorTests(unittest.TestCase):
                 | --- | --- |
                 | `prepare the topic <topic-name>` with no formal Agent Team target | `isomer-op-topic-creator` |
                 | Deploy or use a contextually selected formal Agent Team | `isomer-op-topic-team-specialize` |
+            """,
+            "prerequisite-recovery.md": """
+                # Prerequisite Recovery
+
+                ## Workflow
+
+                1. Preflight the target before mutation.
+                2. Present Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop choices for an ordinary `do <task>` request.
+                3. Use the native planning tool for explicit run-to authorization.
+                4. Use `paused` for a known producer and Use `blocked` for unavailable external state.
+                5. Invoke each owner separately across owner routes, preserve separate Research Tasks, Runs, terminal reports and stop at Nondelegable Boundaries.
+
+                If the user's task does not map cleanly to these steps, use your native planning tool.
             """,
             "system-skill-index.md": """
                 # System Skill Index
@@ -1964,6 +1980,40 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS013", codes(diagnostics))
         self.assertTrue(any("Establish formal Agent Team intent before specialization" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_prerequisite_preflight(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_skill_term="Preflight target prerequisites")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("Preflight target prerequisites" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_prerequisite_recovery_contract(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_reference_term="ordinary `do <task>`")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("ordinary `do <task>`" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_accepts_ordinary_prerequisite_pause_fixture(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root)
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_operator_validator_accepts_authorized_cross_owner_run_to_fixture(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root)
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertEqual([], messages(diagnostics))
 
     def test_operator_validator_accepts_system_skill_manager_contract(self) -> None:
         diagnostics = validator.validate_system_skill_manager_module(REPO_ROOT)

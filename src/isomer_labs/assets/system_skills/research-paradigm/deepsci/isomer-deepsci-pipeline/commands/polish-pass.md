@@ -14,7 +14,7 @@ Polish figures and prose before external review.
 
 When this subcommand is invoked, execute the following steps in order.
 
-1. **Check entry context**. Ensure `DEEPSCI:DRAFT-SECTION-SET` is available from the caller context.
+1. **Check entry context**. Ensure `DEEPSCI:DRAFT-SECTION-SET` is available from the caller context. If a known writing route can produce or repair it, return `paused` prerequisite recovery with that route and the `figures` resume point; do not invoke the producer inside this recipe.
 2. **Execute stages sequentially**. Invoke each stage skill with automatic artifact handoffs. Use the **Recipe** table above for stage order, inputs, outputs, and transition conditions.
 3. **Apply transition rules**. After each stage, use `references/transition-rules.md` to decide continue, pause, or block.
 4. **Produce the terminal report**. Write ``DEEPSCI:PIPELINE-TERMINAL-REPORT`` using `references/terminal-report-template.md`.
@@ -24,4 +24,4 @@ If the user's task does not map cleanly to this pass, route back to `isomer-deep
 ## Notes
 
 - Use this pass when the draft is structurally complete and the goal is final figure and prose quality.
-- If the target venue is not Nature-family, replace or skip `isomer-deepsci-nature-polishing` under external control.
+- If the target venue is not Nature-family, return a material route choice rather than changing the recipe silently. After the terminal report, an explicitly authorized target-scoped run-to controller may select a separate applicable polishing route.

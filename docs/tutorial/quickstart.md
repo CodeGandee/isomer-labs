@@ -60,6 +60,8 @@ isomer-cli system-skills install --target codex --scope user --extension kaoju
 
 The pipeline routes ten user intents from direction selection and reading-list construction through source ingestion, MyST paper production, package-owned wiki export, environment preparation, and separately approved code trials. Users and agents acquire repositories with fit-for-purpose commands outside Isomer, verify the selected source and immutable identity, then use `project repos register` and `project artifacts` for topology and durable provenance. Other deterministic state operations use `project runs`, `project service-requests`, `ext kaoju paper`, and `ext kaoju wiki`; the installed skills decide what research work those services should perform.
 
+If a concrete research target lacks an input that an installed skill can produce, an ordinary request pauses before prerequisite mutation and presents recovery choices. You may explicitly tell the agent to run to the target, which authorizes routine in-scope prerequisites and the target for that prompt only. This is not an `isomer-cli` command, global yes-to-all flag, Project setting, or Run-level Control Mode. The agent preserves each owner Run and Gate, pauses at protected human or external-side-effect boundaries, and stops after the named target.
+
 ## Create a Project
 
 Create a directory that will own the project manifest, topic workspaces, runtime files, and GUI-readable records:

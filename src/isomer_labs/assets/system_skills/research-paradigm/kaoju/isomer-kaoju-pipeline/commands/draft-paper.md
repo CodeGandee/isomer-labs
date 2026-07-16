@@ -2,7 +2,7 @@
 
 ## Workflow
 
-1. Require accepted Audit Report, Field Summary, Related-Work Catalog, Claim Status Table, and the selected paper-line scope. Missing, contradicted, or stale prerequisites pause before writing.
+1. Require accepted Audit Report, Field Summary, Related-Work Catalog, Claim Status Table, and the selected paper-line scope. Missing, contradicted, or stale prerequisites with known audit or synthesis producers yield `paused` prerequisite recovery before writing; report their routes and the draft resume point rather than invoking them inside this procedure.
 2. Use `$isomer-kaoju-write` to select an adaptive structure profile from taxonomy, comparison, empirical survey, or general survey and explain the choice from the accepted direction.
 3. Present the structure for actor revision, then create canonical `KAOJU:PAPER-STRUCTURE-MYST`, `KAOJU:PAPER-TEMPLATE-MYST`, and `KAOJU:PAPER-DRAFT-MYST` files.
 4. Record `KAOJU:CITATION-MAP` and append-only `KAOJU:PAPER-REVISION-LOG`. Figures and tables remain separate file-backed Artifacts referenced through typed placeholders.

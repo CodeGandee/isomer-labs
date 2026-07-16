@@ -72,6 +72,24 @@ AI:
 >
 > Confirmed the layout is readable.
 
+## Run to a Local PDF
+
+When the current state is incomplete, a target-scoped run-to request can cover only the prerequisite work the requested output needs.
+
+User Prompt:
+
+> Run to a validated local survey PDF. Satisfy the evidence prerequisites, but do not publish or submit it.
+
+AI:
+
+> Ran the required audit and recorded its terminal report. The audit found a bounded source-lineage defect, so I ran the named repair as a separate procedure, refreshed the accepted refs, and completed a fresh audit.
+>
+> Used the accepted audit to synthesize the missing paper inputs, drafted canonical paper state, and constructed and inspected the local PDF. Each prerequisite retained its own Run, checkpoint, and terminal report.
+>
+> The validated local PDF target is complete. I stopped before publication and submission.
+
+The exact traversal depends on current durable state. If the audit, synthesis, or draft already satisfies the consumer contract, the agent reuses it instead of repeating that work. A non-ready audit ends its bounded procedure before repair; the prompt-level controller may consume the repair route only under the explicit run-to authorization, then starts a fresh audit. Structure acceptance, material evidence choices, unexpected dependencies or build resources, destructive changes, build authorization, publication, and submission remain human Gates.
+
 ## How to Steer
 
 Give page numbers, figure numbers, table numbers, and the exact reader problem. If the agent says the PDF built, ask whether it inspected the rendered pages. If important proof is hidden in an appendix, ask it to promote the proof into the main narrative.
@@ -96,7 +114,7 @@ User Prompt:
 
 ## Under the Hood
 
-The write skill should use accepted records and evidence as inputs, build the paper with the requested toolchain, and store generated drafts and PDFs under the Topic Workspace output policy. For TeX manuscripts, the skill should prefer Tectonic first, then record a concrete blocker before falling back to another LaTeX workflow.
+The write skill should use accepted records and evidence as inputs, build the paper with the requested toolchain, and store generated drafts and PDFs under the Topic Workspace output policy. For TeX manuscripts, the skill should prefer Tectonic first, then record a concrete blocker before falling back to another LaTeX workflow. Run-to is agent-controller authorization for prerequisite recovery, not a shell or `isomer-cli` command.
 
 ## What Good Looks Like
 

@@ -175,6 +175,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         deepsci_root = target / "deepsci"
         for name in sorted(validator.EXPECTED_DEEPSCI_SKILLS):
             self.write_skill(deepsci_root, name, v2=True)
+        if "isomer-deepsci-pipeline" not in validator.EXPECTED_DEEPSCI_SKILLS:
+            self.write_skill(deepsci_root, "isomer-deepsci-pipeline", v2=True)
         write(
             deepsci_root / "isomer-deepsci-shared" / "references" / "semantic-placeholders.md",
             """
@@ -201,6 +203,40 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             | ID | Resolution |
             | --- | --- |
             | provider-new | Use a registered provider binding. |
+            """,
+        )
+        write(
+            deepsci_root / "isomer-deepsci-shared" / "references" / "prerequisite-recovery.md",
+            """
+            # Prerequisite Recovery
+
+            ## Workflow
+
+            1. Run latest-context preflight and apply Worker Output Policy before checking placeholder bindings and callbacks.
+            2. An ordinary `do <task>` request pauses before producer mutation and offers Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop.
+            3. Explicit authorization is prompt-scoped and target-scoped, not global, session-wide, or a Run-level mode.
+            4. The controller keeps a single-pass and linear recipe, separate Runs, terminal reports, and Gates.
+            5. Do not continue beyond the original target.
+
+            If the task does not map cleanly, use the native planning tool.
+            """,
+        )
+        write(
+            deepsci_root / "isomer-deepsci-pipeline" / "references" / "transition-rules.md",
+            """
+            # Stage Transition Rules
+
+            A missing input pauses when a known in-scope focused skill or pass can produce or repair it. Block only for an unavailable external state change.
+
+            Without authorization, offer run to the target, execute the next prerequisite only, inspect or choose another route, and stop. After explicit target-scoped run-to authorization, use a separate Run and stop at every nondelegable human Gate.
+            """,
+        )
+        write(
+            deepsci_root / "isomer-deepsci-pipeline" / "references" / "terminal-report-template.md",
+            """
+            # Pipeline Terminal Report Template
+
+            Record `paused` prerequisite recovery or the unavailable external state change for `blocked`. An explicitly authorized target-scoped run-to controller may consume the route as a separate focused-skill or pass Run, while preserving separate terminal reports, and stops after the target.
             """,
         )
         return root, target
@@ -241,6 +277,16 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             if v2
             else "3. **Record output**. Use Research Topic, Artifacts, and Decision Records."
         )
+        if name == "isomer-deepsci-pipeline":
+            output_step += (
+                " Preflight target prerequisites. For an ordinary target request, offer Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop before invoking a producer. "
+                "Only after explicit target-scoped run-to authorization, use the native planning tool and let the current agent act as the external controller. Invoke a separate pass Run. Never add a loop or backward edge, and the controller stops after the named target. "
+                "Run-to is not global or session-wide. DO NOT merge prerequisite Runs or continue after the named target."
+            )
+        elif name == "isomer-deepsci-shared":
+            output_step += (
+                " Preflight target prerequisites and pause an ordinary request before producer mutation. Only after explicit target-scoped run-to authorization may the controller coordinate owners; it never inherits their mutation authority."
+            )
         end_step = (
             f"4. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage end`. "
             "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
@@ -254,6 +300,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             else ""
         )
         routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-deepsci-shared` for placeholder semantics."
+        if name == "isomer-deepsci-pipeline":
+            routing_line += " Use `$isomer-deepsci-shared` and its shared Prerequisite Recovery reference."
+        elif name == "isomer-deepsci-shared":
+            routing_line += " Read `references/prerequisite-recovery.md` for recovery coordination."
         write(
             target / name / "SKILL.md",
             f"""
@@ -368,6 +418,64 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
 
         self.assertEqual([], messages(diagnostics))
+
+    def test_deepsci_prerequisite_recovery_accepts_bounded_controller_fixture(self) -> None:
+        root, target = self.make_valid_skillset()
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertNotIn("RPS031", codes(diagnostics), messages(diagnostics))
+
+    def test_kaoju_prerequisite_recovery_accepts_bounded_controller_fixture(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.add_valid_kaoju(target)
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertNotIn("RPS031", codes(diagnostics), messages(diagnostics))
+
+    def test_prerequisite_recovery_regressions_are_rejected(self) -> None:
+        cases = {
+            "troubleshooting-only": (
+                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                lambda text: text.replace("Preflight target prerequisites", "Check target inputs", 1)
+                + "\n## Troubleshooting Guide\n\nPreflight target prerequisites.\n",
+            ),
+            "implicit-automation": (
+                Path("deepsci/isomer-deepsci-shared/references/prerequisite-recovery.md"),
+                lambda text: text + "\nAn ordinary target request authorizes prerequisite mutation.\n",
+            ),
+            "global-yes-to-all": (
+                Path("deepsci/isomer-deepsci-shared/references/prerequisite-recovery.md"),
+                lambda text: text + "\nRun-to is a global session-wide yes-to-all setting.\n",
+            ),
+            "merged-runs": (
+                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                lambda text: text + "\nMerge prerequisite and target work into one Run.\n",
+            ),
+            "skipped-gates": (
+                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                lambda text: text + "\nSkip every Gate during run-to.\n",
+            ),
+            "post-target-continuation": (
+                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                lambda text: text + "\nContinue after the named target into recommended work.\n",
+            ),
+            "never-chain": (
+                Path("kaoju/isomer-kaoju-shared/references/terminal-report.md"),
+                lambda text: text + "\nDo not select or start another macro procedure.\n",
+            ),
+        }
+        for name, (relative, mutate) in cases.items():
+            with self.subTest(name=name):
+                root, target = self.make_valid_skillset()
+                self.add_valid_kaoju(target)
+                path = target / relative
+                path.write_text(mutate(path.read_text(encoding="utf-8")), encoding="utf-8")
+
+                diagnostics = validator.validate_skillset(target, root)
+
+                self.assertIn("RPS031", codes(diagnostics), messages(diagnostics))
 
     def test_kaoju_binding_invalid_fixtures_are_rejected(self) -> None:
         cases = {

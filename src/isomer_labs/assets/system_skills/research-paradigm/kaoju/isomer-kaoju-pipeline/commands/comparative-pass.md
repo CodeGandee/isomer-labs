@@ -9,7 +9,7 @@
 5. **Run the comparison**. Use `$isomer-kaoju-compare` under the frozen Comparison Contract and retain raw outputs, adaptations, quality checks, and uncertainty evidence.
 6. **Audit**. Use `$isomer-kaoju-audit` to check metric traceability, candidate eligibility, fairness, variability, failures, and `not-comparable` decisions.
 7. **Synthesize**. If audit accepts the evidence, use `$isomer-kaoju-synthesize` to produce the Comparison Matrix and survey delta.
-8. **Stop**. Return the pipeline terminal report without expanding the candidate set autonomously.
+8. **Stop**. Return this bounded procedure's terminal report without expanding the candidate set autonomously. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute a controlled comparison plan while preserving the Proceed Decision and audit before synthesis.
 

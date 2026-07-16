@@ -16,7 +16,7 @@ Run the full empirical research pass: frame the problem, establish a comparator,
 
 When this subcommand is invoked, execute the following steps in order.
 
-1. **Check entry context**. Ensure the caller provided any initial research frame or constraints needed by the first stage (`isomer-deepsci-scout`).
+1. **Check entry context**. Ensure the caller provided any initial research constraints needed by the first stage (`isomer-deepsci-scout`). If a material framing choice is unresolved, return `paused` with the choice and frame resume point rather than guessing.
 2. **Execute stages sequentially**. Invoke each stage skill with automatic artifact handoffs. Use the **Recipe** table above for stage order, inputs, outputs, and transition conditions.
 3. **Apply transition rules**. After each stage, use `references/transition-rules.md` to decide continue, pause, or block.
 4. **Produce the terminal report**. Write ``DEEPSCI:PIPELINE-TERMINAL-REPORT`` using `references/terminal-report-template.md`.
@@ -27,4 +27,4 @@ If the user's task does not map cleanly to this pass, route back to `isomer-deep
 
 - This pass expects an unset or loosely framed research topic.
 - The `run` stage is expensive; surface a checkpoint before launching it when the runtime supports cost gating.
-- If the scout stage recommends a route other than `baseline`, pause and return the terminal report to the external controller.
+- If the scout stage recommends a route other than `baseline`, pause and return the terminal report. An explicitly authorized target-scoped run-to controller may consume that route as a separate focused-skill or pass invocation after refreshing current state; this recipe does not add a backward edge.

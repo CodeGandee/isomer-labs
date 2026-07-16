@@ -60,9 +60,27 @@ AI:
 >
 > Reported when the pass completed, which records were created, and what next analysis route was recommended.
 
+## Recover Missing Prerequisites
+
+An ordinary task request does not authorize the agent to create every missing input automatically. If you ask for a pass whose accepted prerequisites are missing, the agent should pause before prerequisite mutation, identify the missing records and their producer routes, recommend an order, and keep the original target as the resume point.
+
+User Prompt:
+
+> Write the reviewed paper from this topic.
+
+AI:
+
+> The paper target is paused before writing because the current topic has no accepted analysis finding. The recommended route is to complete the pending experiment analysis, then resume `paper-pass` at `outline`.
+>
+> You can ask me to run to the paper target, execute only the next prerequisite, inspect or choose another route, or stop without changing prerequisites.
+
+Choose “run to the paper target” when you want the agent to automate routine in-scope prerequisite work and then perform the original task. Choose “execute only the next prerequisite” when you want to inspect each bounded result. The alternate-route choice lets you change the dependency path, while stop leaves the target paused.
+
+Run-to authorization is prompt-scoped and target-scoped. It is not a CLI command, global yes-to-all setting, Project preference, or Run-level Control Mode. The agent keeps separate focused-skill or procedure Runs and terminal reports, refreshes accepted state between them, and stops after the named target. Even with run-to authorization, it pauses for human Gates, material scientific choices, destructive or irreversible actions, credentials or restricted data, material license decisions, unexpected cost or resource use, public exposure, publication, submission, and external side effects.
+
 ## How to Steer
 
-Research passes work best when you keep the next move narrow. Ask for one modeling pass, one experiment, one analysis, or one paper revision. After the agent responds, inspect the artifacts and decide whether the next prompt should continue the same line or change direction.
+Research passes work best when you keep the next move narrow. Ask for one modeling pass, one experiment, one analysis, or one paper revision. After the agent responds, inspect the artifacts and decide whether the next prompt should continue the same line or change direction. When a clear target has several routine prerequisites, explicitly ask the agent to run to that target instead of manually acknowledging each intermediate terminal report.
 
 Useful steering prompts:
 

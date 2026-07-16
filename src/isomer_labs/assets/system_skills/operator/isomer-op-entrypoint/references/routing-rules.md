@@ -8,7 +8,10 @@
 4. Before selecting Topic Team Specialization, require an explicit specialization invocation or prompt or authoritative context that establishes a formal Agent Team target. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces are insufficient.
 5. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
 6. Before optional-extension routing, trust a Project declaration first. For an undeclared extension, delegate receipt-backed explicit-root and live-inventory resolution plus any authorized additive registration to `isomer-op-system-skill-mgr`.
-7. Select one route, proceed with that selected route by default, and report blockers instead of presenting a menu when a concrete task can be routed.
+7. Select one route as the initial owner route and let its owner preflight target prerequisites before mutation.
+8. If the target is ready, proceed through the selected route; if a known producer can satisfy a missing input, return paused prerequisite recovery rather than a terminal blocker.
+9. Present the recovery choices in `prerequisite-recovery.md` unless the user already gave explicit target-scoped run-to authorization.
+10. During authorized run-to, coordinate the dependency closure across owners and stop after the original target or at a nondelegable boundary.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build the smallest safe routing plan from candidate routes, owner boundaries, read-only context evidence, and missing inputs, then execute the plan or stop on a concrete blocker.
 
@@ -35,9 +38,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Proceed Policy
 
-Proceed when the user supplied a concrete task and the selected route owns it. Do not stop after only listing possible routes unless the user asked for route explanation, multiple alternatives, or a non-mutating status.
+Proceed when the user supplied a concrete task, the selected route owns it, and its required inputs are ready. Do not stop after only listing possible routes unless the user asked for route explanation, multiple alternatives, or a non-mutating status.
 
-Block when required context cannot be resolved safely, when the selected route would bypass owner workflow boundaries, when mutation needs approval not present in the prompt, or when the selected research extension's readiness is missing and no setup route can run without more input.
+When an ordinary concrete task has missing or stale inputs with known in-scope producers, pause before invoking those producers and offer run-to-target, next-prerequisite-only, alternate-route, and stop choices. `Do <task>` alone does not authorize prerequisite mutation. Explicit `run to <task>`, `automate the prerequisites and then do <task>`, or an equivalent choice authorizes only the named target's transitive prerequisite closure and the target itself.
+
+During run-to, use the native planning tool, preserve each owner's authority and separate durable execution records, refresh state after bounded results, and stop after the target. Pause at human Gates, material ambiguity, destructive or irreversible action, credentials or restricted data, material license decisions, unexpected resource authorization, public exposure, publication or submission, and repeated recovery without new accepted state.
+
+Use `blocked` when required context cannot be resolved safely, the selected route would bypass owner workflow boundaries, mutation needs approval not present in the prompt, or no available authorized owner can perform the external state change needed by the target. Use `paused` rather than `blocked` when an available in-scope owner can produce or repair the missing state.
 
 If the request says only to prepare, create, initialize, start, or repair a Research Topic, route new or partial setup to `isomer-op-topic-creator` and initialized-topic work to `isomer-op-topic-mgr` or the applicable setup owner. Do not select `isomer-op-topic-team-specialize` unless the user explicitly invoked it or formal Agent Team intent is established by the prompt or authoritative context.
 

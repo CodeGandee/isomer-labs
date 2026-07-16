@@ -68,6 +68,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
             "external-owner-routing.md",
             "interaction-and-gates.md",
             "lineage.md",
+            "prerequisite-recovery.md",
             "source-identity.md",
             "survey-artifacts.md",
             "terminal-report.md",

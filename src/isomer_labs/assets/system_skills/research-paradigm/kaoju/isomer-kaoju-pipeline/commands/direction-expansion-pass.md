@@ -9,7 +9,7 @@
 5. **Propose a catalog delta**. Preserve important additions, exclusions, duplicates, blockers, chronology effects, and the remaining frontier.
 6. **Audit**. Use `$isomer-kaoju-audit` to check seed identity, route provenance, coverage, and claim traceability.
 7. **Synthesize the accepted delta**. Use `$isomer-kaoju-synthesize` only after audit acceptance.
-8. **Stop**. Return the pipeline terminal report without claiming exhaustive coverage.
+8. **Stop**. Return this bounded procedure's terminal report without claiming exhaustive coverage. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute a bounded expansion plan from these routes while preserving audit before synthesis.
 

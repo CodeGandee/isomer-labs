@@ -8,7 +8,7 @@
 4. **Propose a delta**. Map useful evidence to catalog, summary, Claim-Evidence Ledger, chronology, taxonomy, limitations, artifact links, or reading path changes.
 5. **Audit**. Use `$isomer-kaoju-audit` against the base refs, all intake dispositions, and the Curated Source Intake Delta.
 6. **Synthesize the accepted delta**. Use `$isomer-kaoju-synthesize` only after audit acceptance.
-7. **Stop**. Return the pipeline terminal report without executing curated code or selecting another procedure.
+7. **Stop**. Return this bounded procedure's terminal report without executing curated code or selecting another procedure internally. An explicitly authorized prompt-level run-to controller may consume an in-closure recovery route after the report is recorded.
 
 If the request does not map cleanly to this recipe, use the native planning tool to build and execute a bounded intake plan while preserving every nominated item's accounting and audit before synthesis.
 

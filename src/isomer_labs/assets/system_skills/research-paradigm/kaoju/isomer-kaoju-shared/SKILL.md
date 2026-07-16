@@ -19,11 +19,12 @@ Use this skill with every Kaoju procedure or direct Kaoju stage invocation. Do n
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage begin`; follow returned instructions within this skill, the user request, evidence, Gate, and owner constraints, while empty callback results continue normally and conflicts must be reported.
 3. **Resolve bindings through the extension query**. Read only the pages selected in **Reference Routing**. Before an accepted write, run `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`, then read `references/artifact-semantics.md`, `references/artifact-recording.md`, and the producer's concise `artifact-bindings.md`. The extension query is authoritative; local pages are bundle-local projections and procedures.
 4. **Discover durable state through the state DB**. Use `project artifacts latest|list|show` with the binding-defined scope key. Never scan the Topic Workspace filesystem to find a durable Artifact. Reject ambiguous current candidates and stale or corrupt content links.
-5. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
-6. **Route governed work and checkpoint it**. Apply the worker output policy. Use a Service Request for supported Isomer-owned mutation, an Execution Adapter Command Request for registered research execution, a human Gate for material authorization, and an immutable Run plus checkpoint for claim-bearing or resumable work. Repository acquisition and source verification are external user or agent commands; only their verified result, semantic registration, sanitized evidence, or blocker enters Isomer.
-7. **Persist through typed operations**. Use `project artifacts put` for a new current-state object or append-only event and `project artifacts revise` only when the binding permits revision. Let the service infer record kind, profile, semantic label, content mode, scope policy, and managed locator.
-8. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
-9. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs, Run checkpoint, pending Gate, blocker and Service Request refs, and the first incomplete stage as the resume point.
+5. **Preflight target prerequisites**. Before target mutation, resolve accepted input refs, audit state, readiness, known producer routes, and required Gates. For a producible gap, apply `references/prerequisite-recovery.md`: pause an ordinary request before prerequisite mutation, or maintain a target-scoped dependency plan after explicit run-to authorization.
+6. **Preserve evidence meaning**. Record identity, locator, verification depth, evidence verdict, Run purpose, execution fidelity, input basis, and Provenance Record as separate applicable fields.
+7. **Route governed work and checkpoint it**. Apply the worker output policy. Use a Service Request for supported Isomer-owned mutation, an Execution Adapter Command Request for registered research execution, a human Gate for material authorization, and an immutable Run plus checkpoint for claim-bearing or resumable work. Repository acquisition and source verification are external user or agent commands; only their verified result, semantic registration, sanitized evidence, or blocker enters Isomer.
+8. **Persist through typed operations**. Use `project artifacts put` for a new current-state object or append-only event and `project artifacts revise` only when the binding permits revision. Let the service infer record kind, profile, semantic label, content mode, scope policy, and managed locator.
+9. **Apply end callbacks**. After tentative outputs exist, run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-shared --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
+10. **Return terminal state**. Report `complete`, `paused`, or `blocked` with durable refs, Run checkpoint, pending Gate, blocker and Service Request refs, and the first incomplete stage as the resume point. A bounded terminal report ends the current procedure; an explicitly authorized prompt-level controller may consume its recovery route under `references/prerequisite-recovery.md`.
 
 If the task does not map cleanly to these steps, use the native planning tool to build and execute a step-by-step plan from these contracts without weakening them.
 
@@ -62,6 +63,7 @@ Every Isomer-managed executable research stage uses the applicable Research Oper
 | Latest-context, canonical payload, lineage, view, worker-output, and material rules | `references/artifact-recording.md` |
 | Immutable work, repository, dataset, and model identity | `references/source-identity.md` |
 | Clarification-first, Proceed Decision, and Gate behavior | `references/interaction-and-gates.md` |
+| Missing prerequisite classification, recovery choices, run-to authorization, and controller boundaries | `references/prerequisite-recovery.md` |
 | Topic Workspace, provider, environment, execution, and recording ownership | `references/external-owner-routing.md` |
 | Evidence derivation and update lineage | `references/lineage.md` |
 | Terminal report fields and stop semantics | `references/terminal-report.md` |
@@ -90,14 +92,14 @@ Every Isomer-managed executable research stage uses the applicable Research Oper
 - Store them separately.
 - Record both the external source locator and the managed-link locator.
 - State `searched_through`, coverage bounds, and the remaining frontier.
-- Return the terminal report and let the caller choose the next procedure.
+- Return the terminal report. Without active run-to authorization, let the caller choose the next procedure; with target-scoped authorization, let the prompt-level controller consume an in-closure recovery route.
 
 ## Guardrails
 
 - DO NOT combine verification depth and evidence verdict into one confidence label.
 - DO NOT treat a managed link as dataset identity.
 - DO NOT call an inquiry exhaustive because a search converged.
-- DO NOT start another macro procedure after completion.
+- DO NOT start another macro procedure inside a bounded procedure or without explicit target-scoped run-to authorization at the prompt-level controller.
 
 ## Chat Response
 
