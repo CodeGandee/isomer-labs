@@ -46,6 +46,10 @@ Current history uses concise Conventional Commit-style subjects, for example `do
 
 Pull requests should describe the change, explain validation performed, and link related issues or notes when available. Include screenshots only for UI-visible changes. Before requesting review, run `pixi run lint`, `pixi run typecheck`, and `pixi run test`.
 
+## Release Guidelines
+
+Packaged system skills have independent `metadata.version` values in their `agents/openai.yaml` files. For every release, including release candidates, update all packaged system-skill versions to exactly match `project.version` in `pyproject.toml`. Treat `minimum_compatible_skill_version` in the system-skill manifest as a separate compatibility policy and change it only when the supported compatibility floor changes.
+
 ## Agent-Specific Instructions
 
 Make scoped edits that preserve the existing Pixi and `src/` layout. Prefer repository commands over ad hoc environment setup, and do not revert unrelated uncommitted changes.
