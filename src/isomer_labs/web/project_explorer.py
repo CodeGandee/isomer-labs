@@ -123,14 +123,16 @@ class _ProjectExplorerReadModel:
 
         for topic in project.manifest.research_topics:
             topic_diagnostics: list[Diagnostic] = []
-            context, context_diagnostics = resolve_effective_topic_context(
-                state,
-                SelectionRequest(research_topic_id=topic.id),
-                cwd=project.root,
-                env=self.host.selected_env,
-            )
-            topic_diagnostics.extend(context_diagnostics)
             expanded_topic = topic.id in expanded
+            context = None
+            if expanded_topic:
+                context, context_diagnostics = resolve_effective_topic_context(
+                    state,
+                    SelectionRequest(research_topic_id=topic.id),
+                    cwd=project.root,
+                    env=self.host.selected_env,
+                )
+                topic_diagnostics.extend(context_diagnostics)
             topic_statement = None
             if context is not None and context.research_topic_config is not None:
                 topic_statement = context.research_topic_config.topic_statement

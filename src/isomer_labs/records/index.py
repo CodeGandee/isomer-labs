@@ -312,6 +312,30 @@ def query_index_export(
         store.close()
 
 
+def query_index_revision(
+    context: EffectiveTopicContext,
+    *,
+    env: Mapping[str, str],
+) -> tuple[dict[str, object], list[Any]]:
+    """Return only bounded freshness metadata for the query index."""
+
+    store, diagnostics = open_workspace_runtime(context, env=env, read_only=True)
+    if store is None:
+        return _runtime_missing_payload("query.revision", diagnostics), diagnostics
+    engine = _engine_for_db_path(store.db_path, read_only=True)
+    try:
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "query.revision",
+            **index_revision_payload(engine, context),
+            "diagnostics": [],
+        }, diagnostics
+    finally:
+        engine.dispose()
+        store.close()
+
+
 def query_index_lineage(
     context: EffectiveTopicContext,
     record_id: str,

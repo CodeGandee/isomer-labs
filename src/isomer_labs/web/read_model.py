@@ -6,9 +6,12 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 import os
 from pathlib import Path
+import stat
+from threading import RLock
 from typing import Any, Mapping
 
 from isomer_labs.core.diagnostics import Diagnostic, has_errors
+from isomer_labs.core.path_utils import resolve_project_path
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState, SelectionRequest
 from isomer_labs.project import discover_project
 from isomer_labs.project.context import resolve_effective_topic_context
@@ -20,6 +23,7 @@ from isomer_labs.records.index import (
     query_index_files,
     query_index_lineage,
     query_index_list,
+    query_index_revision,
     query_index_siblings,
     rebuild_query_index,
     validate_query_index,
@@ -49,6 +53,24 @@ from .recent_errors import RecentErrorBuffer
 TOPIC_OVERVIEW_LABEL = "topic.intent.overview"
 TOPIC_OVERVIEW_MAX_BYTES = 512 * 1024
 
+_ConfigurationRevision = tuple[tuple[str, str, int, int, int], ...]
+
+
+@dataclass
+class _ProjectReadContextCache:
+    """Mutable single-flight cache owned by one Project Web read model."""
+
+    lock: RLock = field(default_factory=RLock)
+    initialized: bool = False
+    revision: _ConfigurationRevision = ()
+    watch_paths: tuple[Path, ...] = ()
+    project: Project | None = None
+    state: ProjectState | None = None
+    diagnostics: tuple[Diagnostic, ...] = ()
+    topic_contexts: dict[str, tuple[EffectiveTopicContext | None, tuple[Diagnostic, ...]]] = field(
+        default_factory=dict
+    )
+
 
 def diagnostics_json(diagnostics: list[Diagnostic]) -> list[dict[str, object]]:
     return [diagnostic.to_json() for diagnostic in diagnostics]
@@ -63,6 +85,100 @@ def merge_diagnostics(payload: dict[str, Any], diagnostics: list[Diagnostic]) ->
     return {**payload, "diagnostics": merged}
 
 
+def _project_configuration_revision(
+    project_root: Path,
+    watch_paths: tuple[Path, ...] = (),
+) -> _ConfigurationRevision:
+    """Return cheap metadata for Project configuration inputs only."""
+
+    config_dir = project_root / ".isomer-labs"
+    entries = list(_configuration_tree_entries(config_dir, project_root))
+    for path in watch_paths:
+        if path == config_dir or _is_relative_to(path, config_dir):
+            continue
+        entries.append(_configuration_path_entry(path, project_root))
+    return tuple(sorted(set(entries)))
+
+
+def _configuration_tree_entries(root: Path, project_root: Path) -> tuple[tuple[str, str, int, int, int], ...]:
+    pending = [root]
+    entries: list[tuple[str, str, int, int, int]] = []
+    while pending:
+        path = pending.pop()
+        entry = _configuration_path_entry(path, project_root)
+        entries.append(entry)
+        if entry[1] != "directory":
+            continue
+        try:
+            children = sorted(path.iterdir(), key=lambda child: child.name, reverse=True)
+        except OSError:
+            continue
+        pending.extend(children)
+    return tuple(entries)
+
+
+def _configuration_path_entry(path: Path, project_root: Path) -> tuple[str, str, int, int, int]:
+    try:
+        metadata = path.lstat()
+    except OSError:
+        return (_display_configuration_path(path, project_root), "missing", 0, 0, 0)
+    if stat.S_ISLNK(metadata.st_mode):
+        kind = "symlink"
+    elif stat.S_ISDIR(metadata.st_mode):
+        kind = "directory"
+    elif stat.S_ISREG(metadata.st_mode):
+        kind = "file"
+    else:
+        kind = "other"
+    return (
+        _display_configuration_path(path, project_root),
+        kind,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def _display_configuration_path(path: Path, project_root: Path) -> str:
+    try:
+        return path.relative_to(project_root).as_posix()
+    except ValueError:
+        return str(path)
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def _project_state_watch_paths(project: Project | None, state: ProjectState | None) -> tuple[Path, ...]:
+    if project is None:
+        return ()
+    paths: set[Path] = {project.manifest_path, project.config_dir / "local.toml"}
+    manifest = project.manifest
+    paths.update(resolve_project_path(project.root, topic.config_path_input) for topic in manifest.research_topics)
+    paths.update(resolve_project_path(project.root, ref) for ref in manifest.user_skill_callback_registry_refs)
+    if state is not None:
+        paths.update(config.source_path for config in state.topic_configs.values())
+        if state.local_context is not None:
+            paths.add(state.local_context.source_path)
+        for config in state.topic_configs.values():
+            for key in ("user_skill_callback_registry_ref", "user_skill_callback_registry_refs"):
+                value = config.refs.get(key)
+                if isinstance(value, str) and value:
+                    paths.add(resolve_project_path(project.root, value))
+                elif isinstance(value, list):
+                    paths.update(
+                        resolve_project_path(project.root, item)
+                        for item in value
+                        if isinstance(item, str) and item
+                    )
+    return tuple(sorted(paths, key=str))
+
+
 @dataclass(frozen=True)
 class ProjectWebReadModel:
     """Project-scoped read model used by FastAPI routes."""
@@ -70,35 +186,75 @@ class ProjectWebReadModel:
     project_root: Path
     env: Mapping[str, str] | None = None
     _recent_errors: RecentErrorBuffer = field(default_factory=RecentErrorBuffer, init=False, repr=False, compare=False)
+    _read_context_cache: _ProjectReadContextCache = field(
+        default_factory=_ProjectReadContextCache,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     @property
     def selected_env(self) -> Mapping[str, str]:
         return self.env if self.env is not None else os.environ
 
     def project_state(self) -> tuple[Project | None, ProjectState | None, list[Diagnostic]]:
-        project, diagnostics = discover_project(
-            cwd=self.project_root,
-            env=self.selected_env,
-            project_selector=str(self.project_root),
-        )
-        state = None
-        if project is not None:
-            state = build_project_state(project)
-            diagnostics.extend(state.diagnostics)
-        return project, state, diagnostics
+        cache = self._read_context_cache
+        with cache.lock:
+            revision = _project_configuration_revision(self.project_root, cache.watch_paths)
+            if cache.initialized and revision == cache.revision:
+                return cache.project, cache.state, list(cache.diagnostics)
+
+            project, diagnostics = discover_project(
+                cwd=self.project_root,
+                env=self.selected_env,
+                project_selector=str(self.project_root),
+            )
+            state = None
+            if project is not None:
+                state = build_project_state(project)
+                diagnostics.extend(state.diagnostics)
+            watch_paths = _project_state_watch_paths(project, state)
+            cache.initialized = True
+            cache.watch_paths = watch_paths
+            cache.revision = _project_configuration_revision(self.project_root, watch_paths)
+            cache.project = project
+            cache.state = state
+            cache.diagnostics = tuple(diagnostics)
+            cache.topic_contexts.clear()
+            return project, state, list(cache.diagnostics)
+
+    def invalidate_read_context(self) -> None:
+        """Clear cached Project configuration state without mutating the Project."""
+
+        cache = self._read_context_cache
+        with cache.lock:
+            cache.initialized = False
+            cache.revision = ()
+            cache.watch_paths = ()
+            cache.project = None
+            cache.state = None
+            cache.diagnostics = ()
+            cache.topic_contexts.clear()
 
     def topic_context(self, topic_id: str) -> tuple[EffectiveTopicContext | None, list[Diagnostic]]:
-        project, state, diagnostics = self.project_state()
-        if project is None or state is None:
-            return None, diagnostics
-        context, context_diagnostics = resolve_effective_topic_context(
-            state,
-            SelectionRequest(research_topic_id=topic_id),
-            cwd=project.root,
-            env=self.selected_env,
-        )
-        diagnostics.extend(context_diagnostics)
-        return context, diagnostics
+        cache = self._read_context_cache
+        with cache.lock:
+            project, state, diagnostics = self.project_state()
+            if project is None or state is None:
+                return None, diagnostics
+            cached = cache.topic_contexts.get(topic_id)
+            if cached is None:
+                context, context_diagnostics = resolve_effective_topic_context(
+                    state,
+                    SelectionRequest(research_topic_id=topic_id),
+                    cwd=project.root,
+                    env=self.selected_env,
+                )
+                cached = (context, tuple(context_diagnostics))
+                cache.topic_contexts[topic_id] = cached
+            context, cached_diagnostics = cached
+            diagnostics.extend(cached_diagnostics)
+            return context, diagnostics
 
     def project_summary(self) -> dict[str, Any]:
         project, state, diagnostics = self.project_state()
@@ -780,17 +936,17 @@ class ProjectWebReadModel:
         return enriched, diagnostics
 
     def _topic_change_event_payload(self, context: EffectiveTopicContext) -> tuple[dict[str, Any], list[Diagnostic]]:
-        export_payload, diagnostics = query_index_export(context, env=self.selected_env, view="graph")
-        export_diagnostic_payload = export_payload.get("diagnostics")
-        event_diagnostics = list(export_diagnostic_payload) if isinstance(export_diagnostic_payload, list) else []
+        revision_payload, diagnostics = query_index_revision(context, env=self.selected_env)
+        revision_diagnostic_payload = revision_payload.get("diagnostics")
+        event_diagnostics = list(revision_diagnostic_payload) if isinstance(revision_diagnostic_payload, list) else []
         event = {
-            "ok": bool(export_payload.get("ok", True)),
+            "ok": bool(revision_payload.get("ok", True)),
             "mutated": False,
-            "event_id": f"{context.topic_workspace_id}:{export_payload.get('index_revision') or 'unknown'}",
+            "event_id": f"{context.topic_workspace_id}:{revision_payload.get('index_revision') or 'unknown'}",
             "event_type": "topic.index.changed",
             "topic_id": context.research_topic.id,
             "topic_workspace_id": context.topic_workspace_id,
-            "index_revision": export_payload.get("index_revision"),
+            "index_revision": revision_payload.get("index_revision"),
             "changed_record_ids": [],
             "changed_material_kinds": [],
             "graph_scopes": ["idea-lineage", "idea-timeline"],

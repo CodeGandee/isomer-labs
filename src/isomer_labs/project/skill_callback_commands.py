@@ -11,6 +11,7 @@ from isomer_labs.core.path_utils import display_path, is_within, resolve_project
 from isomer_labs.models import EffectiveTopicContext, Project, ProjectState
 from isomer_labs.project.skill_callbacks import (
     DEFAULT_CALLBACK_PRIORITY,
+    CallbackRegistryLoadResult,
     CallbackRegistryRef,
     CallbackSource,
     UserSkillCallback,
@@ -494,9 +495,13 @@ def resolve_user_skill_callbacks(
 ) -> CallbackCommandResult:
     project = state.project
     diagnostics: list[Diagnostic] = _callback_identity_diagnostics(skill=skill, stage=stage, scope=None, callback_id=None)
-    callbacks, refs, load_diagnostics = _load_visible_callbacks(project, context, missing_severity="error")
+    callbacks, refs, load_diagnostics, load_results = _load_visible_callbacks(
+        project,
+        context,
+        missing_severity="error",
+    )
     diagnostics.extend(load_diagnostics)
-    diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
+    diagnostics.extend(_duplicate_active_callback_diagnostics(load_results))
     selected: tuple[UserSkillCallback, ...] = ()
     if not has_errors(diagnostics):
         selected = tuple(
@@ -530,7 +535,11 @@ def list_user_skill_callbacks(
     context: EffectiveTopicContext | None,
 ) -> CallbackCommandResult:
     project = state.project
-    callbacks, refs, diagnostics = _load_visible_callbacks(project, context, missing_severity="warning")
+    callbacks, refs, diagnostics, _load_results = _load_visible_callbacks(
+        project,
+        context,
+        missing_severity="warning",
+    )
     _active_callbacks, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, tuple(callbacks))
     diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
@@ -552,7 +561,11 @@ def show_user_skill_callback(
     callback_id: str,
 ) -> CallbackCommandResult:
     project = state.project
-    callbacks, refs, diagnostics = _load_visible_callbacks(project, context, missing_severity="warning")
+    callbacks, refs, diagnostics, _load_results = _load_visible_callbacks(
+        project,
+        context,
+        missing_severity="warning",
+    )
     matches = [callback for callback in callbacks if callback.id == callback_id]
     if not matches:
         diagnostics.append(
@@ -651,11 +664,13 @@ def validate_user_skill_callbacks(
     refs = visible_callback_registry_refs(project, context)
     diagnostics: list[Diagnostic] = []
     all_callbacks: list[UserSkillCallback] = []
+    load_results: list[CallbackRegistryLoadResult] = []
     for ref in refs:
         result = load_callback_registry(project, ref, missing_severity="error")
+        load_results.append(result)
         diagnostics.extend(result.diagnostics)
         all_callbacks.extend(result.callbacks)
-    diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
+    diagnostics.extend(_duplicate_active_callback_diagnostics(load_results))
     _active_callbacks, toolbox_statuses, gated_callback_ids, gate_diagnostics = _apply_toolbox_gating(project, context, tuple(all_callbacks))
     diagnostics.extend(gate_diagnostics)
     return CallbackCommandResult(
@@ -675,15 +690,22 @@ def _load_visible_callbacks(
     context: EffectiveTopicContext | None,
     *,
     missing_severity: str,
-) -> tuple[tuple[UserSkillCallback, ...], tuple[CallbackRegistryRef, ...], list[Diagnostic]]:
+) -> tuple[
+    tuple[UserSkillCallback, ...],
+    tuple[CallbackRegistryRef, ...],
+    list[Diagnostic],
+    tuple[CallbackRegistryLoadResult, ...],
+]:
     refs = visible_callback_registry_refs(project, context)
     callbacks: list[UserSkillCallback] = []
     diagnostics: list[Diagnostic] = []
+    load_results: list[CallbackRegistryLoadResult] = []
     for ref in refs:
         result = load_callback_registry(project, ref, missing_severity=missing_severity)
+        load_results.append(result)
         diagnostics.extend(result.diagnostics)
         callbacks.extend(result.callbacks)
-    return tuple(callbacks), refs, diagnostics
+    return tuple(callbacks), refs, diagnostics, tuple(load_results)
 
 
 def _apply_toolbox_gating(

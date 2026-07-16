@@ -5,7 +5,9 @@ import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import isomer_labs.project.skill_callbacks as skill_callbacks
 from isomer_labs.models import (
     PROJECT_MANIFEST_SCHEMA_VERSION,
     Project,
@@ -17,7 +19,7 @@ from isomer_labs.project.skill_callback_commands import (
     prepare_callback_source,
     resolve_user_skill_callbacks,
 )
-from isomer_labs.project.skill_callbacks import CallbackRegistryRef, load_callback_registry
+from isomer_labs.project.skill_callbacks import CallbackRegistryRef, load_callback_registry, validate_callback_registry_refs
 from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
 
 
@@ -106,6 +108,39 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertIn("ISO102", codes(result.diagnostics))
         self.assertIn("ISO103", codes(result.diagnostics))
         self.assertIn("ISO104", codes(result.diagnostics))
+
+    def test_project_validation_loads_each_registry_once_and_keeps_cross_registry_duplicates(self) -> None:
+        project = self.make_project()
+        first = self.registry_ref(project)
+        second = CallbackRegistryRef(
+            scope="project",
+            path_input=".isomer-labs/user-skill-callbacks/second.toml",
+            path=project.root / ".isomer-labs" / "user-skill-callbacks" / "second.toml",
+            source_path=project.manifest_path,
+        )
+        project.manifest.user_skill_callback_registry_refs.append(second.path_input)
+        write(project.root / "prompt.md", "Prompt\n")
+        callback_row = """
+            schema_version = "isomer-user-skill-callback-registry.v1"
+
+            [[callbacks]]
+            id = "duplicate-visible"
+            skill = "isomer-deepsci-scout"
+            stage = "begin"
+            scope = "project"
+            status = "active"
+            priority = 10
+            source_type = "prompt_file"
+            prompt_file = "prompt.md"
+        """
+        write(first.path, callback_row)
+        write(second.path, callback_row)
+
+        with patch.object(skill_callbacks, "load_callback_registry", wraps=load_callback_registry) as load:
+            diagnostics = validate_callback_registry_refs(project, {})
+
+        self.assertEqual(2, load.call_count)
+        self.assertIn("ISO104", codes(diagnostics))
 
     def test_resolve_orders_topic_before_project_priority_then_id_and_skips_inactive(self) -> None:
         project = self.make_project()

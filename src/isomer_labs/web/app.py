@@ -201,7 +201,7 @@ def create_app(project_root: Path | str, *, env: Mapping[str, str] | None = None
         async def stream() -> AsyncIterator[str]:
             last_event_id = None
             while True:
-                payload = read_model.topic_change_event(topic_id)
+                payload = await asyncio.to_thread(read_model.topic_change_event, topic_id)
                 event_id = str(payload.get("event_id") or f"{topic_id}:unknown")
                 event_type = str(payload.get("event_type") or "topic.index.changed")
                 if once or event_id != last_event_id:

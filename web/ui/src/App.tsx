@@ -26,7 +26,6 @@ import {
   getTopicOverview,
   getTopicOverviewJson,
   getTopicGraph,
-  getTopics,
   getViewerDescriptor,
 } from "./api";
 import { topicRelativeDisplayPath } from "./display-path";
@@ -145,14 +144,21 @@ function Workbench() {
   const panelStateByIdRef = useRef<Map<string, WorkbenchSearchState>>(new Map());
   const suppressPanelCloseUrlRef = useRef(false);
   const queryClientValue = useQueryClient();
-  const project = useQuery({ queryKey: ["project"], queryFn: getProject });
-  const topics = useQuery({ queryKey: ["topics"], queryFn: getTopics });
   const explorer = useQuery({
     queryKey: ["explorer", "project", expandedTopicIds],
     queryFn: () => getProjectExplorer(expandedTopicIds),
   });
-  const topicList = topics.data?.topics || [];
-  const selectedTopicId = urlState.topicId || topicList[0]?.id;
+  const explorerBootstrap = useMemo(() => {
+    const nodes = explorer.data?.nodes || [];
+    const projectNode = nodes.find((node) => node.item_kind === "project");
+    const firstTopic = nodes.find((node) => node.item_kind === "research_topic");
+    const root = projectNode?.metadata?.root;
+    return {
+      firstTopicId: firstTopic?.topic_id || undefined,
+      projectRoot: typeof root === "string" ? root : "",
+    };
+  }, [explorer.data?.nodes]);
+  const selectedTopicId = urlState.topicId || explorerBootstrap.firstTopicId;
   const graphScope = urlState.graphScope;
   const { resolvedThemeMode } = useGuiTheme();
   const dockviewTheme = resolvedThemeMode === "dark" ? themeDark : themeLight;
@@ -406,9 +412,9 @@ function Workbench() {
       <>
         <header className="brand-row">
           <h1>Isomer</h1>
-          <span>{project.data?.ok ? "ready" : "loading"}</span>
+          <span>{explorer.data?.ok ? "ready" : "loading"}</span>
         </header>
-        <div className="project-root">{String(project.data?.project?.root || "")}</div>
+        <div className="project-root">{explorerBootstrap.projectRoot}</div>
         <ExplorerPane
           key={explorer.data?.revision || "loading"}
           nodes={explorer.data?.nodes || []}
@@ -424,7 +430,7 @@ function Workbench() {
         />
       </>
     ),
-    [expandedItems, explorer.data?.nodes, explorer.data?.revision, explorer.data?.root_node_ids, onExpandTopic, openItem, project.data?.ok, project.data?.project?.root, selectedTopicId],
+    [expandedItems, explorer.data?.nodes, explorer.data?.ok, explorer.data?.revision, explorer.data?.root_node_ids, explorerBootstrap.projectRoot, onExpandTopic, openItem, selectedTopicId],
   );
 
   return (

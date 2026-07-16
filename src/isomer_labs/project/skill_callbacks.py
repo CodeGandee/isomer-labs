@@ -183,6 +183,7 @@ def validate_callback_registry_refs(
     topic_configs: dict[str, Any],
 ) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
+    load_results: list[CallbackRegistryLoadResult] = []
     refs = list(project_callback_registry_refs(project))
     for topic_id, config in sorted(topic_configs.items()):
         for path_input in _callback_registry_ref_values(config.refs):
@@ -198,8 +199,9 @@ def validate_callback_registry_refs(
     for ref in refs:
         diagnostics.extend(_validate_registry_ref_path(project, ref))
         result = load_callback_registry(project, ref, missing_severity="error")
+        load_results.append(result)
         diagnostics.extend(result.diagnostics)
-    diagnostics.extend(_duplicate_active_callback_diagnostics(project, refs))
+    diagnostics.extend(_duplicate_active_callback_diagnostics(load_results))
     return diagnostics
 
 
@@ -609,11 +611,10 @@ def _callback_sort_key(callback: UserSkillCallback) -> tuple[int, int, str]:
     return (scope_rank, callback.priority, callback.id)
 
 
-def _duplicate_active_callback_diagnostics(project: Project, refs: Iterable[CallbackRegistryRef]) -> list[Diagnostic]:
+def _duplicate_active_callback_diagnostics(results: Iterable[CallbackRegistryLoadResult]) -> list[Diagnostic]:
     callbacks: list[UserSkillCallback] = []
     diagnostics: list[Diagnostic] = []
-    for ref in refs:
-        result = load_callback_registry(project, ref, missing_severity="error")
+    for result in results:
         if has_errors(list(result.diagnostics)):
             continue
         callbacks.extend(callback for callback in result.callbacks if callback.active)

@@ -7,7 +7,6 @@ import { GraphSummary } from "../graph/GraphPanels";
 import { openRecordFromNode } from "../graph/open-record";
 import { ideaNodeVisibleLabel, toFlowEdges, toFlowNodes, type IdeaFlowNodeData } from "../../graph-utils";
 import { buildJsonMarkdownPreview } from "../../markdown-doc";
-import { MarkdownView } from "../../markdown-view";
 import { useGuiTheme } from "../../theme-provider";
 import type { GraphScope, TopicGraphView } from "../../types";
 import { DEFAULT_HOVER_PREVIEW_DELAY_MS, useGuiSettings } from "../../ui-settings";
@@ -37,6 +36,9 @@ const NODE_DOUBLE_CLICK_DISTANCE_PX = 72;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 500;
 const TOUCH_LONG_PRESS_MOVE_TOLERANCE_PX = 14;
 const IDEA_LINEAGE_OVERVIEW_FILTERS = { includeSecondary: false, limit: 1000 };
+const LazyIdeaHoverMarkdownView = React.lazy(() =>
+  import("../../markdown-view").then((module) => ({ default: module.MarkdownView })),
+);
 
 export type IdeaGraphPanelProps = {
   topicId?: string;
@@ -557,7 +559,16 @@ function IdeaNodeHoverCard({
           <span>Loading preview</span>
         </div>
       ) : (
-        <MarkdownView content={markdown} />
+        <React.Suspense
+          fallback={(
+            <div className="idea-node-hover-loading">
+              <LoaderCircle aria-hidden="true" />
+              <span>Loading preview</span>
+            </div>
+          )}
+        >
+          <LazyIdeaHoverMarkdownView content={markdown} />
+        </React.Suspense>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 import contextlib
 import io
 import json
@@ -8,11 +9,14 @@ import os
 import sqlite3
 import tempfile
 import textwrap
+import time
 import unittest
 from pathlib import Path
 from urllib.parse import urlsplit
 from unittest.mock import patch
 
+import isomer_labs.web.project_explorer as project_explorer_module
+import isomer_labs.web.read_model as read_model_module
 from isomer_labs import cli
 from isomer_labs.deepsci_ext.record_formats import canonical_record_format_ref
 from isomer_labs.web import create_app
@@ -90,53 +94,59 @@ class ProjectWebGuiTests(unittest.TestCase):
     def read_model(self, root: Path) -> ProjectWebReadModel:
         return ProjectWebReadModel(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
 
+    async def asgi_get_response_async(
+        self,
+        app: object,
+        path: str,
+        *,
+        request_headers: dict[str, str] | None = None,
+    ) -> tuple[int, dict[str, str], bytes]:
+        messages: list[dict[str, object]] = []
+        parsed = urlsplit(path)
+        received = False
+
+        async def receive() -> dict[str, object]:
+            nonlocal received
+            if received:
+                await asyncio.Event().wait()
+            received = True
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message: dict[str, object]) -> None:
+            messages.append(message)
+
+        scope = {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": parsed.path,
+            "raw_path": parsed.path.encode(),
+            "query_string": parsed.query.encode(),
+            "headers": [
+                (key.lower().encode("latin1"), value.encode("latin1"))
+                for key, value in (request_headers or {}).items()
+            ],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+            "root_path": "",
+        }
+        await app(scope, receive, send)  # type: ignore[operator]
+        start = next(message for message in messages if message["type"] == "http.response.start")
+        headers = {
+            key.decode("latin1").lower(): value.decode("latin1")
+            for key, value in start["headers"]  # type: ignore[index]
+        }
+        body = b"".join(
+            message.get("body", b"")  # type: ignore[arg-type]
+            for message in messages
+            if message["type"] == "http.response.body"
+        )
+        return int(start["status"]), headers, body
+
     def asgi_get_response(self, app: object, path: str, *, request_headers: dict[str, str] | None = None) -> tuple[int, dict[str, str], bytes]:
-        async def call() -> tuple[int, dict[str, str], bytes]:
-            messages: list[dict[str, object]] = []
-            parsed = urlsplit(path)
-            received = False
-
-            async def receive() -> dict[str, object]:
-                nonlocal received
-                if received:
-                    return {"type": "http.disconnect"}
-                received = True
-                return {"type": "http.request", "body": b"", "more_body": False}
-
-            async def send(message: dict[str, object]) -> None:
-                messages.append(message)
-
-            scope = {
-                "type": "http",
-                "asgi": {"version": "3.0"},
-                "http_version": "1.1",
-                "method": "GET",
-                "scheme": "http",
-                "path": parsed.path,
-                "raw_path": parsed.path.encode(),
-                "query_string": parsed.query.encode(),
-                "headers": [
-                    (key.lower().encode("latin1"), value.encode("latin1"))
-                    for key, value in (request_headers or {}).items()
-                ],
-                "client": ("testclient", 50000),
-                "server": ("testserver", 80),
-                "root_path": "",
-            }
-            await app(scope, receive, send)  # type: ignore[operator]
-            start = next(message for message in messages if message["type"] == "http.response.start")
-            headers = {
-                key.decode("latin1").lower(): value.decode("latin1")
-                for key, value in start["headers"]  # type: ignore[index]
-            }
-            body = b"".join(
-                message.get("body", b"")  # type: ignore[arg-type]
-                for message in messages
-                if message["type"] == "http.response.body"
-            )
-            return int(start["status"]), headers, body
-
-        return asyncio.run(call())
+        return asyncio.run(self.asgi_get_response_async(app, path, request_headers=request_headers))
 
     def asgi_get(self, app: object, path: str, *, headers: dict[str, str] | None = None) -> tuple[int, dict[str, str]]:
         status, headers, _body = self.asgi_get_response(app, path, request_headers=headers)
@@ -419,6 +429,103 @@ class ProjectWebGuiTests(unittest.TestCase):
         missing = read_model.openable_item_descriptor("topic:missing:overview")
         self.assertFalse(missing["ok"], missing)
         self.assertEqual("topic_not_found", missing["error"]["code"])
+
+    def test_project_read_context_is_single_flight_and_invalidates_on_config_change(self) -> None:
+        root = self.make_project()
+        read_model = self.read_model(root)
+        original_build = read_model_module.build_project_state
+        build_count = 0
+
+        def delayed_build(*args: object, **kwargs: object) -> object:
+            nonlocal build_count
+            build_count += 1
+            time.sleep(0.05)
+            return original_build(*args, **kwargs)  # type: ignore[arg-type]
+
+        with patch.object(read_model_module, "build_project_state", side_effect=delayed_build):
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                results = list(executor.map(lambda _index: read_model.project_state(), range(4)))
+
+        self.assertEqual(1, build_count)
+        self.assertTrue(all(project is not None and state is not None for project, state, _diagnostics in results))
+
+        with patch.object(
+            read_model_module,
+            "resolve_effective_topic_context",
+            wraps=read_model_module.resolve_effective_topic_context,
+        ) as resolve:
+            first_context, _first_diagnostics = read_model.topic_context("alpha")
+            second_context, _second_diagnostics = read_model.topic_context("alpha")
+        self.assertIs(first_context, second_context)
+        self.assertEqual(1, resolve.call_count)
+
+        topic_config = root / ".isomer-labs" / "research-topics" / "alpha.toml"
+        topic_config.write_text(topic_config.read_text(encoding="utf-8") + "\n# cache invalidation\n", encoding="utf-8")
+        with patch.object(read_model_module, "build_project_state", wraps=original_build) as rebuild:
+            read_model.project_state()
+            read_model.project_state()
+        self.assertEqual(1, rebuild.call_count)
+
+        read_model.invalidate_read_context()
+        with patch.object(read_model_module, "build_project_state", wraps=original_build) as rebuild:
+            read_model.project_state()
+        self.assertEqual(1, rebuild.call_count)
+
+    def test_slow_topic_event_revision_read_does_not_block_health(self) -> None:
+        root = self.make_project()
+        app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
+
+        def slow_topic_change_event(_read_model: ProjectWebReadModel, topic_id: str) -> dict[str, object]:
+            time.sleep(0.25)
+            return {
+                "ok": True,
+                "mutated": False,
+                "event_id": f"{topic_id}:qidx:test",
+                "event_type": "topic.index.changed",
+                "topic_id": topic_id,
+                "topic_workspace_id": topic_id,
+                "index_revision": "qidx:test",
+                "graph_scopes": ["idea-lineage", "idea-timeline"],
+                "occurred_at": "2026-07-16T00:00:00+00:00",
+                "diagnostics": [],
+            }
+
+        async def exercise() -> tuple[float, tuple[int, dict[str, str], bytes], tuple[int, dict[str, str], bytes]]:
+            event_request = asyncio.create_task(
+                self.asgi_get_response_async(app, "/api/events?topic_id=alpha&once=true")
+            )
+            await asyncio.sleep(0.03)
+            started = time.perf_counter()
+            health_response = await self.asgi_get_response_async(app, "/api/health")
+            health_elapsed = time.perf_counter() - started
+            return health_elapsed, health_response, await event_request
+
+        with patch.object(ProjectWebReadModel, "topic_change_event", slow_topic_change_event):
+            elapsed, health, event = asyncio.run(exercise())
+
+        self.assertEqual(200, health[0])
+        self.assertLess(elapsed, 0.15)
+        self.assertEqual(200, event[0])
+        self.assertIn(b"qidx:test", event[2])
+
+    def test_project_explorer_resolves_only_expanded_topic_contexts(self) -> None:
+        root = self.make_project()
+        read_model = self.read_model(root)
+
+        with patch.object(
+            project_explorer_module,
+            "resolve_effective_topic_context",
+            wraps=project_explorer_module.resolve_effective_topic_context,
+        ) as resolve:
+            collapsed = read_model.project_explorer()
+            self.assertEqual(0, resolve.call_count)
+            expanded = read_model.project_explorer(expanded_topic_ids=("alpha",))
+            self.assertEqual(1, resolve.call_count)
+
+        collapsed_topic = next(node for node in collapsed["nodes"] if node["id"] == "topic:alpha")
+        expanded_topic = next(node for node in expanded["nodes"] if node["id"] == "topic:alpha")
+        self.assertIsNone(collapsed_topic["metadata"]["topic_workspace_path"])
+        self.assertEqual("Alpha topic", expanded_topic["metadata"]["topic_statement"])
 
     def test_topic_overview_api_reads_markdown_and_defers_supporting_json(self) -> None:
         root = self.make_project()
@@ -790,11 +897,24 @@ class ProjectWebGuiTests(unittest.TestCase):
         self.assertFalse(missing["mutated"])
         self.assertEqual("record_not_found", missing["error"]["code"])
 
-        event = read_model.topic_change_event("alpha")
+        with (
+            patch.object(
+                read_model_module,
+                "query_index_revision",
+                wraps=read_model_module.query_index_revision,
+            ) as revision,
+            patch.object(
+                read_model_module,
+                "query_index_export",
+                side_effect=AssertionError("topic events must not export graph content"),
+            ),
+        ):
+            event = read_model.topic_change_event("alpha")
         self.assertTrue(event["ok"], event)
         self.assertFalse(event["mutated"])
         self.assertEqual("topic.index.changed", event["event_type"])
         self.assertEqual(export["index_revision"], event["index_revision"])
+        self.assertEqual(1, revision.call_count)
 
         app = create_app(root, env={"HOME": str(root), "PATH": os.environ.get("PATH", "")})
         status, headers = self.asgi_get(app, "/api/events?topic_id=alpha&once=true")

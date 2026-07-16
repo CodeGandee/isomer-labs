@@ -7,6 +7,7 @@
     "test": "vitest run",
     "test:playwright": "node tests/topic-workbench-smoke.mjs",
     "test:performance": "node tests/performance-smoke.mjs",
+    "test:lazy-loading": "node tests/lazy-loading-smoke.mjs",
     "test:idea-graph-performance": "vitest run src/features/idea-lineage/idea-graph-performance.test.ts",
     "test:idea-detail": "node tests/idea-detail-smoke.mjs",
     "test:idea-hover-preview": "node tests/idea-hover-preview-smoke.mjs",

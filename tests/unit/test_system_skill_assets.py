@@ -107,6 +107,19 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertTrue(has_system_skill_callback_insertion_point("isomer-kaoju-pipeline", "begin"))
         self.assertFalse(has_system_skill_callback_insertion_point("isomer-op-entrypoint", "begin"))
 
+    def test_manifest_parse_and_callback_lookup_are_process_cached(self) -> None:
+        system_assets._load_system_skill_manifest_cached.cache_clear()
+        system_assets._all_system_skill_callback_insertion_points.cache_clear()
+        system_assets._system_skill_callback_insertion_point_keys.cache_clear()
+        with patch.object(system_assets.tomlkit, "parse", wraps=system_assets.tomlkit.parse) as parse:
+            first = load_system_skill_manifest()
+            second = load_system_skill_manifest()
+            self.assertIsNot(first, second)
+            self.assertEqual(first, second)
+            self.assertTrue(has_system_skill_callback_insertion_point("isomer-deepsci-scout", "begin"))
+            self.assertTrue(has_system_skill_callback_insertion_point("isomer-deepsci-scout", "begin"))
+        self.assertEqual(1, parse.call_count)
+
     def test_callback_insertion_point_filters_reject_unknown_extension(self) -> None:
         with self.assertRaises(SystemSkillAssetError):
             iter_system_skill_callback_insertion_points(extension_ids=("unknown",))

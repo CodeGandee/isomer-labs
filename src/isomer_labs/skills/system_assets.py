@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass
+from functools import lru_cache
 from importlib import resources
 from importlib.resources.abc import Traversable
 from pathlib import Path, PurePosixPath
@@ -100,14 +102,21 @@ def system_skills_root() -> Traversable:
     return root
 
 
-def load_system_skill_manifest() -> dict[str, Any]:
-    """Load the packaged system-skill manifest."""
+@lru_cache(maxsize=1)
+def _load_system_skill_manifest_cached() -> dict[str, Any]:
+    """Parse the process-immutable packaged system-skill manifest once."""
 
     manifest = system_skills_root().joinpath("manifest.toml")
     if not manifest.is_file():
         raise SystemSkillAssetError("Packaged system-skill manifest is missing.")
     parsed = tomlkit.parse(manifest.read_text(encoding="utf-8"))
     return dict(parsed)
+
+
+def load_system_skill_manifest() -> dict[str, Any]:
+    """Load an isolated copy of the packaged system-skill manifest."""
+
+    return deepcopy(_load_system_skill_manifest_cached())
 
 
 def iter_system_skill_groups() -> tuple[SystemSkillGroup, ...]:
@@ -155,25 +164,44 @@ def iter_system_skill_callback_insertion_points(
 ) -> tuple[CallbackInsertionPoint, ...]:
     """Return manifest-defined callback insertion points matching filters."""
 
-    manifest = load_system_skill_manifest()
-    groups = _parse_system_skill_groups(manifest)
     requested_extensions = tuple(dict.fromkeys(extension_ids or ()))
     if include_all_extensions and requested_extensions:
         raise SystemSkillAssetError("Cannot combine include_all_extensions with explicit extension ids.")
-    available_extension_ids = {group.extension_id for group in groups if group.kind == "extension" and group.extension_id is not None}
+    points = _all_system_skill_callback_insertion_points()
+    available_extension_ids = {
+        point.extension_id
+        for point in points
+        if point.group_kind == "extension" and point.extension_id is not None
+    }
     for extension_id in requested_extensions:
         if extension_id not in available_extension_ids:
             raise SystemSkillAssetError(f"Unknown packaged system extension: {extension_id}")
+    selected: list[CallbackInsertionPoint] = []
+    for point in points:
+        include_point = point.group_kind == "core" and include_core
+        if point.group_kind == "extension":
+            include_point = include_all_extensions or point.extension_id in requested_extensions
+        if not include_point:
+            continue
+        if skill is not None and point.target_skill != skill:
+            continue
+        if stage is not None and point.stage != stage:
+            continue
+        selected.append(point)
+    return tuple(selected)
+
+
+@lru_cache(maxsize=1)
+def _all_system_skill_callback_insertion_points() -> tuple[CallbackInsertionPoint, ...]:
+    """Return the immutable callback insertion-point catalog for this process."""
+
+    manifest = _load_system_skill_manifest_cached()
+    groups = _parse_system_skill_groups(manifest)
     stages = {item.stage: item for item in _parse_callback_stages(manifest)}
     skill_metadata = _parse_skill_metadata(manifest)
     points: list[CallbackInsertionPoint] = []
     seen_targets: set[tuple[str, str]] = set()
     for group in groups:
-        include_group = group.kind == "core" and include_core
-        if group.kind == "extension":
-            include_group = include_all_extensions or (group.extension_id in requested_extensions)
-        if not include_group:
-            continue
         for skill_path in group.skills:
             metadata = skill_metadata.get(skill_path, SystemSkillCatalogMetadata())
             for point_stage in metadata.callback_insertion_points:
@@ -195,12 +223,15 @@ def iter_system_skill_callback_insertion_points(
                     stage_label=stage_metadata.label,
                     description=stage_metadata.description,
                 )
-                if skill is not None and point.target_skill != skill:
-                    continue
-                if stage is not None and point.stage != stage:
-                    continue
                 points.append(point)
     return tuple(points)
+
+
+@lru_cache(maxsize=1)
+def _system_skill_callback_insertion_point_keys() -> frozenset[tuple[str, str]]:
+    """Return constant-time lookup keys for callback target validation."""
+
+    return frozenset((point.target_skill, point.stage) for point in _all_system_skill_callback_insertion_points())
 
 
 def has_system_skill_callback_insertion_point(skill: str | None, stage: str | None) -> bool:
@@ -208,15 +239,7 @@ def has_system_skill_callback_insertion_point(skill: str | None, stage: str | No
 
     if not skill or not stage:
         return False
-    return any(
-        True
-        for _ in iter_system_skill_callback_insertion_points(
-            include_core=True,
-            include_all_extensions=True,
-            skill=skill,
-            stage=stage,
-        )
-    )
+    return (skill, stage) in _system_skill_callback_insertion_point_keys()
 
 
 def callback_insertion_point_stage_names() -> tuple[str, ...]:
