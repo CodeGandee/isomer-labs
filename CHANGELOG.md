@@ -6,14 +6,22 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-17
+
+This release adds the Research Idea portfolio workflow, run-to prerequisite recovery, external repository registration, named Kaoju template exchange, and Project Web lazy loading.
+
 ### Added
 
+- Added the Research Idea portfolio workflow: a canonical topic-scoped collection of durable research concepts with independent exploration, decision, evidence, archive, and visibility facets, `ext research ideas` recording and decision operations, and Project Web idea portfolio, steering, and traversal views.
+- Added explicit run-to prerequisite recovery: a missing-prerequisite preflight pauses with recommended recovery choices, and an inclusive `run-to <task>` authorization executes the recommended transitive prerequisite closure and the original target across the operator entrypoint and the DeepSci and Kaoju pipeline guidance.
 - Added read-only dynamic target planning for unregistered grouped `topic.repos.*` labels and `project repos register <repo-label> --path <existing-path>` for non-executing Topic Workspace topology registration.
 - Added `topic.paper.template_exchange_root`, low-level `ext kaoju paper template` named-tree CRUD, optimistic state tokens, lightweight mutation audits, stable working-copy export status, explicit named copy and replacement, and legacy template migration inspection.
 
 ### Changed
 
 - Defaulted `system-skills install` to Project scope when `--scope` is omitted. The default uses the exact current working directory, user-wide installation still requires `--scope user`, and status, upgrade, and uninstall remain scope-explicit.
+- Improved Project Web loading performance with lazy loading across the explorer read API, idea graph refresh, research viewer, and state management.
+- Defaulted idea lineage graph controls to closed in Project Web.
 - Moved Canonical External Repository acquisition and verification to user-controlled or agent-controlled commands outside Isomer. Kaoju now records the registered semantic label, externally observed immutable identity, selected method, sanitized command evidence, source relationship, access and license posture, limitations, and blockers.
 - Changed canonical Kaoju MyST templates to one stable mutable managed directory record per exact path-safe name. Templates accept arbitrary safe trees and bounded agent-authored entrypoint, use-guidance, and extension metadata without imposing a universal template schema. Paper derivation records the selected name, stable ref, and observed tree digest.
 - Changed manual template exchange to stable non-canonical `intent/derived/writing-template/<name>/` working directories with reserved identity metadata, digest-based edited detection, clean refresh, and agent-owned reconciliation. Unnamed database updates now use the exact one-edited-export, current Topic Workspace `main/`, then user-clarification discovery order.
@@ -183,7 +191,8 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.1...v0.2.2
