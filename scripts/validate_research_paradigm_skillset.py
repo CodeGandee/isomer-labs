@@ -714,6 +714,53 @@ CALLBACK_MANAGEMENT_ONLY_FIELDS = (
     "toolbox registration",
     "gating",
 )
+DEEPSCI_CLOSEOUT_REQUIRED_TERMS = (
+    "operation set closeout",
+    "$isomer-research-operation-set-recording",
+    "complete",
+    "receipt",
+    "durable record refs",
+    "closeout: not_applicable",
+    "paused",
+    "diagnostics",
+    "resume command",
+)
+DEEPSCI_FILE_ONLY_TERMINAL_RE = re.compile(
+    r"\b(?:return|handoff|hand off|report success|treat.{0,20}complete)\b.{0,180}"
+    r"\b(?:worker path|file path|markdown (?:file|path)|rendered file|git commit|terminal prose)\b",
+    re.I,
+)
+DEEPSCI_CLOSEOUT_REFERENCE_TERMS = {
+    Path("deepsci/isomer-deepsci-shared/references/operation-set-closeout.md"): (
+        "after the owning production DeepSci skill has applied all end callbacks",
+        "$isomer-research-operation-set-recording",
+        "record_payload",
+        "record_attachment",
+        "disposable",
+        "research_idea_effects",
+        "Do not infer Idea Lineage Edges from record lineage",
+        "closeout: complete",
+        "closeout: not_applicable",
+        "closeout: paused",
+        "exact resume command",
+    ),
+    Path("deepsci/isomer-deepsci-pipeline/references/transition-rules.md"): (
+        "verified durable record ref",
+        "verified `complete` acceptance receipt id",
+        "closeout: not_applicable",
+        "`partial`",
+        "status is `paused`",
+        "acceptance resume point",
+    ),
+    Path("deepsci/isomer-deepsci-pipeline/references/terminal-report-template.md"): (
+        "`accepted_record_refs`",
+        "`pipeline_closeout`",
+        "`acceptance_receipt_id`",
+        "`closeout_resume_command`",
+        "pipeline-level material files",
+        "`status: complete`",
+    ),
+}
 
 
 @dataclass(frozen=True, order=True)
@@ -989,6 +1036,117 @@ def workflow_numbered_steps(lines: tuple[str, ...], workflow_line: int) -> list[
     return steps
 
 
+def validate_deepsci_operation_set_closeout_step(
+    skill_md: Path,
+    lines: tuple[str, ...],
+    workflow_steps: list[tuple[int, int, str]],
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    end_steps = [
+        (line_number, number, line)
+        for line_number, number, line in workflow_steps
+        if "Apply end callbacks" in line
+    ]
+    closeout_steps = [
+        (line_number, number, line)
+        for line_number, number, line in workflow_steps
+        if "close" in line.casefold() and "operation set" in line.casefold()
+    ]
+    if len(closeout_steps) != 1:
+        add(
+            diagnostics,
+            repo_root,
+            skill_md,
+            1,
+            "RPS032",
+            "active production DeepSci workflow must contain one numbered Operation Set Closeout gate",
+        )
+        return
+
+    closeout_line, _closeout_number, closeout_text = closeout_steps[0]
+    lowered = closeout_text.casefold()
+    missing_terms = [term for term in DEEPSCI_CLOSEOUT_REQUIRED_TERMS if term.casefold() not in lowered]
+    if missing_terms:
+        add(
+            diagnostics,
+            repo_root,
+            skill_md,
+            closeout_line,
+            "RPS032",
+            f"Operation Set Closeout gate is missing required evidence: {', '.join(missing_terms)}",
+        )
+
+    if not end_steps or closeout_line <= max(line_number for line_number, _, _ in end_steps):
+        add(
+            diagnostics,
+            repo_root,
+            skill_md,
+            closeout_line,
+            "RPS032",
+            "Operation Set Closeout gate must run after end callbacks",
+        )
+
+    terminal_steps = [
+        (line_number, line)
+        for line_number, _number, line in workflow_steps
+        if line_number > max((item[0] for item in end_steps), default=0)
+        and line_number != closeout_line
+        and (
+            "**return" in line.casefold()
+            or "final response" in line.casefold()
+            or "status: complete" in line.casefold()
+            or "successful handoff" in line.casefold()
+        )
+    ]
+    if terminal_steps and closeout_line >= min(line_number for line_number, _ in terminal_steps):
+        add(
+            diagnostics,
+            repo_root,
+            skill_md,
+            closeout_line,
+            "RPS032",
+            "Operation Set Closeout gate must run before final response, successful handoff, or complete status",
+        )
+
+    for line_number, _number, line in workflow_steps:
+        if line_number == closeout_line or is_rejection_line(line):
+            continue
+        if DEEPSCI_FILE_ONLY_TERMINAL_RE.search(line):
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                line_number,
+                "RPS032",
+                "file-only terminal claim is forbidden; require durable record refs and verified closeout evidence",
+            )
+
+
+def validate_deepsci_operation_set_closeout_references(
+    target: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    for relative, required_terms in DEEPSCI_CLOSEOUT_REFERENCE_TERMS.items():
+        path = target / relative
+        if not path.exists():
+            add(diagnostics, repo_root, path, 1, "RPS032", f"required Operation Set Closeout guidance '{relative.as_posix()}' is missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        lowered = text.casefold()
+        for term in required_terms:
+            if term.casefold() not in lowered:
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    1,
+                    "RPS032",
+                    f"Operation Set Closeout guidance must document '{term}'",
+                )
+
+
 def validate_skill_layout(
     skill_dir: Path,
     repo_root: Path,
@@ -1087,6 +1245,8 @@ def validate_skill_layout(
                 "RPS017",
                 f"production {family.key} SKILL.md must express ordered compact User Skill Callback locator consumption without management-only fields in ordinary begin/end workflow steps",
             )
+    if family.key == "deepsci":
+        validate_deepsci_operation_set_closeout_step(skill_md, lines, workflow_steps, repo_root, diagnostics)
 
 
 def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
@@ -2827,6 +2987,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
         validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
     validate_prerequisite_recovery_guidance(target, repo_root, diagnostics)
+    validate_deepsci_operation_set_closeout_references(target, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     validate_repository_command_boundary(target, repo_root, diagnostics)
     return sorted(set(diagnostics))

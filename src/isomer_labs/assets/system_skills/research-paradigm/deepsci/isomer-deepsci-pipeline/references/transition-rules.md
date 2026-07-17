@@ -9,6 +9,8 @@ The pipeline proceeds to the next stage when all of the following are true:
 - The stage completed without emitting a blocker record.
 - The stage's route decision matches the continue condition given in the recipe table.
 - The stage produced all artifacts listed in the next stage's `consumes` list.
+- Every produced artifact is available as a verified durable record ref; a worker path, rendered file, Git commit, or terminal prose is unavailable.
+- The stage reports either a verified `complete` acceptance receipt id or `closeout: not_applicable` with the durable refs it used or created.
 - The caller has not sent an interrupt or stop signal.
 
 ## Pause
@@ -19,8 +21,9 @@ The pipeline pauses (status `paused`) when:
 - The stage recommends a user-sensitive decision before continuing.
 - The stage's output indicates the recipe should hand off to a different skill or pipeline.
 - A required input is missing or stale and a known in-scope focused skill or pass can produce or repair it.
+- The stage has a missing, `applying`, `partial`, stale, or unverifiable acceptance receipt, an unclassified material file, or a missing promised Research Idea effect.
 
-The terminal report includes the stage id, the unexpected route, known producer, original target resume point, and all artifacts produced so far. The bounded recipe ends; it does not add a backward edge or invoke the producer internally.
+The terminal report includes the stage id, the unexpected route, known producer, original target resume point, accepted durable refs, partial receipt when present, closeout diagnostics, and exact resume command. The bounded recipe ends; it does not add a backward edge or invoke the producer internally.
 
 ## Block
 
@@ -34,7 +37,7 @@ The terminal report includes the blocker record and a `resume_point` pointing to
 
 ## Stop
 
-The pipeline stops (status `complete`) when the terminal stage finishes successfully. The terminal report's `recommended_next` field is derived from the last stage's route decision.
+The pipeline stops with status `complete` only when the terminal stage finishes successfully, every stage has verified closeout evidence, and the pipeline's own terminal report or other material files are accepted and verified. If pipeline-level closeout fails, status is `paused`; completed stage refs remain durable and the report names the acceptance resume point. The terminal report's `recommended_next` field is derived from the last stage's route decision.
 
 ## Controller Responsibilities
 

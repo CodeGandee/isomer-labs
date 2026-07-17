@@ -29,6 +29,8 @@ from isomer_labs.runtime.records import (
     AdapterStopOutcomeRecord,
     HandoffNormalizationRecord,
     HandoffRecord,
+    OperationSetAcceptanceItemRecord,
+    OperationSetAcceptanceRecord,
     PathPlanRecord,
     ResearchIdea,
     ResearchIdeaDecisionOption,
@@ -260,7 +262,16 @@ ADAPTER_RUNTIME_SCHEMA_TABLES = (
     "adapter_inspection_snapshots",
     "adapter_stop_outcomes",
 )
-RUNTIME_SCHEMA_TABLES = (*CORE_RUNTIME_SCHEMA_TABLES, *LINEAGE_RUNTIME_SCHEMA_TABLES, *ADAPTER_RUNTIME_SCHEMA_TABLES)
+ACCEPTANCE_RUNTIME_SCHEMA_TABLES = (
+    "operation_set_acceptances",
+    "operation_set_acceptance_items",
+)
+RUNTIME_SCHEMA_TABLES = (
+    *CORE_RUNTIME_SCHEMA_TABLES,
+    *LINEAGE_RUNTIME_SCHEMA_TABLES,
+    *ADAPTER_RUNTIME_SCHEMA_TABLES,
+    *ACCEPTANCE_RUNTIME_SCHEMA_TABLES,
+)
 
 
 def _create_schema(connection: sqlite3.Connection) -> None:
@@ -510,6 +521,57 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             ON research_record_lineage_edges (topic_workspace_id, lineage_kind);
         CREATE INDEX IF NOT EXISTS idx_research_record_lineage_edges_generation
             ON research_record_lineage_edges (topic_workspace_id, generation_id);
+
+        CREATE TABLE IF NOT EXISTS operation_set_acceptances (
+            id TEXT PRIMARY KEY,
+            research_topic_id TEXT NOT NULL,
+            topic_workspace_id TEXT NOT NULL,
+            operation_set_id TEXT NOT NULL,
+            revision INTEGER NOT NULL,
+            supersedes_receipt_id TEXT,
+            worker_kind TEXT NOT NULL,
+            worker_name TEXT NOT NULL,
+            canonical_root TEXT NOT NULL,
+            manifest_path TEXT NOT NULL,
+            manifest_digest TEXT NOT NULL,
+            manifest_json TEXT NOT NULL,
+            status TEXT NOT NULL,
+            output_summary_json TEXT NOT NULL,
+            diagnostics_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            provenance_refs_json TEXT NOT NULL,
+            UNIQUE(topic_workspace_id, operation_set_id, revision)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_operation_set_acceptances_topic
+            ON operation_set_acceptances (research_topic_id, topic_workspace_id, updated_at);
+        CREATE INDEX IF NOT EXISTS idx_operation_set_acceptances_operation
+            ON operation_set_acceptances (topic_workspace_id, operation_set_id, revision);
+        CREATE INDEX IF NOT EXISTS idx_operation_set_acceptances_status
+            ON operation_set_acceptances (topic_workspace_id, status, updated_at);
+
+        CREATE TABLE IF NOT EXISTS operation_set_acceptance_items (
+            id TEXT PRIMARY KEY,
+            acceptance_id TEXT NOT NULL,
+            intent_key TEXT NOT NULL,
+            intent_digest TEXT NOT NULL,
+            action TEXT NOT NULL,
+            status TEXT NOT NULL,
+            record_id TEXT,
+            managed_files_json TEXT NOT NULL,
+            lineage_refs_json TEXT NOT NULL,
+            idea_effect_refs_json TEXT NOT NULL,
+            diagnostics_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            UNIQUE(acceptance_id, intent_key)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_operation_set_acceptance_items_receipt
+            ON operation_set_acceptance_items (acceptance_id, status, intent_key);
+        CREATE INDEX IF NOT EXISTS idx_operation_set_acceptance_items_record
+            ON operation_set_acceptance_items (record_id);
 
         CREATE TABLE IF NOT EXISTS research_ideas (
             id TEXT PRIMARY KEY,
@@ -1142,6 +1204,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
     _ensure_agent_workspace_metadata_columns(connection)
     _ensure_structured_payload_file_columns(connection)
     _ensure_record_index_payload_file_columns(connection)
+    _ensure_operation_set_acceptance_columns(connection)
     _ensure_research_idea_summary_schema(connection)
     _ensure_research_record_ideas_summary_schema(connection)
     _ensure_research_idea_display_key_schema(connection)
@@ -1529,6 +1592,17 @@ def _ensure_record_index_payload_file_columns(connection: sqlite3.Connection) ->
     )
 
 
+def _ensure_operation_set_acceptance_columns(connection: sqlite3.Connection) -> None:
+    if not _table_exists(connection, "operation_set_acceptance_items"):
+        return
+    columns = _column_names(connection, "operation_set_acceptance_items")
+    if "lineage_refs_json" not in columns:
+        connection.execute(
+            "ALTER TABLE operation_set_acceptance_items "
+            "ADD COLUMN lineage_refs_json TEXT NOT NULL DEFAULT '[]'"
+        )
+
+
 def _write_metadata(connection: sqlite3.Connection, metadata: WorkspaceRuntimeMetadata) -> None:
     values = metadata.to_json()
     values["provenance_refs"] = _dumps(metadata.provenance_refs)
@@ -1779,6 +1853,47 @@ def _row_to_research_record_lineage_edge(row: sqlite3.Row) -> ResearchRecordLine
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_operation_set_acceptance(row: sqlite3.Row) -> OperationSetAcceptanceRecord:
+    return OperationSetAcceptanceRecord(
+        id=row["id"],
+        research_topic_id=row["research_topic_id"],
+        topic_workspace_id=row["topic_workspace_id"],
+        operation_set_id=row["operation_set_id"],
+        revision=int(row["revision"]),
+        supersedes_receipt_id=row["supersedes_receipt_id"],
+        worker_kind=row["worker_kind"],
+        worker_name=row["worker_name"],
+        canonical_root=row["canonical_root"],
+        manifest_path=row["manifest_path"],
+        manifest_digest=row["manifest_digest"],
+        manifest=_loads_object_dict(row["manifest_json"]),
+        status=row["status"],
+        output_summary=_loads_object_dict(row["output_summary_json"]),
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
+        provenance_refs=_loads_list(row["provenance_refs_json"]),
+    )
+
+
+def _row_to_operation_set_acceptance_item(row: sqlite3.Row) -> OperationSetAcceptanceItemRecord:
+    return OperationSetAcceptanceItemRecord(
+        id=row["id"],
+        acceptance_id=row["acceptance_id"],
+        intent_key=row["intent_key"],
+        intent_digest=row["intent_digest"],
+        action=row["action"],
+        status=row["status"],
+        record_id=row["record_id"],
+        managed_files=_loads_json_list(row["managed_files_json"]),
+        lineage_refs=_loads_list(row["lineage_refs_json"]),
+        idea_effect_refs=_loads_list(row["idea_effect_refs_json"]),
+        diagnostics=_loads_json_list(row["diagnostics_json"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 

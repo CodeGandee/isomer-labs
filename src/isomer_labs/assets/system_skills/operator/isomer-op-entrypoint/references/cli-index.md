@@ -58,9 +58,10 @@ Use these before ambiguous mutation:
 | Create, list, show, update, delete, validate, or render structured research records. | `isomer-cli ext research records ...` |
 | Maintain record indexes. | `isomer-cli ext research records index rebuild`, `validate`, or `cleanup` |
 | Query record indexes, lineage, files, facets, or export views. | `isomer-cli ext research records query ...` |
+| Inventory worker operation sets, preview or apply exhaustive acceptance, resume partial receipts, and verify closeout. | `isomer-cli ext research operation-sets inspect`, `accept`, or `verify` |
 | Validate, render, or register Artifact Formats. | `isomer-cli project artifact-formats ...` |
 
-Do not hand-edit research record indexes. Use `isomer-cli ext research records ...` command families.
+Do not hand-edit research record indexes or acceptance receipts. Use `isomer-cli ext research records ...` and `isomer-cli ext research operation-sets ...` command families.
 
 ## Team and Handoff Command Families
 

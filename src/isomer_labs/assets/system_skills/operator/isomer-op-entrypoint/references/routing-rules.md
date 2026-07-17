@@ -23,6 +23,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | User gives a concrete task and asks the agent to handle it. | `isomer-op-entrypoint`, then route and proceed. |
 | User names a valid skill directly. | Load that skill unless readiness or ownership makes it unsafe. |
 | User names a valid `isomer-cli` command family. | Inspect CLI help and run the smallest safe command. |
+| A Topic Actor or Agent operation set needs durable closeout, receipt resume, verification, or explicit legacy repair. | `isomer-research-operation-set-recording` or the explicit `isomer-cli ext research operation-sets ...` family. |
 | Project bootstrap, validation, cleanup, relocation, context, or runtime setup. | `isomer-op-project-mgr`. |
 | System-skill extension detection, reconciliation, installation, status, registration, or repair. | `isomer-op-system-skill-mgr`. |
 | Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-toolbox-mgr`. |

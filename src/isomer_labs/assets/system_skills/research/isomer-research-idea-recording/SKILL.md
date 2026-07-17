@@ -5,11 +5,15 @@ description: Use when an Isomer workflow creates, accepts, classifies, selects, 
 
 # Research Idea Recording
 
-## Purpose
+## Overview
 
 Record durable research concepts as a producer-neutral portfolio that Project Web, CLI queries, and later agents can interpret without parsing extension-specific prose. Keep concept identity, record identity, evidence, workflow state, and browser state separate.
 
 Read `references/recording-contract.md` before accepting any idea-bearing output or changing canonical idea state.
+
+## When to Use
+
+Use this skill whenever a durable research concept is proposed, explored, selected, deferred, closed, reopened, supported, refuted, revised, derived, merged, or archived, or when an idea-bearing record promises canonical portfolio effects.
 
 ## Workflow
 
@@ -21,15 +25,19 @@ Read `references/recording-contract.md` before accepting any idea-bearing output
 6. Verify the accepted result. Inspect returned idea, realization, generation, lineage, decision-option, transition, and operation refs; query the affected ideas and decision context; run canonical validation before claiming completion.
 7. Report uncertainty honestly. Use `unknown` when durable evidence does not justify a facet, preserve incomplete historical context as a diagnostic, and use preview before applying migration or repair.
 
+If the request does not map cleanly to this workflow, use the native planning tool to build a bounded recording plan from the durable-concept test, authoritative record profile, current canonical portfolio state, and explicit actor intent, then execute only justified mutations or stop on a concrete blocker.
+
 ## Completion Boundary
 
 Do not call an idea-bearing output accepted until the durable research record and all promised canonical effects have committed, the exact realization paths resolve to individual objects, the compatibility status matches the facets, and validation returns no errors. A Markdown file, rendered view, operation-set report, or chat claim is not canonical recording evidence.
 
+Do not use the deprecated one-value `status` as the source of truth.
+
 ## Guardrails
 
-- Do not infer canonical ideas, state, decisions, or lineage from Markdown.
-- Do not use the deprecated one-value `status` as the source of truth.
-- Do not treat generation membership as proof that a Decision Record considered every sibling.
-- Do not change decision state because evidence changed, or evidence state because a decision changed, without an explicit transition for the affected facet.
-- Do not create Research Ideas automatically for sources, datasets, repositories, claims, metrics, tasks, repair routes, paper sections, or implementation attempts unless an actor explicitly promotes a distinct durable concept.
-- Do not create idea-level `revision_of` edges. Preserve identity for concept-stable revisions and add a new realization; create a new idea and justified concept-lineage edge only when the concept changes.
+- DO NOT infer canonical ideas, state, decisions, or lineage from Markdown.
+- DO NOT use the deprecated one-value `status` as the source of truth.
+- DO NOT treat generation membership as proof that a Decision Record considered every sibling.
+- DO NOT change decision state because evidence changed, or evidence state because a decision changed, without an explicit transition for the affected facet.
+- DO NOT create Research Ideas automatically for sources, datasets, repositories, claims, metrics, tasks, repair routes, paper sections, or implementation attempts unless an actor explicitly promotes a distinct durable concept.
+- DO NOT create idea-level `revision_of` edges. Preserve identity for concept-stable revisions and add a new realization; create a new idea and justified concept-lineage edge only when the concept changes.

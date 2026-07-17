@@ -1,10 +1,10 @@
-# Operation-Set Outputs Are Not Automatically Recorded in the Research Database
+# Operation-Set Outputs Were Not Reliably Recorded in the Research Database
 
 **Discovered**: 2026-07-16
 **Last confirmed**: 2026-07-17
 **Topic**: flash-attention-4-whitebox-runtime-model
 **Severity**: process/intent
-**Status**: open
+**Status**: resolved
 
 ## What happened
 
@@ -66,7 +66,23 @@ The selected hypothesis `artifact-DEEPSCI-SELECTED-HYPOTHESIS-6ff8d6824fa3` is t
 
 This recovery repairs durable record storage and record lineage. It does not by itself promote the candidate ideas embedded in earlier raw-idea-slate and candidate-frontier payloads into canonical Research Ideas or construct their idea lineage.
 
-## Recommended fixes
+## Systemic Resolution
+
+The historical Flash Attention 4 data repair and the systemic workflow fix are separate:
+
+- The six listed outputs and their record lineage were repaired manually before this feature. The current topic must not be re-imported or mutated during installation, validation, or migration.
+- The recurrence gap is resolved by the provider-neutral Operation Set Acceptance capability implemented on 2026-07-17. It adds `ext research operation-sets inspect`, preview-first `accept`, `accept --apply`, and read-only `verify`.
+- A strict versioned manifest exhaustively classifies every material file as a record payload, managed record attachment, or reasoned disposable output. Git-ignored and untracked files remain part of inventory.
+- Workspace Runtime acceptance headers and item receipts record resumable progress. An unchanged manifest replays idempotently, a partial receipt preserves earlier durable commits, and a changed applied plan requires an explicit superseding revision.
+- Record creation and revision still use the existing canonical research-record service. Idea-bearing outputs pass authored `research_idea_effects` through that service's atomic transaction and verify the returned idea refs; record lineage never implies Idea Lineage.
+- The core `isomer-research-operation-set-recording` skill owns the guided workflow. Every active production DeepSci workflow closes operation sets after end callbacks, and the DeepSci pipeline requires verified durable refs plus complete receipts or explicit `not_applicable` evidence before stage progression or `status: complete`.
+- Research-paradigm validation rejects missing or misordered closeout gates, file-only terminal claims, absent receipt evidence, and pipeline progression from partial acceptance.
+
+This resolution does not change canonical Research Idea facets, lifecycle, decisions, lineage, CLI semantics, or GUI projections. It uses those current contracts and closes the remaining persistence boundary around them.
+
+## Historical Recommendations
+
+The following recommendations were recorded with the incident. The implemented resolution follows the terminal-gate and focused-skill intent while replacing automatic scanning or inferred lineage with an explicit manifest, authored semantics, and verification receipt.
 
 1. Update `isomer-deepsci-pipeline` and the focused production DeepSci skills to include an explicit final step: "persist operation-set deliverables as durable research records with lineage" before returning the terminal report.
 2. Provide a helper command or skill (e.g., `isomer-op-project-mgr record-operation-set`) that wraps the common case of importing an operation-set output directory into the research database.

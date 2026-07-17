@@ -222,11 +222,25 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """,
         )
         write(
+            deepsci_root / "isomer-deepsci-shared" / "references" / "operation-set-closeout.md",
+            """
+            # Operation Set Closeout
+
+            Run this contract after the owning production DeepSci skill has applied all end callbacks.
+
+            Invoke $isomer-research-operation-set-recording. Classify record_payload, record_attachment, and disposable outputs. Pass exact research_idea_effects through the atomic record write. Do not infer Idea Lineage Edges from record lineage.
+
+            Return closeout: complete with the receipt and durable refs, closeout: not_applicable only without an operation set, or closeout: paused with diagnostics and the exact resume command.
+            """,
+        )
+        write(
             deepsci_root / "isomer-deepsci-pipeline" / "references" / "transition-rules.md",
             """
             # Stage Transition Rules
 
             A missing input pauses when a known in-scope focused skill or pass can produce or repair it. Block only for an unavailable external state change.
+
+            Continue only with a verified durable record ref and a verified `complete` acceptance receipt id or closeout: not_applicable. A `partial` receipt means status is `paused` at the acceptance resume point.
 
             Without authorization, offer run to the target, execute the next prerequisite only, inspect or choose another route, and stop. After explicit target-scoped run-to authorization, use a separate Run and stop at every nondelegable human Gate.
             """,
@@ -236,7 +250,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """
             # Pipeline Terminal Report Template
 
-            Record `paused` prerequisite recovery or the unavailable external state change for `blocked`. An explicitly authorized target-scoped run-to controller may consume the route as a separate focused-skill or pass Run, while preserving separate terminal reports, and stops after the target.
+            Record `paused` prerequisite recovery or the unavailable external state change for `blocked`. Include `accepted_record_refs`, `pipeline_closeout`, `acceptance_receipt_id`, and `closeout_resume_command`. Pipeline-level material files must be accepted before `status: complete`. An explicitly authorized target-scoped run-to controller may consume the route as a separate focused-skill or pass Run, while preserving separate terminal reports, and stops after the target.
             """,
         )
         return root, target
@@ -291,6 +305,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             f"4. **Apply end callbacks**. After tentative outputs exist and before final response, handoff, or treating the workflow as complete, resolve `end` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill {name} --stage end`. "
             "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
         )
+        closeout_step = (
+            "5. **Close the operation set**. After end callbacks, invoke `$isomer-deepsci-shared`, follow its Operation Set Closeout reference, and invoke `$isomer-research-operation-set-recording`. "
+            "Require a `complete` receipt and durable record refs, or report `closeout: not_applicable` when no operation set was opened. Return `paused` with diagnostics and the exact resume command when verification fails."
+        )
         shared_worker_policy = (
             (
                 "## Worker Output Policy\n\n"
@@ -331,6 +349,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             {output_step}
             {workflow_extra}
             {end_step}
+            {closeout_step}
 
             Callback resolution returns a compact `callbacks` array. Process entries in returned order and read each absolute `instruction_path` as supplemental material according to `source_type`. For `skill_dir`, read the reported `SKILL.md` and any directly required relative resources; do not treat the directory as an installed system skill or execute its scripts solely because resolution returned it. During ordinary execution, do not request `--explain` or depend on registry, priority, scope, status, Toolbox registration, or gating fields. Use `--explain`, `list`, `show`, or `validate` only to diagnose or manage callback resolution. Preserve higher-priority instructions, the current user request, owning-skill and shared research rules, evidence discipline, required Gates, validation, and recording obligations; report any material conflict.
 
@@ -695,6 +714,67 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
 
         self.assertIn("RPS017", codes(diagnostics), messages(diagnostics))
+
+    def test_deepsci_operation_set_closeout_step_is_required(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        text = "\n".join(line for line in skill_md.read_text(encoding="utf-8").splitlines() if "**Close the operation set**" not in line)
+        skill_md.write_text(text + "\n", encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS032", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("Closeout gate" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_deepsci_operation_set_closeout_must_follow_end_callbacks(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        lines = skill_md.read_text(encoding="utf-8").splitlines()
+        end_index = next(index for index, line in enumerate(lines) if "**Apply end callbacks**" in line)
+        closeout_index = next(index for index, line in enumerate(lines) if "**Close the operation set**" in line)
+        lines[end_index], lines[closeout_index] = lines[closeout_index], lines[end_index]
+        skill_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS032", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("after end callbacks" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_deepsci_file_only_terminal_claim_is_rejected(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        text = skill_md.read_text(encoding="utf-8").replace(
+            "\n\nCallback resolution returns",
+            "\n6. **Return success**. Return the Markdown path as the completed handoff.\n\nCallback resolution returns",
+        )
+        skill_md.write_text(text, encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS032", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("file-only terminal claim" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_deepsci_closeout_requires_receipt_evidence(self) -> None:
+        root, target = self.make_valid_skillset()
+        skill_md = target / "deepsci" / "isomer-deepsci-scout" / "SKILL.md"
+        text = skill_md.read_text(encoding="utf-8").replace("Require a `complete` receipt", "Require a `complete` result")
+        skill_md.write_text(text, encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS032", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("missing required evidence" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_deepsci_pipeline_cannot_progress_from_partial_acceptance(self) -> None:
+        root, target = self.make_valid_skillset()
+        transition_rules = target / "deepsci" / "isomer-deepsci-pipeline" / "references" / "transition-rules.md"
+        text = transition_rules.read_text(encoding="utf-8").replace("A `partial` receipt means status is `paused`", "A pending receipt may continue")
+        transition_rules.write_text(text, encoding="utf-8")
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        self.assertIn("RPS032", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("transition-rules.md" in diagnostic.path for diagnostic in diagnostics if diagnostic.code == "RPS032"), messages(diagnostics))
 
     def test_research_validator_rejects_repo_local_isomer_cli_wrapper(self) -> None:
         root, target = self.make_valid_skillset()

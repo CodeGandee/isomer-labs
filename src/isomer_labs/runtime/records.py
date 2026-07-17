@@ -220,6 +220,8 @@ RESEARCH_RECORD_LINEAGE_KINDS = (
     "follow_up_to",
 )
 RESEARCH_RECORD_LINEAGE_STATUSES = ("ready", "stale", "archived")
+OPERATION_SET_ACCEPTANCE_STATUSES = ("applying", "partial", "complete", "superseded")
+OPERATION_SET_ACCEPTANCE_ITEM_STATUSES = ("pending", "applying", "complete", "failed")
 ResearchIdeaExplorationState: TypeAlias = Literal["unknown", "unexplored", "exploring", "explored"]
 ResearchIdeaDecisionState: TypeAlias = Literal["unknown", "open", "shortlisted", "selected", "deferred", "closed"]
 ResearchIdeaEvidenceState: TypeAlias = Literal["unknown", "unassessed", "inconclusive", "supported", "mixed", "refuted"]
@@ -641,6 +643,89 @@ class ResearchRecordLineageEdge:
         ):
             if value is not None:
                 data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class OperationSetAcceptanceRecord:
+    id: str
+    research_topic_id: str
+    topic_workspace_id: str
+    operation_set_id: str
+    revision: int
+    worker_kind: str
+    worker_name: str
+    canonical_root: str
+    manifest_path: str
+    manifest_digest: str
+    manifest: dict[str, object]
+    status: str
+    output_summary: dict[str, object]
+    diagnostics: list[dict[str, object]]
+    created_at: str
+    updated_at: str
+    supersedes_receipt_id: str | None = None
+    provenance_refs: list[str] = field(default_factory=list)
+
+    def to_json(self, *, include_manifest: bool = True) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "research_topic_id": self.research_topic_id,
+            "topic_workspace_id": self.topic_workspace_id,
+            "operation_set_id": self.operation_set_id,
+            "revision": self.revision,
+            "worker_kind": self.worker_kind,
+            "worker_name": self.worker_name,
+            "canonical_root": self.canonical_root,
+            "manifest_path": self.manifest_path,
+            "manifest_digest": self.manifest_digest,
+            "status": self.status,
+            "output_summary": self.output_summary,
+            "diagnostics": self.diagnostics,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "provenance_refs": self.provenance_refs,
+        }
+        if include_manifest:
+            data["manifest"] = self.manifest
+        if self.supersedes_receipt_id is not None:
+            data["supersedes_receipt_id"] = self.supersedes_receipt_id
+        return data
+
+
+@dataclass(frozen=True)
+class OperationSetAcceptanceItemRecord:
+    id: str
+    acceptance_id: str
+    intent_key: str
+    intent_digest: str
+    action: str
+    status: str
+    managed_files: list[dict[str, object]]
+    lineage_refs: list[str]
+    idea_effect_refs: list[str]
+    diagnostics: list[dict[str, object]]
+    created_at: str
+    updated_at: str
+    record_id: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "id": self.id,
+            "acceptance_id": self.acceptance_id,
+            "intent_key": self.intent_key,
+            "intent_digest": self.intent_digest,
+            "action": self.action,
+            "status": self.status,
+            "managed_files": self.managed_files,
+            "lineage_refs": self.lineage_refs,
+            "idea_effect_refs": self.idea_effect_refs,
+            "diagnostics": self.diagnostics,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
+        if self.record_id is not None:
+            data["record_id"] = self.record_id
         return data
 
 

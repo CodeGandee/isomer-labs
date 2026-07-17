@@ -8,6 +8,8 @@ Records may contain more fields than the GUI currently displays. GUI data-contra
 
 Idea-bearing records have an additional acceptance obligation. Their structured payload declares canonical Research Idea identity, known independent facets, exact Idea Realization paths, generation membership, justified Idea Lineage Edges, complete considered option sets, and transitions. The record and promised canonical effects commit in one transaction. A profile that promises those effects fails acceptance if any required effect fails; a non-idea-bearing profile does not infer ideas. See [Research Idea Portfolio](research-idea-portfolio.md).
 
+Worker operation sets are staging areas rather than durable records. When a Topic Actor or Agent produces material plain files, use [Operation Set Acceptance](operation-set-acceptance.md) to classify every file, preview and apply the current record mutations, snapshot managed attachments, and verify a resumable completion receipt.
+
 ## Family-Neutral Structured Formats
 
 Built-in extension-neutral profiles use `isomer:research/record-format/profile/<family>/<class>/<semantic-id>/v1`. They share `isomer:research/record-format/schema/research-structured-record/v1` and `isomer:research/record-format/template/markdown/research-structured-record/v1`. The packaged Kaoju catalog is declarative: each entry defines compatible record kinds, required payload paths, relationship and file paths, query facets, renderer, version, and status.

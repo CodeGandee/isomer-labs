@@ -27,6 +27,13 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 `isomer-op-welcome` is read-only orientation. `isomer-op-entrypoint` is route-and-proceed dispatch.
 
+## Research Skills
+
+| Intent | Skill | Boundary |
+| --- | --- | --- |
+| Accept, verify, resume, or explicitly repair all material files from one Topic Actor or Agent operation set. | `isomer-research-operation-set-recording` | Exhaustive staging reconciliation and receipt workflow; durable record and Research Idea semantics remain owned by existing canonical services. |
+| Create or change canonical Research Ideas, facets, exact realizations, generations, decisions, transitions, or Idea Lineage. | `isomer-research-idea-recording` | Canonical concept-state owner; does not make worker staging durable by itself. |
+
 Topic Team Specialization requires an explicit skill or specialization-route invocation, or a formal Agent Team target established by the prompt or authoritative Project context. A Research Topic, Topic Workspace, readiness gap, missing summary, missing Agent Workspace, or generic launch-facing request alone does not satisfy this route.
 
 ## Service Skills

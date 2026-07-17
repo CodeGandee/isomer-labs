@@ -9,6 +9,7 @@ Installed Isomer packages load official non-development skills from `isomer_labs
 | Subtree | Naming | Installation target |
 | --- | --- | --- |
 | `skillset/operator/` | `isomer-op-<purpose>` | Project Operator Sessions and Operator Agents that operate project control surfaces. |
+| `skillset/research/` | `isomer-research-<purpose>` | Producer-neutral research recording skills shared by all paradigms. |
 | `skillset/research-paradigm/` | `isomer-deepsci-<purpose>` and `isomer-kaoju-<purpose>` production research skills | Research-stage workers that perform reusable hypothesis-driven or evidence-led research procedures. |
 | `skillset/service/` | `isomer-srv-<purpose>` | Service Team actors that perform bounded operational support. |
 

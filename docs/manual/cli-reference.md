@@ -108,6 +108,9 @@ The top-level `ext` namespace contains native runtime and compatibility commands
 - `ext research ideas repair`
 - `ext research ideas upsert`
 - `ext research ideas validate`
+- `ext research operation-sets inspect`
+- `ext research operation-sets accept`
+- `ext research operation-sets verify`
 - `ext research records index cleanup`
 - `ext research records index rebuild`
 - `ext research records index validate`
@@ -1051,6 +1054,28 @@ isomer-cli --print-json ext research records query list \
 
 `--latest-only` follows explicit revision and supersession links and reports competing current candidates. `show --include-payload` reads canonical JSON, `render` produces an on-demand readable view, and `render --output-file` creates an explicit export without changing latest state.
 
+### `ext research operation-sets inspect/accept/verify`
+
+Inventory one Topic Actor or Agent operation set, preview and apply an exhaustive durable-record plan, and verify its receipt. See [Operation Set Acceptance](operation-set-acceptance.md) for the manifest and recovery contract.
+
+**Side effects:** `inspect` is read-only unless `--write-scaffold` is present. `accept` is read-only by default; `accept --apply` creates or revises records through the existing record service, copies managed attachments, applies authored Research Idea effects atomically with their record, and writes acceptance receipt progress. `verify` is read-only and never repairs state.
+
+```bash
+isomer-cli --print-json ext research operation-sets inspect <operation-set-path> \
+  --topic my-topic --topic-actor researcher
+
+isomer-cli --print-json ext research operation-sets accept <manifest-path> \
+  --topic my-topic --topic-actor researcher
+
+isomer-cli --print-json ext research operation-sets accept <manifest-path> \
+  --topic my-topic --topic-actor researcher --apply
+
+isomer-cli --print-json ext research operation-sets verify <receipt-or-operation-set-id> \
+  --topic my-topic
+```
+
+Use exactly one of `--topic-actor` and `--agent` when inference is ambiguous. `inspect --write-scaffold` never overwrites an existing manifest. A successful preview is not completion; require apply to return a complete receipt and verify to succeed.
+
 ### `ext research templates create/list/show/refresh/compile/remove`
 
 Inspect legacy non-canonical LaTeX writing-template records that predate mutable named MyST trees. `list` and `show` remain read-only. `create`, `refresh`, `compile`, and `remove` return `legacy_template_mutation_disabled` plus named Kaoju CRUD, migration, or agentic reconciliation guidance and do not write `intent/derived/writing-template`.
@@ -1228,6 +1253,10 @@ isomer-cli project --root /path/to/project team-profiles validate topic-workspac
 | `ext research records list` | no | no | no | no |
 | `ext research records update` | yes with body files | yes | no | no |
 | `ext research records delete` | no | yes (archives record) | no | no |
+| `ext research operation-sets inspect` | only with `--write-scaffold` | no | no | no |
+| `ext research operation-sets accept` | no | no | no | no |
+| `ext research operation-sets accept --apply` | yes (managed record files) | yes | no | no |
+| `ext research operation-sets verify` | no | no | no | no |
 | `ext research ideas query/graph/decision-context/traverse/validate` | no | no | no | no |
 | `ext research ideas upsert/realize/generation/lineage/transition/decision-options` | no | yes | no | no |
 | `ext research ideas migrate-status/migrate-kaoju-direction-set` | no in preview; no Project files on apply | only with `--apply` | no | no |

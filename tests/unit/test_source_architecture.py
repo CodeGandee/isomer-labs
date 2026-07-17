@@ -247,7 +247,7 @@ class SourceArchitectureTests(unittest.TestCase):
         skillset_root = REPO_ROOT / "skillset"
         self.assertTrue((skillset_root / "dev").is_dir())
         self.assertFalse((skillset_root / "dev").is_symlink())
-        for name in ("README.md", "manifest.toml", "misc", "operator", "research-paradigm", "service"):
+        for name in ("README.md", "manifest.toml", "misc", "operator", "research", "research-paradigm", "service"):
             path = skillset_root / name
             self.assertTrue(path.is_symlink(), name)
             self.assertTrue(path.resolve(strict=True).is_relative_to((SRC_ROOT / "assets" / "system_skills").resolve()))

@@ -11,6 +11,7 @@ skills = [
   "misc/isomer-misc-pkg-specifics",
   "misc/isomer-misc-tool-packs",
   "research/isomer-research-idea-recording",
+  "research/isomer-research-operation-set-recording",
   "operator/isomer-op-entrypoint",
   "operator/isomer-op-gui-mgr",
   "operator/isomer-op-project-mgr",

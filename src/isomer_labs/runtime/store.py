@@ -33,6 +33,8 @@ from isomer_labs.runtime.records import (
     ARTIFACT_FORMAT_REGISTRATION_SOURCE_KINDS,
     HANDOFF_NORMALIZATION_STATUSES,
     HANDOFF_STATUSES,
+    OPERATION_SET_ACCEPTANCE_ITEM_STATUSES,
+    OPERATION_SET_ACCEPTANCE_STATUSES,
     READINESS_STATUSES,
     RESEARCH_IDEA_ARCHIVE_STATES,
     RESEARCH_IDEA_CLOSURE_REASONS,
@@ -74,6 +76,8 @@ from isomer_labs.runtime.records import (
     AdapterStopOutcomeRecord,
     HandoffNormalizationRecord,
     HandoffRecord,
+    OperationSetAcceptanceItemRecord,
+    OperationSetAcceptanceRecord,
     PathPlanRecord,
     ResearchIdea,
     ResearchIdeaArchiveState,
@@ -126,6 +130,8 @@ from isomer_labs.runtime.sqlite import (
     _row_to_handoff,
     _row_to_handoff_normalization,
     _row_to_lifecycle_record,
+    _row_to_operation_set_acceptance,
+    _row_to_operation_set_acceptance_item,
     _row_to_path_plan,
     _row_to_readiness,
     _row_to_research_idea,
@@ -645,6 +651,150 @@ class WorkspaceRuntimeStore:
             (record_id,),
         ).fetchone()
         return _row_to_lifecycle_record(row) if row is not None else None
+
+    def upsert_operation_set_acceptance(self, record: OperationSetAcceptanceRecord) -> None:
+        if record.status not in OPERATION_SET_ACCEPTANCE_STATUSES:
+            raise ValueError(f"Unsupported operation-set acceptance status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT INTO operation_set_acceptances
+                (
+                    id, research_topic_id, topic_workspace_id, operation_set_id, revision,
+                    supersedes_receipt_id, worker_kind, worker_name, canonical_root,
+                    manifest_path, manifest_digest, manifest_json, status,
+                    output_summary_json, diagnostics_json, created_at, updated_at,
+                    provenance_refs_json
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                supersedes_receipt_id = excluded.supersedes_receipt_id,
+                status = excluded.status,
+                output_summary_json = excluded.output_summary_json,
+                diagnostics_json = excluded.diagnostics_json,
+                updated_at = excluded.updated_at,
+                provenance_refs_json = excluded.provenance_refs_json
+            """,
+            (
+                record.id,
+                record.research_topic_id,
+                record.topic_workspace_id,
+                record.operation_set_id,
+                record.revision,
+                record.supersedes_receipt_id,
+                record.worker_kind,
+                record.worker_name,
+                record.canonical_root,
+                record.manifest_path,
+                record.manifest_digest,
+                _dumps(record.manifest),
+                record.status,
+                _dumps(record.output_summary),
+                _dumps(record.diagnostics),
+                record.created_at,
+                record.updated_at,
+                _dumps(record.provenance_refs),
+            ),
+        )
+
+    def get_operation_set_acceptance(self, acceptance_id: str) -> OperationSetAcceptanceRecord | None:
+        if not _table_exists(self.connection, "operation_set_acceptances"):
+            return None
+        row = self.connection.execute(
+            "SELECT * FROM operation_set_acceptances WHERE id = ?",
+            (acceptance_id,),
+        ).fetchone()
+        return _row_to_operation_set_acceptance(row) if row is not None else None
+
+    def get_operation_set_acceptance_revision(
+        self,
+        *,
+        topic_workspace_id: str,
+        operation_set_id: str,
+        revision: int,
+    ) -> OperationSetAcceptanceRecord | None:
+        if not _table_exists(self.connection, "operation_set_acceptances"):
+            return None
+        row = self.connection.execute(
+            """
+            SELECT * FROM operation_set_acceptances
+            WHERE topic_workspace_id = ? AND operation_set_id = ? AND revision = ?
+            """,
+            (topic_workspace_id, operation_set_id, revision),
+        ).fetchone()
+        return _row_to_operation_set_acceptance(row) if row is not None else None
+
+    def list_operation_set_acceptances(
+        self,
+        *,
+        topic_workspace_id: str | None = None,
+        operation_set_id: str | None = None,
+    ) -> list[OperationSetAcceptanceRecord]:
+        if not _table_exists(self.connection, "operation_set_acceptances"):
+            return []
+        clauses: list[str] = []
+        values: list[object] = []
+        if topic_workspace_id is not None:
+            clauses.append("topic_workspace_id = ?")
+            values.append(topic_workspace_id)
+        if operation_set_id is not None:
+            clauses.append("operation_set_id = ?")
+            values.append(operation_set_id)
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        rows = self.connection.execute(
+            f"SELECT * FROM operation_set_acceptances{where} ORDER BY operation_set_id, revision DESC, id",
+            tuple(values),
+        )
+        return [_row_to_operation_set_acceptance(row) for row in rows]
+
+    def upsert_operation_set_acceptance_item(self, record: OperationSetAcceptanceItemRecord) -> None:
+        if record.status not in OPERATION_SET_ACCEPTANCE_ITEM_STATUSES:
+            raise ValueError(f"Unsupported operation-set acceptance item status: {record.status}")
+        self.connection.execute(
+            """
+            INSERT INTO operation_set_acceptance_items
+                (
+                    id, acceptance_id, intent_key, intent_digest, action, status,
+                    record_id, managed_files_json, lineage_refs_json,
+                    idea_effect_refs_json, diagnostics_json,
+                    created_at, updated_at
+                )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                intent_digest = excluded.intent_digest,
+                action = excluded.action,
+                status = excluded.status,
+                record_id = excluded.record_id,
+                managed_files_json = excluded.managed_files_json,
+                lineage_refs_json = excluded.lineage_refs_json,
+                idea_effect_refs_json = excluded.idea_effect_refs_json,
+                diagnostics_json = excluded.diagnostics_json,
+                updated_at = excluded.updated_at
+            """,
+            (
+                record.id,
+                record.acceptance_id,
+                record.intent_key,
+                record.intent_digest,
+                record.action,
+                record.status,
+                record.record_id,
+                _dumps(record.managed_files),
+                _dumps(record.lineage_refs),
+                _dumps(record.idea_effect_refs),
+                _dumps(record.diagnostics),
+                record.created_at,
+                record.updated_at,
+            ),
+        )
+
+    def list_operation_set_acceptance_items(self, acceptance_id: str) -> list[OperationSetAcceptanceItemRecord]:
+        if not _table_exists(self.connection, "operation_set_acceptance_items"):
+            return []
+        rows = self.connection.execute(
+            "SELECT * FROM operation_set_acceptance_items WHERE acceptance_id = ? ORDER BY intent_key",
+            (acceptance_id,),
+        )
+        return [_row_to_operation_set_acceptance_item(row) for row in rows]
 
     def upsert_research_record_generation_group(self, record: ResearchRecordGenerationGroup) -> None:
         self.connection.execute(

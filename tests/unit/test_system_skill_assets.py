@@ -45,6 +45,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertNotIn("operator/isomer-op-toolbox-creator", paths)
         self.assertIn("service/isomer-srv-houmao-interop", paths)
         self.assertIn("research/isomer-research-idea-recording", paths)
+        self.assertIn("research/isomer-research-operation-set-recording", paths)
         self.assertNotIn(old_houmao_interop_path, paths)
         self.assertIn("research-paradigm/deepsci/isomer-deepsci-write", paths)
         self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", paths)
@@ -197,6 +198,8 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertTrue((target / "service" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
             self.assertTrue((target / "research" / "isomer-research-idea-recording" / "SKILL.md").is_file())
             self.assertTrue((target / "research" / "isomer-research-idea-recording" / "references" / "recording-contract.md").is_file())
+            self.assertTrue((target / "research" / "isomer-research-operation-set-recording" / "SKILL.md").is_file())
+            self.assertTrue((target / "research" / "isomer-research-operation-set-recording" / "references" / "manifest-contract.md").is_file())
             self.assertFalse((target / "research-paradigm").exists())
             self.assertFalse((target / "dev").exists())
 

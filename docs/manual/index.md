@@ -9,6 +9,7 @@ The manual is the operator reference for Isomer Labs. It defines the domain lang
 - [Topic Workspaces](topic-workspaces.md)
 - [Workspace Runtime](workspace-runtime.md)
 - [Research Records](research-records.md)
+- [Operation Set Acceptance](operation-set-acceptance.md)
 - [Research Idea Portfolio](research-idea-portfolio.md)
 - [Project Web GUI](project-web.md)
 - [Houmao Adapter](houmao-adapter.md)
