@@ -104,9 +104,9 @@
     {
       "semantic_id": "KAOJU:READING-LIST",
       "category": "Discovery and Acquisition",
-      "meaning": "one direction-scoped priority and secondary target set with coverage and shortage notes.",
+      "meaning": "one direction-scoped priority and secondary target set with target derivation, achieved counts, coverage, and shortage notes.",
       "minimum_content": [
-        "one direction-scoped priority and secondary target set with coverage and shortage notes."
+        "one direction-scoped priority and secondary target set with target derivation, achieved counts, coverage, and shortage notes."
       ],
       "producer": "isomer-kaoju-discover",
       "consumers": [

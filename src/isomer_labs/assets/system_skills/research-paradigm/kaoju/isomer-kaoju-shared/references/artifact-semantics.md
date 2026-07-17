@@ -15,7 +15,7 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 ## Discovery and Acquisition
 
 - `KAOJU:DISCOVERY-LEDGER`: bounded searches, routes, dates, identities, version families, dispositions, gaps, and frontier.
-- `KAOJU:READING-LIST`: one direction-scoped priority and secondary target set with coverage and shortage notes.
+- `KAOJU:READING-LIST`: one direction-scoped priority and secondary target set with target derivation, achieved counts, coverage, and shortage notes; absent target metadata retains the legacy three-plus-three default.
 - `KAOJU:RELATED-WORK-CATALOG`: current identity-resolved catalog of relevant primary works and supporting materials.
 - `KAOJU:RELATED-WORK-DELTA`: auditable additions, changes, exclusions, and evidence against a catalog revision.
 - `KAOJU:CURATED-INTAKE-DELTA`: dispositions and survey effects of actor-nominated materials.
