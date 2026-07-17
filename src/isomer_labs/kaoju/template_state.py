@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import builtins
 from contextlib import contextmanager
-import json
 from pathlib import Path
 import shutil
 import tempfile
@@ -20,6 +19,7 @@ from isomer_labs.kaoju.content import (
     validate_directory_manifest,
 )
 from isomer_labs.kaoju.contracts import KaojuBinding, load_binding_registry
+from isomer_labs.kaoju.template_payloads import mutation_payload, mutation_summary, no_change_payload
 from isomer_labs.kaoju.template_support import (
     AUDIT_VERSION,
     EXPORT_METADATA_NAME,
@@ -27,17 +27,18 @@ from isomer_labs.kaoju.template_support import (
     TEMPLATE_EXCHANGE_LABEL,
     TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID,
     TEMPLATE_EXPORT_SEMANTIC_ID,
-    TEMPLATE_SEMANTIC_ID,
+    TEMPLATE_KINDS,
+    TemplateKindSpec,
     TemplateState,
-    _AUTHORED_METADATA_KEYS,
     _atomic_write_json,
     _contains_exact,
     _new_state_token,
     _required_actor,
+    resolve_template_kind,
     template_tree_digest,
     validate_template_name,
-    validate_template_relative_path,
 )
+from isomer_labs.kaoju.template_validation import validate_authored_metadata
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.records.index import refresh_query_index_for_record
 from isomer_labs.runtime.records import RuntimeLifecycleRecord, _provenance_ref, utc_timestamp
@@ -48,10 +49,18 @@ from isomer_labs.workspace.path_resolution import materialize_semantic_path, res
 class KaojuTemplateStateService:
     """Own stable records, managed trees, audits, and optimistic concurrency."""
 
-    def __init__(self, context: EffectiveTopicContext, *, env: Mapping[str, str], cwd: Path) -> None:
+    def __init__(
+        self,
+        context: EffectiveTopicContext,
+        *,
+        env: Mapping[str, str],
+        cwd: Path,
+        kind: str | TemplateKindSpec = "content",
+    ) -> None:
         self.context = context
         self.env = env
         self.cwd = cwd
+        self.template_kind = resolve_template_kind(kind)
         self.artifacts = KaojuArtifactService(context, env=env, cwd=cwd)
 
     def _create_from_directory(
@@ -66,7 +75,7 @@ class KaojuTemplateStateService:
         change_summary: str | None,
     ) -> dict[str, object]:
         tree_digest = template_tree_digest(source)
-        stable_ref = f"artifact-paper-template-myst-{name}"
+        stable_ref = f"{self.template_kind.stable_ref_prefix}-{name}"
         state_token = _new_state_token()
         now = utc_timestamp()
         audit_id = self._audit_id(name)
@@ -88,6 +97,7 @@ class KaojuTemplateStateService:
             audit_ref=audit_id,
             actor=actor,
             operation=operation,
+            source_refs=source_refs,
             change_summary=change_summary,
         )
         record = RuntimeLifecycleRecord(
@@ -142,7 +152,8 @@ class KaojuTemplateStateService:
             raise
         finally:
             store.close()
-        return self._mutation_payload(
+        return mutation_payload(
+            self.template_kind,
             operation=operation,
             name=name,
             stable_ref=stable_ref,
@@ -153,6 +164,8 @@ class KaojuTemplateStateService:
             audit_ref=audit_id,
             authored_metadata=authored_metadata,
             status="ready",
+            default_working_path=str(self._default_working_path(name, materialize=False)),
+            source_refs=source_refs,
             diagnostics=index_diagnostics,
         )
 
@@ -172,7 +185,13 @@ class KaojuTemplateStateService:
         validated_metadata = self._validated_authored_metadata(authored_metadata, root=source)
         if tree_digest == state.tree_digest and validated_metadata == state.authored_metadata:
             self._require_expected_state(self._read_state(state.name), expected_state)
-            return self._no_change_payload(state, operation=operation)
+            return no_change_payload(
+                self.template_kind,
+                state,
+                operation=operation,
+                default_working_path=str(self._default_working_path(state.name, materialize=False)),
+                source_refs=source_refs,
+            )
         next_token = _new_state_token()
         now = utc_timestamp()
         audit_id = self._audit_id(state.name)
@@ -221,7 +240,7 @@ class KaojuTemplateStateService:
                     "state_token": next_token,
                     "authored_metadata": dict(validated_metadata),
                     "last_audit_ref": audit_id,
-                    "last_mutation": self._mutation_summary(operation, actor, now, source_refs, change_summary),
+                    "last_mutation": mutation_summary(operation, actor, now, source_refs, change_summary),
                 }
             )
             updated = RuntimeLifecycleRecord(
@@ -245,7 +264,8 @@ class KaojuTemplateStateService:
         finally:
             store.close()
         self._discard_managed_tree(state.record.content_path)
-        return self._mutation_payload(
+        return mutation_payload(
+            self.template_kind,
             operation=operation,
             name=state.name,
             stable_ref=state.record.id,
@@ -256,6 +276,8 @@ class KaojuTemplateStateService:
             audit_ref=audit_id,
             authored_metadata=validated_metadata,
             status="ready",
+            default_working_path=str(self._default_working_path(state.name, materialize=False)),
+            source_refs=source_refs,
             diagnostics=index_diagnostics,
         )
 
@@ -274,7 +296,13 @@ class KaojuTemplateStateService:
         next_status = status or state.record.status
         if dict(authored_metadata) == state.authored_metadata and next_status == state.record.status:
             self._require_expected_state(self._read_state(state.name), expected_state)
-            return self._no_change_payload(state, operation=operation)
+            return no_change_payload(
+                self.template_kind,
+                state,
+                operation=operation,
+                default_working_path=str(self._default_working_path(state.name, materialize=False)),
+                source_refs=source_refs,
+            )
         next_token = _new_state_token()
         now = utc_timestamp()
         audit_id = self._audit_id(state.name)
@@ -309,7 +337,7 @@ class KaojuTemplateStateService:
                     "state_token": next_token,
                     "authored_metadata": dict(authored_metadata),
                     "last_audit_ref": audit_id,
-                    "last_mutation": self._mutation_summary(operation, actor, now, source_refs, change_summary),
+                    "last_mutation": mutation_summary(operation, actor, now, source_refs, change_summary),
                 }
             )
             updated = RuntimeLifecycleRecord(
@@ -331,7 +359,8 @@ class KaojuTemplateStateService:
             raise
         finally:
             store.close()
-        return self._mutation_payload(
+        return mutation_payload(
+            self.template_kind,
             operation=operation,
             name=state.name,
             stable_ref=state.record.id,
@@ -342,6 +371,8 @@ class KaojuTemplateStateService:
             audit_ref=audit_id,
             authored_metadata=authored_metadata,
             status=next_status,
+            default_working_path=str(self._default_working_path(state.name, materialize=False)),
+            source_refs=source_refs,
             diagnostics=index_diagnostics,
         )
 
@@ -352,8 +383,36 @@ class KaojuTemplateStateService:
         finally:
             store.close()
         if record is None:
-            raise KaojuServiceError("template_not_found", f"Named template not found: {name}")
+            raise KaojuServiceError(
+                "template_not_found",
+                f"Named {self.template_kind.label} not found: {name}",
+            )
         return self._state_from_record(record)
+
+    def resolve_state(
+        self,
+        *,
+        name: str | None = None,
+        stable_ref: str | None = None,
+    ) -> TemplateState:
+        """Resolve one exact named state by role-local name or stable ref."""
+
+        selected_name = validate_template_name(name or "main")
+        if stable_ref is None:
+            return self._read_state(selected_name)
+        record = self._read_record(stable_ref)
+        if not self._is_named_template_record(record):
+            raise KaojuServiceError(
+                "template_ref_kind_invalid",
+                f"Template ref {stable_ref} is not a named {self.template_kind.label}.",
+            )
+        state = self._state_from_record(record)
+        if name is not None and state.name != selected_name:
+            raise KaojuServiceError(
+                "template_selector_mismatch",
+                f"Template ref {stable_ref} names {state.name!r}, not {selected_name!r}.",
+            )
+        return state
 
     def _read_record(self, record_id: str) -> RuntimeLifecycleRecord:
         store = self._store(read_only=True)
@@ -401,7 +460,8 @@ class KaojuTemplateStateService:
         metadata = record.transition_metadata
         return (
             record.topic_workspace_id == self.context.topic_workspace_id
-            and metadata.get("semantic_id") == TEMPLATE_SEMANTIC_ID
+            and metadata.get("semantic_id") == self.template_kind.semantic_id
+            and metadata.get("template_kind", "content") == self.template_kind.kind
             and isinstance(metadata.get("template_name"), str)
             and isinstance(metadata.get("state_token"), str)
         )
@@ -410,9 +470,11 @@ class KaojuTemplateStateService:
         root = exchange_root or self._exchange_root(materialize=False)
         working_path = self._safe_named_child(root, state.name)
         return {
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
             "name": state.name,
             "stable_ref": state.record.id,
-            "semantic_id": TEMPLATE_SEMANTIC_ID,
+            "semantic_id": self.template_kind.semantic_id,
             "status": state.record.status,
             "state_token": state.state_token,
             "tree_digest": state.tree_digest,
@@ -462,18 +524,20 @@ class KaojuTemplateStateService:
         audit_ref: str,
         actor: str,
         operation: str,
+        source_refs: Sequence[str],
         change_summary: str | None,
     ) -> dict[str, object]:
-        binding = load_binding_registry()[TEMPLATE_SEMANTIC_ID]
+        binding = load_binding_registry()[self.template_kind.semantic_id]
         now = utc_timestamp()
         return {
             **self._binding_metadata(binding, content, scope_key=name, relationships=[]),
+            "template_kind": self.template_kind.kind,
             "template_name": name,
             "state_token": state_token,
             "tree_digest": tree_digest,
             "authored_metadata": dict(authored_metadata),
             "last_audit_ref": audit_ref,
-            "last_mutation": self._mutation_summary(operation, actor, now, (), change_summary),
+            "last_mutation": mutation_summary(operation, actor, now, source_refs, change_summary),
         }
 
     def _binding_metadata(
@@ -508,35 +572,12 @@ class KaojuTemplateStateService:
         root: Path,
         allow_internal_manifest: bool = False,
     ) -> dict[str, object]:
-        unknown = sorted(set(value) - _AUTHORED_METADATA_KEYS)
-        if unknown:
-            raise KaojuServiceError("template_metadata_unknown", f"Template authored metadata contains unsupported fields: {', '.join(unknown)}")
-        result: dict[str, object] = {}
-        entrypoint = value.get("entrypoint")
-        if entrypoint is not None:
-            if not isinstance(entrypoint, str):
-                raise KaojuServiceError("template_entrypoint_invalid", "Template entrypoint metadata must be a safe relative file path.")
-            relative = validate_template_relative_path(entrypoint)
-            candidate = root.joinpath(*relative.parts)
-            if not candidate.is_file() or candidate.is_symlink():
-                raise KaojuServiceError("template_entrypoint_missing", f"Template entrypoint does not exist in the prepared tree: {entrypoint}")
-            result["entrypoint"] = relative.as_posix()
-        guidance = value.get("use_guidance")
-        if guidance is not None:
-            if not isinstance(guidance, str) or not guidance.strip() or len(guidance) > 20_000:
-                raise KaojuServiceError("template_use_guidance_invalid", "Template use guidance must be a non-empty string of at most 20,000 characters.")
-            result["use_guidance"] = guidance
-        extensions = value.get("extensions")
-        if extensions is not None:
-            if not isinstance(extensions, dict):
-                raise KaojuServiceError("template_extensions_invalid", "Template extension metadata must be a JSON object.")
-            encoded = json.dumps(extensions, sort_keys=True, ensure_ascii=False)
-            if len(encoded.encode("utf-8")) > 64 * 1024:
-                raise KaojuServiceError("template_extensions_too_large", "Template extension metadata exceeds 64 KiB.")
-            result["extensions"] = dict(extensions)
-        if allow_internal_manifest:
-            template_tree_digest(root, allow_internal_manifest=True)
-        return result
+        return validate_authored_metadata(
+            value,
+            root=root,
+            template_kind=self.template_kind,
+            allow_internal_manifest=allow_internal_manifest,
+        )
 
     def _audit_event(
         self,
@@ -557,6 +598,7 @@ class KaojuTemplateStateService:
             "schema_version": AUDIT_VERSION,
             "audit_ref": audit_id,
             "template_ref": state.record.id,
+            "template_kind": self.template_kind.kind,
             "template_name": state.name,
             "actor": _required_actor(actor),
             "operation": operation,
@@ -590,7 +632,7 @@ class KaojuTemplateStateService:
             binding = load_binding_registry()[TEMPLATE_AUDIT_SEMANTIC_ID]
             relationships: Sequence[dict[str, object]] = [{"role": "paper_template", "target_ref": template_ref}]
             metadata = self._binding_metadata(binding, content, scope_key=name, relationships=relationships)
-            metadata.update({"template_name": name, "mutation": dict(event)})
+            metadata.update({"template_kind": self.template_kind.kind, "template_name": name, "mutation": dict(event)})
         except Exception:
             shutil.rmtree(owner, ignore_errors=True)
             raise
@@ -617,7 +659,12 @@ class KaojuTemplateStateService:
             records = store.list_lifecycle_records()
         finally:
             store.close()
-        ignored = {TEMPLATE_SEMANTIC_ID, TEMPLATE_AUDIT_SEMANTIC_ID, TEMPLATE_EXPORT_SEMANTIC_ID, TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID}
+        ignored = {
+            *(spec.semantic_id for spec in TEMPLATE_KINDS.values()),
+            TEMPLATE_AUDIT_SEMANTIC_ID,
+            TEMPLATE_EXPORT_SEMANTIC_ID,
+            TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID,
+        }
         dependents: list[str] = []
         for record in records:
             semantic_id = record.transition_metadata.get("semantic_id")
@@ -628,6 +675,9 @@ class KaojuTemplateStateService:
         return sorted(dependents)
 
     def _exchange_root(self, *, materialize: bool) -> Path:
+        return (self._exchange_base_root(materialize=materialize) / self.template_kind.exchange_subdirectory).resolve(strict=False)
+
+    def _exchange_base_root(self, *, materialize: bool) -> Path:
         if materialize:
             payload, diagnostics = materialize_semantic_path(self.context, TEMPLATE_EXCHANGE_LABEL, env=self.env, cwd=self.cwd)
             if payload is None:
@@ -648,8 +698,12 @@ class KaojuTemplateStateService:
             raise KaojuServiceError("template_path_escape", f"Template working path escapes the exchange root: {child}") from exc
         return child
 
-    def _copy_canonical_tree(self, source: Path, target: Path) -> None:
-        template_tree_digest(source, allow_internal_manifest=True)
+    def _copy_canonical_tree(self, source: Path, target: Path, *, allow_exchange_metadata: bool = False) -> None:
+        template_tree_digest(
+            source,
+            allow_internal_manifest=True,
+            exclude_exchange_metadata=allow_exchange_metadata,
+        )
         target.mkdir(parents=True, exist_ok=True)
         for path in sorted(source.rglob("*"), key=lambda item: item.relative_to(source).as_posix()):
             relative = path.relative_to(source)
@@ -712,77 +766,8 @@ class KaojuTemplateStateService:
         owner = path.parent.parent
         shutil.rmtree(owner, ignore_errors=True)
 
-    def _mutation_payload(
-        self,
-        *,
-        operation: str,
-        name: str,
-        stable_ref: str,
-        prior_state_token: str | None,
-        state_token: str | None,
-        prior_tree_digest: str | None,
-        tree_digest: str | None,
-        audit_ref: str,
-        authored_metadata: Mapping[str, object],
-        status: str,
-        diagnostics: Sequence[Mapping[str, object]] = (),
-    ) -> dict[str, object]:
-        next_actions = ["Run 'isomer-cli ext research records index rebuild' to repair query-index state."] if diagnostics else []
-        return {
-            "ok": True,
-            "mutated": True,
-            "operation": f"paper.template.{operation}",
-            "name": name,
-            "stable_ref": stable_ref,
-            "status": status,
-            "prior_state_token": prior_state_token,
-            "state_token": state_token,
-            "prior_tree_digest": prior_tree_digest,
-            "tree_digest": tree_digest,
-            "authored_metadata": dict(authored_metadata),
-            "audit_ref": audit_ref,
-            "affected_refs": [stable_ref, audit_ref],
-            "diagnostics": [dict(item) for item in diagnostics],
-            "next_actions": next_actions,
-        }
-
-    def _no_change_payload(self, state: TemplateState, *, operation: str) -> dict[str, object]:
-        return {
-            "ok": True,
-            "mutated": False,
-            "operation": f"paper.template.{operation}",
-            "name": state.name,
-            "stable_ref": state.record.id,
-            "status": state.record.status,
-            "prior_state_token": state.state_token,
-            "state_token": state.state_token,
-            "prior_tree_digest": state.tree_digest,
-            "tree_digest": state.tree_digest,
-            "authored_metadata": state.authored_metadata,
-            "audit_ref": None,
-            "affected_refs": [],
-            "diagnostics": [],
-            "next_actions": [],
-        }
-
-    def _mutation_summary(
-        self,
-        operation: str,
-        actor: str,
-        occurred_at: str,
-        source_refs: Sequence[str],
-        change_summary: str | None,
-    ) -> dict[str, object]:
-        return {
-            "operation": operation,
-            "actor": _required_actor(actor),
-            "occurred_at": occurred_at,
-            "source_refs": list(source_refs),
-            "change_summary": change_summary,
-        }
-
     def _audit_id(self, name: str) -> str:
-        return f"artifact-paper-template-mutation-audit-{name}-{uuid.uuid4().hex[:12]}"
+        return f"artifact-paper-template-mutation-audit-{self.template_kind.kind}-{name}-{uuid.uuid4().hex[:12]}"
 
     @contextmanager
     def _temporary_directory(self, prefix: str) -> Iterator[Path]:

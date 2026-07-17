@@ -19,7 +19,10 @@ from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
 from isomer_labs.runtime.records import RuntimeLifecycleRecord
 
 
-TEMPLATE_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-MYST"
+CONTENT_TEMPLATE_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-MYST"
+LATEX_TEMPLATE_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-LATEX"
+# Compatibility alias for callers that predate explicit template kinds.
+TEMPLATE_SEMANTIC_ID = CONTENT_TEMPLATE_SEMANTIC_ID
 TEMPLATE_AUDIT_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT"
 TEMPLATE_EXPORT_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-EXPORT"
 TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID = "KAOJU:PAPER-TEMPLATE-MANIFEST"
@@ -27,7 +30,10 @@ TEMPLATE_PRODUCER = "isomer-kaoju-write"
 TEMPLATE_EXCHANGE_LABEL = "topic.paper.template_exchange_root"
 DEFAULT_TEMPLATE_NAME = "main"
 EXPORT_METADATA_NAME = ".isomer-template-export.json"
-EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v1"
+TEX_SNAPSHOT_MANIFEST_NAME = ".isomer-kaoju-tex-snapshot.json"
+TEX_DRAFT_MANIFEST_NAME = ".isomer-kaoju-tex-draft.json"
+EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v2"
+LEGACY_EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v1"
 AUDIT_VERSION = "isomer-kaoju-template-mutation-audit.v1"
 _TEMPLATE_NAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?$")
 _AUTHORED_METADATA_KEYS = frozenset(("entrypoint", "use_guidance", "extensions"))
@@ -40,6 +46,7 @@ _SERVICE_METADATA_KEYS = frozenset(
         "semantic_id",
         "semantic_label",
         "scope_key",
+        "template_kind",
         "template_name",
         "state_token",
         "tree_digest",
@@ -52,6 +59,57 @@ _SERVICE_METADATA_KEYS = frozenset(
         "query_index",
     )
 )
+
+
+@dataclass(frozen=True)
+class TemplateKindSpec:
+    """Checked identity and validation policy for one named-template role."""
+
+    kind: str
+    semantic_id: str
+    stable_ref_prefix: str
+    label: str
+    exchange_subdirectory: str
+    requires_latex_contract: bool
+
+
+CONTENT_TEMPLATE_KIND = TemplateKindSpec(
+    kind="content",
+    semantic_id=CONTENT_TEMPLATE_SEMANTIC_ID,
+    stable_ref_prefix="artifact-paper-template-myst",
+    label="content template",
+    exchange_subdirectory="content",
+    requires_latex_contract=False,
+)
+LATEX_TEMPLATE_KIND = TemplateKindSpec(
+    kind="latex",
+    semantic_id=LATEX_TEMPLATE_SEMANTIC_ID,
+    stable_ref_prefix="artifact-paper-template-latex",
+    label="LaTeX template",
+    exchange_subdirectory="latex",
+    requires_latex_contract=True,
+)
+TEMPLATE_KINDS: Mapping[str, TemplateKindSpec] = {
+    CONTENT_TEMPLATE_KIND.kind: CONTENT_TEMPLATE_KIND,
+    LATEX_TEMPLATE_KIND.kind: LATEX_TEMPLATE_KIND,
+}
+
+
+def resolve_template_kind(value: str | TemplateKindSpec) -> TemplateKindSpec:
+    """Return one checked template-kind descriptor."""
+
+    if isinstance(value, TemplateKindSpec):
+        registered = TEMPLATE_KINDS.get(value.kind)
+        if registered == value:
+            return value
+    elif isinstance(value, str):
+        registered = TEMPLATE_KINDS.get(value.strip().lower())
+        if registered is not None:
+            return registered
+    raise KaojuServiceError(
+        "template_kind_invalid",
+        "Template kind must be exactly 'content' or 'latex'.",
+    )
 
 
 @dataclass(frozen=True)
@@ -85,7 +143,7 @@ def validate_template_relative_path(value: str) -> PurePosixPath:
     path = PurePosixPath(value)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise KaojuServiceError("template_path_invalid", f"Template file path is not a safe relative path: {value!r}")
-    if any(part in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME} for part in path.parts):
+    if any(part in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME} for part in path.parts):
         raise KaojuServiceError("template_reserved_file", f"Template file path uses a service-reserved name: {value!r}")
     return path
 
@@ -113,7 +171,7 @@ def template_tree_digest(
             continue
         if relative == DIRECTORY_MANIFEST_NAME and allow_internal_manifest:
             continue
-        if path.name in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME}:
+        if path.name in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME}:
             raise KaojuServiceError("template_reserved_file", f"Template tree contains a service-reserved file: {relative}")
         encoded_path = relative.encode("utf-8")
         digest.update(len(encoded_path).to_bytes(8, "big"))
@@ -197,13 +255,23 @@ def _replace_directory(staged: Path, target: Path) -> None:
     shutil.rmtree(backup)
 
 
-def _load_export_metadata(path: Path) -> dict[str, object]:
+def _load_export_metadata(path: Path, *, expected_kind: str | None = None) -> dict[str, object]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise KaojuServiceError("template_export_metadata_invalid", f"Template export metadata is unreadable: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") != EXPORT_METADATA_VERSION:
+    if not isinstance(value, dict) or value.get("schema_version") not in {EXPORT_METADATA_VERSION, LEGACY_EXPORT_METADATA_VERSION}:
         raise KaojuServiceError("template_export_metadata_invalid", "Template export metadata has an unsupported shape or schema version.")
+    if value.get("schema_version") == LEGACY_EXPORT_METADATA_VERSION:
+        value = {**value, "template_kind": "content", "compatibility_source": "legacy-unqualified-content-export"}
+    template_kind = value.get("template_kind")
+    if template_kind not in TEMPLATE_KINDS:
+        raise KaojuServiceError("template_export_metadata_invalid", "Template export metadata has no checked template kind.")
+    if expected_kind is not None and template_kind != resolve_template_kind(expected_kind).kind:
+        raise KaojuServiceError(
+            "template_export_kind_mismatch",
+            f"Template export is for kind {template_kind!r}, not {expected_kind!r}.",
+        )
     required = ("template_name", "canonical_ref", "state_token", "canonical_tree_digest", "exported_tree_digest", "observed_path", "observed_at", "actor")
     missing = [field for field in required if not isinstance(value.get(field), str) or not value.get(field)]
     if missing:

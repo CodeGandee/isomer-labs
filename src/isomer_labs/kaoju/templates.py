@@ -12,6 +12,8 @@ from typing import Mapping, Sequence
 
 from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
+from isomer_labs.kaoju.template_migration import inspect_latex_migration, legacy_content_export_paths, migrate_template
+from isomer_labs.kaoju.template_payloads import mutation_payload
 from isomer_labs.kaoju.template_state import KaojuTemplateStateService
 from isomer_labs.kaoju.template_support import (
     DEFAULT_TEMPLATE_NAME,
@@ -20,8 +22,8 @@ from isomer_labs.kaoju.template_support import (
     TEMPLATE_EXCHANGE_LABEL,
     TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID,
     TEMPLATE_EXPORT_SEMANTIC_ID,
+    TEMPLATE_KINDS,
     TEMPLATE_PRODUCER,
-    TEMPLATE_SEMANTIC_ID,
     TemplateState,
     _AUTHORED_METADATA_KEYS,
     _SERVICE_METADATA_KEYS,
@@ -65,6 +67,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
             "ok": True,
             "mutated": False,
             "operation": "paper.template.list",
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
             "count": len(templates),
             "templates": templates,
             "diagnostics": [],
@@ -77,6 +81,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
             "ok": True,
             "mutated": False,
             "operation": "paper.template.show",
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
             "template": self._summary(state),
             "diagnostics": [],
             "next_actions": [],
@@ -157,6 +163,32 @@ class KaojuTemplateService(KaojuTemplateStateService):
                     change_summary=change_summary,
                 )
         assert source is not None
+        export_metadata = source / EXPORT_METADATA_NAME
+        if export_metadata.is_file():
+            metadata = _load_export_metadata(export_metadata, expected_kind=self.template_kind.kind)
+            if metadata.get("template_name") != target.name or metadata.get("canonical_ref") != target.record.id:
+                raise KaojuServiceError(
+                    "template_export_identity_invalid",
+                    f"Edited export does not target {self.template_kind.kind}/{target.name}.",
+                )
+            if metadata.get("state_token") != expected_state:
+                raise KaojuServiceError(
+                    "template_export_state_stale",
+                    "Edited export was produced from a different template state; reconcile it before updating stock.",
+                )
+            with self._temporary_directory("template-export-update-") as temporary:
+                candidate = temporary / "candidate"
+                self._copy_canonical_tree(source, candidate, allow_exchange_metadata=True)
+                return self._replace_tree(
+                    target,
+                    candidate,
+                    expected_state=expected_state,
+                    authored_metadata=target.authored_metadata,
+                    actor=actor,
+                    operation="update-from-export",
+                    source_refs=_unique_strings(source_refs),
+                    change_summary=change_summary,
+                )
         return self._replace_tree(
             target,
             source,
@@ -348,7 +380,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
         except Exception as exc:
             index_diagnostics.append(self._index_warning("query_index_cleanup_failed", exc))
         self._discard_managed_tree(state.record.content_path)
-        return self._mutation_payload(
+        return mutation_payload(
+            self.template_kind,
             operation="delete",
             name=state.name,
             stable_ref=state.record.id,
@@ -359,6 +392,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
             audit_ref=audit_id,
             authored_metadata=state.authored_metadata,
             status="deleted",
+            default_working_path=str(self._default_working_path(state.name, materialize=False)),
             diagnostics=index_diagnostics,
         )
 
@@ -371,6 +405,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
             metadata = record.get("transition_metadata")
             if not isinstance(metadata, dict) or not isinstance(metadata.get("observed_path"), str):
                 continue
+            if metadata.get("template_kind", "content") != self.template_kind.kind:
+                continue
             observed_path = str(metadata["observed_path"])
             previous = latest_by_path.get(observed_path)
             if previous is None or str(record.get("updated_at") or record.get("created_at") or "") > str(previous.get("updated_at") or previous.get("created_at") or ""):
@@ -381,6 +417,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
             "ok": True,
             "mutated": False,
             "operation": "paper.template.exports",
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
             "count": len(exports),
             "exports": exports,
             "diagnostics": [],
@@ -412,15 +450,21 @@ class KaojuTemplateService(KaojuTemplateStateService):
     def inspect_migration(self) -> dict[str, object]:
         store = self._store(read_only=True)
         try:
-            legacy = [
+            records = [
                 record
                 for record in store.list_lifecycle_records()
                 if record.topic_workspace_id == self.context.topic_workspace_id
-                and record.transition_metadata.get("semantic_id") == TEMPLATE_SEMANTIC_ID
+            ]
+            legacy = [
+                record
+                for record in records
+                if record.transition_metadata.get("semantic_id") == self.template_kind.semantic_id
                 and not self._is_named_template_record(record)
             ]
         finally:
             store.close()
+        if self.template_kind.kind == "latex":
+            return inspect_latex_migration(self, records)
         candidates: list[dict[str, object]] = []
         historical: list[str] = []
         for record in legacy:
@@ -440,10 +484,54 @@ class KaojuTemplateService(KaojuTemplateStateService):
                 candidates.append(item)
         old_export_root = self.context.topic_workspace_path / "exports" / "kaoju-paper"
         versioned_exports = sorted(str(path) for path in old_export_root.glob("**/v[0-9][0-9][0-9][0-9]") if path.is_dir()) if old_export_root.is_dir() else []
+        content_records = [
+            {
+                "record_id": record.id,
+                "template_name": record.transition_metadata.get("template_name"),
+                "stable_ref": record.id,
+                "state_token": record.transition_metadata.get("state_token"),
+                "tree_digest": record.transition_metadata.get("tree_digest"),
+                "contract_current": record.transition_metadata.get("template_kind") == "content",
+            }
+            for record in records
+            if self._is_named_template_record(record)
+        ]
+        legacy_export_paths = legacy_content_export_paths(self)
+        proposed_mutations = [
+            {
+                "operation": "annotate-content-template-kind",
+                "record_id": str(item["record_id"]),
+                "preserve_stable_ref": True,
+                "preserve_tree_bytes": True,
+            }
+            for item in content_records
+            if item["contract_current"] is False
+        ]
+        proposed_mutations.extend(
+            {
+                "operation": "adopt-legacy-content",
+                "source_ref": str(item["record_id"]),
+                "requires_explicit_name": len(candidates) > 1,
+            }
+            for item in candidates
+        )
         return {
             "ok": True,
             "mutated": False,
             "operation": "paper.template.migrate.inspect",
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
+            "content_records": content_records,
+            "legacy_export_paths": legacy_export_paths,
+            "legacy_export_compatibility": [
+                {
+                    "path": path,
+                    "template_kind": "content",
+                    "compatibility_source": "legacy-unqualified-content-export",
+                }
+                for path in legacy_export_paths
+            ],
+            "proposed_mutations": proposed_mutations,
             "active_candidates": candidates,
             "historical_record_ids": sorted(historical),
             "versioned_export_paths": versioned_exports,
@@ -458,51 +546,17 @@ class KaojuTemplateService(KaojuTemplateStateService):
         record_id: str | None = None,
         name: str | None = None,
         actor: str,
+        authored_metadata: Mapping[str, object] | None = None,
+        expected_state: str | None = None,
     ) -> dict[str, object]:
-        inspection = self.inspect_migration()
-        candidates = inspection["active_candidates"]
-        assert isinstance(candidates, list)
-        selected: dict[str, object] | None = None
-        if record_id is not None:
-            selected = next((item for item in candidates if isinstance(item, dict) and item.get("record_id") == record_id), None)
-            if selected is None:
-                raise KaojuServiceError("template_migration_candidate_missing", f"Legacy template migration candidate not found: {record_id}")
-        elif len(candidates) == 1:
-            item = candidates[0]
-            selected = item if isinstance(item, dict) else None
-        elif len(candidates) > 1:
-            raise KaojuServiceError("template_migration_ambiguous", "Several active legacy templates require explicit record ids and names.", tuple(str(item) for item in candidates))
-        if selected is None:
-            raise KaojuServiceError("template_migration_candidate_missing", "No active legacy paper template is available to migrate.")
-        selected_name = validate_template_name(name or (DEFAULT_TEMPLATE_NAME if len(candidates) == 1 else ""))
-        if selected.get("entrypoint_ambiguous") is True:
-            raise KaojuServiceError("template_migration_entrypoint_ambiguous", "Legacy template content has an ambiguous entrypoint; agent review and an explicit prepared tree are required.")
-        legacy_record = self._read_record(str(selected["record_id"]))
-        with self._temporary_directory("template-migration-") as temporary:
-            candidate = temporary / "candidate"
-            candidate.mkdir()
-            content_path = Path(str(legacy_record.content_path)) if legacy_record.content_path else None
-            if content_path is None or not content_path.exists():
-                raise KaojuServiceError("template_migration_content_missing", f"Legacy template content is missing for {legacy_record.id}.")
-            if content_path.name == DIRECTORY_MANIFEST_NAME:
-                self._copy_canonical_tree(content_path.parent, candidate)
-            elif content_path.is_file():
-                shutil.copyfile(content_path, candidate / content_path.name)
-            else:
-                raise KaojuServiceError("template_migration_content_invalid", f"Legacy template content is unsupported: {content_path}")
-            result = self.create(
-                selected_name,
-                source=candidate,
-                actor=actor,
-                source_refs=(legacy_record.id,),
-                change_summary="Wrap one unambiguous active legacy template in the mutable named-template tree without semantic rewriting.",
-            )
-        result["operation"] = "paper.template.migrate"
-        result["legacy_record_id"] = legacy_record.id
-        result["preserved_historical_record_ids"] = inspection["historical_record_ids"]
-        result["preserved_versioned_export_paths"] = inspection["versioned_export_paths"]
-        return result
-
+        return migrate_template(
+            self,
+            record_id=record_id,
+            name=name,
+            actor=actor,
+            authored_metadata=authored_metadata,
+            expected_state=expected_state,
+        )
 
     def _write_export(self, state: TemplateState, target: Path, *, actor: str) -> None:
         if target.exists() and not target.is_dir():
@@ -517,7 +571,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
                     ("Move or archive the existing directory outside Isomer, then export again.",),
                 )
             if metadata_path.is_file():
-                metadata = _load_export_metadata(metadata_path)
+                metadata = _load_export_metadata(metadata_path, expected_kind=self.template_kind.kind)
                 if metadata.get("template_name") != state.name or metadata.get("canonical_ref") != state.record.id:
                     raise KaojuServiceError("template_export_identity_invalid", f"Template export target claims a different canonical identity: {target}")
                 observed = template_tree_digest(target, exclude_exchange_metadata=True)
@@ -548,6 +602,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
     ) -> dict[str, object]:
         return {
             "schema_version": EXPORT_METADATA_VERSION,
+            "template_kind": self.template_kind.kind,
             "template_name": state.name,
             "canonical_ref": state.record.id,
             "state_token": state.state_token,
@@ -568,11 +623,12 @@ class KaojuTemplateService(KaojuTemplateStateService):
         actor: str,
         operation: str,
     ) -> dict[str, object]:
-        metadata = _load_export_metadata(target / EXPORT_METADATA_NAME)
+        metadata = _load_export_metadata(target / EXPORT_METADATA_NAME, expected_kind=self.template_kind.kind)
         idempotency = hashlib.sha256(
             json.dumps(
                 {
                     "operation": operation,
+                    "template_kind": self.template_kind.kind,
                     "path": str(target),
                     "state_token": state.state_token,
                     "exported_tree_digest": metadata.get("exported_tree_digest"),
@@ -586,7 +642,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
             producer=TEMPLATE_PRODUCER,
             scope_key=state.name,
             relationships=[{"role": "paper_template", "target_ref": state.record.id}],
-            idempotency_key=f"paper-template-export:{idempotency}",
+            idempotency_key=f"paper-template-export:{self.template_kind.kind}:{idempotency}",
             external=True,
             metadata={**metadata, "observation_operation": operation},
         )
@@ -594,14 +650,14 @@ class KaojuTemplateService(KaojuTemplateStateService):
         with self._temporary_directory("template-export-manifest-") as temporary:
             payload_path = temporary / "template-export-manifest.json"
             payload = {
-                "title": f"Template export {state.name}",
-                "summary": "Registered non-canonical named-template working-copy observation.",
+                "title": f"{self.template_kind.label.title()} export {state.name}",
+                "summary": f"Registered non-canonical named {self.template_kind.label} working-copy observation.",
                 "artifact_family": "kaoju",
                 "semantic_id": TEMPLATE_EXPORT_MANIFEST_SEMANTIC_ID,
                 "artifact_type": "paper-template-manifest",
                 "sections": {
                     "export": {"ref": export_ref, "operation": operation, "canonical": False},
-                    "source": {"template_name": state.name, "stable_ref": state.record.id, "state_token": state.state_token},
+                    "source": {"template_kind": self.template_kind.kind, "template_name": state.name, "stable_ref": state.record.id, "state_token": state.state_token},
                     "tree": {"canonical_digest": state.tree_digest, "exported_digest": metadata.get("exported_tree_digest")},
                     "actor": {"ref": actor, "observed_at": metadata.get("observed_at"), "path": str(target)},
                 },
@@ -616,7 +672,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
                     {"role": "template_export", "target_ref": export_ref},
                     {"role": "paper_template", "target_ref": state.record.id},
                 ],
-                idempotency_key=f"paper-template-export-manifest:{idempotency}",
+                idempotency_key=f"paper-template-export-manifest:{self.template_kind.kind}:{idempotency}",
                 metadata={**metadata, "observation_operation": operation},
             )
         manifest_ref = _result_ref(manifest_result)
@@ -624,6 +680,8 @@ class KaojuTemplateService(KaojuTemplateStateService):
             "ok": True,
             "mutated": True,
             "operation": f"paper.template.{operation}",
+            "template_kind": self.template_kind.kind,
+            "template_label": self.template_kind.label,
             "name": state.name,
             "stable_ref": state.record.id,
             "state_token": state.state_token,
@@ -653,7 +711,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
             metadata_path = path / EXPORT_METADATA_NAME
             if metadata_path.is_file():
                 try:
-                    disk_metadata = _load_export_metadata(metadata_path)
+                    disk_metadata = _load_export_metadata(metadata_path, expected_kind=self.template_kind.kind)
                     identity_valid = (
                         disk_metadata.get("template_name") == name
                         and disk_metadata.get("canonical_ref") == metadata.get("canonical_ref")
@@ -676,6 +734,7 @@ class KaojuTemplateService(KaojuTemplateStateService):
             else:
                 posture = "identity-invalid"
         return {
+            "template_kind": metadata.get("template_kind", "content"),
             "name": name,
             "path": observed_path,
             "export_ref": record.get("id"),
@@ -718,11 +777,16 @@ class KaojuTemplateService(KaojuTemplateStateService):
         return f"sha256:{digest.hexdigest()}"
 
     def _legacy_latex_paths(self) -> builtins.list[str]:
-        root = self._exchange_root(materialize=False)
+        root = self._exchange_base_root(materialize=False)
         if not root.is_dir():
             return []
+        reserved = {spec.exchange_subdirectory for spec in TEMPLATE_KINDS.values()}
         markers = ("template.tex", "main.tex", "latexmkrc")
-        return sorted(str(path) for path in root.iterdir() if path.is_dir() and any((path / marker).exists() for marker in markers))
+        return sorted(
+            str(path)
+            for path in root.iterdir()
+            if path.is_dir() and path.name not in reserved and any((path / marker).exists() for marker in markers)
+        )
 
     def _migration_next_actions(self, candidates: Sequence[object]) -> builtins.list[str]:
         if len(candidates) == 1:

@@ -47,7 +47,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | `build-reading-list` | `isomer-kaoju-discover` | `commands/build-reading-list.md` |
 | `ingest-reading-item` | `isomer-kaoju-acquire`, then `isomer-kaoju-examine` | `commands/ingest-reading-item.md` |
 | `draft-paper` | `isomer-kaoju-write` | `commands/draft-paper.md` |
-| `manage-paper-template` | `isomer-kaoju-write` | `commands/manage-paper-template.md` |
+| `manage-paper-template` | `isomer-kaoju-write` | Resolve content versus LaTeX role, then use `commands/manage-paper-template.md` |
 | `build-paper-pdf` | `isomer-kaoju-write` | `commands/build-paper-pdf.md` |
 | `export-survey-wiki` | `isomer-kaoju-export` | `commands/export-survey-wiki.md` |
 | `ingest-source-code` | `isomer-kaoju-acquire`, then `isomer-kaoju-examine` | `commands/ingest-source-code.md` |
@@ -66,7 +66,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | `comparative-pass` | Frame, trial, compare, audit | `commands/comparative-pass.md` |
 | `audit-survey-pass` | Audit, then synthesize if accepted | `commands/audit-survey-pass.md` |
 | `paper-pass` | `draft-paper`, then optional `build-paper-pdf` | `commands/paper-pass.md` |
-| `create-paper-template` | Construct a mutable named MyST-oriented template tree, then optionally export | `commands/create-paper-template.md` |
+| `create-paper-template` | Construct a mutable named content-template tree, then optionally export | `commands/create-paper-template.md` |
 
 ## Grouped Managers
 
@@ -99,8 +99,9 @@ Resolve `KAOJU:PROCEED-DECISION` and `KAOJU:SURVEY-TERMINAL-REPORT` through `ext
 - DO NOT use a directory scan when the state DB query is empty or ambiguous.
 - DO NOT route wiki work to an external skill checkout.
 - DO NOT treat TeX or PDF as canonical paper state.
-- DO NOT use generic Artifact revise, direct SQL, or managed-file edits for mutable named templates.
-- DO NOT select a source for an unnamed database-template update outside the one-edited-export, topic `main/`, then user-clarification order.
+- DO NOT use generic Artifact revise, direct SQL, or managed-file edits for mutable named content or LaTeX templates.
+- DO NOT discover or mutate a template before resolving its content or LaTeX role.
+- DO NOT select a source for an unnamed database-template update outside the selected role's one-edited-export, `<exchange-root>/<kind>/main/`, then user-clarification order.
 - DO NOT infer run-to authorization from an ordinary `do <task>` request or make it global or session-wide.
 - DO NOT skip required audits or Gates, merge prerequisite Runs, or continue after the named target.
 

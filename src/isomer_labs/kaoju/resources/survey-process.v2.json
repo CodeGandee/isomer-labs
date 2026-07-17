@@ -71,6 +71,25 @@
       "migrate"
     ]
   },
+  "template_roles": {
+    "content": {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
+      "default_name": "main",
+      "exchange_subdirectory": "content",
+      "purpose": "Canonical MyST authoring structure and content guidance."
+    },
+    "latex": {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-LATEX",
+      "default_name": "main",
+      "exchange_subdirectory": "latex",
+      "purpose": "Multi-file LaTeX presentation stock composed into paper-line TeX snapshots.",
+      "composition_modes": [
+        "preamble",
+        "marker",
+        "include"
+      ]
+    }
+  },
   "supersession": {
     "source_change": "add-kaoju-paper-writing",
     "governing_decision": "context/features/2026-07-14-kaoju-survey-process-usecases/adrs/0006-myst-as-canonical-paper-format.md",
@@ -102,6 +121,14 @@
       "locked_selection": "5.1.0",
       "python_requirement": ">=3.11",
       "purpose": "Structural MyST parsing, validation diagnostics, and TeX initialization."
+    },
+    "paper_templates": {
+      "content_identity": "KAOJU:PAPER-TEMPLATE-MYST",
+      "latex_identity": "KAOJU:PAPER-TEMPLATE-LATEX",
+      "independent_defaults": true,
+      "derived_snapshot_identity": "KAOJU:PAPER-TEMPLATE-TEX",
+      "paper_local_repair_identity": "KAOJU:PAPER-DRAFT-TEX",
+      "drift_policy": "report working-copy, stocked-template, and paper-local repair drift without automatic propagation"
     },
     "wiki_viewer": {
       "decision": "independent-compatible-implementation",

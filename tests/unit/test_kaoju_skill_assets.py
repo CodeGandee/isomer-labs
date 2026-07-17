@@ -62,27 +62,35 @@ class KaojuSkillAssetTests(unittest.TestCase):
         paper = (commands / "manage-paper-template.md").read_text(encoding="utf-8")
         for action in ("list", "show", "create", "copy", "update", "replace", "merge", "file put", "file remove", "metadata patch", "export", "observe", "archive", "delete"):
             self.assertIn(f"`{action}`", paper)
-        self.assertNotIn("snapshot", paper.casefold())
+        self.assertIn("content", paper)
+        self.assertIn("LaTeX", paper)
+        self.assertIn("paper-line TeX snapshots", paper)
+        roles = CONTRACT.raw["template_roles"]
+        self.assertEqual("KAOJU:PAPER-TEMPLATE-MYST", roles["content"]["semantic_id"])
+        self.assertEqual("KAOJU:PAPER-TEMPLATE-LATEX", roles["latex"]["semantic_id"])
+        self.assertEqual("main", roles["content"]["default_name"])
+        self.assertEqual("main", roles["latex"]["default_name"])
 
     def test_paper_template_unnamed_update_discovery_order_is_explicit(self) -> None:
         commands = KAOJU_ROOT / "isomer-kaoju-pipeline" / "commands"
         manager = (commands / "manage-paper-template.md").read_text(encoding="utf-8")
-        explicit = manager.index("When the request supplies a template name")
-        exports = manager.index("template exports")
+        role = manager.index("template role before source discovery")
+        explicit = manager.index("Resolve an explicit role-local name")
+        exports = manager.index("template exports --kind KIND")
         one_edited = manager.index("exactly one eligible export")
-        ambiguous = manager.index("several exports are edited")
-        topic_main = manager.index("inspect its `main/` child")
-        clarification = manager.index("If neither source exists")
-        self.assertEqual(sorted((explicit, exports, one_edited, ambiguous, topic_main, clarification)), [explicit, exports, one_edited, ambiguous, topic_main, clarification])
-        self.assertIn("even when the artifacts database has no template named `main`", manager)
-        self.assertIn("Do not select an unrelated database record", manager)
+        ambiguous = manager.index("If several selected-role exports")
+        topic_main = manager.index("inspect `<root>/<kind>/main/`")
+        clarification = manager.index("If no selected-role source exists")
+        self.assertEqual(sorted((role, explicit, exports, one_edited, ambiguous, topic_main, clarification)), [role, explicit, exports, one_edited, ambiguous, topic_main, clarification])
+        self.assertIn("even when the database has no selected-role `main`", manager)
+        self.assertIn("other role's database records", manager)
 
         writer = (KAOJU_ROOT / "isomer-kaoju-write" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("use exactly one eligible edited registered export", writer)
-        self.assertIn("regardless of database `main`", writer)
-        self.assertIn("if neither exists, ask the user for a source", writer)
-        self.assertIn("Isomer CLI owns name safety", writer)
-        self.assertIn("it does not construct or merge a template for you", writer)
+        self.assertIn("Resolve role before using", writer)
+        self.assertIn("use exactly one eligible edited export of that role", writer)
+        self.assertIn("<topic.paper.template_exchange_root>/<kind>/main/", writer)
+        self.assertIn("Same-named records or exports of the other role are ineligible", writer)
+        self.assertIn("paper-specific TeX draft", writer)
 
     def test_shared_contract_references_are_complete_and_linked(self) -> None:
         shared = KAOJU_ROOT / "isomer-kaoju-shared"

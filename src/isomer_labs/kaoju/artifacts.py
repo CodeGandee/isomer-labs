@@ -40,7 +40,7 @@ from isomer_labs.kaoju.survey import ContractDiagnostic, diagnostic_errors, vali
 from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
 
-@dataclass(frozen=True)
+@dataclass
 class KaojuServiceError(Exception):
     """Stable service error with recovery actions."""
 
@@ -97,7 +97,7 @@ class KaojuArtifactService:
             raise KaojuServiceError(
                 "artifact_mutable_service_required",
                 f"{semantic_id} uses mutable named state and must be created through its owner service.",
-                ("Use 'isomer-cli ext kaoju paper template create' so name uniqueness, state tokens, managed-tree replacement, and audit evidence remain consistent.",),
+                ("Use 'isomer-cli ext kaoju paper template create --kind content|latex' so role-local identity, state tokens, managed-tree replacement, and audit evidence remain consistent.",),
             )
         self._authorize(binding, producer)
         self._validate_status(binding, status)
@@ -167,7 +167,13 @@ class KaojuArtifactService:
         if not isinstance(semantic_id, str):
             raise KaojuServiceError("artifact_binding_missing", f"Record {record_id} has no semantic binding.")
         binding = self._binding(semantic_id)
-        if binding.revision_mode in {"append_only", "immutable", "mutable_state"}:
+        if binding.revision_mode == "mutable_state":
+            raise KaojuServiceError(
+                "artifact_mutable_service_required",
+                f"{semantic_id} uses mutable named state and must be revised through its owner service.",
+                ("Use 'isomer-cli ext kaoju paper template update --kind content|latex' so role-local identity, state tokens, managed-tree replacement, and audit evidence remain consistent.",),
+            )
+        if binding.revision_mode in {"append_only", "immutable"}:
             raise KaojuServiceError("artifact_revision_forbidden", f"{semantic_id} uses {binding.revision_mode} behavior; create a distinct record instead.")
         self._authorize(binding, producer)
         self._validate_relationships(binding, relationships or [])

@@ -378,7 +378,7 @@ def _error_payload(code: str, message: str) -> tuple[dict[str, Any], list[Any]]:
 
 
 def _legacy_mutation_disabled(operation: str) -> tuple[dict[str, Any], list[Any]]:
-    guidance = "Use 'isomer-cli ext kaoju paper template' low-level named CRUD and the Kaoju agent for arbitrary template construction or reconciliation."
+    guidance = "Use 'isomer-cli ext kaoju paper template --kind content|latex' role-explicit named CRUD and the Kaoju agent for arbitrary template construction or reconciliation."
     return (
         {
             "ok": False,

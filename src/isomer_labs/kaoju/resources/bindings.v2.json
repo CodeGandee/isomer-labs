@@ -1278,7 +1278,9 @@
       "relationships": [
         "audit_report",
         "field_summary",
-        "claim_status"
+        "claim_status",
+        "paper_template",
+        "paper_template_latex"
       ],
       "revision_mode": "current_state",
       "scope_key_policy": {
@@ -1355,6 +1357,37 @@
       "acceptance": {
         "statuses": [
           "ready"
+        ],
+        "gate": "human"
+      },
+      "status": "active"
+    },
+    {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-LATEX",
+      "artifact_type": "paper-template-latex",
+      "record_kind": "artifact",
+      "profile_ref": null,
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "directory_manifest",
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "relationships": [],
+      "revision_mode": "mutable_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "template_name"
+      },
+      "latest_selection_policy": "mutable_named",
+      "validation": {
+        "required": true,
+        "contract": "directory-manifest"
+      },
+      "acceptance": {
+        "statuses": [
+          "ready",
+          "blocked"
         ],
         "gate": "human"
       },
@@ -1640,7 +1673,7 @@
         "isomer-kaoju-write"
       ],
       "relationships": [
-        "paper_template_myst"
+        "paper_template_latex"
       ],
       "revision_mode": "current_state",
       "scope_key_policy": {
@@ -1878,6 +1911,9 @@
       ],
       "relationships": [
         "paper_draft_myst",
+        "paper_template",
+        "paper_template_latex",
+        "paper_template_tex",
         "paper_pdf",
         "paper_validation",
         "audit_report"

@@ -53,25 +53,26 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 
 ## MyST-First Paper
 
-- `KAOJU:PAPER-CONTRACT`: accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy.
+- `KAOJU:PAPER-CONTRACT`: accepted audience, questions, evidence boundary, structure profile, independent content-template and LaTeX-template policies, quality policy, and build policy.
 - `KAOJU:PAPER-STRUCTURE-MYST`: canonical typed section jobs and display plan in MyST.
-- `KAOJU:PAPER-TEMPLATE-MYST`: one stable mutable named canonical MyST-oriented template tree.
-- `KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT`: lightweight named-template mutation evidence without prior template bytes.
+- `KAOJU:PAPER-TEMPLATE-MYST`: one stable mutable named content-template tree for canonical MyST authoring structure.
+- `KAOJU:PAPER-TEMPLATE-LATEX`: one stable mutable named multi-file LaTeX presentation-template stock tree.
+- `KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT`: kind-qualified named-template mutation evidence without prior stock bytes.
 - `KAOJU:PAPER-DRAFT-MYST`: canonical grounded paper draft in MyST.
 - `KAOJU:PAPER-DRAFT-MD`: deterministic non-canonical Markdown derivation.
 - `KAOJU:PAPER-DISPLAY`: file-backed figure or table content referenced from MyST by a typed stable ref.
 - `KAOJU:CITATION-MAP`: citation roles, source refs, locators, claim links, display links, and evidence status.
-- `KAOJU:PAPER-TEMPLATE-EXPORT`: registered non-canonical working-directory observation for a stable named template.
-- `KAOJU:PAPER-TEMPLATE-MANIFEST`: named-template export identity, state token, tree digests, path, time, and actor provenance.
+- `KAOJU:PAPER-TEMPLATE-EXPORT`: registered non-canonical working-directory observation for a stable named content or LaTeX template.
+- `KAOJU:PAPER-TEMPLATE-MANIFEST`: template kind, export identity, state token, tree digests, path, time, and actor provenance.
 - `KAOJU:PAPER-REVISION-LOG`: append-only canonical paper changes, evidence effects, and actor decisions.
-- `KAOJU:PAPER-TEMPLATE-TEX`: derived TeX template tree and compatibility fingerprint.
-- `KAOJU:PAPER-DRAFT-TEX`: derived TeX draft tree, citations, included files, and conversion diagnostics.
+- `KAOJU:PAPER-TEMPLATE-TEX`: exact paper-line snapshot of one observed named LaTeX stock tree and presentation fingerprint.
+- `KAOJU:PAPER-DRAFT-TEX`: self-contained composition of canonical MyST and one TeX snapshot, with entrypoint, diagnostics, and paper-local repair posture.
 - `KAOJU:PAPER-PDF`: immutable built PDF output.
 - `KAOJU:PAPER-COMPILE-LOG`: immutable compiler command, diagnostics, output, and fallback rationale.
 - `KAOJU:PAPER-PDF-REVISION-LOG`: append-only authorized build repairs and material-change Gates.
 - `KAOJU:PAPER-BUILD-RUN`: immutable document build attempt and terminal state.
 - `KAOJU:PAPER-VALIDATION-REPORT`: syntax, structure, citation, textual, visual, evidence, and publication assessment.
-- `KAOJU:PUBLICATION-BUNDLE`: accepted canonical and derived paper refs with audit and provenance.
+- `KAOJU:PUBLICATION-BUNDLE`: accepted canonical and derived paper refs with separate content-template, LaTeX-template, audit, build, and publication provenance.
 - `KAOJU:SURVEY-MANUSCRIPT`: readable compatibility record for historical LaTeX-first manuscripts.
 - `KAOJU:WRITING-TEMPLATE`: readable compatibility record for historical LaTeX-first templates.
 

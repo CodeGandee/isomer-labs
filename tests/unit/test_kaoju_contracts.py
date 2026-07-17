@@ -44,7 +44,7 @@ class KaojuContractTests(unittest.TestCase):
 
         bindings = load_binding_registry()
         semantics = load_semantic_registry()
-        self.assertEqual(62, len(bindings))
+        self.assertEqual(63, len(bindings))
         self.assertEqual(set(bindings), set(semantics))
         self.assertEqual((), resource_coverage_diagnostics())
         for semantic_id in bindings:
@@ -82,12 +82,17 @@ class KaojuContractTests(unittest.TestCase):
 
     def test_named_template_bindings_define_mutable_state_and_exchange_evidence(self) -> None:
         bindings = load_binding_registry()
-        template = bindings["KAOJU:PAPER-TEMPLATE-MYST"]
-        self.assertEqual("directory_manifest", template.content_mode)
-        self.assertEqual("mutable_state", template.revision_mode)
-        self.assertEqual("template_name", template.scope_key_policy["dimension"])
-        self.assertEqual("mutable_named", template.latest_selection_policy)
-        self.assertEqual((), template.relationships)
+        for semantic_id in ("KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-TEMPLATE-LATEX"):
+            with self.subTest(semantic_id=semantic_id):
+                template = bindings[semantic_id]
+                self.assertEqual("directory_manifest", template.content_mode)
+                self.assertEqual("mutable_state", template.revision_mode)
+                self.assertEqual("template_name", template.scope_key_policy["dimension"])
+                self.assertEqual("mutable_named", template.latest_selection_policy)
+                self.assertEqual((), template.relationships)
+
+        self.assertEqual("paper-template-latex", bindings["KAOJU:PAPER-TEMPLATE-LATEX"].artifact_type)
+        self.assertEqual(("paper_template_latex",), bindings["KAOJU:PAPER-TEMPLATE-TEX"].relationships)
 
         audit = bindings["KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT"]
         self.assertEqual("append_only", audit.revision_mode)
