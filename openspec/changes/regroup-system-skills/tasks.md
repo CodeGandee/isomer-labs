@@ -17,22 +17,24 @@
 - [ ] 2.5 Move the four `isomer-misc-*` and two research-recording bundles below the core pack and register their six protected shared routes.
 - [ ] 2.6 Rename the DeepSci pipeline bundle to `isomer-ext-deepsci-entrypoint`, retain its eight public pass commands plus help, and register `isomer-deepsci-pipeline` only as a legacy alias.
 - [ ] 2.7 Move all 21 non-pipeline `isomer-deepsci-*` bundles below the DeepSci public pack and add the declared scoped member routes without changing their research method contracts.
-- [ ] 2.8 Rename the Kaoju pipeline bundle to `isomer-ext-kaoju-entrypoint`, retain its accepted public command groups plus help, and register `isomer-kaoju-pipeline` only as a legacy alias.
-- [ ] 2.9 Move all 13 non-pipeline `isomer-kaoju-*` bundles below the Kaoju public pack while preserving trial versus reproduction and every existing evidence boundary.
+- [ ] 2.8 Rename the Kaoju pipeline bundle to `isomer-ext-kaoju-entrypoint`, retain its accepted public command groups plus help, preserve the current role-explicit `manage-paper-template` manager and content-only `create-paper-template` compatibility route, and register `isomer-kaoju-pipeline` only as a legacy alias.
+- [ ] 2.9 Move all 13 non-pipeline `isomer-kaoju-*` bundles below the Kaoju public pack while preserving trial versus reproduction, the current `write` bundle's content-template and LaTeX-template guidance, exact composition and build contracts, drift semantics, historical-record posture, and every existing evidence boundary.
 - [ ] 2.10 Remove obsolete top-level packaged skill directories after their content is present in the owning pack, and add checks that no compatibility shim directory remains.
 - [ ] 2.11 Audit each routable unit by resource ownership: retain every moved capability that owns private entrypoint metadata, commands, references, scripts, assets, templates, or other support files as a self-contained subskill, and retain procedures that use their containing bundle's resources as direct or nested commands.
+- [ ] 2.12 Verify that package-owned Kaoju template, composition, migration, validation, binding, semantic, and process resources remain under `isomer_labs.kaoju` and are queried through `isomer-cli ext kaoju` rather than copied into the public pack or protected `write` bundle.
 
 ## 3. Invocation and Skill Validation
 
 - [ ] 3.1 Update all three public entrypoints to support `$<entrypoint> use <subcommand> to <task>`, task-only route selection, empty-invocation help, and route-and-proceed behavior.
-- [ ] 3.2 Replace active cross-skill prose routes with catalog-declared bare protected-member designators such as `isomer-op-entrypoint->project` and `isomer-ext-kaoju-entrypoint->trial`; put `()` on every actual command component, including parent generators in chains such as `isomer-ext-kaoju-entrypoint->manage-survey()->list()`.
+- [ ] 3.2 Replace active cross-skill prose routes with catalog-declared bare protected-member designators such as `isomer-op-entrypoint->project` and `isomer-ext-kaoju-entrypoint->trial`; put `()` on every actual command component, including parent generators in chains such as `isomer-ext-kaoju-entrypoint->manage-survey()->list()` and `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`.
 - [ ] 3.3 Add the exact standard `skill_invocation_notation` frontmatter value to every active page that uses an object designator.
 - [ ] 3.4 Update protected `agents/openai.yaml` prompts to point ordinary users at the owning public entrypoint while retaining the logical-id display identity needed for private projection.
 - [ ] 3.5 Extend skill validation to enumerate public packs and protected members recursively from manifest v3 and validate identity, current-template structure, resources, and release versions.
-- [ ] 3.6 Validate that each parent route table and invocation designator resolves to the declared capability kind, protected-member entrypoints are bare paths, every command component has `()`, every child command is declared by its immediate parent, no command chain returns to a bare component, same-name command and member routes remain distinguishable, and no undeclared nested skill exists.
+- [ ] 3.6 Validate that each parent route table and invocation designator resolves to the declared capability kind, protected-member entrypoints are bare paths, every command component has `()`, every child command is declared by its immediate parent, no command chain returns to a bare component, same-name command and member routes remain distinguishable, role parameters such as Kaoju `--kind content|latex` do not become capability components, and no undeclared nested skill exists.
 - [ ] 3.7 Add active-guidance validation that rejects direct `$<protected-logical-id>` user prompts outside migration text and logical-id CLI fields.
 - [ ] 3.8 Add flat private-projection fixtures that prove a selected protected bundle and its dependency closure work without parent or sibling filesystem access.
 - [ ] 3.9 Add family checks that require DeepSci and Kaoju shared procedures to route through their protected `shared` member instead of sibling paths or duplicated process text, and reject a command that claims an independent private resource root instead of using its containing bundle.
+- [ ] 3.10 Convert accepted grouped managers into explicit nested command route tables and linked detail pages while preserving each manager's terminal task-selection behavior; cover Kaoju survey and dataset actions plus paper-template actions, `file()->put()`, `file()->remove()`, and `metadata()->patch()`.
 
 ## 4. Catalog Consumers, Callbacks, and Private Projection
 
@@ -42,7 +44,7 @@
 - [ ] 4.4 Update Skill Binding Projection resolution helpers to map preserved logical ids through the catalog without storing pack filesystem layout in provider-neutral bindings.
 - [ ] 4.5 Add the protected capability and dependency-closure API used by Topic Actor, Agent Role, Agent Profile, and Service Agent private projection.
 - [ ] 4.6 Update the Isomer-Houmao adapter to project nested protected source paths with stable logical identity for intended roles and to include every declared dependency.
-- [ ] 4.7 Update DeepSci and Kaoju extension-query payloads, process contracts, and artifact/source metadata to report the new public entry skill and protected member mapping.
+- [ ] 4.7 Update DeepSci and Kaoju extension-query payloads, process contracts, and artifact/source metadata to report the new public entry skill and protected member mapping; preserve Kaoju `manager_actions`, `template_roles`, `implementation_decisions.paper_templates`, `KAOJU:PAPER-TEMPLATE-LATEX`, the three composition modes, and every other non-routing process field unchanged except for an explicitly versioned schema adjustment required by nested route representation.
 - [ ] 4.8 Add tests for logical-id lookup, legacy alias normalization, callback target validation, stage-specific callback execution, and selective projection closure.
 
 ## 5. Pack-Based Installation and Receipts
@@ -77,6 +79,6 @@
 - [ ] 7.4 Update public examples to use `$isomer-op-entrypoint`, `$isomer-ext-deepsci-entrypoint`, or `$isomer-ext-kaoju-entrypoint` with the accepted `use <subcommand> to <task>` form.
 - [ ] 7.5 Update every packaged public and protected `agents/openai.yaml` metadata version to exactly match `project.version` without changing the compatibility floor unless policy requires it.
 - [ ] 7.6 Run `pixi run validate-skills` and fix all recursive layout, identity, invocation-notation, resource-boundary, route, callback, dependency, and version diagnostics.
-- [ ] 7.7 Run targeted unit and integration tests for catalog loading, materialization, installer CLI, receipts, inspection, callbacks, extension queries, and Isomer-Houmao private projection.
+- [ ] 7.7 Run targeted unit and integration tests for catalog loading, materialization, installer CLI, receipts, inspection, callbacks, extension queries, Isomer-Houmao private projection, role-explicit Kaoju named templates, multi-file LaTeX composition, entrypoint-aware PDF builds, template drift, historical-record preservation, and skill-asset routing.
 - [ ] 7.8 Run `pixi run lint`, `pixi run typecheck`, `pixi run test`, and `pixi run python -c "import isomer_labs"`, then record the final validation evidence.
 - [ ] 7.9 Run strict OpenSpec validation and confirm the implementation satisfies every public-pack, protected-routing, migration, and compatibility scenario before requesting archive.

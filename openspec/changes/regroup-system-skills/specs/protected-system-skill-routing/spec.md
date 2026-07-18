@@ -96,6 +96,12 @@ The system SHALL use bare object components for skill and protected subskill ent
 - **AND** `manage-survey()` generates its declared child-routing context without implicitly executing its standalone terminal workflow
 - **AND** `list()` is the terminal invoked command
 
+#### Scenario: Child command exposes a grandchild command
+- **WHEN** the Kaoju paper-template manager invokes `put` declared by child command `file`
+- **THEN** the canonical designator is `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`
+- **AND** both intermediate commands act as declared object generators while `put()` is the terminal invoked command
+- **AND** the separate `--kind content|latex` role parameter does not become a bare or parenthesized capability component
+
 #### Scenario: Parent command is invoked terminally
 - **WHEN** an invocation ends at `X->parent()`
 - **THEN** it executes the parent's declared standalone workflow

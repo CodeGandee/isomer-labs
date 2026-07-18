@@ -22,6 +22,11 @@ Official public packs and protected subskills SHALL own every active private res
 - **THEN** the family is authored as a subskill instead of a subcommand
 - **AND** the subskill owns those resources inside its bundle boundary
 
+#### Scenario: Kaoju manager uses package-owned machine resources
+- **WHEN** a public Kaoju command or protected member needs template, composition, migration, validation, binding, semantic, or process behavior implemented by the package
+- **THEN** it invokes the checked `isomer-cli ext kaoju` surface
+- **AND** those Python modules and JSON resources remain outside the public pack and protected subskill resource trees
+
 #### Scenario: Private projection loads resources
 - **WHEN** a protected member is copied as a bounded private projection without its source siblings
 - **THEN** every private active resource still resolves within the copied member directory

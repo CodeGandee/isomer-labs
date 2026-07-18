@@ -107,6 +107,16 @@ The packaged research-paradigm documentation and assets SHALL present Kaoju thro
 - **THEN** its public entrypoint owns public commands and its protected members own stage-specific behavior and resources
 - **AND** no old pipeline facade or top-level protected member remains
 
+#### Scenario: Kaoju template roles remain explicit
+- **WHEN** public manager, paper drafting, TeX composition, PDF build, or protected write guidance is inspected
+- **THEN** it distinguishes named content templates from named LaTeX templates, including their independent `main` defaults and semantic ids
+- **AND** role selection remains explicit command context rather than a new skill boundary
+
+#### Scenario: Kaoju write resources remain protected
+- **WHEN** the protected `write` member is inspected after relocation
+- **THEN** its entrypoint, artifact bindings, paper references, and role-aware workflow remain inside the `isomer-kaoju-write` bundle
+- **AND** public paper commands route to that member without duplicating its private procedure resources
+
 #### Scenario: Kaoju skills use canonical Isomer language
 - **WHEN** public and protected Kaoju guidance is inspected
 - **THEN** it retains canonical Isomer domain terms and provider boundaries
@@ -124,7 +134,7 @@ Research-paradigm validation SHALL validate the Kaoju public pack, protected mem
 
 #### Scenario: Shared checks preserve family rules
 - **WHEN** common pack validation succeeds
-- **THEN** trial versus reproduction, evidence, binding, artifact identity, and survey-process checks still run
+- **THEN** trial versus reproduction, evidence, binding, artifact identity, survey-process, content-template, LaTeX-template, composition, build-entrypoint, drift, and historical-record checks still run
 
 ### Requirement: Research Skill Validation Enforces Shared Resource Ownership
 Research validation SHALL enforce bundle-local resources, package-owned machine resources, protected shared routing, and dependency closure.
@@ -139,7 +149,7 @@ Research validation SHALL enforce bundle-local resources, package-owned machine 
 
 #### Scenario: Cross-member process bypasses shared
 - **WHEN** a known family-wide procedure is duplicated or loaded from a sibling
-- **THEN** validation requires the corresponding public-parent `shared()` route
+- **THEN** validation requires the corresponding bare protected `shared` member route or one of that member's declared subcommands
 
 #### Scenario: Dependency closure fixture is incomplete
 - **WHEN** selective projection omits a declared shared, recording, service, or helper dependency

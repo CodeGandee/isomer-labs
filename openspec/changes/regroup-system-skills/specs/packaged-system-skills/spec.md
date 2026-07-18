@@ -182,6 +182,11 @@ The packaged catalog SHALL expose Kaoju as optional extension `kaoju` through pu
 - **WHEN** extension discovery metadata is queried for `kaoju`
 - **THEN** it reports `isomer-ext-kaoju-entrypoint`, the accepted ordered public command inventory, and protected logical members from manifest metadata
 
+#### Scenario: Kaoju role-aware baseline is packaged
+- **WHEN** the Kaoju public pack and protected `write` member are materialized
+- **THEN** public template-manager commands retain explicit content-versus-LaTeX role handling and the protected writer retains its private role-aware paper-production resources
+- **AND** package-owned `isomer_labs.kaoju` services remain the machine authority for template state, composition, migration, validation, bindings, semantics, and process data
+
 ### Requirement: System Skill Manifest Describes Extension Entry Surfaces
 The manifest SHALL describe each optional extension as one public entrypoint pack with ordered commands and protected members.
 

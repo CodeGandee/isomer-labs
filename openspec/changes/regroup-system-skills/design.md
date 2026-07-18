@@ -6,6 +6,8 @@ That model conflicts with the intended user surface. Most entries are workflow o
 
 Several identities must survive the physical regrouping. User Skill Callbacks target system skill names, Skill Binding Projection stores provider-neutral skill ids, research records name producer skills, and internal routes refer to stage owners such as `isomer-deepsci-scout`. These are logical capability identities, not installation-folder requirements. Protected visibility is therefore a packaging and routing property, not an authorization or secrecy boundary.
 
+The completed `separate-kaoju-content-and-latex-templates` implementation is part of the current baseline. Kaoju now has independent named content-template and LaTeX-template state, package-owned role-aware template services, exact LaTeX composition, entrypoint-aware PDF builds, three distinct drift postures, and an applied Topic Workspace contract migration. Regrouping must preserve those semantics and records while replacing only skill discovery, filesystem ownership, and invocation routing.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -13,6 +15,7 @@ Several identities must survive the physical regrouping. User Skill Callbacks ta
 - Expose only `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint` as ordinary top-level Isomer skills when all extensions are installed.
 - Keep every current non-pipeline workflow capability available as a protected, self-contained subskill owned by one public pack.
 - Decide command versus subskill form by resource ownership: commands use their containing bundle's resources, while subskills own private resource bundles.
+- Preserve the implemented Kaoju content-template and LaTeX-template roles, manager hierarchy, semantic identities, composition contracts, and migrated runtime state while moving its skill resources.
 - Preserve protected logical ids for callbacks, Skill Binding Projection, durable records, compatibility lookup, and selective role projection.
 - Apply the Imsight subskill layout and invocation notation consistently to entrypoints, protected members, and routed command pages.
 - Make installation, upgrade, receipts, inspection, and validation reason about whole public packs and their nested member integrity.
@@ -22,6 +25,7 @@ Several identities must survive the physical regrouping. User Skill Callbacks ta
 
 - This change does not add an access-control system, encrypt protected content, or prevent an agent that receives a pack from reading its nested files.
 - This change does not merge distinct workflow semantics, such as Kaoju trial and reproduction, or rewrite the scientific methods owned by DeepSci and Kaoju.
+- This change does not redesign Kaoju named-template services, rerun its Topic Workspace template-contract migration, alter existing template records or managed trees, or collapse content and LaTeX roles into skill or subskill identities.
 - This change does not rename the extension ids `deepsci` and `kaoju`, change Project Manifest extension declarations, or redefine Skill Binding Projection as a packaging schema.
 - This change does not keep top-level compatibility shim skills for old public or protected names.
 - This change does not promote Houmao packaging terms into canonical Isomer domain language.
@@ -83,6 +87,10 @@ Kaoju protected members are `acquire`, `audit`, `compare`, `discover`, `examine`
 
 The DeepSci public commands remain `empirical-pass`, `hypothesis-pass`, `list-passes`, `paper-pass`, `polish-pass`, `rebuttal-pass`, `revision-pass`, and `submission-pass`, plus `help`. The Kaoju public command inventory remains the accepted survey-intent, compatibility-procedure, and grouped-manager inventory, plus `help`. A task-only invocation may select a protected member without exposing that member as a top-level host skill.
 
+The Kaoju inventory is read from the current role-aware process contract. `manage-paper-template()` remains one entrypoint-owned parent command whose declared children are `list()`, `show()`, `create()`, `copy()`, `update()`, `replace()`, `merge()`, `file()`, `metadata()`, `export()`, `observe()`, `archive()`, `delete()`, and `migrate()`. Deeper command objects preserve the implemented CLI hierarchy, including `file()->put()`, `file()->remove()`, and `metadata()->patch()`. Content versus LaTeX remains explicit command context, represented by `--kind content|latex`, rather than another skill, subskill, or command layer. Terminal invocation of `manage-paper-template()` retains its current task-based action and role resolution. The compatibility command `create-paper-template()` remains content-template-only and routes LaTeX stock work to the manager.
+
+The protected `write` member remains a subskill because it owns private entrypoint metadata, artifact-binding guidance, and paper-production references. The public manager pages remain commands because they use the public entrypoint bundle and route bounded work to `write`. Python modules and checked JSON resources below `isomer_labs.kaoju` remain package-owned machine services queried through `isomer-cli ext kaoju`; regrouping does not copy them into either skill bundle.
+
 Alternative considered: collapse all stages into command pages inside each entrypoint. Each stage retains a private resource bundle with its own skill entrypoint and runtime metadata, and many also own commands, references, scripts, or assets. The resource boundary therefore requires self-contained protected subskills; triggers, callbacks, outputs, and projection needs reinforce that boundary but do not replace the resource-ownership test.
 
 ### 4. Public and Internal Invocation Forms Are Deliberately Different
@@ -97,7 +105,7 @@ $isomer-ext-kaoju-entrypoint use build-reading-list to build the accepted survey
 
 An empty invocation is equivalent to `use help`. A task-only invocation lets the public entrypoint select the command or protected member. It must proceed with the selected route or report a real blocker rather than stop at a menu.
 
-Internal pages use scoped object notation such as `isomer-op-entrypoint->project`, `isomer-op-entrypoint->project->init-project()`, `isomer-ext-deepsci-entrypoint->scout`, and `isomer-ext-kaoju-entrypoint->manage-survey()->list()`. The parent route table maps each scoped member to its protected logical id and nested bundle path, while each parent command page declares its direct child commands. Every active Markdown page that uses object notation declares the standard `skill_invocation_notation` frontmatter value from the Imsight style guide.
+Internal pages use scoped object notation such as `isomer-op-entrypoint->project`, `isomer-op-entrypoint->project->init-project()`, `isomer-ext-deepsci-entrypoint->scout`, `isomer-ext-kaoju-entrypoint->manage-survey()->list()`, and `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`. The parent route table maps each scoped member to its protected logical id and nested bundle path, while each parent command page declares its direct child commands. Every active Markdown page that uses object notation declares the standard `skill_invocation_notation` frontmatter value from the Imsight style guide.
 
 The canonical internal grammar is:
 
@@ -183,7 +191,7 @@ Alternative considered: keep the v3 receipt and record every nested member as if
 
 ### 9. Validation Recurses Through Pack Boundaries
 
-`pixi run validate-skills` and package tests enumerate all public packs and protected capabilities from manifest v3. They validate the current entrypoint template, nested `SKILL.md` structure, release-aligned `agents/openai.yaml` versions, local resources, logical identity mapping, parent route table, object-notation grammar and frontmatter, public commands, callback insertion points, dependency closure, callback aliases, and flat private-projection fixtures.
+`pixi run validate-skills` and package tests enumerate all public packs and protected capabilities from manifest v3. They validate the current entrypoint template, nested `SKILL.md` structure, release-aligned `agents/openai.yaml` versions, local resources, logical identity mapping, parent route table, object-notation grammar and frontmatter, public commands, callback insertion points, dependency closure, callback aliases, flat private-projection fixtures, and preservation of the current role-aware Kaoju process contract.
 
 Validation also rejects:
 
@@ -212,15 +220,16 @@ Install and upgrade output tells users to refresh the agent host or start a new 
 - [Protected members remain readable to any agent that receives the parent pack] -> State clearly that protected is a visibility and routing classification, then use Skill Binding Projection and private projection when role-level minimization is required.
 - [Removing old top-level skills could delete user modifications] -> Remove only paths recorded by a supported Isomer receipt, reject mismatched ownership evidence, and never remove ambient or untracked directories.
 - [A large atomic migration can produce broad review noise] -> Move bundles without rewriting method content first, then update routes and metadata in focused commits or task groups while validating after each pack.
+- [Kaoju skill relocation could regress the newer template contracts or rerun an already applied data migration] -> Treat the role-aware process, binding, template, composition, drift, and historical-record contracts as immutable migration inputs; update only entry-skill and protected-route identity fields, and test existing migrated Topic Workspace state without mutating it.
 
 ## Migration Plan
 
 1. Add manifest v3 parsing, pack and capability data types, logical-id lookup, alias normalization, dependency closure, and recursive validation while retaining read-only support for manifest v2 fixtures.
-2. Build the three public pack directories in a staging layout, move each existing bundle into its declared `subskills/<logical-id>/` path, rename the two pipeline entrypoints, and update parent route tables and invocation notation.
+2. Build the three public pack directories in a staging layout, move each existing bundle into its declared `subskills/<logical-id>/` path, rename the two pipeline entrypoints, and update parent route tables and invocation notation. Base the Kaoju move on the current role-aware skill files and preserve its content-template, LaTeX-template, composition, drift, and historical-record contracts.
 3. Update callbacks, extension discovery, Skill Binding resolution helpers, internal inspection, and private projection adapters to consume the new catalog model.
 4. Add receipt v4 and pack-based install, status, uninstall, and upgrade behavior. Keep v1 through v3 receipt readers for inspection and managed migration.
 5. During an authorized upgrade, validate destination conflicts, stage and validate all selected new packs, write the v4 receipt, and only then remove obsolete top-level paths that the old receipt tracked. If staging or validation fails, leave the old projections and receipt intact. If cleanup fails, report a partial migration with exact retained paths and repair guidance.
-6. Update documentation, CLI output, active specs, tests, fixtures, and all packaged skill metadata versions. Run recursive skill validation and the repository lint, typecheck, unit, and targeted integration suites.
+6. Update documentation, CLI output, active specs, tests, fixtures, and all packaged skill metadata versions. For the Kaoju process query, replace the public entry-skill identity and protected routes without dropping manager actions, template roles, composition modes, or implementation decisions. Run recursive skill validation and the repository lint, typecheck, unit, and targeted integration suites.
 7. Release the regrouping as one migration boundary. Tell users to run the managed upgrade and start a new agent session so host discovery reflects the new public surface.
 
 Rollback before obsolete-path cleanup discards the staged packs and retains the v3 receipt. Rollback after a successful migration installs the previous package release with force through the managed installer; the installer must still refuse to overwrite or delete untracked user paths.

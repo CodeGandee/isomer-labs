@@ -43,6 +43,22 @@ The package SHALL provide Kaoju as public pack `isomer-ext-kaoju-entrypoint` wit
 - **WHEN** manager actions are inspected
 - **THEN** survey and dataset actions remain grouped under their accepted public manager commands
 
+#### Scenario: Paper-template actions remain grouped by object
+- **WHEN** the role-aware paper-template manager is migrated into the public pack
+- **THEN** `manage-paper-template()` remains one parent command with declared children `list()`, `show()`, `create()`, `copy()`, `update()`, `replace()`, `merge()`, `file()`, `metadata()`, `export()`, `observe()`, `archive()`, `delete()`, and `migrate()`
+- **AND** `file()` declares `put()` and `remove()` children while `metadata()` declares `patch()`
+- **AND** internal routes may use complete chains such as `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`
+
+#### Scenario: Paper-template role remains command context
+- **WHEN** a paper-template action selects content authoring or LaTeX presentation state
+- **THEN** the manager resolves explicit `--kind content|latex` context before role-local discovery or mutation
+- **AND** content and LaTeX do not become skills, subskills, or command-path components
+
+#### Scenario: Compatibility template creation remains content-only
+- **WHEN** the retained `create-paper-template` procedure is invoked
+- **THEN** it creates or updates a named content template backed by `KAOJU:PAPER-TEMPLATE-MYST`
+- **AND** LaTeX stock creation routes through `manage-paper-template()` with `--kind latex`
+
 #### Scenario: Generic maintenance remains absent
 - **WHEN** the public command list is inspected
 - **THEN** it excludes standalone source-audit, repository-refresh, generic environment-repair, full-Kaoju, resume, and list-passes commands
@@ -57,7 +73,7 @@ Kaoju active guidance SHALL query the checked process contract through the packa
 #### Scenario: Entrypoint loads checked contract
 - **WHEN** `isomer-ext-kaoju-entrypoint` starts a routing task
 - **THEN** it runs `isomer-cli --print-json ext kaoju process show`
-- **AND** the response identifies the new public entry skill, public commands, protected logical ids, and binding policy
+- **AND** the response identifies the new public entry skill, public commands, protected logical ids, binding policy, manager-action hierarchy, independent content and LaTeX template roles, and current paper-template implementation decisions
 
 #### Scenario: Entrypoint loads local command process
 - **WHEN** a selected public command has a parent-owned procedure
@@ -105,6 +121,29 @@ Kaoju run-to SHALL automate only routine in-scope prerequisite routing and prese
 - **THEN** the entrypoint pauses with the current durable state and precise resume guidance
 
 ## ADDED Requirements
+
+### Requirement: Kaoju Template Separation Survives Skill Regrouping
+The Kaoju public pack and protected `write` member SHALL preserve the implemented separation between canonical content-template state and named LaTeX presentation stock while changing only skill packaging and routing identities.
+
+#### Scenario: Role-aware process contract is rewritten
+- **WHEN** regrouping updates the checked Kaoju survey-process resource
+- **THEN** its public entry skill becomes `isomer-ext-kaoju-entrypoint` and its focused skills resolve through protected logical ids and parent-owned designators
+- **AND** its manager actions, `template_roles`, independent `main` defaults, `KAOJU:PAPER-TEMPLATE-MYST`, `KAOJU:PAPER-TEMPLATE-LATEX`, preamble, marker, and include composition modes, derived snapshot identities, and drift policy remain intact
+
+#### Scenario: Protected write bundle is moved
+- **WHEN** `isomer-kaoju-write` becomes protected member `write`
+- **THEN** it retains its private artifact-binding guidance and paper-contract, manuscript-structure, LaTeX-build, validation, and survey-quality references
+- **AND** its content-template selection, LaTeX stock selection, exact snapshot composition, entrypoint-aware build, paper-local repair, and publication-lineage behavior remain effective
+
+#### Scenario: Package-owned template services remain external to skill bundles
+- **WHEN** the Kaoju skill pack is materialized or `write` is privately projected
+- **THEN** template state, payload, support, validation, migration, composition, build, binding, semantic, and process services remain package-owned under `isomer_labs.kaoju`
+- **AND** active skills query those services through `isomer-cli ext kaoju` without copying or traversing to their source files
+
+#### Scenario: Existing Topic Workspace template state is encountered
+- **WHEN** regrouped skills operate on a Topic Workspace already migrated to the content-template and LaTeX-template contract
+- **THEN** they preserve its stable refs, state tokens, managed trees, exports, TeX snapshots, drafts, builds, PDFs, and historical source records
+- **AND** skill installation, upgrade, or first invocation does not rerun template-contract migration or adopt another LaTeX source implicitly
 
 ### Requirement: Direct User Intent Remains Public
 Accepted Kaoju survey intents SHALL remain public commands of `isomer-ext-kaoju-entrypoint` even when protected members perform their bounded stages.
