@@ -264,6 +264,7 @@ def _validate_reading_list(payload: Mapping[str, Any], diagnostics: list[Contrac
     direction_id = sections.get("direction_id")
     if not isinstance(direction_id, str) or not direction_id:
         diagnostics.append(ContractDiagnostic("reading_direction_missing", "A reading list requires exactly one direction_id.", "sections.direction_id"))
+    target_counts, target_metadata_present = _resolve_reading_target_counts(sections, diagnostics)
     items = _sequence(sections.get("items"))
     ids: set[str] = set()
     reachable = {"priority": 0, "secondary": 0}
@@ -308,14 +309,79 @@ def _validate_reading_list(payload: Mapping[str, Any], diagnostics: list[Contrac
         for field in ("route", "searched_through"):
             if provenance.get(field) in (None, ""):
                 diagnostics.append(ContractDiagnostic("reading_provenance_incomplete", f"Query provenance requires {field}.", f"sections.items/{index}/query_provenance/{field}"))
-    for priority, target in (("priority", 3), ("secondary", 3)):
+    _validate_reading_achieved_counts(sections, reachable, target_metadata_present=target_metadata_present, diagnostics=diagnostics)
+    for priority, target in target_counts.items():
         if reachable[priority] < target:
-            diagnostics.append(ContractDiagnostic("reading_target_short", f"Reachable {priority} items are below the default target of {target}; preserve a coverage warning.", "sections.items", "warning"))
+            diagnostics.append(ContractDiagnostic("reading_target_short", f"Reachable {priority} items are below the effective target of {target}; preserve a coverage warning.", "sections.items", "warning"))
     if not source_classes.intersection({"paper", "technical_report"}):
         diagnostics.append(ContractDiagnostic("reading_primary_work_missing", "Papers or technical reports must anchor related-work coverage.", "sections.items"))
     approval = _mapping(sections.get("approval"))
     if approval.get("status") == "approved" and not approval.get("actor_ref"):
         diagnostics.append(ContractDiagnostic("reading_approval_actor_missing", "Approved reading lists require an actor ref.", "sections.approval.actor_ref"))
+
+
+def _resolve_reading_target_counts(sections: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> tuple[dict[str, int], bool]:
+    default = {"priority": 3, "secondary": 3}
+    raw_target = sections.get("target_counts")
+    if raw_target is None:
+        return default, False
+    if not isinstance(raw_target, dict):
+        diagnostics.append(ContractDiagnostic("reading_target_counts_invalid", "target_counts must be an object.", "sections.target_counts"))
+        return default, True
+
+    basis = raw_target.get("basis")
+    if basis not in {"default", "user-total", "user-categories"}:
+        diagnostics.append(ContractDiagnostic("reading_target_basis_invalid", "target_counts basis must be default, user-total, or user-categories.", "sections.target_counts.basis"))
+
+    resolved: dict[str, int] = {}
+    for category, fallback in default.items():
+        value = raw_target.get(category)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            diagnostics.append(ContractDiagnostic("reading_target_count_invalid", f"{category} target must be a non-negative integer.", f"sections.target_counts.{category}"))
+            resolved[category] = fallback
+        else:
+            resolved[category] = value
+
+    if sum(resolved.values()) == 0:
+        diagnostics.append(ContractDiagnostic("reading_target_empty", "The combined Reading List target must contain at least one work.", "sections.target_counts"))
+
+    requested_total = raw_target.get("requested_total")
+    if basis == "user-total":
+        if isinstance(requested_total, bool) or not isinstance(requested_total, int) or requested_total < 1:
+            diagnostics.append(ContractDiagnostic("reading_requested_total_invalid", "user-total target metadata requires a positive integer requested_total.", "sections.target_counts.requested_total"))
+        else:
+            expected = {"priority": (requested_total + 1) // 2, "secondary": requested_total // 2}
+            if resolved != expected:
+                diagnostics.append(ContractDiagnostic("reading_target_total_mismatch", f"A requested total of {requested_total} requires {expected['priority']} priority and {expected['secondary']} secondary works.", "sections.target_counts"))
+    elif requested_total is not None:
+        diagnostics.append(ContractDiagnostic("reading_requested_total_unexpected", "requested_total is valid only when target_counts basis is user-total.", "sections.target_counts.requested_total"))
+
+    if basis == "default" and resolved != default:
+        diagnostics.append(ContractDiagnostic("reading_target_default_mismatch", "Default target metadata must record three priority and three secondary works.", "sections.target_counts"))
+    return resolved, True
+
+
+def _validate_reading_achieved_counts(
+    sections: Mapping[str, Any],
+    reachable: Mapping[str, int],
+    *,
+    target_metadata_present: bool,
+    diagnostics: list[ContractDiagnostic],
+) -> None:
+    raw_achieved = sections.get("achieved_counts")
+    if raw_achieved is None:
+        if target_metadata_present:
+            diagnostics.append(ContractDiagnostic("reading_achieved_counts_missing", "Configurable target metadata requires achieved_counts.", "sections.achieved_counts"))
+        return
+    if not isinstance(raw_achieved, dict):
+        diagnostics.append(ContractDiagnostic("reading_achieved_counts_invalid", "achieved_counts must be an object.", "sections.achieved_counts"))
+        return
+    for category, observed in reachable.items():
+        recorded = raw_achieved.get(category)
+        if isinstance(recorded, bool) or not isinstance(recorded, int) or recorded < 0:
+            diagnostics.append(ContractDiagnostic("reading_achieved_count_invalid", f"Achieved {category} count must be a non-negative integer.", f"sections.achieved_counts.{category}"))
+        elif recorded != observed:
+            diagnostics.append(ContractDiagnostic("reading_achieved_count_mismatch", f"Recorded achieved {category} count {recorded} does not match {observed} reachable items.", f"sections.achieved_counts.{category}"))
 
 
 def _validate_source_digest(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:

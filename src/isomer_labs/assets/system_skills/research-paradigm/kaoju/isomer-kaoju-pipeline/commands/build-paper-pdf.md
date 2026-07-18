@@ -2,19 +2,19 @@
 
 ## Workflow
 
-1. Resolve the accepted canonical MyST template and draft, citation map, paper line, current TeX compatibility fingerprint, and publication Gate policy. If canonical MyST state is missing or stale, return `paused` prerequisite recovery with `draft-paper` or the applicable repair route and the build resume point.
-2. Invoke `ext kaoju paper init-tex`. Parse MyST structurally, initialize or reuse `KAOJU:PAPER-TEMPLATE-TEX`, and regenerate `KAOJU:PAPER-DRAFT-TEX`. Record conversion identity, source checksums, citations, included files, lineage, and unsupported directive, table, citation, float, raw-block, or venue diagnostics.
-3. Require the write agent to inspect and repair derived TeX directly. Initialization never claims build readiness.
-4. After build authorization, invoke `build-pdf` through the `document_build` extension point. Record a distinct Run, exact toolchain, fallback rationale, compile log, and outputs.
-5. Permit bounded automatic presentation-only or TeX-syntax repair that preserves canonical MyST and evidence meaning. Any canonical content, dependency, toolchain policy, or interpretation change requires a revised plan and human Gate.
+1. Resolve the accepted canonical MyST draft and its exact observed content-template identity, citation map, paper line, publication Gate policy, and an explicit named LaTeX template or LaTeX `main`. Content and LaTeX selectors are independent. If canonical MyST state is missing or stale, return `paused` prerequisite recovery with `draft-paper`; if LaTeX stock is missing, route to `manage-paper-template --kind latex` for create or explicit adoption.
+2. Invoke `ext kaoju paper init-tex --content-template-ref REF` with either `--latex-template-name NAME`, `--latex-template-ref REF`, or the omitted-selector LaTeX `main` default. Snapshot the exact multi-file `KAOJU:PAPER-TEMPLATE-LATEX` state into `KAOJU:PAPER-TEMPLATE-TEX`, then compose a self-contained `KAOJU:PAPER-DRAFT-TEX` through the checked preamble, marker, or include contract. Record the content-template identity, LaTeX-template identity, state token, digests, source checksum, composition contract, build profile, entrypoint, citations, included files, and conversion diagnostics separately.
+3. Run `paper tex-status` and require the write agent to inspect and repair derived TeX directly. Initialization never claims build readiness. Report stocked-template drift and paper-local repair drift without recomposition or stock mutation.
+4. After build authorization, invoke `build-pdf` through the `document_build` extension point. The builder verifies the pinned snapshot, rejects a mismatched compatibility `--template-tex-ref`, uses the manifest entrypoint and registered build profile, and records a distinct Run, exact command, compile log, drift posture, and outputs.
+5. Permit bounded presentation-only or TeX-syntax repair inside `KAOJU:PAPER-DRAFT-TEX` when it preserves canonical MyST and evidence meaning. Never promote a paper repair into named LaTeX stock unless the user explicitly requests that separate mutation. Any canonical content, dependency, build-profile, or interpretation change requires a revised plan and human Gate.
 6. Validate PDF media type, digest, extracted text, hierarchy, citations, page sequence, displays, clipping, overflow, blank pages, density, and publication-quality profile before the publication Gate.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
 
 ## Owner, Inputs, and Outputs
 
-Owner: `$isomer-kaoju-write`. Outputs: derived TeX template and draft, immutable build Run and compile log, PDF, PDF revision log, validation report, and publication bundle refs.
+Owner: `$isomer-kaoju-write`. Outputs: separate observed content-template and LaTeX-template identities, exact TeX snapshot and self-contained draft, drift posture, immutable build Run and compile log, PDF, PDF revision log, validation report, and publication bundle refs.
 
 ## Gates, Blockers, and Resume
 
-Build and publication Gates are distinct. Resume at MyST validation, TeX initialization, agent repair, build authorization, build repair, PDF inspection, or publication acceptance.
+Build and publication Gates are distinct. Resume at MyST validation, LaTeX stock resolution, TeX composition, agent repair, build authorization, build repair, PDF inspection, or publication acceptance.

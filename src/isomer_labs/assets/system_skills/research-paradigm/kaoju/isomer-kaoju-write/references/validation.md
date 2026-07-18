@@ -5,7 +5,8 @@ A successful build does not make a paper ready. A bound `KAOJU:PAPER-VALIDATION-
 ## Structural and Textual Checks
 
 - canonical MyST revision, structure, citations, placeholders, display refs, and evidence boundaries
-- derived TeX identity, conversion diagnostics, compatibility fingerprint, and included-file digests
+- separate observed content-template and LaTeX-template identities, exact snapshot digest, composition contract, declared entrypoint, conversion diagnostics, presentation fingerprint, and included-file digests
+- stocked-template drift and paper-local repair drift
 - absence of authored section numbers
 - citation resolution and bibliography consistency
 - engine exit status, missing references, missing glyphs, overfull content, material warnings

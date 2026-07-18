@@ -104,9 +104,9 @@
     {
       "semantic_id": "KAOJU:READING-LIST",
       "category": "Discovery and Acquisition",
-      "meaning": "one direction-scoped priority and secondary target set with coverage and shortage notes.",
+      "meaning": "one direction-scoped priority and secondary target set with target derivation, achieved counts, coverage, and shortage notes.",
       "minimum_content": [
-        "one direction-scoped priority and secondary target set with coverage and shortage notes."
+        "one direction-scoped priority and secondary target set with target derivation, achieved counts, coverage, and shortage notes."
       ],
       "producer": "isomer-kaoju-discover",
       "consumers": [
@@ -517,9 +517,9 @@
     {
       "semantic_id": "KAOJU:PAPER-CONTRACT",
       "category": "MyST-First Paper",
-      "meaning": "accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy.",
+      "meaning": "accepted audience, questions, evidence boundary, content-template selection, LaTeX-template selection, structure profile, quality policy, and build policy.",
       "minimum_content": [
-        "accepted audience, questions, evidence boundary, structure profile, quality policy, and build policy."
+        "accepted audience, questions, evidence boundary, independent content and LaTeX template identities, structure profile, quality policy, and build policy."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -543,9 +543,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
       "category": "MyST-First Paper",
-      "meaning": "one stable mutable named canonical MyST-oriented template tree.",
+      "meaning": "one stable mutable named content-template tree for canonical MyST authoring structure.",
       "minimum_content": [
-        "a checksummed managed directory tree with a path-safe template name, opaque state token, and bounded authored metadata."
+        "a checksummed managed directory tree with template kind content, a path-safe template name, opaque state token, and bounded authored metadata."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -554,11 +554,24 @@
       "update_intent": "Atomically replace the stable named record without an automatic content revision or saved copy."
     },
     {
+      "semantic_id": "KAOJU:PAPER-TEMPLATE-LATEX",
+      "category": "MyST-First Paper",
+      "meaning": "one stable mutable named multi-file LaTeX presentation-template stock tree.",
+      "minimum_content": [
+        "a checksummed managed directory tree with template kind latex, a path-safe name, state token, entrypoint, checked composition contract, build profile, provenance, and license posture."
+      ],
+      "producer": "isomer-kaoju-write",
+      "consumers": [
+        "isomer-kaoju-write"
+      ],
+      "update_intent": "Atomically replace the stable named LaTeX stock without changing already composed paper snapshots."
+    },
+    {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-MUTATION-AUDIT",
       "category": "MyST-First Paper",
-      "meaning": "lightweight mutable-template mutation evidence without prior template bytes.",
+      "meaning": "lightweight content-template or LaTeX-template mutation evidence without prior template bytes.",
       "minimum_content": [
-        "template name, stable ref, actor, operation, source refs, time, and before-and-after state tokens and tree digests."
+        "template kind, template name, stable ref, actor, operation, source refs, time, and before-and-after state tokens and tree digests."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -625,9 +638,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-EXPORT",
       "category": "MyST-First Paper",
-      "meaning": "registered non-canonical working-directory observation for a stable named template.",
+      "meaning": "registered non-canonical working-directory observation for a stable named content or LaTeX template.",
       "minimum_content": [
-        "stable template ref, name, state token, canonical and exported tree digests, observed path, time, and actor provenance."
+        "template kind, stable template ref, name, state token, canonical and exported tree digests, observed path, time, and actor provenance."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -638,9 +651,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-MANIFEST",
       "category": "MyST-First Paper",
-      "meaning": "named-template export identity, state token, tree digests, path, time, and actor provenance.",
+      "meaning": "kind-qualified named-template export identity, state token, tree digests, path, time, and actor provenance.",
       "minimum_content": [
-        "stable source ref, template name, state token, canonical and exported tree digests, observed path, time, and actor."
+        "template kind, stable source ref, template name, state token, canonical and exported tree digests, observed path, time, and actor."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -665,9 +678,9 @@
     {
       "semantic_id": "KAOJU:PAPER-TEMPLATE-TEX",
       "category": "MyST-First Paper",
-      "meaning": "derived TeX template tree and compatibility fingerprint.",
+      "meaning": "exact derived snapshot of one observed named LaTeX template state and its presentation fingerprint.",
       "minimum_content": [
-        "derived TeX template tree and compatibility fingerprint."
+        "complete LaTeX stock tree, source stable ref, name, state token, digest, entrypoint, composition contract, build profile, provenance, and presentation fingerprint."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -678,9 +691,9 @@
     {
       "semantic_id": "KAOJU:PAPER-DRAFT-TEX",
       "category": "MyST-First Paper",
-      "meaning": "derived TeX draft tree, citations, included files, and conversion diagnostics.",
+      "meaning": "self-contained TeX draft composed from canonical MyST content and an exact LaTeX presentation snapshot.",
       "minimum_content": [
-        "derived TeX draft tree, citations, included files, and conversion diagnostics."
+        "canonical MyST checksum, separate content and LaTeX template lineage, declared entrypoint, citations, included files, conversion diagnostics, and paper-local repair posture."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [
@@ -757,9 +770,9 @@
     {
       "semantic_id": "KAOJU:PUBLICATION-BUNDLE",
       "category": "MyST-First Paper",
-      "meaning": "accepted canonical and derived paper refs with audit and provenance.",
+      "meaning": "accepted canonical and derived paper refs with independent content-template, LaTeX-template, audit, build, and publication provenance.",
       "minimum_content": [
-        "accepted canonical and derived paper refs with audit and provenance."
+        "accepted canonical and derived paper refs, observed content and LaTeX template identities, snapshot and build refs, audit, and provenance."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [

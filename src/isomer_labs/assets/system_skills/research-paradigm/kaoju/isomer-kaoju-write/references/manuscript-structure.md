@@ -1,6 +1,6 @@
 # MyST Manuscript Structure
 
-The paper separates a reader-facing narrative from an auditable evidence view. Both are authored in canonical MyST and linked through typed roles, directives, citations, display refs, and source refs. Paper use resolves an explicitly named mutable template or canonical `main` and records its stable ref and observed tree digest.
+The paper separates a reader-facing narrative from an auditable evidence view. Both are authored in canonical MyST and linked through typed roles, directives, citations, display refs, and source refs. Drafting resolves an explicitly named content template or content `main` and records its stable ref, state token, and observed tree digest. LaTeX presentation selection is separate and occurs only when TeX or PDF output is requested.
 
 ## Adaptive Profiles
 
@@ -18,4 +18,4 @@ Record the profile id, rationale, section order, section jobs, required evidence
 
 ## Derivation Boundary
 
-The named template can contain arbitrary MyST, configuration, includes, assets, and guidance without a universal entrypoint. The agent interprets the tree and its bounded authored metadata. Review Markdown is deterministic and non-canonical. TeX initialization parses accepted MyST state, records the selected template name, stable ref, observed digest and unsupported constructs, and creates a compatibility fingerprint. Direct TeX inspection may repair presentation and TeX syntax, but a content repair returns to canonical MyST.
+The content template can contain arbitrary MyST, configuration, includes, assets, and guidance. The agent interprets its tree and bounded authored metadata. Review Markdown is deterministic and non-canonical. TeX composition separately snapshots a named multi-file LaTeX template with a checked entrypoint and preamble, marker, or include contract. The presentation fingerprint depends on LaTeX stock and composition behavior, while the canonical MyST checksum remains separate lineage. Direct TeX inspection may repair paper-specific presentation and syntax, but content repair returns to canonical MyST and stock promotion requires an explicit LaTeX-template update.

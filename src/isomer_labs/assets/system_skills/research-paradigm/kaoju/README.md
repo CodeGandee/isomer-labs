@@ -25,7 +25,7 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 
 The entry skill exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
 
-Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` constructs a mutable named canonical MyST-oriented tree. Grouped object operations remain under `manage-survey`, `manage-dataset`, and `manage-paper-template`.
+Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` constructs a mutable named content template. `manage-paper-template` resolves content versus LaTeX role before managing either namespace.
 
 ## Durable State and CLI Boundaries
 
@@ -40,24 +40,27 @@ Houmao may implement Service Dispatch Forms, launch, mailboxes, or inspection be
 ```text
 accepted audit and synthesis
             |
- named template main or explicit name
-     stable ref + observed digest
+ content template main or explicit name
+ stable ref + state token + observed digest
             |
    paper-structure-myst
             |
       paper-draft-myst ----------------> paper-draft-md
             |                               derived review view
             |
-     TeX initialization
-       /             \
-paper-template-tex  paper-draft-tex
+ independent LaTeX template main or explicit name
+ stable ref + state token + observed digest
+            |
+ exact paper-template-tex snapshot
+            |
+   self-contained paper-draft-tex
                           |
                  agent inspection and repair
                           |
                       paper-pdf
 ```
 
-MyST is the only canonical paper source. Figures and tables are separate file-backed `KAOJU:PAPER-DISPLAY` Artifacts referenced by typed placeholders and citation-map entries. TeX trees, compile logs, PDFs, and viewer directories retain checksummed file or directory manifests and lineage to their exact canonical inputs.
+MyST is the only canonical paper source. Content templates define MyST authoring structure; independent multi-file LaTeX templates define presentation. Each role owns its own `main`, stable refs, state tokens, exports, and updates. Figures and tables remain separate file-backed `KAOJU:PAPER-DISPLAY` Artifacts. TeX snapshots, composed drafts, compile logs, PDFs, and viewer directories retain checksummed manifests and lineage to exact content and presentation inputs.
 
 ## Reset and Resume Semantics
 
@@ -71,7 +74,7 @@ If the user chooses “run to the PDF target,” the current agent maintains a p
 
 ## Migration
 
-Legacy `KAOJU:SURVEY-MANUSCRIPT` and `KAOJU:WRITING-TEMPLATE` records remain readable but are never promoted automatically into canonical MyST state. Legacy `ext research templates` mutation is disabled; new paper templates use the flat mutable namespace under `ext kaoju paper template`. Each name owns one stable record and arbitrary managed directory tree. Ordinary updates require the current opaque state token, replace that tree without automatic history, and emit lightweight audit evidence. Users preserve a state only by explicitly copying it to another ordinary name. Stable working copies resolve beneath `topic.paper.template_exchange_root`, defaulting to `intent/derived/writing-template/<name>/`, and remain non-canonical until an agent-prepared explicit update succeeds. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
+Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJU:PAPER-TEMPLATE-TEX` records remain readable and never redefine canonical MyST. New named stock uses `ext kaoju paper template --kind content|latex`. Each role-local name owns one stable record and managed tree. Updates require the current opaque token and emit kind-qualified audit evidence. Working copies resolve to `<topic.paper.template_exchange_root>/content/<name>/` or `/latex/<name>/`. Contract migration annotates existing content records in place and adopts LaTeX only by copying one exact actor-selected historical tree with checked composition metadata. The source and all paper-line snapshots remain unchanged. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
 
 ## Installation
 

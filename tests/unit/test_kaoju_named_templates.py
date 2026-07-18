@@ -14,12 +14,14 @@ from unittest.mock import patch
 from isomer_labs import cli
 from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
+from isomer_labs.kaoju.paper import _compose_latex_tree
 from isomer_labs.kaoju.template_support import _replace_directory
 from isomer_labs.models import SelectionRequest
 from isomer_labs.project import discover_project
 from isomer_labs.project.context import resolve_effective_topic_context
 from isomer_labs.project.validation import build_project_state
-from isomer_labs.runtime.store import WorkspaceRuntimeStore
+from isomer_labs.runtime.records import RuntimeLifecycleRecord
+from isomer_labs.runtime.store import WorkspaceRuntimeStore, open_workspace_runtime
 
 
 def _write(path: Path, content: str) -> None:
@@ -152,6 +154,18 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(0, status, payload)
         return payload
 
+    def test_empty_content_migration_is_an_idempotent_noop(self) -> None:
+        status, migrated = self.template("migrate", "--kind", "content", "--apply", "--actor", "agent:migration")
+        self.assertEqual(0, status, migrated)
+        self.assertFalse(migrated["mutated"])
+        self.assertEqual([], migrated["upgraded_content_refs"])
+        self.assertEqual([], migrated["affected_refs"])
+        self.assertEqual({"kind": "content", "source": "explicit"}, migrated["template_kind_selection"])
+
+        status, compatibility_default = self.template("list")
+        self.assertEqual(0, status, compatibility_default)
+        self.assertEqual({"kind": "content", "source": "compatibility-default"}, compatibility_default["template_kind_selection"])
+
     def test_mutable_update_keeps_one_stable_record_and_rejects_stale_state(self) -> None:
         created = self.create_main()
         stable_ref = created["stable_ref"]
@@ -167,6 +181,27 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(stable_ref, updated["stable_ref"])
         self.assertNotEqual(token, updated["state_token"])
         self.assertNotEqual(created["tree_digest"], updated["tree_digest"])
+
+        status, unchanged = self.template(
+            "update",
+            "--name",
+            "main",
+            "--from",
+            str(replacement),
+            "--expected-state",
+            str(updated["state_token"]),
+            "--actor",
+            "agent:test",
+            "--source-ref",
+            "artifact-source-same-tree",
+        )
+        self.assertEqual(0, status, unchanged)
+        self.assertFalse(unchanged["mutated"])
+        self.assertEqual(
+            str(self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main"),
+            unchanged["default_working_path"],
+        )
+        self.assertEqual(["artifact-source-same-tree"], unchanged["source_refs"])
 
         status, listed = self.template("list")
         self.assertEqual(0, status, listed)
@@ -217,7 +252,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         status, exported = self.template("export", "--actor", "agent:test")
         self.assertEqual(0, status, exported)
-        target = self.root / "topic-workspaces/alpha/intent/derived/writing-template/main"
+        target = self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main"
         self.assertEqual(str(target), exported["target"])
         self.assertTrue((target / ".isomer-template-export.json").is_file())
         self.assertTrue((target / "paper/index.md").is_file())
@@ -431,6 +466,153 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(0, status, canonical)
         self.assertEqual(created["state_token"], canonical["template"]["state_token"])
 
+    def test_content_and_latex_main_are_independent_and_edited_latex_export_updates_stock(self) -> None:
+        content = self.create_main()
+        latex_tree = self.root / "prepared/latex-main"
+        _write(latex_tree / "template.tex", "\\documentclass{fixture}\n\\usepackage{survey}\n")
+        _write(latex_tree / "fixture.cls", "\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesClass{fixture}\n\\LoadClass{article}\n")
+        _write(latex_tree / "survey.sty", "\\ProvidesPackage{survey}\n")
+        metadata = self.root / "prepared/latex-metadata.json"
+        _write(
+            metadata,
+            json.dumps(
+                {
+                    "entrypoint": "template.tex",
+                    "use_guidance": "Compose canonical MyST through the fixture presentation.",
+                    "extensions": {
+                        "latex": {
+                            "composition_mode": "preamble",
+                            "generated_entrypoint": "paper.tex",
+                            "build_profile": "pdflatex",
+                            "source_provenance": {"kind": "fixture", "ref": "fixture:latex-main"},
+                            "license_posture": "test-only",
+                        }
+                    },
+                }
+            )
+            + "\n",
+        )
+        status, latex = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--from",
+            str(latex_tree),
+            "--metadata-file",
+            str(metadata),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, latex)
+        self.assertEqual("artifact-paper-template-myst-main", content["stable_ref"])
+        self.assertEqual("artifact-paper-template-latex-main", latex["stable_ref"])
+        self.assertEqual("content", content["template_kind"])
+        self.assertEqual("latex", latex["template_kind"])
+        self.assertEqual(
+            str(self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex/main"),
+            latex["default_working_path"],
+        )
+        self.assertEqual([], latex["source_refs"])
+
+        status, content_list = self.template("list", "--kind", "content")
+        self.assertEqual(0, status, content_list)
+        status, latex_list = self.template("list", "--kind", "latex")
+        self.assertEqual(0, status, latex_list)
+        self.assertEqual(["main"], [item["name"] for item in content_list["templates"]])
+        self.assertEqual(["main"], [item["name"] for item in latex_list["templates"]])
+
+        status, exported = self.template("export", "--kind", "latex", "--actor", "agent:test")
+        self.assertEqual(0, status, exported)
+        target = self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex/main"
+        self.assertEqual(str(target), exported["target"])
+        export_metadata = json.loads((target / ".isomer-template-export.json").read_text(encoding="utf-8"))
+        self.assertEqual("latex", export_metadata["template_kind"])
+        _write(target / "survey.sty", "\\ProvidesPackage{survey}\n% edited\n")
+        status, updated = self.template(
+            "update",
+            "--kind",
+            "latex",
+            "--from",
+            str(target),
+            "--expected-state",
+            str(latex["state_token"]),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, updated)
+        self.assertEqual("update-from-export", updated["operation"].rsplit(".", 1)[-1])
+        self.assertNotEqual(latex["tree_digest"], updated["tree_digest"])
+        status, content_after = self.template("show", "--kind", "content")
+        self.assertEqual(0, status, content_after)
+        self.assertEqual(content["state_token"], content_after["template"]["state_token"])
+
+    def test_latex_composition_contract_validates_marker_and_include_modes(self) -> None:
+        missing = self.root / "prepared/latex-missing-contract"
+        _write(missing / "main.tex", "\\documentclass{article}\n\\begin{document}\nX\\end{document}\n")
+        status, rejected = self.template("create", "--kind", "latex", "--name", "missing", "--from", str(missing), "--actor", "agent:test")
+        self.assertEqual(1, status)
+        self.assertEqual("latex_template_entrypoint_required", rejected["error"]["code"])
+
+        fixtures = {
+            "marker": (
+                "\\documentclass{article}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n",
+                {"composition_mode": "marker", "marker": "% ISOMER_BODY"},
+            ),
+            "include": (
+                "\\documentclass{article}\n\\begin{document}\n\\input{generated/body}\n\\end{document}\n",
+                {"composition_mode": "include", "body_path": "generated/body.tex"},
+            ),
+        }
+        for name, (tex, contract) in fixtures.items():
+            with self.subTest(name=name):
+                tree = self.root / f"prepared/latex-{name}"
+                _write(tree / "paper.tex", tex)
+                metadata = self.root / f"prepared/latex-{name}.json"
+                _write(
+                    metadata,
+                    json.dumps(
+                        {
+                            "entrypoint": "paper.tex",
+                            "extensions": {
+                                "latex": {
+                                    **contract,
+                                    "build_profile": "pdflatex",
+                                    "source_provenance": f"fixture:{name}",
+                                    "license_posture": "test-only",
+                                }
+                            },
+                        }
+                    )
+                    + "\n",
+                )
+                status, created = self.template("create", "--kind", "latex", "--name", name, "--from", str(tree), "--metadata-file", str(metadata), "--actor", "agent:test")
+                self.assertEqual(0, status, created)
+
+        marker_root = self.root / "composed/marker"
+        _write(marker_root / "paper.tex", fixtures["marker"][0])
+        marker_entrypoint = _compose_latex_tree(
+            marker_root,
+            stock_entrypoint="paper.tex",
+            contract={"composition_mode": "marker", "marker": "% ISOMER_BODY"},
+            converted_body="Composed marker body.\n",
+        )
+        self.assertEqual("paper.tex", marker_entrypoint)
+        marker_output = (marker_root / "paper.tex").read_text(encoding="utf-8")
+        self.assertIn("Composed marker body.", marker_output)
+        self.assertNotIn("% ISOMER_BODY", marker_output)
+
+        include_root = self.root / "composed/include"
+        _write(include_root / "paper.tex", fixtures["include"][0])
+        include_entrypoint = _compose_latex_tree(
+            include_root,
+            stock_entrypoint="paper.tex",
+            contract={"composition_mode": "include", "body_path": "generated/body.tex"},
+            converted_body="Composed include body.\n",
+        )
+        self.assertEqual("paper.tex", include_entrypoint)
+        self.assertEqual("Composed include body.\n", (include_root / "generated/body.tex").read_text(encoding="utf-8"))
+        self.assertIn("\\input{generated/body}", (include_root / "paper.tex").read_text(encoding="utf-8"))
+
     def test_migration_wraps_one_current_file_and_preserves_legacy_state(self) -> None:
         source = self.root / "prepared/legacy-template.md"
         _write(source, "# Legacy template\n")
@@ -455,6 +637,25 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         _write(versioned_export / "template.md", "historical export\n")
         legacy_latex = self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex-old"
         _write(legacy_latex / "main.tex", "legacy latex\n")
+        legacy_content_export = self.root / "topic-workspaces/alpha/intent/derived/writing-template/legacy-main"
+        _write(legacy_content_export / "template.md", "legacy exported content\n")
+        _write(
+            legacy_content_export / ".isomer-template-export.json",
+            json.dumps(
+                {
+                    "schema_version": "isomer-kaoju-template-export.v1",
+                    "template_name": "main",
+                    "canonical_ref": "artifact-legacy-paper-template-current",
+                    "state_token": "legacy-state",
+                    "canonical_tree_digest": "sha256:legacy",
+                    "exported_tree_digest": "sha256:legacy",
+                    "observed_path": str(legacy_content_export),
+                    "observed_at": "2026-01-01T00:00:00Z",
+                    "actor": "agent:legacy",
+                }
+            )
+            + "\n",
+        )
 
         status, inspection = self.template("migrate")
         self.assertEqual(0, status, inspection)
@@ -465,6 +666,18 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(["artifact-legacy-paper-template-old"], inspection["historical_record_ids"])
         self.assertEqual([str(versioned_export)], inspection["versioned_export_paths"])
         self.assertEqual([str(legacy_latex)], inspection["legacy_latex_paths"])
+        self.assertEqual([str(legacy_content_export)], inspection["legacy_export_paths"])
+        self.assertEqual(
+            [
+                {
+                    "path": str(legacy_content_export),
+                    "template_kind": "content",
+                    "compatibility_source": "legacy-unqualified-content-export",
+                }
+            ],
+            inspection["legacy_export_compatibility"],
+        )
+        self.assertEqual("adopt-legacy-content", inspection["proposed_mutations"][0]["operation"])
 
         status, migrated = self.template("migrate", "--apply", "--actor", "agent:test")
         self.assertEqual(0, status, migrated)
@@ -508,6 +721,139 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         status, blocked = self.template("migrate", "--apply", "--record", "artifact-legacy-ambiguous", "--name", "ambiguous", "--actor", "agent:test")
         self.assertEqual(1, status)
         self.assertEqual("template_migration_entrypoint_ambiguous", blocked["error"]["code"])
+
+    def test_contract_migration_upgrades_content_in_place_and_adopts_exact_latex_source(self) -> None:
+        content = self.create_main()
+        legacy_source = self.root / "prepared/legacy-alongside-main.md"
+        _write(legacy_source, "# Preserved legacy content\n")
+        self.create_generic_record(
+            "artifact-legacy-alongside-main",
+            "KAOJU:PAPER-TEMPLATE-MYST",
+            body_file=legacy_source,
+            scope_key="legacy-alongside-main",
+        )
+        context = self.context()
+        store, diagnostics = open_workspace_runtime(context, env={}, read_only=False)
+        self.assertIsNotNone(store, [item.message for item in diagnostics])
+        assert store is not None
+        try:
+            record = store.get_lifecycle_record(str(content["stable_ref"]))
+            assert record is not None
+            metadata = dict(record.transition_metadata)
+            metadata.pop("template_kind", None)
+            store.upsert_lifecycle_record(RuntimeLifecycleRecord(**{**record.__dict__, "transition_metadata": metadata}))
+            store.connection.commit()
+        finally:
+            store.close()
+
+        status, preview = self.template("migrate", "--kind", "content")
+        self.assertEqual(0, status, preview)
+        self.assertFalse(preview["mutated"])
+        self.assertFalse(preview["content_records"][0]["contract_current"])
+        status, upgraded = self.template("migrate", "--kind", "content", "--apply", "--actor", "agent:migration")
+        self.assertEqual(0, status, upgraded)
+        self.assertEqual([content["stable_ref"]], upgraded["upgraded_content_refs"])
+        status, content_after = self.template("show", "--kind", "content")
+        self.assertEqual(0, status, content_after)
+        self.assertEqual(content["stable_ref"], content_after["template"]["stable_ref"])
+        self.assertEqual(content["state_token"], content_after["template"]["state_token"])
+        self.assertEqual(content["tree_digest"], content_after["template"]["tree_digest"])
+        self.assertEqual(["artifact-legacy-alongside-main"], upgraded["preserved_active_legacy_record_ids"])
+
+        snapshot = self.root / "prepared/legacy-tex-snapshot"
+        _write(snapshot / "template.tex", "\\documentclass{fixture}\n")
+        _write(snapshot / "fixture.cls", "\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesClass{fixture}\n\\LoadClass{article}\n")
+        status, source = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "artifacts",
+            "put",
+            "KAOJU:PAPER-TEMPLATE-TEX",
+            str(snapshot),
+            "--producer",
+            "isomer-kaoju-write",
+            "--scope-key",
+            "legacy-paper",
+            "--id",
+            "artifact-legacy-tex-source",
+            "--relationships-json",
+            json.dumps([{"role": "paper_template_latex", "target_ref": str(content["stable_ref"])}]),
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, source)
+        source_path = source["record"]["content_path"]
+        status, alternate_source = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "artifacts",
+            "put",
+            "KAOJU:PAPER-TEMPLATE-TEX",
+            str(snapshot),
+            "--producer",
+            "isomer-kaoju-write",
+            "--scope-key",
+            "legacy-paper-alternate",
+            "--id",
+            "artifact-legacy-tex-alternate",
+            "--relationships-json",
+            json.dumps([{"role": "paper_template_latex", "target_ref": str(content["stable_ref"])}]),
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, alternate_source)
+        metadata = self.root / "prepared/adopt-latex-metadata.json"
+        _write(
+            metadata,
+            json.dumps(
+                {
+                    "entrypoint": "template.tex",
+                    "extensions": {
+                        "latex": {
+                            "composition_mode": "preamble",
+                            "build_profile": "pdflatex",
+                            "source_provenance": "artifact-legacy-tex-source",
+                            "license_posture": "approved fixture",
+                        }
+                    },
+                }
+            )
+            + "\n",
+        )
+        status, latex_preview = self.template("migrate", "--kind", "latex")
+        self.assertEqual(0, status, latex_preview)
+        self.assertEqual(
+            {"artifact-legacy-tex-source", "artifact-legacy-tex-alternate"},
+            {item["record_id"] for item in latex_preview["latex_candidates"]},
+        )
+        self.assertEqual(["explicit_source_ref_required"], latex_preview["conflicts"])
+        self.assertEqual(
+            {"artifact-legacy-tex-source", "artifact-legacy-tex-alternate"},
+            {item["source_ref"] for item in latex_preview["proposed_mutations"]},
+        )
+        status, missing_source = self.template("migrate", "--kind", "latex", "--apply", "--metadata-file", str(metadata), "--actor", "agent:migration")
+        self.assertEqual(1, status)
+        self.assertEqual("template_migration_source_required", missing_source["error"]["code"])
+        status, adopted = self.template(
+            "migrate",
+            "--kind",
+            "latex",
+            "--apply",
+            "--record",
+            "artifact-legacy-tex-source",
+            "--metadata-file",
+            str(metadata),
+            "--actor",
+            "agent:migration",
+        )
+        self.assertEqual(0, status, adopted)
+        self.assertEqual("artifact-paper-template-latex-main", adopted["stable_ref"])
+        self.assertEqual("artifact-legacy-tex-source", adopted["adopted_source_ref"])
+        status, source_after = self.run_cli("project", "--root", str(self.root), "artifacts", "show", "artifact-legacy-tex-source", "--topic", "alpha")
+        self.assertEqual(0, status, source_after)
+        self.assertEqual(source_path, source_after["record"]["content_path"])
 
     def test_path_safety_reserved_files_and_symlinks_are_rejected(self) -> None:
         tree = self.prepared_tree("unsafe")
@@ -579,6 +925,77 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertEqual("artifact_mutable_service_required", rejected["error"]["code"])
         self.assertTrue(any("ext kaoju paper template" in action for action in rejected["recovery_actions"]))
+
+        status, latex_rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "artifacts",
+            "put",
+            "KAOJU:PAPER-TEMPLATE-LATEX",
+            str(tree),
+            "--producer",
+            "isomer-kaoju-write",
+            "--scope-key",
+            "main",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_mutable_service_required", latex_rejected["error"]["code"])
+
+        latex_tree = self.root / "prepared/generic-revise-latex"
+        _write(latex_tree / "template.tex", "\\documentclass{article}\n")
+        metadata = self.root / "prepared/generic-revise-latex-metadata.json"
+        _write(
+            metadata,
+            json.dumps(
+                {
+                    "entrypoint": "template.tex",
+                    "extensions": {
+                        "latex": {
+                            "composition_mode": "preamble",
+                            "build_profile": "pdflatex",
+                            "source_provenance": "fixture:generic-revise",
+                            "license_posture": "test-only",
+                        }
+                    },
+                }
+            )
+            + "\n",
+        )
+        status, named_latex = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--from",
+            str(latex_tree),
+            "--metadata-file",
+            str(metadata),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, named_latex)
+        status, revise_rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "artifacts",
+            "revise",
+            str(named_latex["stable_ref"]),
+            str(latex_tree),
+            "--producer",
+            "isomer-kaoju-write",
+            "--scope-key",
+            "main",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_mutable_service_required", revise_rejected["error"]["code"])
+        status, latex_list = self.template("list", "--kind", "latex")
+        self.assertEqual(0, status, latex_list)
+        self.assertEqual([named_latex["stable_ref"]], [item["stable_ref"] for item in latex_list["templates"]])
 
     def test_unknown_template_command_returns_named_template_examples(self) -> None:
         status, payload = self.run_cli("ext", "kaoju", "paper", "template", "not-a-command")

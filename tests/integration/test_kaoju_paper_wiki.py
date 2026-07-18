@@ -5,6 +5,7 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import signal
 import socket
 import tempfile
@@ -333,7 +334,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         status, exported = self.paper("template", "export", "--actor", "agent:integration")
         self.assertEqual(0, status, exported)
         export_path = Path(str(exported["target"]))
-        self.assertEqual(self.root / "topic-workspaces/alpha/intent/derived/writing-template/main", export_path)
+        self.assertEqual(self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main", export_path)
         export_metadata = json.loads((export_path / ".isomer-template-export.json").read_text(encoding="utf-8"))
         self.assertEqual("main", export_metadata["template_name"])
         self.assertEqual(created_template["stable_ref"], export_metadata["canonical_ref"])
@@ -371,6 +372,57 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, observed)
         self.assertFalse(observed["canonical"])
 
+        status, missing_latex = self.paper(
+            "init-tex",
+            "--draft-ref",
+            refs["draft"],
+            "--content-template-ref",
+            str(updated_template["stable_ref"]),
+            "--paper-line",
+            "paper-main",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("paper_latex_template_default_missing", missing_latex["error"]["code"])
+
+        latex_tree = self.root / "inputs/latex-template"
+        write(latex_tree / "template.tex", "\\documentclass{fixture}\n\\usepackage{surveyfixture}\n")
+        write(latex_tree / "fixture.cls", "\\NeedsTeXFormat{LaTeX2e}\n\\ProvidesClass{fixture}\n\\LoadClass{article}\n")
+        write(latex_tree / "surveyfixture.sty", "\\ProvidesPackage{surveyfixture}\n")
+        latex_metadata = self.root / "inputs/latex-template-metadata.json"
+        write(
+            latex_metadata,
+            json.dumps(
+                {
+                    "entrypoint": "template.tex",
+                    "use_guidance": "Use the fixture class and style as presentation stock.",
+                    "extensions": {
+                        "latex": {
+                            "composition_mode": "preamble",
+                            "generated_entrypoint": "paper.tex",
+                            "build_profile": "pdflatex",
+                            "source_provenance": {"kind": "integration-fixture", "ref": "fixture:latex-template"},
+                            "license_posture": "test-only",
+                        }
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        status, latex_template = self.paper(
+            "template",
+            "create",
+            "--kind",
+            "latex",
+            "--from",
+            str(latex_tree),
+            "--metadata-file",
+            str(latex_metadata),
+            "--actor",
+            "agent:integration",
+        )
+        self.assertEqual(0, status, latex_template)
+
         status, markdown = self.paper(
             "derive-markdown",
             "--source-ref",
@@ -381,11 +433,27 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, markdown)
         self.assertFalse(markdown["canonical"])
 
+        status, explicit_initialized = self.paper(
+            "init-tex",
+            "--draft-ref",
+            refs["draft"],
+            "--content-template-ref",
+            str(updated_template["stable_ref"]),
+            "--latex-template-name",
+            "main",
+            "--paper-line",
+            "paper-explicit-latex",
+            "--citation-ref",
+            refs["citation"],
+        )
+        self.assertEqual(0, status, explicit_initialized)
+        self.assertEqual(latex_template["stable_ref"], explicit_initialized["latex_template"]["stable_ref"])
+
         status, initialized = self.paper(
             "init-tex",
             "--draft-ref",
             refs["draft"],
-            "--template-myst-ref",
+            "--content-template-ref",
             str(updated_template["stable_ref"]),
             "--paper-line",
             "paper-main",
@@ -393,13 +461,20 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             refs["citation"],
         )
         self.assertEqual(0, status, initialized)
+        self.assertEqual("artifact-paper-template-latex-main", initialized["latex_template"]["stable_ref"])
+        self.assertEqual("paper.tex", initialized["entrypoint"])
         self.assertFalse(initialized["build_ready"])
         self.assertTrue(initialized["agent_inspection_required"])
+        status, composed_record = self.artifact("show", str(initialized["draft_ref"]))
+        self.assertEqual(0, status, composed_record)
+        composed_root = Path(str(composed_record["record"]["content_path"])).parent
+        self.assertTrue((composed_root / "fixture.cls").is_file())
+        self.assertTrue((composed_root / "surveyfixture.sty").is_file())
         status, initialized_again = self.paper(
             "init-tex",
             "--draft-ref",
             refs["draft"],
-            "--template-myst-ref",
+            "--content-template-ref",
             str(updated_template["stable_ref"]),
             "--paper-line",
             "paper-main",
@@ -408,6 +483,120 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(0, status, initialized_again)
         self.assertTrue(initialized_again["template_reused"])
+
+        status, content_baseline = self.paper(
+            "init-tex",
+            "--draft-ref",
+            refs["draft"],
+            "--content-template-ref",
+            str(updated_template["stable_ref"]),
+            "--paper-line",
+            "paper-content-drift",
+            "--citation-ref",
+            refs["citation"],
+        )
+        self.assertEqual(0, status, content_baseline)
+        self.assertFalse(content_baseline["template_reused"])
+        revised_content = self.root / "inputs/content-template-revised"
+        shutil.copytree(candidate, revised_content)
+        with (revised_content / "myst.yml").open("a", encoding="utf-8") as handle:
+            handle.write("# content-only revision\n")
+        status, revised_content_stock = self.paper(
+            "template",
+            "update",
+            "--kind",
+            "content",
+            "--from",
+            str(revised_content),
+            "--expected-state",
+            str(updated_template["state_token"]),
+            "--actor",
+            "agent:integration",
+        )
+        self.assertEqual(0, status, revised_content_stock)
+        status, content_stale = self.paper("tex-status", "--draft-tex-ref", str(content_baseline["draft_ref"]))
+        self.assertEqual(0, status, content_stale)
+        self.assertEqual("content-stale", content_stale["content_template_posture"])
+        self.assertEqual("current", content_stale["stocked_template_posture"])
+        status, content_recomposed = self.paper(
+            "init-tex",
+            "--draft-ref",
+            refs["draft"],
+            "--content-template-ref",
+            str(revised_content_stock["stable_ref"]),
+            "--paper-line",
+            "paper-content-drift",
+            "--citation-ref",
+            refs["citation"],
+        )
+        self.assertEqual(0, status, content_recomposed)
+        self.assertTrue(content_recomposed["template_reused"])
+        self.assertEqual(content_baseline["template_ref"], content_recomposed["template_ref"])
+        self.assertEqual(content_baseline["compatibility_fingerprint"], content_recomposed["compatibility_fingerprint"])
+        self.assertEqual(content_baseline["latex_template"]["state_token"], content_recomposed["latex_template"]["state_token"])
+
+        status, mismatch = self.paper(
+            "build-pdf",
+            "--draft-tex-ref",
+            str(initialized_again["draft_ref"]),
+            "--template-tex-ref",
+            "artifact-unrelated-template",
+            "--paper-line",
+            "paper-main",
+            "--audit-ref",
+            refs["audit"],
+            "--inspected",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("paper_template_ref_mismatch", mismatch["error"]["code"])
+
+        revised_latex = self.root / "inputs/latex-template-revised"
+        write(revised_latex / "template.tex", "\\documentclass{fixture}\n\\usepackage{surveyfixture}\n% revised stock\n")
+        write(revised_latex / "fixture.cls", (latex_tree / "fixture.cls").read_text(encoding="utf-8"))
+        write(revised_latex / "surveyfixture.sty", (latex_tree / "surveyfixture.sty").read_text(encoding="utf-8"))
+        status, revised_stock = self.paper(
+            "template",
+            "update",
+            "--kind",
+            "latex",
+            "--from",
+            str(revised_latex),
+            "--expected-state",
+            str(latex_template["state_token"]),
+            "--actor",
+            "agent:integration",
+        )
+        self.assertEqual(0, status, revised_stock)
+        status, stale_status = self.paper("tex-status", "--draft-tex-ref", str(initialized_again["draft_ref"]))
+        self.assertEqual(0, status, stale_status)
+        self.assertEqual("presentation-stale", stale_status["stocked_template_posture"])
+        self.assertFalse(stale_status["paper_local_repair"])
+
+        repaired_tree = self.root / "actor/repaired-tex-draft"
+        shutil.copytree(composed_root, repaired_tree, ignore=shutil.ignore_patterns(".isomer-artifact-manifest.json"))
+        with (repaired_tree / "paper.tex").open("a", encoding="utf-8") as handle:
+            handle.write("% paper-local inspected repair\n")
+        status, repaired = self.artifact(
+            "revise",
+            str(initialized_again["draft_ref"]),
+            str(repaired_tree),
+            "--producer",
+            "isomer-kaoju-write",
+            "--scope-key",
+            "paper-main",
+            "--relationships-json",
+            json.dumps(
+                [
+                    {"role": "paper_draft_myst", "target_ref": refs["draft"]},
+                    {"role": "paper_template_tex", "target_ref": initialized_again["template_ref"]},
+                ]
+            ),
+        )
+        self.assertEqual(0, status, repaired)
+        repaired_ref = str(repaired["record"]["id"])
+        status, repaired_status = self.paper("tex-status", "--draft-tex-ref", repaired_ref)
+        self.assertEqual(0, status, repaired_status)
+        self.assertTrue(repaired_status["paper_local_repair"])
 
         self.put_structured(
             "KAOJU:AUDIT-REPORT",
@@ -435,13 +624,13 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
 
         fake_bin = self.root / "fake-bin"
         compiler = fake_bin / "pdflatex"
-        write(compiler, "#!/bin/sh\nprintf '%s\\n' '%PDF-1.4' '1 0 obj' '<<>>' 'endobj' '%%EOF' > main.pdf\n")
+        write(compiler, "#!/bin/sh\ntest -f fixture.cls || exit 7\ntest -f surveyfixture.sty || exit 8\nprintf '%s\\n' '%PDF-1.4' '1 0 obj' '<<>>' 'endobj' '%%EOF' > paper.pdf\n")
         compiler.chmod(0o755)
         self.path = str(fake_bin)
         status, gated = self.paper(
             "build-pdf",
             "--draft-tex-ref",
-            str(initialized_again["draft_ref"]),
+            repaired_ref,
             "--template-tex-ref",
             str(initialized_again["template_ref"]),
             "--paper-line",
@@ -451,14 +640,19 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             "--inspected",
         )
         self.assertEqual(0, status, gated)
-        self.assertEqual("preferred tectonic unavailable; selected pdflatex", gated["fallback"])
+        self.assertIsNone(gated["fallback"])
         self.assertFalse(gated["accepted"])
         self.assertEqual("required", gated["pdf_inspection"])
+        status, revision_record = self.artifact("show", str(gated["revision_log_ref"]))
+        self.assertEqual(0, status, revision_record)
+        revision_path = Path(str(revision_record["record"]["content_path"]))
+        revision_payload = json.loads(revision_path.read_text(encoding="utf-8"))
+        self.assertEqual("paper-local", revision_payload["sections"]["builds"][0]["repair_class"])
 
         status, accepted = self.paper(
             "build-pdf",
             "--draft-tex-ref",
-            str(initialized_again["draft_ref"]),
+            repaired_ref,
             "--template-tex-ref",
             str(initialized_again["template_ref"]),
             "--paper-line",

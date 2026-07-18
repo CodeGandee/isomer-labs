@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import mimetypes
 from pathlib import Path
@@ -178,12 +179,13 @@ def _edge_rows(
         ("source_refs", "derived_from"),
         ("source_ref", "derived_from"),
         ("claim_refs", "supports_claim"),
-        ("provenance_refs", "cites"),
         ("parent_record_id", "derived_from"),
         ("supersedes", "supersedes"),
         ("blocked_by", "blocks"),
     )
     for path, value in _walk_json(payload_json):
+        if path.endswith("[]"):
+            continue
         key = path.rsplit(".", 1)[-1].replace("[]", "")
         relation = next((relation for candidate, relation in derived_specs if key == candidate), None)
         if relation is None:
@@ -776,7 +778,10 @@ def _resolve_local_path(context: EffectiveTopicContext, path_text: str) -> Path 
 def _row_id(*parts: object) -> str:
     text_value = "::".join(str(part) for part in parts)
     safe = "".join(char if char.isalnum() or char in "._-" else "-" for char in text_value)
-    return safe[:220]
+    if len(safe) <= 220:
+        return safe
+    digest = hashlib.sha256(text_value.encode("utf-8")).hexdigest()[:16]
+    return f"{safe[:203]}-{digest}"
 
 
 def _dedupe_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:

@@ -7,7 +7,7 @@ Implement the full Kaoju Survey Process user-facing workflow layer for the `2026
 ## Required Use Cases
 
 - `uc-01`: Survey Direction From Topic — propose one or more bounded survey directions from a topic or research question, let the actor select or refine, and persist the chosen next-direction set.
-- `uc-02`: Collect Online Info And Build In-Depth Reading List — for an accepted direction, collect online sources and compose a direction-owned reading list with 3 priority + 3 secondary items (best effort), plus metadata, saved for actor inspection.
+- `uc-02`: Collect Online Info And Build In-Depth Reading List — for an accepted direction, collect online sources and compose a direction-owned reading list with configurable priority and secondary targets that default to 3 each, plus metadata, saved for actor inspection.
 - `uc-03`: Ingest Reading Item In Depth — read a selected reading item (paper, article, documentation) and produce structured survey records; download papers/repos to the topic artifact library when possible, fall back to online reading when access is blocked.
 - `uc-04`: Write Paper From Digested Materials — from accepted audit/synthesis records, produce a content-first MyST paper draft through a two-stage structure-then-fill workflow.
 - `uc-05`: Paper Template Manual Editing And Apply — extract the MyST paper template to a workspace directory for manual editing, then apply the revised template and regenerate the paper.
@@ -61,7 +61,7 @@ Document the chosen surface in `design/public-interfaces.md`. Each command must 
 - Accept a direction id (from `KAOJU:NEXT-DIRECTION-SET`).
 - Use `isomer-kaoju-discover` to collect candidate sources, recording query provenance.
 - Compose one direction-owned reading list artifact (`KAOJU:READING-LIST`) with metadata per item: name, URL, source type, one-paragraph summary, priority (primary/secondary), and locator.
-- Default target is 3 primary + 3 secondary items; fewer is a warning, not a blocker.
+- Default target is 3 primary plus 3 secondary items. Actor-supplied category counts override their respective defaults, while a total `N` derives `ceil(N / 2)` primary and `floor(N / 2)` secondary items; fewer than the effective target is a warning, not a blocker.
 - Answer the actor question: "For `<direction>`, what are you going to read?"
 
 #### uc-03 — Ingest Reading Item In Depth

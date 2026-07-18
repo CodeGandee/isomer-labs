@@ -680,6 +680,11 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         output_file = workspace / "outputs" / "metrics.json"
         output_file.parent.mkdir(parents=True)
         output_file.write_text('{"runtime_ms": 12.5}', encoding="utf-8")
+        long_attachment_root = workspace / "outputs" / ("shared-prefix-" + "x" * 180)
+        long_attachment_root.mkdir(parents=True)
+        long_attachments = [long_attachment_root / "first.json", long_attachment_root / "second.json"]
+        for attachment in long_attachments:
+            attachment.write_text('{"status":"ready"}', encoding="utf-8")
         status, target = self.run_records(
             root,
             [
@@ -730,6 +735,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                         }
                     ],
                     "evidence_refs": ["input-record"],
+                    "provenance_refs": ["provenance:run:run-alpha"],
                 }
             ),
             encoding="utf-8",
@@ -749,7 +755,15 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
                 "--relationships-json",
                 '[{"target_record_id":"input-record","relation_kind":"uses_input","relation_role":"baseline"}]',
                 "--files-json",
-                '[{"path":"outputs/metrics.json","file_role":"raw_results","semantic_label":"topic.records.runs"}]',
+                json.dumps(
+                    [
+                        {"path": "outputs/metrics.json", "file_role": "raw_results", "semantic_label": "topic.records.runs"},
+                        *[
+                            {"path": str(path), "file_role": "long_path_attachment", "semantic_label": "topic.records.runs"}
+                            for path in long_attachments
+                        ],
+                    ]
+                ),
             ],
         )
         self.assertEqual(0, status, created)
@@ -780,6 +794,7 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         self.assertTrue(any(item["file_role"] == "structured_payload" and item["exists"] for item in files["files"]))
         self.assertTrue(any(item["file_role"] == "structured_payload_manifest" and item["exists"] for item in files["files"]))
         self.assertTrue(any(item["file_role"] == "raw_results" and item["exists"] and item["openable"] for item in files["files"]))
+        self.assertEqual(2, sum(item["file_role"] == "long_path_attachment" and item["exists"] for item in files["files"]))
         self.assertFalse(any(item["path"] == "validation_metrics.json" for item in files["files"]))
         self.assertFalse(any(str(item["path"]).endswith("records/artifacts/missing") for item in files["files"]))
 
@@ -790,6 +805,13 @@ class ResearchRecordsExtensionTests(unittest.TestCase):
         status, exported = self.run_records(root, ["query", "export", "--view", "dashboard"])
         self.assertEqual(0, status, exported)
         self.assertTrue(any(node["record_id"] == "indexed-main-run" for node in exported["nodes"]))
+        input_edges = [
+            edge
+            for edge in exported["edges"]
+            if edge["source_record_id"] == "indexed-main-run" and edge["target_record_id"] == "input-record"
+        ]
+        self.assertEqual(2, len(input_edges))
+        self.assertFalse(any(edge["target_record_id"].startswith("provenance:") for edge in exported["edges"]))
         self.assertEqual({"total": 0, "by_code": []}, exported["diagnostic_summary"])
 
         status, rebuilt = self.run_records(root, ["index", "rebuild"])

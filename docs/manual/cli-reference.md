@@ -908,37 +908,34 @@ isomer-cli --print-json project handoffs normalize <handoff-id> \
 
 ### `ext kaoju paper template` and Paper Derivation Commands
 
-`ext kaoju paper template` owns a Topic Workspace's flat namespace of mutable named `KAOJU:PAPER-TEMPLATE-MYST` trees. Each path-safe name maps to one stable record, current managed directory tree, opaque state token, tree digest, bounded authored metadata, and lightweight mutation audit. Ordinary updates replace the current tree without creating another record or retaining prior bytes as recoverable template state. Preserve a state explicitly with `create --from-template` under another ordinary name. Exact replacement uses `update --from-template`; arbitrary construction and merge remain Kaoju agent work followed by update from a prepared directory.
+`ext kaoju paper template` owns two independent mutable named namespaces. `--kind content` selects `KAOJU:PAPER-TEMPLATE-MYST`, which defines canonical MyST authoring structure. `--kind latex` selects `KAOJU:PAPER-TEMPLATE-LATEX`, which stores multi-file presentation bundles. Each namespace has its own `main`. Every path-safe role-local name maps to one stable record, managed directory tree, opaque state token, tree digest, bounded authored metadata, and kind-qualified mutation audit. Omitting `--kind` selects content only for compatibility; new automation should pass the role explicitly.
 
-`template list` and `show` are read-only. `create` accepts either `--from PATH` or `--from-template NAME`. `update`, `file put`, `file remove`, `metadata patch`, `archive`, and `delete` require the current `--expected-state` token and reject lost updates without mutation. Archive and delete refuse templates referenced by durable paper state. The service rejects traversal, symlinks, `.isomer-template-export.json`, internal manifest names, corrupt trees, and service-controlled metadata fields.
+`template list` and `show` are read-only. `create` accepts `--from PATH` or a same-role `--from-template NAME`; omitted names use role-local `main`. `update`, `file put`, `file remove`, `metadata patch`, `archive`, and `delete` require the current `--expected-state` token. A registered edited export can be passed directly to `update`; the service verifies its kind, stable ref, and source token before stripping reserved export metadata. LaTeX metadata requires a safe `.tex` entrypoint and `extensions.latex` with `composition_mode`, registered `build_profile`, `source_provenance`, and `license_posture`. Preamble mode may declare `generated_entrypoint`; marker mode requires `marker`; include mode requires `body_path`.
 
-`template export` defaults to named template `main` and resolves `topic.paper.template_exchange_root`, whose built-in path is `<topic-workspace>/intent/derived/writing-template`. It writes the stable non-canonical child `main/` or `<name>/` with reserved `.isomer-template-export.json` identity and digest metadata. Clean recognized targets refresh in place; edited or unrecognized targets are preserved. `template exports` reports `unchanged`, `edited`, `missing`, `identity-invalid`, or `canonical-changed`. `template export --observe --target PATH` records an agent-prepared working tree without promoting it.
+`template export --kind content` defaults to `<exchange-root>/content/main/`; `--kind latex` defaults to `<exchange-root>/latex/main/`. Reserved `.isomer-template-export.json` records the kind, name, stable ref, token, digests, path, actor, and time. Clean recognized targets refresh in place; edited or unrecognized targets are preserved. `template exports --kind KIND` reports only that role's `unchanged`, `edited`, `missing`, `identity-invalid`, or `canonical-changed` working copies. `--observe --target PATH` records an assessed tree without promoting it.
 
-The Kaoju agent handles an update request with no name or path in this order: use exactly one edited registered export; ask the user when several edited or identity-inconsistent exports qualify; otherwise use the current Topic Workspace's resolved `writing-template/main/` directory when it exists, regardless of whether database `main` exists; otherwise ask for a source. Explicit input bypasses discovery.
+The Kaoju agent resolves content versus LaTeX role before discovery. With no source locator, it uses exactly one edited export of that role, asks when several role-local candidates qualify, otherwise checks `<exchange-root>/<kind>/main/`, then asks for a source. It never selects the other role's same-named record or export.
 
-The old `paper export-template` and `paper apply-template` commands return retirement guidance without mutation. Legacy `ext research templates` mutation is also disabled. `template migrate` inspects old paper-line records and can wrap one unambiguous selected current template into named `main` while leaving historical records, versioned export directories, and legacy LaTeX trees untouched.
+`template migrate --kind content` previews existing records and legacy export paths; `--apply` annotates old named content records without changing stable refs, state tokens, or tree bytes. `template migrate --kind latex` reports historical TeX candidates. Adoption requires `--apply --record EXACT_REF --metadata-file FILE`, copies the selected tree into LaTeX stock, and leaves the source record unchanged. Replacing existing stock also requires `--expected-state`. The retired `paper export-template`, `paper apply-template`, and legacy `ext research templates` mutation surfaces remain non-mutating.
 
-`paper validate` checks MyST syntax, required sections, citation roles, typed display placeholders, and accepted refs. `derive-markdown` creates a non-canonical review view. `init-tex` records the selected template name, stable ref, observed tree digest, conversion diagnostics, and compatibility fingerprint. `build-pdf` executes the `document_build` extension point and records the Run, compile log, PDF inspection state, and publication Gate.
+`paper validate` checks canonical MyST. `derive-markdown` creates a non-canonical review view. `init-tex` takes an exact content-template ref and an explicit LaTeX selector or default LaTeX `main`, snapshots the complete presentation tree, and composes a self-contained TeX draft through preamble, marker, or include mode. `tex-status` reports stocked-template and paper-local repair drift. `build-pdf` verifies the pinned snapshot, uses the declared entrypoint and build profile, executes `document_build`, and records the Run, compile log, drift, PDF inspection, and publication Gate.
 
 ```bash
-isomer-cli --print-json ext kaoju paper template list --topic my-topic
-isomer-cli --print-json ext kaoju paper template create --topic my-topic --name main --from prepared-template --actor agent:writer
-isomer-cli --print-json ext kaoju paper template show --topic my-topic --name main
-isomer-cli --print-json ext kaoju paper template create --topic my-topic --name main-before-change --from-template main --actor agent:writer
-isomer-cli --print-json ext kaoju paper template update --topic my-topic --name main --from reconciled-template --expected-state template-state-... --actor agent:writer --change-summary "Apply the reviewed venue structure."
-isomer-cli --print-json ext kaoju paper template update --topic my-topic --name main --from-template main-before-change --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template file put --topic my-topic --name main --path includes/ethics.md --from ethics.md --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template file remove --topic my-topic --name main --path includes/ethics.md --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template metadata patch --topic my-topic --name main --patch-file template-metadata.json --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template export --topic my-topic --name main --actor agent:writer
-isomer-cli --print-json ext kaoju paper template exports --topic my-topic
-isomer-cli --print-json ext kaoju paper template archive --topic my-topic --name old-venue --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template delete --topic my-topic --name old-venue --expected-state template-state-... --actor agent:writer
-isomer-cli --print-json ext kaoju paper template migrate --topic my-topic
+isomer-cli --print-json ext kaoju paper template list --topic my-topic --kind content
+isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind content --from prepared-content-template --actor agent:writer
+isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind latex --from publisher-template --metadata-file latex-template.json --actor agent:writer
+isomer-cli --print-json ext kaoju paper template show --topic my-topic --kind latex
+isomer-cli --print-json ext kaoju paper template export --topic my-topic --kind latex --actor agent:writer
+isomer-cli --print-json ext kaoju paper template update --topic my-topic --kind latex --from topic-workspace/intent/derived/writing-template/latex/main --expected-state template-state-... --actor agent:writer
+isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind content --name main-before-change --from-template main --actor agent:writer
+isomer-cli --print-json ext kaoju paper template metadata patch --topic my-topic --kind latex --patch-file latex-template.json --expected-state template-state-... --actor agent:writer
+isomer-cli --print-json ext kaoju paper template migrate --topic my-topic --kind content
+isomer-cli --print-json ext kaoju paper template migrate --topic my-topic --kind latex --apply --record paper-tex-template-2 --metadata-file latex-template.json --actor agent:writer
 
 isomer-cli --print-json ext kaoju paper validate --topic my-topic prepared-template/paper/index.md
 isomer-cli --print-json ext kaoju paper derive-markdown --topic my-topic --source-ref paper-draft-3 --paper-line paper:main
-isomer-cli --print-json ext kaoju paper init-tex --topic my-topic --draft-ref paper-draft-3 --template-myst-ref artifact-paper-template-myst-main --paper-line paper:main
+isomer-cli --print-json ext kaoju paper init-tex --topic my-topic --draft-ref paper-draft-3 --content-template-ref artifact-paper-template-myst-main --latex-template-name main --paper-line paper:main
+isomer-cli --print-json ext kaoju paper tex-status --topic my-topic --draft-tex-ref paper-tex-draft-3
 isomer-cli --print-json ext kaoju paper build-pdf --topic my-topic --draft-tex-ref paper-tex-draft-3 --template-tex-ref paper-tex-template-2 --paper-line paper:main --audit-ref paper-audit-4 --inspected --pdf-inspected
 
 # Retired commands return paper_template_command_retired without mutation.

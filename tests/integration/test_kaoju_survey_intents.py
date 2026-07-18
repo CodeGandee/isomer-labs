@@ -195,25 +195,28 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             )
         return {"proposals": proposals, "selections": ["lineage", "custom-cost"], "confirmation": {"status": "accepted", "actor_ref": "topic-actor:researcher"}}
 
-    def reading_items(self, direction: str, *, count: int = 6) -> list[dict[str, object]]:
+    def reading_items(self, direction: str, *, priority_count: int = 3, secondary_count: int = 3) -> list[dict[str, object]]:
         source_types = ("paper", "technical_report", "framework_doc", "repository", "dataset", "model")
         items: list[dict[str, object]] = []
-        for index, source_type in enumerate(source_types[:count], start=1):
-            items.append(
-                {
-                    "item_id": f"{direction}-item-{index}",
-                    "title": f"{direction.title()} source {index}",
-                    "source_type": source_type,
-                    "urls": [f"https://example.test/{direction}/{index}"],
-                    "summary": "Bounded source summary.",
-                    "relevance_rationale": f"Addresses direction {direction}.",
-                    "estimated_depth": "full-text" if source_type in {"paper", "technical_report"} else "code-level",
-                    "query_provenance": {"query": f"{direction} mechanisms", "provider": "configured-literature-provider", "route": "online-search", "searched_through": "2026-07-14"},
-                    "status": "planned",
-                    "priority": "priority" if index <= 3 else "secondary",
-                    "version_family": f"{direction}-family-{index}",
-                }
-            )
+        for category, count in (("priority", priority_count), ("secondary", secondary_count)):
+            for _ in range(count):
+                index = len(items) + 1
+                source_type = source_types[(index - 1) % len(source_types)]
+                items.append(
+                    {
+                        "item_id": f"{direction}-item-{index}",
+                        "title": f"{direction.title()} source {index}",
+                        "source_type": source_type,
+                        "urls": [f"https://example.test/{direction}/{index}"],
+                        "summary": "Bounded source summary.",
+                        "relevance_rationale": f"Addresses direction {direction}.",
+                        "estimated_depth": "full-text" if source_type in {"paper", "technical_report"} else "code-level",
+                        "query_provenance": {"query": f"{direction} mechanisms", "provider": "configured-literature-provider", "route": "online-search", "searched_through": "2026-07-14"},
+                        "status": "planned",
+                        "priority": category,
+                        "version_family": f"{direction}-family-{index}",
+                    }
+                )
         return items
 
     def test_uc01_and_uc02_multiple_custom_directions_independent_lists_and_shortage(self) -> None:
@@ -254,6 +257,12 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         self.assertEqual(0, status, checkpoint)
 
         for direction in ("lineage", "custom-cost"):
+            if direction == "lineage":
+                target_counts = {"basis": "default", "priority": 3, "secondary": 3}
+                priority_count, secondary_count = 3, 3
+            else:
+                target_counts = {"basis": "user-total", "requested_total": 5, "priority": 3, "secondary": 2}
+                priority_count, secondary_count = 3, 2
             ledger_id = f"discovery-{direction}"
             self.put(
                 "KAOJU:DISCOVERY-LEDGER",
@@ -267,7 +276,13 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
                 "KAOJU:READING-LIST",
                 f"reading-{direction}",
                 "isomer-kaoju-discover",
-                {"direction_id": direction, "items": self.reading_items(direction), "approval": {"status": "approved", "actor_ref": "topic-actor:researcher"}},
+                {
+                    "direction_id": direction,
+                    "target_counts": target_counts,
+                    "achieved_counts": {"priority": priority_count, "secondary": secondary_count},
+                    "items": self.reading_items(direction, priority_count=priority_count, secondary_count=secondary_count),
+                    "approval": {"status": "approved", "actor_ref": "topic-actor:researcher"},
+                },
                 {"direction_set": "directions-1", "discovery_ledger": ledger_id},
                 scope=f"direction:{direction}",
             )
@@ -277,7 +292,13 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
             "KAOJU:READING-LIST",
             "reading-short",
             "isomer-kaoju-discover",
-            {"direction_id": "short", "items": self.reading_items("short", count=4), "approval": {"status": "approved", "actor_ref": "topic-actor:researcher", "coverage_waiver": "bounded search found four reachable sources"}},
+            {
+                "direction_id": "short",
+                "target_counts": {"basis": "default", "priority": 3, "secondary": 3},
+                "achieved_counts": {"priority": 3, "secondary": 1},
+                "items": self.reading_items("short", priority_count=3, secondary_count=1),
+                "approval": {"status": "approved", "actor_ref": "topic-actor:researcher", "coverage_waiver": "bounded search found four reachable sources"},
+            },
             {"direction_set": "directions-1", "discovery_ledger": "discovery-lineage"},
             scope="direction:short",
         )
@@ -289,7 +310,7 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
         duplicate_items[1]["version_family"] = duplicate_items[0]["version_family"]
         write(
             duplicate_path,
-            json.dumps({"title": "Duplicate versions", "summary": "Invalid unresolved version family.", "artifact_family": "kaoju", "semantic_id": "KAOJU:READING-LIST", "artifact_type": "reading-list", "sections": {"direction_id": "duplicate", "items": duplicate_items, "approval": {"status": "pending"}}}, indent=2) + "\n",
+            json.dumps({"title": "Duplicate versions", "summary": "Invalid unresolved version family.", "artifact_family": "kaoju", "semantic_id": "KAOJU:READING-LIST", "artifact_type": "reading-list", "sections": {"direction_id": "duplicate", "target_counts": {"basis": "default", "priority": 3, "secondary": 3}, "achieved_counts": {"priority": 3, "secondary": 3}, "items": duplicate_items, "approval": {"status": "pending"}}}, indent=2) + "\n",
         )
         status, duplicate = self.artifact(
             "put",

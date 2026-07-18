@@ -21,8 +21,29 @@ from myst_parser.parsers.docutils_ import Parser as MystParser
 
 from isomer_labs.kaoju.artifacts import KaojuArtifactService, KaojuServiceError
 from isomer_labs.kaoju.content import checksum_file
-from isomer_labs.kaoju.contracts import load_binding_registry
 from isomer_labs.kaoju.execution import ExecutionAdapterCommandRequest, command_environment, execute_command_request
+from isomer_labs.kaoju.paper_support import (
+    _compile_log,
+    _compose_latex_tree,
+    _latex_state_identity,
+    _load_json,
+    _load_tex_manifest,
+    _paper_tree_digest,
+    _record_id,
+    _relationships,
+    _select_tex_toolchain,
+    _semantic_id,
+    _structured_payload,
+    _tex_command,
+    _tree_files,
+    _write_json,
+)
+from isomer_labs.kaoju.templates import KaojuTemplateService
+from isomer_labs.kaoju.template_support import (
+    TEX_DRAFT_MANIFEST_NAME,
+    TEX_SNAPSHOT_MANIFEST_NAME,
+    validate_template_relative_path,
+)
 from isomer_labs.models import EffectiveTopicContext
 
 
@@ -155,7 +176,7 @@ def derive_markdown_text(text: str) -> tuple[str, list[PaperDiagnostic]]:
 
 
 class KaojuPaperService:
-    """Implement paper template exchange, derivation, TeX initialization, and PDF build."""
+    """Implement paper derivation, LaTeX composition, drift inspection, and PDF build."""
 
     def __init__(self, context: EffectiveTopicContext, *, env: Mapping[str, str], cwd: Path) -> None:
         self.context = context
@@ -197,7 +218,7 @@ class KaojuPaperService:
         raise KaojuServiceError(
             "paper_template_command_retired",
             "The versioned flat template export workflow is retired. Use the named 'ext kaoju paper template export' service.",
-            ("Export canonical main or an explicit named template through the mutable named-template service.",),
+            ("Export content/main or latex/main, or an explicit role-local name, through the mutable named-template service.",),
         )
 
     def apply_template(self, export_directory: Path, *, confirm_orphans: bool = False) -> dict[str, object]:
@@ -232,47 +253,168 @@ class KaojuPaperService:
         self,
         *,
         draft_ref: str,
-        template_myst_ref: str,
         paper_line: str,
-        venue: str,
-        document_class: str,
-        toolchain_policy: str,
-        citation_refs: Sequence[str],
+        content_template_ref: str | None = None,
+        template_myst_ref: str | None = None,
+        latex_template_name: str | None = None,
+        latex_template_ref: str | None = None,
+        venue: str | None = None,
+        document_class: str | None = None,
+        toolchain_policy: str | None = None,
+        citation_refs: Sequence[str] = (),
     ) -> dict[str, object]:
+        if content_template_ref and template_myst_ref and content_template_ref != template_myst_ref:
+            raise KaojuServiceError(
+                "paper_content_template_selector_mismatch",
+                "content_template_ref and the deprecated template_myst_ref alias identify different records.",
+            )
+        selected_content_ref = content_template_ref or template_myst_ref
+        if not selected_content_ref:
+            raise KaojuServiceError(
+                "paper_content_template_required",
+                "TeX composition requires the exact observed content-template ref.",
+            )
         draft_path, _draft_record = self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
-        template_path, template_record = self._record_file(template_myst_ref, expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"}, allow_directory=True)
+        template_path, template_record = self._record_file(
+            selected_content_ref,
+            expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"},
+            allow_directory=True,
+        )
         template_metadata_value = template_record.get("transition_metadata")
         template_metadata = template_metadata_value if isinstance(template_metadata_value, dict) else {}
-        template_name = template_metadata.get("template_name") if isinstance(template_metadata.get("template_name"), str) else None
-        template_digest = template_metadata.get("tree_digest") if isinstance(template_metadata.get("tree_digest"), str) else checksum_file(template_path)
+        content_template = {
+            "kind": "content",
+            "ref": selected_content_ref,
+            "name": template_metadata.get("template_name") if isinstance(template_metadata.get("template_name"), str) else None,
+            "state_token": template_metadata.get("state_token") if isinstance(template_metadata.get("state_token"), str) else None,
+            "tree_digest": template_metadata.get("tree_digest") if isinstance(template_metadata.get("tree_digest"), str) else checksum_file(template_path),
+        }
+        latex_service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="latex")
+        try:
+            latex_state = latex_service.resolve_state(name=latex_template_name, stable_ref=latex_template_ref)
+        except KaojuServiceError as exc:
+            if exc.code == "template_not_found" and latex_template_name is None and latex_template_ref is None:
+                raise KaojuServiceError(
+                    "paper_latex_template_default_missing",
+                    "TeX composition omitted a LaTeX selector, but latex/main does not exist.",
+                    (
+                        "Create latex/main from a prepared directory.",
+                        "Adopt an exact KAOJU:PAPER-TEMPLATE-TEX source through template migration.",
+                    ),
+                ) from exc
+            raise
+        latex_metadata = latex_state.authored_metadata
+        extensions = latex_metadata.get("extensions")
+        latex_contract = extensions.get("latex") if isinstance(extensions, dict) else None
+        if not isinstance(latex_contract, dict):
+            raise KaojuServiceError(
+                "latex_template_contract_required",
+                f"Named LaTeX template {latex_state.name!r} has no checked composition contract.",
+            )
+        stock_entrypoint = latex_metadata.get("entrypoint")
+        if not isinstance(stock_entrypoint, str):
+            raise KaojuServiceError("latex_template_entrypoint_required", "Named LaTeX stock has no entrypoint.")
+        build_profile = latex_contract.get("build_profile")
+        if not isinstance(build_profile, str):
+            raise KaojuServiceError("latex_template_build_profile_invalid", "Named LaTeX stock has no registered build profile.")
         text = draft_path.read_text(encoding="utf-8")
         myst_diagnostics = validate_myst(text)
         if _errors(myst_diagnostics):
             raise KaojuServiceError("paper_myst_invalid", "Canonical MyST draft failed validation before TeX initialization.", tuple(diagnostic.message for diagnostic in _errors(myst_diagnostics)))
         constructs = sorted(set(DIRECTIVE_RE.findall(text)) | ({"table"} if "|" in text else set()) | ({"citation"} if CITATION_RE.search(text) else set()))
-        fingerprint_payload = {"venue": venue, "document_class": document_class, "toolchain_policy": toolchain_policy, "required_constructs": constructs, "source_template_ref": template_myst_ref, "source_template_name": template_name, "source_template_observed_digest": template_digest}
+        fingerprint_payload = {
+            "latex_template_ref": latex_state.record.id,
+            "latex_template_name": latex_state.name,
+            "latex_template_state_token": latex_state.state_token,
+            "latex_template_tree_digest": latex_state.tree_digest,
+            "composition_contract": latex_contract,
+            "converter": {"id": "isomer-myst-to-tex.v2", "myst_parser_version": myst_parser_version()},
+            "required_constructs": constructs,
+            "build_profile": build_profile,
+        }
         fingerprint = _digest_json(fingerprint_payload)
         existing_template_ref = self._latest_ref("KAOJU:PAPER-TEMPLATE-TEX", paper_line)
         reused = False
         if existing_template_ref is not None:
-            existing_manifest = self._directory_member_json(existing_template_ref, "manifest.json")
-            reused = existing_manifest.get("compatibility_fingerprint") == fingerprint
+            existing_manifest = self._directory_member_json(existing_template_ref, TEX_SNAPSHOT_MANIFEST_NAME)
+            reused = (
+                existing_manifest.get("compatibility_fingerprint") == fingerprint
+                and existing_manifest.get("stock_tree_digest") == latex_state.tree_digest
+            )
 
         with self._temporary_directory("paper-tex-") as temporary:
             if reused and existing_template_ref is not None:
                 template_ref = existing_template_ref
             else:
                 template_tree = temporary / "template"
-                template_tree.mkdir()
-                (template_tree / "template.tex").write_text(_tex_template(document_class, venue), encoding="utf-8")
-                _write_json(template_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "template", "compatibility_fingerprint": fingerprint, "fingerprint_dimensions": fingerprint_payload, "source_ref": template_myst_ref, "source_template_name": template_name, "source_observed_digest": template_digest, "tool": "isomer-myst-initializer.v1", "included_files": ["template.tex"]})
-                template_result = self._upsert_current("KAOJU:PAPER-TEMPLATE-TEX", template_tree, paper_line, relationships=_relationships(paper_template_myst=template_myst_ref))
+                latex_service._copy_canonical_tree(latex_state.root, template_tree)
+                observed_snapshot_digest = _paper_tree_digest(template_tree, excluded={TEX_SNAPSHOT_MANIFEST_NAME})
+                if observed_snapshot_digest != latex_state.tree_digest:
+                    raise KaojuServiceError(
+                        "paper_latex_snapshot_digest_mismatch",
+                        "Copied LaTeX snapshot bytes do not match the selected named stock digest.",
+                    )
+                snapshot_manifest = {
+                    "schema_version": "isomer-kaoju-tex-snapshot.v2",
+                    "kind": "latex-template-snapshot",
+                    "compatibility_fingerprint": fingerprint,
+                    "fingerprint_dimensions": fingerprint_payload,
+                    "stocked_latex_template": _latex_state_identity(latex_state),
+                    "stock_tree_digest": latex_state.tree_digest,
+                    "stock_entrypoint": stock_entrypoint,
+                    "composition_contract": latex_contract,
+                    "build_profile": build_profile,
+                    "source_provenance": latex_contract.get("source_provenance"),
+                    "included_files": _tree_files(template_tree),
+                }
+                _write_json(template_tree / TEX_SNAPSHOT_MANIFEST_NAME, snapshot_manifest)
+                template_result = self._upsert_current(
+                    "KAOJU:PAPER-TEMPLATE-TEX",
+                    template_tree,
+                    paper_line,
+                    relationships=_relationships(paper_template_latex=latex_state.record.id),
+                )
                 template_ref = _record_id(template_result)
             draft_tree = temporary / "draft"
-            draft_tree.mkdir()
+            latex_service._copy_canonical_tree(latex_state.root, draft_tree)
             converted, conversion_diagnostics = _myst_to_tex(text)
-            (draft_tree / "main.tex").write_text(_tex_document(document_class, venue, converted), encoding="utf-8")
-            _write_json(draft_tree / "manifest.json", {"schema_version": "isomer-kaoju-tex-manifest.v1", "kind": "draft", "compatibility_fingerprint": fingerprint, "source_ref": draft_ref, "source_checksum": checksum_file(draft_path), "template_ref": template_ref, "source_template_ref": template_myst_ref, "source_template_name": template_name, "source_template_observed_digest": template_digest, "citation_inputs": list(citation_refs), "included_files": ["main.tex"], "conversion_diagnostics": [diagnostic.to_json() for diagnostic in conversion_diagnostics], "agent_inspection": {"status": "required", "reason": "mechanical initialization does not establish build readiness"}})
+            composed_entrypoint = _compose_latex_tree(
+                draft_tree,
+                stock_entrypoint=stock_entrypoint,
+                contract=latex_contract,
+                converted_body=converted,
+            )
+            composed_tree_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME})
+            draft_manifest = {
+                "schema_version": "isomer-kaoju-tex-draft.v2",
+                "kind": "composed-tex-draft",
+                "compatibility_fingerprint": fingerprint,
+                "source_ref": draft_ref,
+                "source_checksum": checksum_file(draft_path),
+                "content_template": content_template,
+                "template_ref": template_ref,
+                "template_snapshot_tree_digest": latex_state.tree_digest,
+                "latex_template": _latex_state_identity(latex_state),
+                "stock_entrypoint": stock_entrypoint,
+                "entrypoint": composed_entrypoint,
+                "composition_contract": latex_contract,
+                "build_profile": build_profile,
+                "citation_inputs": list(citation_refs),
+                "included_files": _tree_files(draft_tree),
+                "initial_composed_tree_digest": composed_tree_digest,
+                "paper_local_repair": False,
+                "conversion_diagnostics": [diagnostic.to_json() for diagnostic in conversion_diagnostics],
+                "legacy_presentation_hints": {
+                    "venue": venue,
+                    "document_class": document_class,
+                    "toolchain_policy": toolchain_policy,
+                },
+                "agent_inspection": {
+                    "status": "required",
+                    "reason": "mechanical composition does not establish build readiness",
+                },
+            }
+            _write_json(draft_tree / TEX_DRAFT_MANIFEST_NAME, draft_manifest)
             draft_result = self._upsert_current("KAOJU:PAPER-DRAFT-TEX", draft_tree, paper_line, relationships=_relationships(paper_draft_myst=draft_ref, paper_template_tex=template_ref))
         all_diagnostics = [*myst_diagnostics, *conversion_diagnostics]
         return {
@@ -280,9 +422,11 @@ class KaojuPaperService:
             "mutated": True,
             "operation": "paper.init-tex",
             "template_ref": template_ref,
-            "source_template_ref": template_myst_ref,
-            "source_template_name": template_name,
-            "source_template_observed_digest": template_digest,
+            "content_template": content_template,
+            "latex_template": _latex_state_identity(latex_state),
+            "entrypoint": composed_entrypoint,
+            "composition_mode": latex_contract.get("composition_mode"),
+            "build_profile": build_profile,
             "template_reused": reused,
             "draft_ref": _record_id(draft_result),
             "compatibility_fingerprint": fingerprint,
@@ -292,11 +436,95 @@ class KaojuPaperService:
             "affected_refs": [template_ref, _record_id(draft_result)],
         }
 
+    def tex_status(self, *, draft_tex_ref: str) -> dict[str, object]:
+        draft_manifest_path, _record = self._record_file(
+            draft_tex_ref,
+            expected={"KAOJU:PAPER-DRAFT-TEX"},
+            allow_directory=True,
+        )
+        draft_tree = draft_manifest_path.parent
+        manifest = _load_tex_manifest(draft_tree, TEX_DRAFT_MANIFEST_NAME)
+        recorded_composed_digest = manifest.get("initial_composed_tree_digest")
+        current_composed_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME})
+        paper_local_repair = current_composed_digest != recorded_composed_digest
+        content_identity = manifest.get("content_template")
+        content_posture = "unknown"
+        current_content: dict[str, object] | None = None
+        if isinstance(content_identity, dict):
+            content_ref = content_identity.get("ref")
+            content_name = content_identity.get("name")
+            if isinstance(content_name, str):
+                content_service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="content")
+                try:
+                    content_state = content_service.resolve_state(
+                        name=content_name,
+                        stable_ref=str(content_ref) if isinstance(content_ref, str) else None,
+                    )
+                except KaojuServiceError as exc:
+                    content_posture = "missing" if exc.code in {"template_not_found", "template_record_not_found"} else "invalid"
+                else:
+                    current_content = {
+                        "kind": "content",
+                        "name": content_state.name,
+                        "ref": content_state.record.id,
+                        "state_token": content_state.state_token,
+                        "tree_digest": content_state.tree_digest,
+                    }
+                    content_posture = (
+                        "current"
+                        if content_state.state_token == content_identity.get("state_token")
+                        and content_state.tree_digest == content_identity.get("tree_digest")
+                        else "content-stale"
+                    )
+            else:
+                content_posture = "fixed"
+        latex_identity = manifest.get("latex_template")
+        stocked_posture = "unknown"
+        current_latex: dict[str, object] | None = None
+        if isinstance(latex_identity, dict):
+            stable_ref = latex_identity.get("stable_ref")
+            name = latex_identity.get("name")
+            service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="latex")
+            try:
+                state = service.resolve_state(
+                    name=str(name) if isinstance(name, str) else None,
+                    stable_ref=str(stable_ref) if isinstance(stable_ref, str) else None,
+                )
+            except KaojuServiceError as exc:
+                stocked_posture = "missing" if exc.code in {"template_not_found", "template_record_not_found"} else "invalid"
+            else:
+                current_latex = _latex_state_identity(state)
+                stocked_posture = (
+                    "current"
+                    if state.state_token == latex_identity.get("state_token") and state.tree_digest == latex_identity.get("tree_digest")
+                    else "presentation-stale"
+                )
+        return {
+            "ok": True,
+            "mutated": False,
+            "operation": "paper.tex-status",
+            "draft_ref": draft_tex_ref,
+            "template_ref": manifest.get("template_ref"),
+            "content_template": manifest.get("content_template"),
+            "observed_content_template": content_identity,
+            "current_content_template": current_content,
+            "content_template_posture": content_posture,
+            "observed_latex_template": latex_identity,
+            "current_latex_template": current_latex,
+            "stocked_template_posture": stocked_posture,
+            "paper_local_repair": paper_local_repair,
+            "recorded_composed_tree_digest": recorded_composed_digest,
+            "current_composed_tree_digest": current_composed_digest,
+            "entrypoint": manifest.get("entrypoint"),
+            "diagnostics": [],
+            "next_actions": [],
+        }
+
     def build_pdf(
         self,
         *,
         draft_tex_ref: str,
-        template_tex_ref: str,
+        template_tex_ref: str | None,
         paper_line: str,
         audit_ref: str,
         inspected: bool,
@@ -308,37 +536,81 @@ class KaojuPaperService:
         if not inspected:
             raise KaojuServiceError("paper_tex_inspection_required", "Mechanically initialized TeX requires recorded agent inspection before build.")
         draft_manifest_path, _record = self._record_file(draft_tex_ref, expected={"KAOJU:PAPER-DRAFT-TEX"}, allow_directory=True)
-        self._record_file(template_tex_ref, expected={"KAOJU:PAPER-TEMPLATE-TEX"}, allow_directory=True)
+        source_tree = draft_manifest_path.parent
+        draft_manifest = _load_tex_manifest(source_tree, TEX_DRAFT_MANIFEST_NAME)
+        pinned_template_ref = draft_manifest.get("template_ref")
+        if not isinstance(pinned_template_ref, str):
+            raise KaojuServiceError("paper_template_pin_missing", "TeX draft manifest has no pinned template snapshot ref.")
+        if template_tex_ref is not None and template_tex_ref != pinned_template_ref:
+            raise KaojuServiceError(
+                "paper_template_ref_mismatch",
+                f"Build supplied template ref {template_tex_ref}, but the TeX draft pins {pinned_template_ref}.",
+            )
+        selected_template_ref = template_tex_ref or pinned_template_ref
+        snapshot_manifest_path, _template_record = self._record_file(
+            selected_template_ref,
+            expected={"KAOJU:PAPER-TEMPLATE-TEX"},
+            allow_directory=True,
+        )
+        snapshot_tree = snapshot_manifest_path.parent
+        snapshot_manifest = _load_tex_manifest(snapshot_tree, TEX_SNAPSHOT_MANIFEST_NAME)
+        recorded_snapshot_digest = snapshot_manifest.get("stock_tree_digest")
+        actual_snapshot_digest = _paper_tree_digest(snapshot_tree, excluded={TEX_SNAPSHOT_MANIFEST_NAME})
+        if actual_snapshot_digest != recorded_snapshot_digest or draft_manifest.get("template_snapshot_tree_digest") != recorded_snapshot_digest:
+            raise KaojuServiceError(
+                "paper_template_snapshot_mismatch",
+                "Pinned LaTeX snapshot bytes, snapshot manifest, and TeX draft manifest do not agree.",
+            )
+        entrypoint_value = draft_manifest.get("entrypoint")
+        if not isinstance(entrypoint_value, str):
+            raise KaojuServiceError("paper_entrypoint_missing", "TeX draft manifest has no declared entrypoint.")
+        entrypoint = validate_template_relative_path(entrypoint_value)
+        source_entrypoint = source_tree.joinpath(*entrypoint.parts)
+        if source_entrypoint.suffix.lower() != ".tex" or not source_entrypoint.is_file():
+            raise KaojuServiceError("paper_entrypoint_invalid", f"Declared TeX entrypoint is missing or invalid: {entrypoint_value}")
+        build_profile = draft_manifest.get("build_profile")
+        if not isinstance(build_profile, str):
+            raise KaojuServiceError("paper_build_profile_missing", "TeX draft manifest has no registered build profile.")
+        if toolchain is not None and toolchain != build_profile:
+            raise KaojuServiceError(
+                "paper_build_profile_mismatch",
+                f"Requested toolchain {toolchain!r} differs from the pinned build profile {build_profile!r}.",
+            )
         _audit_path, audit_record = self._record_file(audit_ref, expected={"KAOJU:AUDIT-REPORT"})
         if audit_record.get("status") != "ready":
             raise KaojuServiceError("paper_audit_not_accepted", f"Audit Report {audit_ref} is not accepted and ready; PDF build is blocked.")
-        source_tree = draft_manifest_path.parent
-        selected, fallback = _select_tex_toolchain(toolchain)
+        drift = self.tex_status(draft_tex_ref=draft_tex_ref)
+        selected, fallback = _select_tex_toolchain(build_profile)
         if selected is None:
             raise KaojuServiceError("paper_compiler_missing", "No supported TeX compiler is available.", ("Install Tectonic, latexmk, or pdflatex in the selected Topic Workspace environment.",))
         build_id = f"artifact-paper-build-run-{uuid.uuid4().hex[:12]}"
         with self._temporary_directory("paper-build-") as temporary:
             build_tree = temporary / "build"
             shutil.copytree(source_tree, build_tree)
-            argv = _tex_command(selected)
-            request = ExecutionAdapterCommandRequest.create(extension_point="document_build", argv=argv, cwd=build_tree, timeout_seconds=timeout_seconds, recording_refs=(draft_tex_ref, template_tex_ref, build_id))
+            argv = _tex_command(selected, entrypoint.as_posix())
+            request = ExecutionAdapterCommandRequest.create(extension_point="document_build", argv=argv, cwd=build_tree, timeout_seconds=timeout_seconds, recording_refs=(draft_tex_ref, selected_template_ref, build_id))
             observation = execute_command_request(request, env=command_environment(self.env))
             log_path = temporary / "compile.log"
             log_path.write_text(_compile_log(selected, fallback, observation), encoding="utf-8")
-            pdf_path = build_tree / "main.pdf"
+            pdf_candidates = [
+                build_tree.joinpath(*entrypoint.with_suffix(".pdf").parts),
+                build_tree / entrypoint.with_suffix(".pdf").name,
+            ]
+            pdf_path = next((candidate for candidate in pdf_candidates if candidate.is_file()), pdf_candidates[0])
             pdf_valid = pdf_path.is_file() and pdf_path.stat().st_size > 8 and pdf_path.read_bytes()[:4] == b"%PDF"
             terminal = "complete" if observation.get("status") == "succeeded" and pdf_valid else "failed"
             run_path = temporary / "paper-build-run.json"
-            _write_json(run_path, _structured_payload("KAOJU:PAPER-BUILD-RUN", "Paper PDF build Run", "Immutable registered document-build attempt.", {"execution": {"command_request": observation.get("request"), "toolchain": selected, "fallback": fallback, "input_refs": [draft_tex_ref, template_tex_ref]}, "result": {"terminal_status": terminal, "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "pdf_magic_valid": pdf_valid}}))
-            run_result = self.artifacts.put("KAOJU:PAPER-BUILD-RUN", run_path, producer="isomer-kaoju-write", scope_key=paper_line, record_id=build_id, status=terminal, relationships=_relationships(paper_draft_tex=draft_tex_ref, paper_template_tex=template_tex_ref))
+            _write_json(run_path, _structured_payload("KAOJU:PAPER-BUILD-RUN", "Paper PDF build Run", "Immutable registered document-build attempt.", {"execution": {"command_request": observation.get("request"), "toolchain": selected, "fallback": fallback, "entrypoint": entrypoint.as_posix(), "input_refs": [draft_tex_ref, selected_template_ref]}, "result": {"terminal_status": terminal, "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "pdf_magic_valid": pdf_valid, "stocked_template_posture": drift.get("stocked_template_posture"), "paper_local_repair": drift.get("paper_local_repair")}}))
+            run_result = self.artifacts.put("KAOJU:PAPER-BUILD-RUN", run_path, producer="isomer-kaoju-write", scope_key=paper_line, record_id=build_id, status=terminal, relationships=_relationships(paper_draft_tex=draft_tex_ref, paper_template_tex=selected_template_ref))
             log_result = self.artifacts.put("KAOJU:PAPER-COMPILE-LOG", log_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if terminal == "complete" else "failed", relationships=_relationships(paper_build_run=build_id))
             affected = [_record_id(run_result), _record_id(log_result)]
             if terminal != "complete":
-                return {"ok": False, "mutated": True, "operation": "paper.build-pdf", "terminal_status": terminal, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected, "recovery_actions": ["Inspect the registered compile log and classify any repair as presentation-only or material before retrying."]}
+                return {"ok": False, "mutated": True, "operation": "paper.build-pdf", "terminal_status": terminal, "entrypoint": entrypoint.as_posix(), "template_ref": selected_template_ref, "template_drift": drift, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected, "recovery_actions": ["Inspect the registered compile log and classify any repair as presentation-only or material before retrying."]}
             pdf_result = self.artifacts.put("KAOJU:PAPER-PDF", pdf_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_build_run=build_id, paper_draft_tex=draft_tex_ref))
             pdf_ref = _record_id(pdf_result)
             revision_path = temporary / "paper-pdf-revision-log.json"
-            _write_json(revision_path, _structured_payload("KAOJU:PAPER-PDF-REVISION-LOG", "Paper PDF revision log", "Append-only build attempt and repair provenance.", {"builds": [{"build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "toolchain": selected, "fallback": fallback, "repair_class": "none"}]}))
+            repair_class = "paper-local" if drift.get("paper_local_repair") is True else "none"
+            _write_json(revision_path, _structured_payload("KAOJU:PAPER-PDF-REVISION-LOG", "Paper PDF revision log", "Append-only build attempt and repair provenance.", {"builds": [{"build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "toolchain": selected, "fallback": fallback, "repair_class": repair_class}]}))
             revision_result = self.artifacts.put("KAOJU:PAPER-PDF-REVISION-LOG", revision_path, producer="isomer-kaoju-write", scope_key=paper_line, relationships=_relationships(paper_pdf=pdf_ref, paper_build_run=build_id))
             validation_path = temporary / "paper-validation-report.json"
             accepted = publication_approved and pdf_inspected
@@ -347,7 +619,7 @@ class KaojuPaperService:
             validation_result = self.artifacts.put("KAOJU:PAPER-VALIDATION-REPORT", validation_path, producer="isomer-kaoju-write", scope_key=paper_line, status="ready" if accepted else "blocked", relationships=_relationships(paper_build_run=build_id, paper_pdf=pdf_ref, audit_report=audit_ref))
             affected.extend([pdf_ref, _record_id(revision_result), _record_id(validation_result)])
         accepted = publication_approved and pdf_inspected
-        return {"ok": True, "mutated": True, "operation": "paper.build-pdf", "terminal_status": "complete", "pdf_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "accepted": accepted, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "revision_log_ref": _record_id(revision_result), "validation_ref": _record_id(validation_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected}
+        return {"ok": True, "mutated": True, "operation": "paper.build-pdf", "terminal_status": "complete", "entrypoint": entrypoint.as_posix(), "template_ref": selected_template_ref, "template_drift": drift, "pdf_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "accepted": accepted, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "revision_log_ref": _record_id(revision_result), "validation_ref": _record_id(validation_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected}
 
     def _record_file(self, record_id: str, *, expected: set[str], allow_directory: bool = False) -> tuple[Path, dict[str, object]]:
         payload = self.artifacts.show(record_id, include_content=True)
@@ -387,6 +659,8 @@ class KaojuPaperService:
     def _directory_member_json(self, record_id: str, name: str) -> dict[str, object]:
         manifest_path, _record = self._record_file(record_id, expected={"KAOJU:PAPER-TEMPLATE-TEX"}, allow_directory=True)
         member = manifest_path.parent / name
+        if not member.is_file():
+            return {}
         return _load_json(member)
 
     @contextmanager
@@ -436,69 +710,6 @@ def _tex_template(document_class: str, venue: str) -> str:
 
 def _tex_document(document_class: str, venue: str, body: str) -> str:
     return _tex_template(document_class, venue) + "\\title{Survey Paper}\n\\author{}\n\\begin{document}\n\\maketitle\n" + body + "\\end{document}\n"
-
-
-def _select_tex_toolchain(requested: str | None) -> tuple[str | None, str | None]:
-    supported = ["tectonic", "latexmk", "pdflatex"]
-    if requested is not None:
-        if requested not in supported:
-            raise KaojuServiceError("paper_toolchain_invalid", f"Unsupported TeX toolchain: {requested}")
-        return (requested, None) if shutil.which(requested) else (None, None)
-    for index, candidate in enumerate(supported):
-        if shutil.which(candidate):
-            return candidate, None if index == 0 else f"preferred tectonic unavailable; selected {candidate}"
-    return None, None
-
-
-def _tex_command(toolchain: str) -> tuple[str, ...]:
-    if toolchain == "tectonic":
-        return ("tectonic", "--keep-logs", "--synctex", "main.tex")
-    if toolchain == "latexmk":
-        return ("latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error", "main.tex")
-    return ("pdflatex", "-interaction=nonstopmode", "-halt-on-error", "main.tex")
-
-
-def _compile_log(toolchain: str, fallback: str | None, observation: Mapping[str, object]) -> str:
-    request = observation.get("request")
-    return json.dumps({"schema_version": "isomer-kaoju-paper-compile-log.v1", "toolchain": toolchain, "fallback_rationale": fallback, "command_request": request, "status": observation.get("status"), "returncode": observation.get("returncode"), "elapsed_seconds": observation.get("elapsed_seconds"), "stdout": observation.get("stdout"), "stderr": observation.get("stderr")}, indent=2, sort_keys=True) + "\n"
-
-
-def _structured_payload(semantic_id: str, title: str, summary: str, sections: dict[str, object]) -> dict[str, object]:
-    return {"title": title, "summary": summary, "artifact_family": "kaoju", "semantic_id": semantic_id, "artifact_type": load_binding_registry()[semantic_id].artifact_type, "sections": sections}
-
-
-def _relationships(**values: str) -> list[dict[str, object]]:
-    return [{"role": role, "target_ref": target} for role, target in values.items()]
-
-
-def _record_id(payload: Mapping[str, object]) -> str:
-    record = payload.get("record")
-    if isinstance(record, dict) and isinstance(record.get("id"), str):
-        return record["id"]
-    affected = payload.get("affected_refs")
-    if isinstance(affected, list) and affected:
-        return str(affected[0])
-    raise KaojuServiceError("paper_record_ref_missing", "Artifact service did not return a stable record ref.")
-
-
-def _semantic_id(record: Mapping[str, object]) -> str:
-    metadata_value = record.get("transition_metadata")
-    metadata_map = metadata_value if isinstance(metadata_value, dict) else {}
-    return str(metadata_map.get("semantic_id") or "")
-
-
-def _write_json(path: Path, payload: Mapping[str, object]) -> None:
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8")
-
-
-def _load_json(path: Path) -> dict[str, object]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise KaojuServiceError("paper_manifest_unreadable", f"Paper manifest is unreadable: {exc}") from exc
-    if not isinstance(value, dict):
-        raise KaojuServiceError("paper_manifest_invalid", "Paper manifest must be a JSON object.")
-    return value
 
 
 def _errors(diagnostics: Sequence[PaperDiagnostic]) -> list[PaperDiagnostic]:

@@ -10,8 +10,10 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 
 - UC-02 does **not** decide how the next survey direction is selected. Direction selection and sequencing belong to UC-01 and to future scheduling logic. UC-02 assumes the direction is already selected when the reading list is built.
 - The reading list artifact is **direction-owned**: one `KAOJU:READING-LIST` artifact per direction. A direction identifier is part of the artifact metadata so downstream stages know which scope the list covers.
-- A default reading list **targets** 3 priority items and 3 secondary items. The agent tries its best to reach that count on the first attempt, but falling short is a warning rather than a blocker; the human can approve a shorter list or ask the agent to expand coverage.
-- Blocked or identity-unresolved candidates remain in discovery provenance but do not count toward the reachable 3+3 target. The agent performs bounded backfill before reporting a coverage deficit.
+- A reading list defaults to 3 priority items and 3 secondary items. The actor may instead supply either category counts, with an omitted category retaining its default of 3, or one positive total `N`, which derives `ceil(N / 2)` priority and `floor(N / 2)` secondary items.
+- Total and category request modes are mutually exclusive. Counts must be integers, category counts must be non-negative, and the effective target must contain at least one work; invalid or mixed modes require clarification before discovery.
+- Each new configurable Reading List records its effective target, derivation basis, and achieved counts. Existing lists without target metadata retain the legacy 3+3 interpretation.
+- Blocked or identity-unresolved candidates remain in discovery provenance but do not count toward the reachable effective target. The agent performs bounded backfill before reporting a coverage deficit.
 - Each reading-list item includes a `priority` field with values `priority` or `secondary`.
 
 ## Affected Artifacts
@@ -20,6 +22,13 @@ The initial UC-02 draft left three questions open: how the next direction is cho
 - `README.md`: added ADR link to artifact map.
 
 ## Refinement History
+
+### 2026-07-17 - Configurable Effective Targets
+
+- Preserved 3 priority plus 3 secondary items as the default while allowing independent category overrides.
+- Defined a total request of `N` as `ceil(N / 2)` priority and `floor(N / 2)` secondary items.
+- Required target derivation and achieved counts in new configurable Reading Lists, with legacy missing metadata interpreted as the prior default.
+- Changed bounded backfill and shortage warnings to use the effective target.
 
 ### 2026-07-14 - Blocked-Item Backfill
 
