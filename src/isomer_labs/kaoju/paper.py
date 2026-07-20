@@ -332,7 +332,7 @@ class KaojuPaperService:
             "latex_template_state_token": latex_state.state_token,
             "latex_template_tree_digest": latex_state.tree_digest,
             "composition_contract": latex_contract,
-            "converter": {"id": "isomer-myst-to-tex.v2", "myst_parser_version": myst_parser_version()},
+            "converter": {"id": "isomer-myst-to-tex.v3", "myst_parser_version": myst_parser_version()},
             "required_constructs": constructs,
             "build_profile": build_profile,
         }

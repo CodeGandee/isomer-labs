@@ -212,7 +212,7 @@ def _myst_to_tex(text: str) -> tuple[str, list[PaperDiagnostic]]:
         heading = re.fullmatch(r"(#{1,6})\s+(.+)", line)
         if heading:
             level = len(heading.group(1))
-            command = "section" if level <= 2 else "subsection" if level == 3 else "subsubsection"
+            command = "section" if level == 1 else "subsection" if level == 2 else "subsubsection"
             output.append(f"\\{command}{{{_tex_escape(heading.group(2))}}}")
             continue
         directive = re.fullmatch(r"\s*:::\{([^}]+)\}\s*", line)
