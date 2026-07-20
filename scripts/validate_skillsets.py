@@ -2678,6 +2678,233 @@ def _validate_troubleshooting(
             )
 
 
+def _markdown_table_cells(line: str) -> tuple[str, ...] | None:
+    stripped = line.strip()
+    if not stripped.startswith("|") or not stripped.endswith("|"):
+        return None
+    return tuple(cell.strip() for cell in stripped[1:-1].split("|"))
+
+
+def _markdown_cell_scalar(value: str) -> str:
+    stripped = value.strip()
+    if len(stripped) >= 2 and stripped.startswith("`") and stripped.endswith("`"):
+        return stripped[1:-1].strip()
+    return stripped
+
+
+def _normalize_routing_source(value: str) -> str:
+    normalized = re.sub(r"`([^`]*)`", r"\1", value).strip().casefold()
+    normalized = re.sub(r"^use\s+(?:this\s+(?:skill|subskill)\s+)?(?:when|for)\s+", "", normalized)
+    normalized = re.sub(r"[^a-z0-9+]+", " ", normalized)
+    return " ".join(normalized.split())
+
+
+def _routing_sentence_diagnostics(value: str) -> tuple[str, ...]:
+    stripped = value.strip()
+    if not stripped:
+        return ("must contain one populated routing sentence",)
+    without_code = re.sub(r"`[^`]*`", "route", stripped)
+    terminal_count = len(re.findall(r"[.!?](?=\s|$)", without_code))
+    issues: list[str] = []
+    if not without_code.endswith((".", "!", "?")) or terminal_count != 1:
+        issues.append("must contain exactly one logical sentence")
+    word_count = len(re.findall(r"[A-Za-z0-9][A-Za-z0-9+/-]*", without_code))
+    if word_count < 8:
+        issues.append("must contain a substantive selection condition rather than a short category phrase")
+    return tuple(issues)
+
+
+def validate_protected_subskill_routing_guidance(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    catalog = packaged_system_skill_catalog(repo_root, diagnostics)
+    if catalog is None:
+        return sorted(set(diagnostics))
+
+    for pack in catalog.packs:
+        capabilities = tuple(capability for capability in catalog.capabilities if capability.pack_id == pack.pack_id)
+        if not capabilities:
+            continue
+        entrypoint = repo_root / "skillset" / pack.source_path / "SKILL.md"
+        if not entrypoint.exists():
+            continue
+        lines = read_lines(entrypoint)
+        section_indices = _h2_indices(lines, "Protected Subskills")
+        if len(section_indices) != 1:
+            add(
+                diagnostics,
+                repo_root,
+                entrypoint,
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "public entrypoint must contain exactly one ## Protected Subskills routing table",
+            )
+            continue
+
+        section_index = section_indices[0]
+        section_end = len(lines)
+        for index in range(section_index + 1, len(lines)):
+            if lines[index].startswith("## "):
+                section_end = index
+                break
+        header_index = next(
+            (
+                index
+                for index in range(section_index + 1, section_end)
+                if (cells := _markdown_table_cells(lines[index])) is not None and "Member" in cells
+            ),
+            None,
+        )
+        if header_index is None:
+            add(
+                diagnostics,
+                repo_root,
+                entrypoint,
+                section_index + 1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "## Protected Subskills must contain a Markdown table with a Member column",
+            )
+            continue
+
+        header = _markdown_table_cells(lines[header_index])
+        assert header is not None
+        required_columns = ("Member", "Logical ID", "When to Route Here", "Internal Designator")
+        column_indices: dict[str, int] = {}
+        for column in required_columns:
+            matches = [index for index, cell in enumerate(header) if cell == column]
+            if len(matches) != 1:
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    header_index + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"protected-subskill table must contain exactly one {column!r} column",
+                )
+                continue
+            column_indices[column] = matches[0]
+        if "Member" not in column_indices:
+            continue
+
+        expected_by_member = {capability.member_name: capability for capability in capabilities}
+        rows_by_member: dict[str, list[tuple[int, tuple[str, ...]]]] = {}
+        rows_started = False
+        for index in range(header_index + 1, section_end):
+            cells = _markdown_table_cells(lines[index])
+            if cells is None:
+                if rows_started and lines[index].strip():
+                    break
+                continue
+            if cells and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+                continue
+            rows_started = True
+            if len(cells) != len(header):
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    index + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    "protected-subskill table row must have the same number of cells as its header",
+                )
+                continue
+            member = _markdown_cell_scalar(cells[column_indices["Member"]])
+            rows_by_member.setdefault(member, []).append((index, cells))
+
+        for member, rows in rows_by_member.items():
+            if member not in expected_by_member:
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    rows[0][0] + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"protected-subskill table contains undeclared member {member!r}",
+                )
+                continue
+            if len(rows) != 1:
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    rows[1][0] + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"protected member {member!r} must appear exactly once in the routing table",
+                )
+
+        for member, capability in expected_by_member.items():
+            rows = rows_by_member.get(member, [])
+            if not rows:
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    section_index + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"protected-subskill table is missing declared member {member!r}",
+                )
+                continue
+            row_index, cells = rows[0]
+            expected_values = {
+                "Logical ID": capability.logical_id,
+                "Internal Designator": capability.invocation_designator,
+            }
+            if "Area" in header:
+                expected_values["Area"] = capability.area
+            for column, expected in expected_values.items():
+                if column not in header:
+                    continue
+                actual = _markdown_cell_scalar(cells[header.index(column)])
+                if actual != expected:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        entrypoint,
+                        row_index + 1,
+                        SYSTEM_SKILL_TEMPLATE_CODE,
+                        f"protected member {member!r} {column} must be {expected!r}, found {actual!r}",
+                    )
+
+            guidance_index = column_indices.get("When to Route Here")
+            if guidance_index is None:
+                continue
+            guidance = cells[guidance_index].strip()
+            for issue in _routing_sentence_diagnostics(guidance):
+                add(
+                    diagnostics,
+                    repo_root,
+                    entrypoint,
+                    row_index + 1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"protected member {member!r} routing guidance {issue}",
+                )
+
+            normalized_guidance = _normalize_routing_source(guidance)
+            capability_dir = repo_root / "skillset" / capability.source_path
+            skill_path = capability_dir / "SKILL.md"
+            source_values: list[tuple[str, str]] = []
+            if skill_path.exists():
+                description = parse_frontmatter(read_lines(skill_path)).get("description", "")
+                if description:
+                    source_values.append(("frontmatter description", description))
+            agent_path = capability_dir / "agents" / "openai.yaml"
+            if agent_path.exists():
+                short_description = parse_interface_fields(read_lines(agent_path)).get("short_description")
+                if short_description is not None and short_description[0]:
+                    source_values.append(("agent short_description", short_description[0]))
+            for source_name, source_value in source_values:
+                if normalized_guidance and normalized_guidance == _normalize_routing_source(source_value):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        entrypoint,
+                        row_index + 1,
+                        SYSTEM_SKILL_TEMPLATE_CODE,
+                        f"protected member {member!r} routing guidance must adapt parent context instead of copying its {source_name}",
+                    )
+
+    return sorted(set(diagnostics))
+
+
 def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     for record in packaged_skill_records(repo_root, diagnostics):
@@ -2749,6 +2976,7 @@ def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
             is_executable = "commands" in relative.parts or page.resolve() in subcommand_refs or bool(_h2_indices(lines, "Workflow"))
             if is_executable:
                 _validate_current_workflow(page, lines, repo_root, diagnostics, require_near_top=False)
+    diagnostics.extend(validate_protected_subskill_routing_guidance(repo_root))
     return sorted(set(diagnostics))
 
 

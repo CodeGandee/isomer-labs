@@ -45,28 +45,28 @@ Use `$isomer-op-entrypoint use <subcommand> to <task>`. Public help exposes `hel
 
 ## Protected Subskills
 
-| Member | Logical ID | Area | Use For | Internal Designator |
+| Member | Logical ID | Area | When to Route Here | Internal Designator |
 | --- | --- | --- | --- | --- |
-| `welcome` | `isomer-op-welcome` | operator | Read-only help and orientation | `isomer-op-entrypoint->welcome` |
-| `project` | `isomer-op-project-mgr` | operator | Project lifecycle | `isomer-op-entrypoint->project` |
-| `gui` | `isomer-op-gui-mgr` | operator | Project Web GUI | `isomer-op-entrypoint->gui` |
-| `identity` | `isomer-op-switch-identity` | operator | Topic Actor or Agent posture | `isomer-op-entrypoint->identity` |
-| `system-skills` | `isomer-op-system-skill-mgr` | operator | System-skill lifecycle | `isomer-op-entrypoint->system-skills` |
-| `toolbox` | `isomer-op-toolbox-mgr` | operator | Project-local Toolboxes | `isomer-op-entrypoint->toolbox` |
-| `topic-create` | `isomer-op-topic-creator` | operator | Research Topic initialization | `isomer-op-entrypoint->topic-create` |
-| `topic-manage` | `isomer-op-topic-mgr` | operator | Initialized Research Topic management | `isomer-op-entrypoint->topic-manage` |
-| `topic-team` | `isomer-op-topic-team-specialize` | operator | Formal Topic Agent Team specialization | `isomer-op-entrypoint->topic-team` |
-| `topic-env` | `isomer-srv-topic-env-setup` | service | Topic Workspace environment support | `isomer-op-entrypoint->topic-env` |
-| `agent-env` | `isomer-srv-agent-env-setup` | service | Agent Workspace environment support | `isomer-op-entrypoint->agent-env` |
-| `package-repo` | `isomer-srv-resolve-pkg-repo` | service | Package repository resolution | `isomer-op-entrypoint->package-repo` |
-| `houmao` | `isomer-srv-houmao-interop` | service | Bounded Houmao interoperability | `isomer-op-entrypoint->houmao` |
-| `topic-service` | `isomer-srv-topic-service-agent-support` | service | Topic Service Agent support | `isomer-op-entrypoint->topic-service` |
-| `bounded-run` | `isomer-misc-bounded-run-tips` | shared | Resource-bounded execution guidance | `isomer-op-entrypoint->bounded-run` |
-| `nvidia` | `isomer-misc-nvidia-tools` | shared | NVIDIA toolchain guidance | `isomer-op-entrypoint->nvidia` |
-| `package-specifics` | `isomer-misc-pkg-specifics` | shared | Package caveats | `isomer-op-entrypoint->package-specifics` |
-| `tool-packs` | `isomer-misc-tool-packs` | shared | Named dependency bundles | `isomer-op-entrypoint->tool-packs` |
-| `research-ideas` | `isomer-research-idea-recording` | shared | Research Idea recording | `isomer-op-entrypoint->research-ideas` |
-| `operation-sets` | `isomer-research-operation-set-recording` | shared | Operation Set closeout | `isomer-op-entrypoint->operation-sets` |
+| `welcome` | `isomer-op-welcome` | operator | The user explicitly requests read-only orientation, route comparison, extension discovery, or a suggested next step rather than execution. | `isomer-op-entrypoint->welcome` |
+| `project` | `isomer-op-project-mgr` | operator | The request concerns Project bootstrap, health, context inspection, lifecycle, cleanup, or relocation rather than creating or managing one Research Topic. | `isomer-op-entrypoint->project` |
+| `gui` | `isomer-op-gui-mgr` | operator | The Project Web GUI must be started, inspected, refreshed, configured, debugged, or mapped to a Backend API route. | `isomer-op-entrypoint->gui` |
+| `identity` | `isomer-op-switch-identity` | operator | Operator work must run once or persistently under a selected Topic Actor or Agent posture, or return to normal operator identity. | `isomer-op-entrypoint->identity` |
+| `system-skills` | `isomer-op-system-skill-mgr` | operator | An extension pack must be detected, reconciled, installed, upgraded, inspected, migrated, or repaired for a concrete agent host and scope. | `isomer-op-entrypoint->system-skills` |
+| `toolbox` | `isomer-op-toolbox-mgr` | operator | A project-local Toolbox, callback declaration or insertion point, or Toolbox Runtime Param must be created, converted, installed, inspected, updated, disabled, or removed. | `isomer-op-entrypoint->toolbox` |
+| `topic-create` | `isomer-op-topic-creator` | operator | Empty or partial Project state must become a prepared Research Topic and Topic Workspace through the Topic Creator readiness handoff. | `isomer-op-entrypoint->topic-create` |
+| `topic-manage` | `isomer-op-topic-mgr` | operator | An initialized Research Topic after Topic Creator handoff needs storage, actor, topology, package, environment, checkpoint, or diagnostic management. | `isomer-op-entrypoint->topic-manage` |
+| `topic-team` | `isomer-op-topic-team-specialize` | operator | The user explicitly requests Topic Team Specialization or established context names a formal Agent Team that must be initialized, specialized, validated, repaired, or materialized. | `isomer-op-entrypoint->topic-team` |
+| `topic-env` | `isomer-srv-topic-env-setup` | service | An owning operator workflow needs bounded service support to prepare or repair the enclosed Pixi environment and development repository for a Topic Workspace, independent of Agent Team structure. | `isomer-op-entrypoint->topic-env` |
+| `agent-env` | `isomer-srv-agent-env-setup` | service | Topic Workspace and repository predecessor evidence already exists, and an owning operator workflow needs service-safe per-Agent Workspace setup or repair. | `isomer-op-entrypoint->agent-env` |
+| `package-repo` | `isomer-srv-resolve-pkg-repo` | service | A package manager needs repository or channel selection, mirror fallback, or NVIDIA channel priority because its default source is slow, blocked, or unsuitable. | `isomer-op-entrypoint->package-repo` |
+| `houmao` | `isomer-srv-houmao-interop` | service | An owner or Service Request needs bounded Houmao adapter support for loop explanation, template mapping, customization guidance, or runtime inspection without delegating operator decisions. | `isomer-op-entrypoint->houmao` |
+| `topic-service` | `isomer-srv-topic-service-agent-support` | service | A Topic Service Agent or Service Master needs bounded support for workspace, environment, team, monitoring, diagnostics, or support Artifact work under an owner route. | `isomer-op-entrypoint->topic-service` |
+| `bounded-run` | `isomer-misc-bounded-run-tips` | shared | Resource-heavy execution needs risk classification, safe concurrency or memory bounds, CUDA architecture limits, or crash-avoidance guidance. | `isomer-op-entrypoint->bounded-run` |
+| `nvidia` | `isomer-misc-nvidia-tools` | shared | A Pixi CUDA or C++ build needs NVIDIA Toolkit components, Conda packages, host-tool wiring, or CMake and Ninja integration. | `isomer-op-entrypoint->nvidia` |
+| `package-specifics` | `isomer-misc-pkg-specifics` | shared | A named dependency needs package-specific source, variant, compatibility, or installation-caveat guidance rather than general repository selection. | `isomer-op-entrypoint->package-specifics` |
+| `tool-packs` | `isomer-misc-tool-packs` | shared | The user explicitly requests a named installable toolset to be resolved into dependency, CLI-install, verification, and downstream setup contracts. | `isomer-op-entrypoint->tool-packs` |
+| `research-ideas` | `isomer-research-idea-recording` | shared | A workflow has changed a durable research concept or portfolio decision and must record canonical Research Idea state, facets, transitions, generations, or lineage. | `isomer-op-entrypoint->research-ideas` |
+| `operation-sets` | `isomer-research-operation-set-recording` | shared | A completed operation-set directory must be exhaustively classified, promoted into durable records or attachments, linked, accepted with a receipt, verified, or repaired before closeout. | `isomer-op-entrypoint->operation-sets` |
 
 ## Reference Pages
 

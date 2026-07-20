@@ -66,29 +66,29 @@ If the user's task does not map cleanly to these steps, refine the existing plan
 
 ## Protected Subskills
 
-| Member | Logical ID | Internal Designator |
-| --- | --- | --- |
-| `analysis` | `isomer-deepsci-analysis` | `isomer-ext-deepsci-entrypoint->analysis` |
-| `baseline` | `isomer-deepsci-baseline` | `isomer-ext-deepsci-entrypoint->baseline` |
-| `decision` | `isomer-deepsci-decision` | `isomer-ext-deepsci-entrypoint->decision` |
-| `experiment` | `isomer-deepsci-experiment` | `isomer-ext-deepsci-entrypoint->experiment` |
-| `figure-polish` | `isomer-deepsci-figure-polish` | `isomer-ext-deepsci-entrypoint->figure-polish` |
-| `finalize` | `isomer-deepsci-finalize` | `isomer-ext-deepsci-entrypoint->finalize` |
-| `idea` | `isomer-deepsci-idea` | `isomer-ext-deepsci-entrypoint->idea` |
-| `nature-data` | `isomer-deepsci-nature-data` | `isomer-ext-deepsci-entrypoint->nature-data` |
-| `nature-figure` | `isomer-deepsci-nature-figure` | `isomer-ext-deepsci-entrypoint->nature-figure` |
-| `nature-paper2ppt` | `isomer-deepsci-nature-paper2ppt` | `isomer-ext-deepsci-entrypoint->nature-paper2ppt` |
-| `nature-polishing` | `isomer-deepsci-nature-polishing` | `isomer-ext-deepsci-entrypoint->nature-polishing` |
-| `optimize` | `isomer-deepsci-optimize` | `isomer-ext-deepsci-entrypoint->optimize` |
-| `paper-outline` | `isomer-deepsci-paper-outline` | `isomer-ext-deepsci-entrypoint->paper-outline` |
-| `paper-plot` | `isomer-deepsci-paper-plot` | `isomer-ext-deepsci-entrypoint->paper-plot` |
-| `rebuttal` | `isomer-deepsci-rebuttal` | `isomer-ext-deepsci-entrypoint->rebuttal` |
-| `review` | `isomer-deepsci-review` | `isomer-ext-deepsci-entrypoint->review` |
-| `science` | `isomer-deepsci-science` | `isomer-ext-deepsci-entrypoint->science` |
-| `scout` | `isomer-deepsci-scout` | `isomer-ext-deepsci-entrypoint->scout` |
-| `shared` | `isomer-deepsci-shared` | `isomer-ext-deepsci-entrypoint->shared` |
-| `workspace` | `isomer-deepsci-workspace-mgr` | `isomer-ext-deepsci-entrypoint->workspace` |
-| `write` | `isomer-deepsci-write` | `isomer-ext-deepsci-entrypoint->write` |
+| Member | Logical ID | When to Route Here | Internal Designator |
+| --- | --- | --- | --- |
+| `analysis` | `isomer-deepsci-analysis` | A parent result already exists and needs bounded follow-up evidence through ablations, robustness checks, failure analysis, or limitation analysis. | `isomer-ext-deepsci-entrypoint->analysis` |
+| `baseline` | `isomer-deepsci-baseline` | Hypothesis or experiment work is blocked until a trustworthy comparator, metric contract, waiver, or explicit baseline blocker is established. | `isomer-ext-deepsci-entrypoint->baseline` |
+| `decision` | `isomer-deepsci-decision` | Accumulated evidence requires an explicit route choice, stop, branch, baseline reuse, reset, writing, finalization, or user-sensitive decision. | `isomer-ext-deepsci-entrypoint->decision` |
+| `experiment` | `isomer-deepsci-experiment` | A selected hypothesis or route, comparator basis, and evaluation contract are ready for one bounded implementation or measured run. | `isomer-ext-deepsci-entrypoint->experiment` |
+| `figure-polish` | `isomer-deepsci-figure-polish` | An already meaningful figure needs general academic styling, render inspection, iterative revision, final export, and evidence-linked recording. | `isomer-ext-deepsci-entrypoint->figure-polish` |
+| `finalize` | `isomer-deepsci-finalize` | The inquiry is ready to close, pause, archive, publish, or hand off with consolidated claims, limitations, recommendations, and a resume path. | `isomer-ext-deepsci-entrypoint->finalize` |
+| `idea` | `isomer-deepsci-idea` | A framed topic and comparator basis are ready to become one falsifiable hypothesis, research route, or algorithm-first brief before experiments. | `isomer-ext-deepsci-entrypoint->idea` |
+| `nature-data` | `isomer-deepsci-nature-data` | A manuscript needs Nature-ready data-availability language, repository or citation planning, FAIR metadata checks, or a data-sharing audit. | `isomer-ext-deepsci-entrypoint->nature-data` |
+| `nature-figure` | `isomer-deepsci-nature-figure` | A Nature-family or other high-impact journal figure needs creation or revision in Python or R under an explicit evidence and export contract. | `isomer-ext-deepsci-entrypoint->nature-figure` |
+| `nature-paper2ppt` | `isomer-deepsci-nature-paper2ppt` | A scientific paper or related source material must become a complete Chinese presentation deck with selected figures and speaker support. | `isomer-ext-deepsci-entrypoint->nature-paper2ppt` |
+| `nature-polishing` | `isomer-deepsci-nature-polishing` | Existing academic prose needs Nature-leaning English polishing, restructuring, or translation without concealing evidence gaps or inventing claims. | `isomer-ext-deepsci-entrypoint->nature-polishing` |
+| `optimize` | `isomer-deepsci-optimize` | Algorithm-first research needs candidate generation, frontier ranking, promotion, fusion, debugging, plateau response, or route selection around measured runs. | `isomer-ext-deepsci-entrypoint->optimize` |
+| `paper-outline` | `isomer-deepsci-paper-outline` | Evidence exists, but the paper idea, claim boundary, method abstraction, evaluation, analysis, or writing plan must mature before drafting. | `isomer-ext-deepsci-entrypoint->paper-outline` |
+| `paper-plot` | `isomer-deepsci-paper-plot` | Structured numeric data needs a first-pass publication figure produced from a bundled plotting template before later visual refinement. | `isomer-ext-deepsci-entrypoint->paper-plot` |
+| `rebuttal` | `isomer-deepsci-rebuttal` | Reviewer feedback must become bounded manuscript deltas, evidence work, experiments, limitations, and a durable rebuttal or revision response. | `isomer-ext-deepsci-entrypoint->rebuttal` |
+| `review` | `isomer-deepsci-review` | A substantial draft or paper-like bundle needs an independent skeptical audit before finalization, rebuttal, or revision. | `isomer-ext-deepsci-entrypoint->review` |
+| `science` | `isomer-deepsci-science` | The work depends on scientific computation, data analysis, simulation, package checks, HPC execution, claim-type discipline, or validity evidence. | `isomer-ext-deepsci-entrypoint->science` |
+| `scout` | `isomer-deepsci-scout` | The inquiry lacks enough framing, metric clarity, literature orientation, benchmark context, or comparator direction to choose its next research stage. | `isomer-ext-deepsci-entrypoint->scout` |
+| `shared` | `isomer-deepsci-shared` | Another DeepSci member needs cross-stage coordination, semantic handoffs, latest-context, output, lineage, evidence, or storage-binding rules rather than a standalone research stage. | `isomer-ext-deepsci-entrypoint->shared` |
+| `workspace` | `isomer-deepsci-workspace-mgr` | Topic Workspace and Topic Actor preparation is complete, and production DeepSci storage, placeholder bindings, worker access, or skill readiness must be bootstrapped before durable research work. | `isomer-ext-deepsci-entrypoint->workspace` |
+| `write` | `isomer-deepsci-write` | Accepted evidence is sufficient to draft or revise a paper, report, research summary, oral-style package, or manuscript section without fabricating support. | `isomer-ext-deepsci-entrypoint->write` |
 
 ## Reference Routing
 

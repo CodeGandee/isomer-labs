@@ -209,6 +209,49 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
 
+    def write_v3_routing_guidance_fixture(self, root: Path) -> Path:
+        self.write_v3_invocation_fixture(root)
+        pack = root / "skillset" / "operator" / "isomer-op-entrypoint"
+        write(
+            pack / "SKILL.md",
+            """
+            ---
+            name: isomer-op-entrypoint
+            description: Use when validating protected-subskill routing guidance.
+            ---
+
+            # Fixture Entrypoint
+
+            ## Protected Subskills
+
+            | Member | Logical ID | Area | When to Route Here | Internal Designator |
+            | --- | --- | --- | --- | --- |
+            | `project` | `isomer-op-project-mgr` | operator | Project lifecycle state needs inspection, validation, cleanup, or repair after the public entrypoint resolves context. | `isomer-op-entrypoint->project` |
+            """,
+        )
+        capability = pack / "subskills" / "isomer-op-project-mgr"
+        write(
+            capability / "SKILL.md",
+            """
+            ---
+            name: isomer-op-project-mgr
+            description: Use when a protected Project lifecycle needs inspection, validation, cleanup, or repair.
+            ---
+
+            # Project Manager
+            """,
+        )
+        write(
+            capability / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-project-mgr"
+              short_description: "Inspect protected Project lifecycle state."
+              default_prompt: "Use $isomer-op-entrypoint use project to inspect the project."
+            """,
+        )
+        return pack / "SKILL.md"
+
     def test_v3_invocation_validator_distinguishes_same_name_member_and_command(self) -> None:
         root = self.make_root()
         self.write_v3_invocation_fixture(root)
@@ -273,6 +316,137 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertTrue(any("exact standard skill_invocation_notation" in message for message in rendered), rendered)
         self.assertTrue(any("owning public entrypoint" in message for message in rendered), rendered)
+
+    def test_protected_routing_guidance_validator_accepts_context_aware_sentence(self) -> None:
+        root = self.make_root()
+        self.write_v3_routing_guidance_fixture(root)
+
+        diagnostics = validator.validate_protected_subskill_routing_guidance(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_protected_routing_guidance_validator_requires_column_and_complete_unique_rows(self) -> None:
+        root = self.make_root()
+        skill_path = self.write_v3_routing_guidance_fixture(root)
+        skill_text = skill_path.read_text(encoding="utf-8")
+        skill_path.write_text(
+            skill_text.replace(
+                "| Member | Logical ID | Area | When to Route Here | Internal Designator |\n"
+                "| --- | --- | --- | --- | --- |\n"
+                "| `project` | `isomer-op-project-mgr` | operator | Project lifecycle state needs inspection, validation, cleanup, or repair after the public entrypoint resolves context. | `isomer-op-entrypoint->project` |",
+                "| Member | Logical ID | Area | Internal Designator |\n"
+                "| --- | --- | --- | --- |\n"
+                "| `project` | `isomer-op-project-mgr` | operator | `isomer-op-entrypoint->project` |",
+            ),
+            encoding="utf-8",
+        )
+
+        rendered = messages(validator.validate_protected_subskill_routing_guidance(root))
+
+        self.assertTrue(any("'When to Route Here' column" in message for message in rendered), rendered)
+
+        root = self.make_root()
+        skill_path = self.write_v3_routing_guidance_fixture(root)
+        skill_text = skill_path.read_text(encoding="utf-8")
+        row = "| `project` | `isomer-op-project-mgr` | operator | Project lifecycle state needs inspection, validation, cleanup, or repair after the public entrypoint resolves context. | `isomer-op-entrypoint->project` |"
+        skill_path.write_text(skill_text.replace(row, f"{row}\n{row}"), encoding="utf-8")
+
+        rendered = messages(validator.validate_protected_subskill_routing_guidance(root))
+
+        self.assertTrue(any("must appear exactly once" in message for message in rendered), rendered)
+
+        root = self.make_root()
+        skill_path = self.write_v3_routing_guidance_fixture(root)
+        skill_text = skill_path.read_text(encoding="utf-8")
+        skill_path.write_text(skill_text.replace(f"{row}\n", ""), encoding="utf-8")
+
+        rendered = messages(validator.validate_protected_subskill_routing_guidance(root))
+
+        self.assertTrue(any("missing declared member 'project'" in message for message in rendered), rendered)
+
+    def test_protected_routing_guidance_validator_rejects_bad_sentence_shapes_and_metadata_copies(self) -> None:
+        valid_guidance = "Project lifecycle state needs inspection, validation, cleanup, or repair after the public entrypoint resolves context."
+        cases = (
+            ("", "one populated routing sentence"),
+            ("Project lifecycle.", "substantive selection condition"),
+            ("Project state needs inspection and validation. Cleanup work also needs a bounded owner route.", "exactly one logical sentence"),
+            ("Use when a protected Project lifecycle needs inspection, validation, cleanup, or repair.", "copying its frontmatter description"),
+            ("Inspect protected Project lifecycle state.", "copying its agent short_description"),
+        )
+        for guidance, expected_message in cases:
+            with self.subTest(guidance=guidance):
+                root = self.make_root()
+                skill_path = self.write_v3_routing_guidance_fixture(root)
+                skill_path.write_text(
+                    skill_path.read_text(encoding="utf-8").replace(valid_guidance, guidance),
+                    encoding="utf-8",
+                )
+
+                rendered = messages(validator.validate_protected_subskill_routing_guidance(root))
+
+                self.assertTrue(any(expected_message in message for message in rendered), rendered)
+
+    def test_protected_routing_guidance_validator_rejects_malformed_identity_and_designator(self) -> None:
+        root = self.make_root()
+        skill_path = self.write_v3_routing_guidance_fixture(root)
+        skill_path.write_text(
+            skill_path.read_text(encoding="utf-8")
+            .replace("`isomer-op-project-mgr`", "`isomer-op-project-broken`", 1)
+            .replace("`isomer-op-entrypoint->project`", "`isomer-op-entrypoint->broken`", 1),
+            encoding="utf-8",
+        )
+
+        rendered = messages(validator.validate_protected_subskill_routing_guidance(root))
+
+        self.assertTrue(any("Logical ID must be 'isomer-op-project-mgr'" in message for message in rendered), rendered)
+        self.assertTrue(any("Internal Designator must be 'isomer-op-entrypoint->project'" in message for message in rendered), rendered)
+
+    def test_packaged_entrypoints_have_complete_distinguishable_protected_routing_guidance(self) -> None:
+        diagnostics = validator.validate_protected_subskill_routing_guidance(REPO_ROOT)
+
+        self.assertEqual([], messages(diagnostics))
+        expected_packs = {
+            "operator/isomer-op-entrypoint/SKILL.md": (20, ("project", "topic-create", "topic-manage")),
+            "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md": (21, ("scout", "baseline", "idea", "paper-plot", "figure-polish")),
+            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (13, ("trial", "reproduce", "audit", "synthesize")),
+        }
+        routing_by_pack: dict[str, dict[str, str]] = {}
+        for relative_path, (expected_count, representative_members) in expected_packs.items():
+            lines = validator.read_lines(REPO_ROOT / "skillset" / relative_path)
+            section_index = validator._h2_indices(lines, "Protected Subskills")[0]
+            table_lines = validator._h2_section(lines, section_index)
+            header = next(validator._markdown_table_cells(line) for line in table_lines if "When to Route Here" in line)
+            assert header is not None
+            member_index = header.index("Member")
+            guidance_index = header.index("When to Route Here")
+            rows: dict[str, str] = {}
+            for line in table_lines:
+                cells = validator._markdown_table_cells(line)
+                if cells is None or len(cells) != len(header) or cells == header:
+                    continue
+                if all(cell == "---" for cell in cells):
+                    continue
+                member = validator._markdown_cell_scalar(cells[member_index])
+                rows[member] = cells[guidance_index]
+            self.assertEqual(expected_count, len(rows), relative_path)
+            self.assertTrue(set(representative_members).issubset(rows), relative_path)
+            routing_by_pack[relative_path] = rows
+
+        operator_rows = routing_by_pack["operator/isomer-op-entrypoint/SKILL.md"]
+        self.assertIn("rather than creating or managing", operator_rows["project"])
+        self.assertIn("Empty or partial Project state", operator_rows["topic-create"])
+        self.assertIn("after Topic Creator handoff", operator_rows["topic-manage"])
+        deepsci_rows = routing_by_pack["research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"]
+        self.assertIn("lacks enough framing", deepsci_rows["scout"])
+        self.assertIn("blocked until", deepsci_rows["baseline"])
+        self.assertIn("ready to become", deepsci_rows["idea"])
+        self.assertIn("first-pass publication figure", deepsci_rows["paper-plot"])
+        self.assertIn("already meaningful figure", deepsci_rows["figure-polish"])
+        kaoju_rows = routing_by_pack["research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md"]
+        self.assertIn("without claiming full reproduction", kaoju_rows["trial"])
+        self.assertIn("genuine paper-reproduction claim", kaoju_rows["reproduce"])
+        self.assertIn("non-mutating", kaoju_rows["audit"])
+        self.assertIn("accepted audit", kaoju_rows["synthesize"])
 
     def test_repository_boundary_scans_source_mirrored_symlink_projection(self) -> None:
         root = self.make_root()

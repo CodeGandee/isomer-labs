@@ -48,21 +48,21 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 
 ## Protected Subskills
 
-| Member | Logical ID | Internal Designator |
-| --- | --- | --- |
-| `acquire` | `isomer-kaoju-acquire` | `isomer-ext-kaoju-entrypoint->acquire` |
-| `audit` | `isomer-kaoju-audit` | `isomer-ext-kaoju-entrypoint->audit` |
-| `compare` | `isomer-kaoju-compare` | `isomer-ext-kaoju-entrypoint->compare` |
-| `discover` | `isomer-kaoju-discover` | `isomer-ext-kaoju-entrypoint->discover` |
-| `examine` | `isomer-kaoju-examine` | `isomer-ext-kaoju-entrypoint->examine` |
-| `export` | `isomer-kaoju-export` | `isomer-ext-kaoju-entrypoint->export` |
-| `frame` | `isomer-kaoju-frame` | `isomer-ext-kaoju-entrypoint->frame` |
-| `reproduce` | `isomer-kaoju-reproduce` | `isomer-ext-kaoju-entrypoint->reproduce` |
-| `shared` | `isomer-kaoju-shared` | `isomer-ext-kaoju-entrypoint->shared` |
-| `synthesize` | `isomer-kaoju-synthesize` | `isomer-ext-kaoju-entrypoint->synthesize` |
-| `trial` | `isomer-kaoju-trial` | `isomer-ext-kaoju-entrypoint->trial` |
-| `workspace` | `isomer-kaoju-workspace-mgr` | `isomer-ext-kaoju-entrypoint->workspace` |
-| `write` | `isomer-kaoju-write` | `isomer-ext-kaoju-entrypoint->write` |
+| Member | Logical ID | When to Route Here | Internal Designator |
+| --- | --- | --- | --- |
+| `acquire` | `isomer-kaoju-acquire` | Selected sources or materials need a governed checkout, full-text fetch, dataset or model acquisition, immutable revision, or access and license capture. | `isomer-ext-kaoju-entrypoint->acquire` |
+| `audit` | `isomer-kaoju-audit` | Collected evidence, comparisons, trials, deltas, or draft conclusions need a non-mutating coverage, identity, provenance, traceability, or fairness audit before closeout. | `isomer-ext-kaoju-entrypoint->audit` |
+| `compare` | `isomer-kaoju-compare` | Named works need theory comparison, an empirical comparison contract, or a controlled actual-run comparison with fairness and uncertainty limits. | `isomer-ext-kaoju-entrypoint->compare` |
+| `discover` | `isomer-kaoju-discover` | The survey needs broad field discovery, curated-reference resolution, seed expansion, version-family mapping, query provenance, or bounded source selection before acquisition. | `isomer-ext-kaoju-entrypoint->discover` |
+| `examine` | `isomer-kaoju-examine` | Acquired papers or code need full-text or source inspection, exact locators, paper-code mapping, Source Digests, contradiction tracking, or ledger updates. | `isomer-ext-kaoju-entrypoint->examine` |
+| `export` | `isomer-kaoju-export` | Accepted survey records must become a self-contained LLM Wiki, a packaged local viewer, or a governed viewer launch after synthesis or writing. | `isomer-ext-kaoju-entrypoint->export` |
+| `frame` | `isomer-kaoju-frame` | The request needs a bounded Survey Contract covering clarification choices, intent, scope, evidence depth, resources, Gates, or stop conditions before evidence work. | `isomer-ext-kaoju-entrypoint->frame` |
+| `reproduce` | `isomer-kaoju-reproduce` | The user is making a genuine paper-reproduction claim that requires a source-grounded fidelity contract rather than an ordinary method trial or generated-data probe. | `isomer-ext-kaoju-entrypoint->reproduce` |
+| `shared` | `isomer-kaoju-shared` | Another Kaoju member needs common evidence, identity, lineage, clarification, Gate, owner-routing, Artifact, or terminal-status rules rather than a standalone survey stage. | `isomer-ext-kaoju-entrypoint->shared` |
+| `synthesize` | `isomer-kaoju-synthesize` | An accepted audit and evidence set are ready to produce survey conclusions such as a Field Summary, Survey Delta, Claim Status Table, or Kaoju Dossier. | `isomer-ext-kaoju-entrypoint->synthesize` |
+| `trial` | `isomer-kaoju-trial` | A source-code method needs governed environment preparation, a task-critical smoke check, or one approved bounded trial without claiming full reproduction. | `isomer-ext-kaoju-entrypoint->trial` |
+| `workspace` | `isomer-kaoju-workspace-mgr` | Survey work needs readiness checks for Topic Workspace state, registered datasets, repository posture, resource boundaries, or mutation ownership before a stage proceeds. | `isomer-ext-kaoju-entrypoint->workspace` |
+| `write` | `isomer-kaoju-write` | An accepted audit and synthesis are ready for canonical MyST paper drafting, template exchange, derived Markdown or TeX, PDF construction, validation, and publication bundling. | `isomer-ext-kaoju-entrypoint->write` |
 
 ## Survey Intents
 
