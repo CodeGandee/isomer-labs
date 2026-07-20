@@ -192,7 +192,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
+> Use $isomer-op-entrypoint use toolbox to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
 
 AI (visible response):
 
@@ -229,7 +229,7 @@ AI (visible response):
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to initialize a Toolbox from `context/toolbox-intents/gpu-experiment-checklist.md`.
+> Use $isomer-op-entrypoint use toolbox to initialize a Toolbox from `context/toolbox-intents/gpu-experiment-checklist.md`.
 
 AI (visible response):
 

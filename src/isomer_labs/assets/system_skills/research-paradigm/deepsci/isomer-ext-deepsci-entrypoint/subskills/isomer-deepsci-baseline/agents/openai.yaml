@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-deepsci-baseline"
+  short_description: "Establish the comparator and metric basis."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use baseline to perform this isomer-deepsci-baseline task."

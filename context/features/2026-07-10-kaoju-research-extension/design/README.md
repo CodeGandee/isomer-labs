@@ -6,11 +6,11 @@ This directory contains skill-family interface and contract design notes for the
 
 | Design Doc | Purpose | Status |
 | --- | --- | --- |
-| [Kaoju Pipeline and Skill Family Design Overview](isomer-kaoju-pipeline/design-overview.md) | Define the public pipeline subcommands, direct peer-skill interfaces, evidence contracts, routing boundaries, external owner calls, and visible response contract. | Draft |
+| [Kaoju Pipeline and Skill Family Design Overview](isomer-ext-kaoju-entrypoint/design-overview.md) | Define the public pipeline subcommands, direct peer-skill interfaces, evidence contracts, routing boundaries, external owner calls, and visible response contract. | Draft |
 
 ## Module Map
 
-- `isomer-kaoju-pipeline`: Public named-pass coordinator; executes one bounded pass and returns one terminal report.
+- `isomer-ext-kaoju-entrypoint`: Public named-pass coordinator; executes one bounded pass and returns one terminal report.
 - `isomer-kaoju-shared`: Internal family vocabulary, context, lineage, evidence-state, and worker-output contract.
 - `isomer-kaoju-workspace-mgr`: Kaoju-specific bootstrap, record-binding, material-storage, and access readiness.
 - `isomer-kaoju-frame`, `discover`, `acquire`, `examine`, `reproduce`, `compare`, `audit`, and `synthesize`: Directly invokable peer skills with one primary procedure each.

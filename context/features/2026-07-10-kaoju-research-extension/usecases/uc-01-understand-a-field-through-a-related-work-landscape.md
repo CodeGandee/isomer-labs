@@ -57,7 +57,7 @@ The researcher asks Kaoju to synthesize the field from the curated and coverage-
 
 ## Main Flow
 
-1. The researcher invokes `isomer-kaoju-pipeline landscape-pass` with a field description, optional seed works, time range, themes, and desired coverage mode.
+1. The researcher invokes `isomer-ext-kaoju-entrypoint landscape-pass` with a field description, optional seed works, time range, themes, and desired coverage mode.
 2. `isomer-kaoju-frame` turns the request into a Kaoju Inquiry Contract with field boundaries, primary source classes, date cutoff, inclusion and exclusion rules, coverage criterion, and output contract.
 3. `isomer-kaoju-discover` searches the five required source classes: papers, technical reports, source code repositories, datasets, and models. It follows useful citation and version links, records each provider, query, filter, time, candidate result, inclusion or exclusion rationale, and per-class coverage, and curates candidate papers and technical reports as the primary works.
 4. The skill deduplicates preprints, proceedings versions, journal versions, supplements, technical-report revisions, forks, mirrors, releases, and derived implementations into work or artifact families while preserving exact source identities and relationship evidence.
@@ -115,7 +115,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Discover as isomer-kaoju-discover
   participant Examine as isomer-kaoju-examine
   participant Audit as isomer-kaoju-audit
@@ -156,7 +156,7 @@ sequenceDiagram
 
 User Prompt:
 
-> Use `$isomer-kaoju-pipeline landscape-pass` to help me understand speculative decoding broadly. Produce a list of related works and a summary of the main approach families, how the field developed, important disagreements, and open gaps. Link official repositories, models, datasets, and benchmarks where relevant, but do not run reproduction experiments.
+> Use `$isomer-ext-kaoju-entrypoint use landscape-pass to help me understand speculative decoding broadly`. Produce a list of related works and a summary of the main approach families, how the field developed, important disagreements, and open gaps. Link official repositories, models, datasets, and benchmarks where relevant, but do not run reproduction experiments.
 
 AI:
 

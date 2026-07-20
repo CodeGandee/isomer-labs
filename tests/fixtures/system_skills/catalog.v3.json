@@ -1,0 +1,80 @@
+{
+  "schema_version": "isomer-skillset-manifest.v3",
+  "packs": {
+    "core": {
+      "entry_skill": "isomer-op-entrypoint",
+      "protected_members": {
+        "welcome": "isomer-op-welcome",
+        "project": "isomer-op-project-mgr",
+        "gui": "isomer-op-gui-mgr",
+        "identity": "isomer-op-switch-identity",
+        "system-skills": "isomer-op-system-skill-mgr",
+        "toolbox": "isomer-op-toolbox-mgr",
+        "topic-create": "isomer-op-topic-creator",
+        "topic-manage": "isomer-op-topic-mgr",
+        "topic-team": "isomer-op-topic-team-specialize",
+        "topic-env": "isomer-srv-topic-env-setup",
+        "agent-env": "isomer-srv-agent-env-setup",
+        "package-repo": "isomer-srv-resolve-pkg-repo",
+        "houmao": "isomer-srv-houmao-interop",
+        "topic-service": "isomer-srv-topic-service-agent-support",
+        "bounded-run": "isomer-misc-bounded-run-tips",
+        "nvidia": "isomer-misc-nvidia-tools",
+        "package-specifics": "isomer-misc-pkg-specifics",
+        "tool-packs": "isomer-misc-tool-packs",
+        "research-ideas": "isomer-research-idea-recording",
+        "operation-sets": "isomer-research-operation-set-recording"
+      }
+    },
+    "deepsci": {
+      "entry_skill": "isomer-ext-deepsci-entrypoint",
+      "legacy_aliases": [
+        "isomer-deepsci-pipeline"
+      ],
+      "protected_members": {
+        "analysis": "isomer-deepsci-analysis",
+        "baseline": "isomer-deepsci-baseline",
+        "decision": "isomer-deepsci-decision",
+        "experiment": "isomer-deepsci-experiment",
+        "figure-polish": "isomer-deepsci-figure-polish",
+        "finalize": "isomer-deepsci-finalize",
+        "idea": "isomer-deepsci-idea",
+        "nature-data": "isomer-deepsci-nature-data",
+        "nature-figure": "isomer-deepsci-nature-figure",
+        "nature-paper2ppt": "isomer-deepsci-nature-paper2ppt",
+        "nature-polishing": "isomer-deepsci-nature-polishing",
+        "optimize": "isomer-deepsci-optimize",
+        "paper-outline": "isomer-deepsci-paper-outline",
+        "paper-plot": "isomer-deepsci-paper-plot",
+        "rebuttal": "isomer-deepsci-rebuttal",
+        "review": "isomer-deepsci-review",
+        "science": "isomer-deepsci-science",
+        "scout": "isomer-deepsci-scout",
+        "shared": "isomer-deepsci-shared",
+        "workspace": "isomer-deepsci-workspace-mgr",
+        "write": "isomer-deepsci-write"
+      }
+    },
+    "kaoju": {
+      "entry_skill": "isomer-ext-kaoju-entrypoint",
+      "legacy_aliases": [
+        "isomer-kaoju-pipeline"
+      ],
+      "protected_members": {
+        "acquire": "isomer-kaoju-acquire",
+        "audit": "isomer-kaoju-audit",
+        "compare": "isomer-kaoju-compare",
+        "discover": "isomer-kaoju-discover",
+        "examine": "isomer-kaoju-examine",
+        "export": "isomer-kaoju-export",
+        "frame": "isomer-kaoju-frame",
+        "reproduce": "isomer-kaoju-reproduce",
+        "shared": "isomer-kaoju-shared",
+        "synthesize": "isomer-kaoju-synthesize",
+        "trial": "isomer-kaoju-trial",
+        "workspace": "isomer-kaoju-workspace-mgr",
+        "write": "isomer-kaoju-write"
+      }
+    }
+  }
+}

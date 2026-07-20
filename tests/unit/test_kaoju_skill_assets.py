@@ -9,6 +9,8 @@ from isomer_labs.kaoju.contracts import load_contract
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 KAOJU_ROOT = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "kaoju"
+ENTRYPOINT = KAOJU_ROOT / "isomer-ext-kaoju-entrypoint"
+SUBSKILLS = ENTRYPOINT / "subskills"
 
 
 CONTRACT = load_contract()
@@ -18,10 +20,10 @@ COMMANDS = set(CONTRACT.survey_intents) | set(CONTRACT.compatibility_procedures)
 
 class KaojuSkillAssetTests(unittest.TestCase):
     def test_exact_skill_inventory_and_identity_contract(self) -> None:
-        actual = {path.name for path in KAOJU_ROOT.glob("isomer-kaoju-*") if path.is_dir()}
+        actual = {ENTRYPOINT.name, *(path.name for path in SUBSKILLS.glob("isomer-kaoju-*") if path.is_dir())}
         self.assertEqual(EXPECTED_SKILLS, actual)
         for name in sorted(actual):
-            skill = KAOJU_ROOT / name
+            skill = ENTRYPOINT if name == ENTRYPOINT.name else SUBSKILLS / name
             skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
             agent_text = (skill / "agents" / "openai.yaml").read_text(encoding="utf-8")
             self.assertRegex(skill_text, rf"(?m)^name: {re.escape(name)}$")
@@ -30,10 +32,10 @@ class KaojuSkillAssetTests(unittest.TestCase):
             self.assertIn("## When to Use", skill_text, name)
             self.assertIn("## Guardrails", skill_text, name)
             self.assertIn(f'display_name: "{name}"', agent_text)
-            self.assertIn(f"${name}", agent_text)
+            self.assertIn(f"${ENTRYPOINT.name}", agent_text)
 
     def test_pipeline_uses_checked_intent_compatibility_and_manager_groups(self) -> None:
-        pipeline = KAOJU_ROOT / "isomer-kaoju-pipeline"
+        pipeline = ENTRYPOINT
         text = (pipeline / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("## Survey Intents", text)
         self.assertIn("## Compatibility Procedures", text)
@@ -42,14 +44,14 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertEqual(COMMANDS, command_names)
         for name in sorted(command_names):
             page = (pipeline / "commands" / f"{name}.md").read_text(encoding="utf-8")
-            self.assertIn("## Workflow", "\n".join(page.splitlines()[:20]), name)
+            self.assertIn("## Workflow", page, name)
             self.assertTrue("does not map cleanly" in page or "Gates, Blockers, and Resume" in page, name)
             self.assertIn(f"`{name}`", text)
             self.assertIn(f"commands/{name}.md", text)
         self.assertIn("`help`", text)
 
     def test_manager_actions_are_grouped(self) -> None:
-        commands = KAOJU_ROOT / "isomer-kaoju-pipeline" / "commands"
+        commands = ENTRYPOINT / "commands"
         survey = (commands / "manage-survey.md").read_text(encoding="utf-8")
         dataset = (commands / "manage-dataset.md").read_text(encoding="utf-8")
         for action in ("list", "show", "status", "export"):
@@ -72,7 +74,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertEqual("main", roles["latex"]["default_name"])
 
     def test_paper_template_unnamed_update_discovery_order_is_explicit(self) -> None:
-        commands = KAOJU_ROOT / "isomer-kaoju-pipeline" / "commands"
+        commands = ENTRYPOINT / "commands"
         manager = (commands / "manage-paper-template.md").read_text(encoding="utf-8")
         role = manager.index("template role before source discovery")
         explicit = manager.index("Resolve an explicit role-local name")
@@ -85,7 +87,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("even when the database has no selected-role `main`", manager)
         self.assertIn("other role's database records", manager)
 
-        writer = (KAOJU_ROOT / "isomer-kaoju-write" / "SKILL.md").read_text(encoding="utf-8")
+        writer = (SUBSKILLS / "isomer-kaoju-write" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Resolve role before using", writer)
         self.assertIn("use exactly one eligible edited export of that role", writer)
         self.assertIn("<topic.paper.template_exchange_root>/<kind>/main/", writer)
@@ -93,7 +95,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("paper-specific TeX draft", writer)
 
     def test_shared_contract_references_are_complete_and_linked(self) -> None:
-        shared = KAOJU_ROOT / "isomer-kaoju-shared"
+        shared = SUBSKILLS / "isomer-kaoju-shared"
         expected = {
             "artifact-recording.md",
             "artifact-semantics.md",
@@ -114,7 +116,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
             self.assertIn(f"references/{name}", skill_text)
 
     def test_generic_maintenance_procedures_are_absent(self) -> None:
-        pipeline = KAOJU_ROOT / "isomer-kaoju-pipeline"
+        pipeline = ENTRYPOINT
         command_names = {path.stem for path in (pipeline / "commands").glob("*.md")}
         forbidden = {
             "environment-repair",

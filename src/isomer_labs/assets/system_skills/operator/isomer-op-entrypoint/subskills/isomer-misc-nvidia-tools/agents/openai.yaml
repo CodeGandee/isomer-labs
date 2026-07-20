@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-misc-nvidia-tools"
+  short_description: "Pixi CUDA/C++ environment setup"
+  default_prompt: "Use $isomer-op-entrypoint use nvidia to perform this isomer-misc-nvidia-tools task."

@@ -1,8 +1,0 @@
-metadata:
-  version: "0.4.0"
-  thanks_to: "https://github.com/ResearAI/DeepScientist"
-
-interface:
-  display_name: "isomer-deepsci-scout"
-  short_description: "Frame the research task and choose the next stage."
-  default_prompt: "Use $isomer-deepsci-scout to clarify the research frame, metric direction, comparator neighborhood, and next route."

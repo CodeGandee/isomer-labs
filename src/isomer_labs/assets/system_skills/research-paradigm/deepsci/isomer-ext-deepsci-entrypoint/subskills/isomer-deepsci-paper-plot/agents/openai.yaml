@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-deepsci-paper-plot"
+  short_description: "Create first-pass publication figures from templates."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use paper-plot to perform this isomer-deepsci-paper-plot task."

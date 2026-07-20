@@ -1,31 +1,54 @@
-# Project Skills
+# Packaged System Skills
 
-Project-specific agent skills live in this packaged asset directory. The repository-root `skillset/` path is an authoring view that links here for distributable skills while keeping `skillset/dev/` local-only.
+Official non-development Isomer system skills live in this package resource tree. The repository-root `skillset/` directory is a linked authoring view; runtime code must use package-resource helpers rather than derive repository paths.
 
-Installed Isomer packages load official non-development skills from `isomer_labs.assets.system_skills`; runtime code should use package-resource helpers instead of deriving a repository checkout path.
+`manifest.toml` uses `isomer-skillset-manifest.v3` and declares exactly three public packs:
 
-`manifest.toml` is the packaged catalog for system-skill groups, optional system extensions, and callback insertion points. When a packaged skill starts or stops resolving User Skill Callbacks, update the manifest metadata along with the `SKILL.md` workflow text.
-
-| Subtree | Naming | Installation target |
+| Pack | Public Source | Protected Members |
 | --- | --- | --- |
-| `skillset/operator/` | `isomer-op-<purpose>` | Project Operator Sessions and Operator Agents that operate project control surfaces. |
-| `skillset/research/` | `isomer-research-<purpose>` | Producer-neutral research recording skills shared by all paradigms. |
-| `skillset/research-paradigm/` | `isomer-deepsci-<purpose>` and `isomer-kaoju-<purpose>` production research skills | Research-stage workers that perform reusable hypothesis-driven or evidence-led research procedures. |
-| `skillset/service/` | `isomer-srv-<purpose>` | Service Team actors that perform bounded operational support. |
+| Core | `operator/isomer-op-entrypoint/` | 20 members below `subskills/` |
+| DeepSci | `research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/` | 21 members below `subskills/` |
+| Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 13 members below `subskills/` |
 
-Operator skills include the informed-user `isomer-op-entrypoint` dispatcher plus module-level workflows such as `isomer-op-topic-team-specialize`; local subcommands inside those modules cover help, guided and automatic specialization, project awareness, Topic Team Specialization support, approval provenance, profile materialization, and team launch orchestration. Production DeepSci research-paradigm skills handle hypothesis-driven new-method research, experiments, analysis, decisions, writing, and publication support. The fourteen production Kaoju skills handle direction selection, reading lists, source and repository ingestion, evidence audit and synthesis, canonical MyST papers, separately approved code trials, and package-owned wiki export. Kaoju durable state is resolved through its packaged binding registry and Workspace Runtime state DB, while executable or environment support crosses typed Artifact, Run, repository, Service Request, and Execution Adapter boundaries. Service skills handle support tasks such as topic environment setup, Agent Workspace setup support, diagnostics, monitoring, and support Artifact writing.
+Only `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint` are public host-discoverable skills. Ordinary guidance uses `$<entrypoint> use <subcommand> to <task>` or a task-only invocation. Protected members keep stable logical ids for callbacks, bindings, provenance, compatibility, and private projection, but they are not independent public install units.
 
-Do not install `isomer-op-*` skills into ordinary research team members unless the role is explicitly an Operator Agent role. Do not place operator control-surface skills under `skillset/research-paradigm/`.
+Protected is a visibility and routing classification, not a security boundary. A complete installed pack contains readable nested bundles. Role-level minimization uses selective private projection of a protected logical-id dependency closure.
+
+## Authoring Boundary
+
+Keep a routable unit as a protected subskill when it owns private resources such as its own `SKILL.md`, `agents/`, scripts, references, templates, or assets. Keep a procedure as a command when it uses only resources owned by its containing bundle. A parent command may expose child commands without becoming a subskill.
+
+Object notation follows these rules:
+
+- Skills and subskills are bare: `isomer-op-entrypoint->project`.
+- Every command component has `()`: `isomer-op-entrypoint->project->init-project()`.
+- Parent commands act as object generators: `isomer-ext-kaoju-entrypoint->manage-survey()->list()`.
+- A command and subskill may share a name because `X->Y()` is a command and `X->Y` is a subskill.
+- A bare component cannot follow a command component.
+
+Every active Markdown page that uses object notation declares the standard `skill_invocation_notation` frontmatter value.
 
 ## Namespace Convention
 
-All Isomer system-skill names keep the `isomer-` product prefix. New names should use one of these responsibility prefixes:
+Reserve `isomer-op-entrypoint` for the public core pack and `isomer-ext-<extension-id>-entrypoint` for public extension packs. Protected logical identities retain responsibility prefixes:
 
-| Prefix | Responsibility |
+| Prefix | Protected Responsibility |
 | --- | --- |
-| `isomer-misc-<purpose>` | Public cross-domain helper interfaces that other Isomer skill families may call. These are not domain extensions. |
-| `isomer-op-<purpose>` | User-facing operator skills for Project Operator Sessions and Operator Agents. |
-| `isomer-srv-<purpose>` | Protected service-routed skills for bounded operational support. |
-| `isomer-<extension-name>-<purpose>` | Domain extension skill families. The extension name identifies the concrete domain or method, such as `deepsci` for hypothesis-driven research or `kaoju` for evidence-led surveys. |
+| `isomer-op-*` | Operator workflow capability |
+| `isomer-srv-*` | Bounded service support |
+| `isomer-misc-*` | Shared helper capability |
+| `isomer-research-*` | Paradigm-neutral research recording |
+| `isomer-deepsci-*` | DeepSci research capability |
+| `isomer-kaoju-*` | Kaoju research capability |
 
-Use `isomer-<extension-name>-<purpose>` for domain families, for example `isomer-deepsci-scout`, `isomer-kaoju-pipeline`, or a future `isomer-chem-*` family. Do not use `isomer-ext-*` as a generic extension bucket because extensions are named by their domain family. Keep `isomer-misc-*` for stable utility-like helper interfaces that are intentionally shared across domains.
+Do not use `isomer-ext-*` for protected helpers or a generic capability bucket. Do not add top-level compatibility folders for protected logical ids or former pipeline aliases.
+
+## Catalog and Resources
+
+When a public pack or protected member starts or stops resolving User Skill Callbacks, update the manifest insertion-point metadata with the workflow text. Callback identity remains the protected logical id. When one protected member depends on another, declare the logical-id dependency instead of reading a sibling path.
+
+Kaoju process, semantic, binding, schema, template, composition, migration, validation, and build resources remain package-owned under `isomer_labs.kaoju`. Skills query them through `isomer-cli ext kaoju`; do not copy those resources into the public pack or protected writer bundle.
+
+All public and protected `agents/openai.yaml` files must set `metadata.version` exactly equal to `project.version`, including release candidates. Treat `minimum_compatible_skill_version` as a separate compatibility policy.
+
+Run `pixi run validate-skills` after catalog, routing, resource, callback, dependency, or version changes.

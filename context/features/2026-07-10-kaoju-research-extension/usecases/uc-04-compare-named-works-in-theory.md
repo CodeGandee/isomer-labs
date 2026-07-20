@@ -42,7 +42,7 @@ The researcher asks Kaoju to analyze each selected work against the accepted dom
 
 ## Main Flow
 
-1. The researcher invokes `isomer-kaoju-pipeline theory-comparison-pass` with two or more named works and an optional comparison question, domain boundary, or preferred aspects.
+1. The researcher invokes `isomer-ext-kaoju-entrypoint theory-comparison-pass` with two or more named works and an optional comparison question, domain boundary, or preferred aspects.
 2. `isomer-kaoju-frame` resolves the target work identities and creates a Kaoju Inquiry Contract that selects `comparison_mode: theory` and fixes the evidence boundary, output placement, resource envelope, and stopping criteria.
 3. The pipeline loads relevant Related-Work Catalog, Field Summary, source catalog, Claim-Evidence Ledger, and prior examination records so it can reuse accepted survey context.
 4. `isomer-kaoju-examine` inspects the selected works' problem formulations, assumptions, mechanisms, representations, formal claims, complexity statements, intended settings, limitations, and relationships to the field.
@@ -89,7 +89,7 @@ flowchart TD
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Discover as isomer-kaoju-discover
   participant Examine as isomer-kaoju-examine
   participant Compare as isomer-kaoju-compare

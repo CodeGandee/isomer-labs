@@ -1,8 +1,0 @@
-metadata:
-  version: "0.4.0"
-  thanks_to: "https://github.com/ResearAI/DeepScientist"
-
-interface:
-  display_name: "isomer-deepsci-paper-outline"
-  short_description: "Turn evidence into a paper-native outline."
-  default_prompt: "Use $isomer-deepsci-paper-outline to build or repair a paper-native outline, scoped claims, method abstraction, and evidence boundaries."

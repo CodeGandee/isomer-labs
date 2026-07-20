@@ -1,7 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-op-topic-team-specialize"
-  short_description: "Specialize an explicit or context-selected topic team"
-  default_prompt: "Use $isomer-op-topic-team-specialize to initialize a Research Topic, ensure Project Manifest-backed topic registration, specialize a Domain Agent Team Template, route Topic Workspace predecessor setup through $isomer-srv-topic-env-setup, prepare Agent Workspace setup, route per-agent cwd readiness through $isomer-srv-agent-env-setup when needed after source gate and topology evidence exist, validate static topic-team material readiness, and write the topic-team summary."

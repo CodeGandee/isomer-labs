@@ -1,3 +1,13 @@
+---
+skill_invocation_notation: >
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
+---
+
 # Routing Rules
 
 ## Workflow
@@ -7,7 +17,7 @@
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
 4. Before selecting Topic Team Specialization, require an explicit specialization invocation or prompt or authoritative context that establishes a formal Agent Team target. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces are insufficient.
 5. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
-6. Before optional-extension routing, trust a Project declaration first. For an undeclared extension, delegate receipt-backed explicit-root and live-inventory resolution plus any authorized additive registration to `isomer-op-system-skill-mgr`.
+6. Before optional-extension routing, treat a Project declaration as authoritative routing intent. Delegate current v4 receipt, explicit-root, and limited live-inventory resolution plus any authorized additive registration to `isomer-op-entrypoint->system-skills`. Register only a verified current-v4 complete pack.
 7. Select one route as the initial owner route and let its owner preflight target prerequisites before mutation.
 8. If the target is ready, proceed through the selected route; if a known producer can satisfy a missing input, return paused prerequisite recovery rather than a terminal blocker.
 9. Present the recovery choices in `prerequisite-recovery.md` unless the user already gave explicit target-scoped run-to authorization.
@@ -19,23 +29,23 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 | Signal | Preferred Route |
 | --- | --- |
-| User asks what Isomer can do, asks for supported paths, or wants a safe menu. | `isomer-op-welcome`, read-only. |
+| User asks what Isomer can do, asks for supported paths, or wants a safe menu. | `isomer-op-entrypoint->welcome`, read-only. |
 | User gives a concrete task and asks the agent to handle it. | `isomer-op-entrypoint`, then route and proceed. |
 | User names a valid skill directly. | Load that skill unless readiness or ownership makes it unsafe. |
 | User names a valid `isomer-cli` command family. | Inspect CLI help and run the smallest safe command. |
-| A Topic Actor or Agent operation set needs durable closeout, receipt resume, verification, or explicit legacy repair. | `isomer-research-operation-set-recording` or the explicit `isomer-cli ext research operation-sets ...` family. |
-| Project bootstrap, validation, cleanup, relocation, context, or runtime setup. | `isomer-op-project-mgr`. |
-| System-skill extension detection, reconciliation, installation, status, registration, or repair. | `isomer-op-system-skill-mgr`. |
-| Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-toolbox-mgr`. |
-| New or partial Research Topic setup. | `isomer-op-topic-creator`. |
-| Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-topic-mgr`. |
-| Work as or on behalf of a Topic Actor or Agent. | `isomer-op-switch-identity`. |
-| Explicit specialization invocation, or deploy, specialize, instantiate, materialize, validate, repair, launch, or use a contextually established formal Agent Team. | `isomer-op-topic-team-specialize`; name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence. |
-| Topic Service Master lifecycle preparation, launch, inspection, stop, or repair. | `isomer-srv-topic-service-agent-support` through the matching lifecycle subcommand after an operator owner delegates it. |
-| Prepared DeepSci research-stage work. | Matching `isomer-deepsci-*` skill or `isomer-deepsci-pipeline`. |
-| DeepSci work before accepted bootstrap. | `isomer-deepsci-workspace-mgr` or missing setup owner. |
-| Prepared evidence-led survey, source examination, method trial, or comparison work. | Matching `isomer-kaoju-*` skill or `isomer-kaoju-pipeline`. |
-| Kaoju work before Topic Workspace, survey, or dataset-registry readiness is established. | `isomer-kaoju-workspace-mgr` or the missing platform owner. |
+| A Topic Actor or Agent operation set needs durable closeout, receipt resume, verification, or explicit legacy repair. | `isomer-op-entrypoint->operation-sets` or the explicit `isomer-cli ext research operation-sets ...` family. |
+| Project bootstrap, validation, cleanup, relocation, context, or runtime setup. | `isomer-op-entrypoint->project`. |
+| System-skill extension detection, reconciliation, installation, upgrade, status, registration, or repair. | `isomer-op-entrypoint->system-skills`. |
+| Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-entrypoint->toolbox`. |
+| New or partial Research Topic setup. | `isomer-op-entrypoint->topic-create`. |
+| Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-entrypoint->topic-manage`. |
+| Work as or on behalf of a Topic Actor or Agent. | `isomer-op-entrypoint->identity`. |
+| Explicit specialization invocation, or deploy, specialize, instantiate, materialize, validate, repair, launch, or use a contextually established formal Agent Team. | `isomer-op-entrypoint->topic-team`; name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence. |
+| Topic Service Master lifecycle preparation, launch, inspection, stop, or repair. | `isomer-op-entrypoint->topic-service` through the matching lifecycle subcommand after an operator owner delegates it. |
+| Prepared DeepSci research-stage work. | `isomer-ext-deepsci-entrypoint` or its matching protected member designator. |
+| DeepSci work before accepted bootstrap. | `isomer-ext-deepsci-entrypoint->workspace` or the missing platform owner. |
+| Prepared evidence-led survey, source examination, method trial, or comparison work. | `isomer-ext-kaoju-entrypoint` or its matching protected member designator. |
+| Kaoju work before Topic Workspace, survey, or dataset-registry readiness is established. | `isomer-ext-kaoju-entrypoint->workspace` or the missing platform owner. |
 
 ## Proceed Policy
 
@@ -47,19 +57,19 @@ During run-to, use the native planning tool, preserve each owner's authority and
 
 Use `blocked` when required context cannot be resolved safely, the selected route would bypass owner workflow boundaries, mutation needs approval not present in the prompt, or no available authorized owner can perform the external state change needed by the target. Use `paused` rather than `blocked` when an available in-scope owner can produce or repair the missing state.
 
-If the request says only to prepare, create, initialize, start, or repair a Research Topic, route new or partial setup to `isomer-op-topic-creator` and initialized-topic work to `isomer-op-topic-mgr` or the applicable setup owner. Do not select `isomer-op-topic-team-specialize` unless the user explicitly invoked it or formal Agent Team intent is established by the prompt or authoritative context.
+If the request says only to prepare, create, initialize, start, or repair a Research Topic, route new or partial setup to `isomer-op-entrypoint->topic-create` and initialized-topic work to `isomer-op-entrypoint->topic-manage` or the applicable setup owner. Do not select `isomer-op-entrypoint->topic-team` unless the user explicitly invoked it or formal Agent Team intent is established by the prompt or authoritative context.
 
 ## Topic Team Specialization Examples
 
 | Request or Context | Route |
 | --- | --- |
-| `prepare the topic <topic-name>` with no formal Agent Team target | `isomer-op-topic-creator` for new or partial setup, or `isomer-op-topic-mgr` for initialized-topic work |
-| Prepare a topic for manual or human-orchestrated research | `isomer-op-topic-creator` |
+| `prepare the topic <topic-name>` with no formal Agent Team target | `isomer-op-entrypoint->topic-create` for new or partial setup, or `isomer-op-entrypoint->topic-manage` for initialized-topic work |
+| Prepare a topic for manual or human-orchestrated research | `isomer-op-entrypoint->topic-create` |
 | A missing `isomer-topic-summary.md`, Agent Workspace, or readiness check with no formal Agent Team target | The owner of the missing base readiness or setup surface |
-| Explicitly invoke `isomer-op-topic-team-specialize` or a named specialization subcommand | `isomer-op-topic-team-specialize` |
-| Deploy, specialize, instantiate, materialize, validate, repair, launch, or use a named or contextually selected formal Agent Team | `isomer-op-topic-team-specialize`, carrying the formal-team evidence |
+| Explicitly invoke the public `topic-team` route or a named specialization subcommand | `isomer-op-entrypoint->topic-team` |
+| Deploy, specialize, instantiate, materialize, validate, repair, launch, or use a named or contextually selected formal Agent Team | `isomer-op-entrypoint->topic-team`, carrying the formal-team evidence |
 
-A direct extension-skill invocation preserves explicit user intent. A Project declaration is authoritative routing state; later load failure receives stale-state repair guidance. An undeclared extension routes through `isomer-op-system-skill-mgr`, which may reconcile a complete family when the concrete request authorizes Project bookkeeping or return installation, compatibility, or refresh advice.
+A direct public extension invocation preserves explicit user intent. A Project declaration is authoritative routing state; later load failure receives stale-state repair guidance. Current-host readiness routes through `isomer-op-entrypoint->system-skills`, which may reconcile a verified current-v4 complete pack when the concrete request authorizes Project bookkeeping or return migration, installation, compatibility, or refresh advice.
 
 ## Boundary Rules
 
@@ -67,9 +77,9 @@ Normal user-facing requests route to operator owner skills before service delega
 
 Houmao-backed work stays Isomer-first. Use `isomer-cli project integrations houmao ...` and returned skill-context paths before following Houmao-owned procedures; do not make ordinary users install or invoke Houmao system skills directly for standard Isomer workflows.
 
-Misc helper skills are explicit helper routes. `isomer-misc-tool-packs` can resolve a named toolset contract only when explicitly requested as a helper, but package mutation for a Topic Workspace remains owned by topic or environment setup workflows.
+Protected shared members are explicit helper routes. `isomer-op-entrypoint->tool-packs` can resolve a named toolset contract only when explicitly requested as a helper, but package mutation for a Topic Workspace remains owned by topic or environment setup workflows.
 
-Project-local Toolbox requests route to `isomer-op-toolbox-mgr`. Do not treat Toolbox callback management, insertion points, or Runtime Params as installable toolset requests.
+Project-local Toolbox requests route to `isomer-op-entrypoint->toolbox`. Do not treat Toolbox callback management, insertion points, or Runtime Params as installable toolset requests.
 
 Provider-specific project roots, user-home roots, plugin roots, and discovery layouts are not entrypoint rules. The system-skill manager obtains roots and live inventory from the current host and passes only explicit inputs to `isomer-cli`.
 

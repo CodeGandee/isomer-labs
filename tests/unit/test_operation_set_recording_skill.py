@@ -7,12 +7,12 @@ from pathlib import Path
 
 import yaml
 
-from isomer_labs.skills.system_assets import materialize_system_skills, resolve_system_skill
+from isomer_labs.skills.system_assets import materialize_system_skills, resolve_system_skill, resolve_system_skill_capability
 
 
 class OperationSetRecordingSkillTests(unittest.TestCase):
     def test_core_skill_has_bounded_workflow_and_required_references(self) -> None:
-        skill = resolve_system_skill("research/isomer-research-operation-set-recording")
+        skill = resolve_system_skill_capability("isomer-research-operation-set-recording")
         text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         for reference_name in (
             "manifest-contract.md",
@@ -30,14 +30,14 @@ class OperationSetRecordingSkillTests(unittest.TestCase):
             "record_attachment",
             "disposable",
             "complete` receipt",
-            "$isomer-research-idea-recording",
+            "isomer-op-entrypoint->research-ideas",
             "DO NOT guess record kinds",
             "DO NOT index a worker-staging path",
         ):
             self.assertIn(token, text)
 
     def test_manifest_recovery_and_legacy_guidance_preserve_canonical_boundaries(self) -> None:
-        skill = resolve_system_skill("research/isomer-research-operation-set-recording")
+        skill = resolve_system_skill_capability("isomer-research-operation-set-recording")
         manifest = skill.joinpath("references", "manifest-contract.md").read_text(encoding="utf-8")
         recovery = skill.joinpath("references", "recovery.md").read_text(encoding="utf-8")
         legacy = skill.joinpath("references", "legacy-repair.md").read_text(encoding="utf-8")
@@ -59,18 +59,18 @@ class OperationSetRecordingSkillTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         project = tomllib.loads(root.joinpath("pyproject.toml").read_text(encoding="utf-8"))
         expected_version = project["project"]["version"]
-        skill = resolve_system_skill("research/isomer-research-operation-set-recording")
+        skill = resolve_system_skill_capability("isomer-research-operation-set-recording")
         metadata = yaml.safe_load(skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8"))
         self.assertEqual(expected_version, metadata["metadata"]["version"])
         self.assertEqual("isomer-research-operation-set-recording", metadata["interface"]["display_name"])
-        self.assertIn("$isomer-research-operation-set-recording", metadata["interface"]["default_prompt"])
+        self.assertIn("$isomer-op-entrypoint", metadata["interface"]["default_prompt"])
 
         entrypoint = resolve_system_skill("operator/isomer-op-entrypoint")
         system_index = entrypoint.joinpath("references", "system-skill-index.md").read_text(encoding="utf-8")
         cli_index = entrypoint.joinpath("references", "cli-index.md").read_text(encoding="utf-8")
         input_surfaces = entrypoint.joinpath("references", "input-surfaces.md").read_text(encoding="utf-8")
         routing = entrypoint.joinpath("references", "routing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("isomer-research-operation-set-recording", system_index)
+        self.assertIn("isomer-op-entrypoint->operation-sets", system_index)
         self.assertIn("ext research operation-sets", cli_index)
         self.assertIn("acceptance manifest", input_surfaces)
         self.assertIn("operation set needs durable closeout", routing)
@@ -80,7 +80,7 @@ class OperationSetRecordingSkillTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             target = Path(temporary)
             materialize_system_skills(target, groups=("core",))
-            skill = target / "research" / "isomer-research-operation-set-recording"
+            skill = target / "isomer-op-entrypoint" / "subskills" / "isomer-research-operation-set-recording"
             self.assertTrue(skill.joinpath("SKILL.md").is_file())
             self.assertTrue(skill.joinpath("agents", "openai.yaml").is_file())
             self.assertTrue(skill.joinpath("references", "manifest-contract.md").is_file())

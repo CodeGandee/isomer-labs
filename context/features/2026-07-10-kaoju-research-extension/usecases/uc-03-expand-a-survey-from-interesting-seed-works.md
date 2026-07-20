@@ -57,7 +57,7 @@ The researcher asks Kaoju to extend the direction beyond A, B, and C to closely 
 
 ## Main Flow
 
-1. The researcher invokes `isomer-kaoju-pipeline direction-expansion-pass` with works A, B, and C, the active survey topic, and optional direction or time constraints.
+1. The researcher invokes `isomer-ext-kaoju-entrypoint direction-expansion-pass` with works A, B, and C, the active survey topic, and optional direction or time constraints.
 2. `isomer-kaoju-frame` creates a Kaoju Inquiry Contract that fixes the seed selection, requested direction, relevance and importance criteria, date preferences, search budget, stopping rule, and survey outputs to update.
 3. The pipeline resolves the proposed `latest_after`, which defaults to the latest publication date among the seed work families, and `searched_through`, which records the current pass's search cutoff.
 4. The pipeline loads the Related-Work Catalog, Field Summary, Search Query Log, source catalog, Claim-Evidence Ledger, and prior inclusion decisions for the active survey.
@@ -110,7 +110,7 @@ flowchart TD
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Examine as isomer-kaoju-examine
   participant Discover as isomer-kaoju-discover
   participant Audit as isomer-kaoju-audit

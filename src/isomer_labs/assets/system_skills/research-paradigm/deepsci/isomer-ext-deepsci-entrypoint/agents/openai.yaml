@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-ext-deepsci-entrypoint"
+  short_description: "Execute a named single-pass sequence of production DeepSci skills with automatic artifact handoffs."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use help to list DeepSci passes, or use a named pass to perform the research task."

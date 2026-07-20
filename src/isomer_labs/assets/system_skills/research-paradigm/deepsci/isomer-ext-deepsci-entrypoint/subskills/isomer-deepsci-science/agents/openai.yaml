@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-deepsci-science"
+  short_description: "Check scientific computation and validity."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use science to perform this isomer-deepsci-science task."

@@ -54,6 +54,25 @@ OUTPUT_CONTRACT_FIXTURE = """
             Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
 """
 
+INVOCATION_NOTATION_FRONTMATTER = """
+            skill_invocation_notation: >
+              Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+              `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+              `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+              subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+              by parent subcommand parent. Intermediate subcommands act as object generators.
+              Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
+"""
+
+SYSTEM_SKILL_MANAGER_SOURCE = (
+    REPO_ROOT
+    / "skillset"
+    / "operator"
+    / "isomer-op-entrypoint"
+    / "subskills"
+    / "isomer-op-system-skill-mgr"
+)
+
 
 class SkillsetValidatorTests(unittest.TestCase):
     def make_root(self) -> Path:
@@ -64,6 +83,196 @@ class SkillsetValidatorTests(unittest.TestCase):
         write(root / "skillset" / "research-paradigm" / "README.md", "# Research Skills\n")
         write(root / "skillset" / "service" / "README.md", "# Service Skills\n")
         return root
+
+    def write_v3_invocation_fixture(self, root: Path) -> None:
+        write(
+            root / "skillset" / "manifest.toml",
+            """
+            schema_version = "isomer-skillset-manifest.v3"
+
+            [[packs]]
+            pack_id = "core"
+            description = "Fixture public pack."
+            kind = "core"
+            source_path = "operator/isomer-op-entrypoint"
+            entry_skill = "isomer-op-entrypoint"
+            always_available = true
+            minimum_compatible_skill_version = "0.1.0"
+            public_commands = ["manage", "project"]
+            protected_members = ["isomer-op-project-mgr"]
+            legacy_aliases = []
+            callback_insertion_points = []
+
+            [[capabilities]]
+            logical_id = "isomer-op-project-mgr"
+            pack_id = "core"
+            area = "operator"
+            member_name = "project"
+            source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-project-mgr"
+            invocation_designator = "isomer-op-entrypoint->project"
+            dependencies = []
+            legacy_aliases = []
+            callback_insertion_points = []
+            """,
+        )
+        pack = root / "skillset" / "operator" / "isomer-op-entrypoint"
+        write(
+            pack / "SKILL.md",
+            f"""
+            ---
+            name: isomer-op-entrypoint
+            description: Use when validating invocation routes.
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # Fixture Entrypoint
+
+            `isomer-op-entrypoint->project` selects the protected member while `isomer-op-entrypoint->project()` selects the same-name public command.
+            `isomer-op-entrypoint->manage()->list()` selects a nested public command.
+            """,
+        )
+        write(
+            pack / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-entrypoint"
+              default_prompt: "Use $isomer-op-entrypoint for this task."
+            """,
+        )
+        write(
+            pack / "commands" / "manage.md",
+            f"""
+            ---
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # Manage
+
+            ## Subcommands
+
+            | Child | Detail |
+            | --- | --- |
+            | `isomer-op-entrypoint->manage()->list()` | [commands/manage/list.md](commands/manage/list.md) |
+            """,
+        )
+        write(
+            pack / "commands" / "manage" / "list.md",
+            f"""
+            ---
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # List
+
+            Route: `isomer-op-entrypoint->manage()->list()`.
+            """,
+        )
+        capability = pack / "subskills" / "isomer-op-project-mgr"
+        write(
+            capability / "SKILL.md",
+            f"""
+            ---
+            name: isomer-op-project-mgr
+            description: Use when validating a protected member route.
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # Project Manager
+
+            Route: `isomer-op-entrypoint->project`.
+
+            ## Subcommands
+
+            | Child | Detail |
+            | --- | --- |
+            | `isomer-op-entrypoint->project->inspect()` | [commands/inspect.md](commands/inspect.md) |
+            """,
+        )
+        write(
+            capability / "commands" / "inspect.md",
+            f"""
+            ---
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # Inspect
+
+            Route: `isomer-op-entrypoint->project->inspect()`.
+            """,
+        )
+        write(
+            capability / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-project-mgr"
+              default_prompt: "Use $isomer-op-entrypoint use project to inspect the project."
+            """,
+        )
+
+    def test_v3_invocation_validator_distinguishes_same_name_member_and_command(self) -> None:
+        root = self.make_root()
+        self.write_v3_invocation_fixture(root)
+
+        diagnostics = validator.validate_system_skill_invocations(root)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_v3_invocation_validator_rejects_ambiguous_malformed_and_undeclared_routes(self) -> None:
+        root = self.make_root()
+        self.write_v3_invocation_fixture(root)
+        page = root / "skillset" / "operator" / "isomer-op-entrypoint" / "commands" / "broken.md"
+        write(
+            page,
+            f"""
+            ---
+            {INVOCATION_NOTATION_FRONTMATTER}
+            ---
+
+            # Broken Routes
+
+            `isomer-op-entrypoint->manage`
+            `isomer-op-entrypoint->manage()->list`
+            `isomer-op-entrypoint->manage()->remove()`
+            `isomer-op-entrypoint->manage()->latex()`
+            """,
+        )
+        write(
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-op-entrypoint"
+            / "subskills"
+            / "undeclared"
+            / "SKILL.md",
+            "# Undeclared\n",
+        )
+
+        rendered = messages(validator.validate_system_skill_invocations(root))
+
+        self.assertTrue(any("declared command and must use ()" in message for message in rendered), rendered)
+        self.assertTrue(any("must not return to a bare component" in message for message in rendered), rendered)
+        self.assertTrue(any("does not declare child route" in message for message in rendered), rendered)
+        self.assertTrue(any("role parameters" in message for message in rendered), rendered)
+        self.assertTrue(any("not declared as a protected capability" in message for message in rendered), rendered)
+
+    def test_v3_invocation_validator_requires_notation_and_public_protected_prompts(self) -> None:
+        root = self.make_root()
+        self.write_v3_invocation_fixture(root)
+        pack = root / "skillset" / "operator" / "isomer-op-entrypoint"
+        write(pack / "references" / "missing-notation.md", "Use `isomer-op-entrypoint->project`.\n")
+        write(
+            pack / "subskills" / "isomer-op-project-mgr" / "agents" / "openai.yaml",
+            """
+            interface:
+              display_name: "isomer-op-project-mgr"
+              default_prompt: "Use $isomer-op-project-mgr directly."
+            """,
+        )
+
+        rendered = messages(validator.validate_system_skill_invocations(root))
+
+        self.assertTrue(any("exact standard skill_invocation_notation" in message for message in rendered), rendered)
+        self.assertTrue(any("owning public entrypoint" in message for message in rendered), rendered)
 
     def test_repository_boundary_scans_source_mirrored_symlink_projection(self) -> None:
         root = self.make_root()
@@ -500,7 +709,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.write_entrypoint_skill(root)
         self.write_switch_identity_skill(root)
         shutil.copytree(
-            REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr",
+            SYSTEM_SKILL_MANAGER_SOURCE,
             root / "skillset" / "operator" / "isomer-op-system-skill-mgr",
         )
 
@@ -913,7 +1122,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             The skill is read-only and uses `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, `isomer-cli system-skills extensions list`, and `isomer-cli project system-extensions list` only for inspection.
             Route concrete tasks to `isomer-op-entrypoint`, extension work to `isomer-op-system-skill-mgr`, Project checks to `isomer-op-project-mgr`, Project Web GUI work to `isomer-op-gui-mgr`, identity work to `isomer-op-switch-identity`, Toolbox work to `isomer-op-toolbox-mgr`, topic creation to `isomer-op-topic-creator`, initialized-topic work to `isomer-op-topic-mgr`, and Topic Team work to `isomer-op-topic-team-specialize`. Route bounded Houmao adapter support through the owning operator workflow to `isomer-srv-houmao-interop`; service skills are not first-click owner routes.
-            DeepSci uses `isomer-deepsci-pipeline`; Kaoju uses `isomer-kaoju-pipeline`. Distinguish `catalog-known`, Project-declared, and host-usable extension evidence. Manual versus Agent Team is execution topology; DeepSci versus Kaoju is research paradigm. The `isomer-cli ext` namespace does not install system-skill extensions.
+            DeepSci uses `isomer-ext-deepsci-entrypoint`; Kaoju uses `isomer-ext-kaoju-entrypoint`. Distinguish `catalog-known`, Project-declared, and host-usable extension evidence. Manual versus Agent Team is execution topology; DeepSci versus Kaoju is research paradigm. The `isomer-cli ext` namespace does not install system-skill extensions.
             Do not ask users or agents to invoke `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, or `isomer-op-manual-research-session`; they are retired.
             Do not automatically route to `isomer-misc-tool-packs`; mention `isomer-misc-tool-packs` only as a manual skill when explicitly relevant.
             Route Topic Team Specialization only for an explicit invocation or a formal Agent Team target established by the prompt or authoritative context. A generic topic preparation request, launch-facing language, readiness gaps, missing summaries, and missing Agent Workspaces do not establish that target.
@@ -950,8 +1159,8 @@ class SkillsetValidatorTests(unittest.TestCase):
                 | --- | --- | --- |
                 | `start-research-manually` | Manual research. | Owner route. |
                 | `start-research-by-agent-team` | Agent Team research. | Owner route. |
-                | `start-deepsci-research` | Hypothesis research. | `isomer-deepsci-pipeline`. |
-                | `start-kaoju-survey` | Evidence-led survey. | `isomer-kaoju-pipeline`. |
+                | `start-deepsci-research` | Hypothesis research. | `isomer-ext-deepsci-entrypoint`. |
+                | `start-kaoju-survey` | Evidence-led survey. | `isomer-ext-kaoju-entrypoint`. |
                 | `isomer-op-entrypoint` | Concrete route and proceed. | Owner route. |
                 | `isomer-op-system-skill-mgr` | Extension lifecycle. | Owner route. |
                 | `isomer-op-gui-mgr` | Project Web GUI lifecycle and backend API reference. | Owner route. |
@@ -970,7 +1179,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                `start-deepsci-research` uses `isomer-deepsci-pipeline`; `start-kaoju-survey` uses `isomer-kaoju-pipeline`. Use `isomer-op-system-skill-mgr` for extension lifecycle and Use $isomer-op-entrypoint for a concrete task. Manual or Agent Team is execution topology; DeepSci or Kaoju is research paradigm.
+                `start-deepsci-research` uses `isomer-ext-deepsci-entrypoint`; `start-kaoju-survey` uses `isomer-ext-kaoju-entrypoint`. Use `isomer-op-system-skill-mgr` for extension lifecycle and Use $isomer-op-entrypoint for a concrete task. Manual or Agent Team is execution topology; DeepSci or Kaoju is research paradigm.
 
                 Project setup or checks, Project Web GUI work with `isomer-op-gui-mgr`, Research Topic setup, Topic Team work, and Houmao support all name owner workflows.
             """,
@@ -983,7 +1192,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Distinguish `catalog-known`, Project-declared, and Host-usable evidence. Route lifecycle work to `isomer-op-system-skill-mgr`; Use $isomer-op-entrypoint for concrete work. DeepSci uses `isomer-deepsci-pipeline`, Kaoju uses `isomer-kaoju-pipeline`, and `isomer-cli ext` is a runtime namespace.
+                Distinguish `catalog-known`, Project-declared, and Host-usable evidence. Route lifecycle work to `isomer-op-system-skill-mgr`; Use $isomer-op-entrypoint for concrete work. DeepSci uses `isomer-ext-deepsci-entrypoint`, Kaoju uses `isomer-ext-kaoju-entrypoint`, and `isomer-cli ext` is a runtime namespace.
             """,
             "choose-path.md": """
                 # Choose Path
@@ -1045,11 +1254,11 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 ## Workflow
 
-                1. Recommend hypothesis-driven production research through `isomer-deepsci-pipeline` while preserving execution topology as a separate choice.
+                1. Recommend hypothesis-driven production research through `isomer-ext-deepsci-entrypoint` while preserving execution topology as a separate choice.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and bootstrap to `isomer-deepsci-workspace-mgr`.
+                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and bootstrap to `isomer-ext-deepsci-entrypoint->workspace`.
 
                 ## Mutation Boundary
 
@@ -1060,11 +1269,11 @@ class SkillsetValidatorTests(unittest.TestCase):
 
                 ## Workflow
 
-                1. Recommend an evidence-led survey through `isomer-kaoju-pipeline` while preserving execution topology as a separate choice.
+                1. Recommend an evidence-led survey through `isomer-ext-kaoju-entrypoint` while preserving execution topology as a separate choice.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
-                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and readiness to `isomer-kaoju-workspace-mgr`.
+                Use $isomer-op-entrypoint when readiness is unclear. Route extension state to `isomer-op-system-skill-mgr` and readiness to `isomer-ext-kaoju-entrypoint->workspace`.
 
                 ## Mutation Boundary
 
@@ -2022,7 +2231,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_rejects_system_skill_manager_universal_provider_path(self) -> None:
         root = self.make_root()
-        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
         skill_md = target / "SKILL.md"
@@ -2038,21 +2247,30 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_rejects_system_skill_manager_trust_order_regression(self) -> None:
         root = self.make_root()
-        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
         skill_md = target / "SKILL.md"
         text = skill_md.read_text(encoding="utf-8")
-        skill_md.write_text(text.replace("# Isomer Operator", "Live inventory first.\n\n# Isomer Operator", 1), encoding="utf-8")
+        skill_md.write_text(
+            text.replace("# Isomer Operator", "**Limited live inventory** first.\n\n# Isomer Operator", 1),
+            encoding="utf-8",
+        )
 
         diagnostics = validator.validate_system_skill_manager_module(root)
 
         self.assertIn("OPS014", codes(diagnostics))
-        self.assertTrue(any("declaration, managed-root receipt, then live-inventory order" in message for message in messages(diagnostics)), messages(diagnostics))
+        self.assertTrue(
+            any(
+                "declaration, current-v4 receipt, explicit-root, then live-inventory order" in message
+                for message in messages(diagnostics)
+            ),
+            messages(diagnostics),
+        )
 
     def test_operator_validator_rejects_system_skill_manager_home_override(self) -> None:
         root = self.make_root()
-        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
         install_reference = target / "references" / "install-extension.md"
@@ -2069,7 +2287,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
     def test_operator_validator_rejects_stale_universal_install_scope_claim(self) -> None:
         root = self.make_root()
-        source = REPO_ROOT / "skillset" / "operator" / "isomer-op-system-skill-mgr"
+        source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
         install_reference = target / "references" / "install-extension.md"

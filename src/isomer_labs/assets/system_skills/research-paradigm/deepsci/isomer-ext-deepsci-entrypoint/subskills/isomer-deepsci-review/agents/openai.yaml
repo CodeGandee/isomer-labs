@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-deepsci-review"
+  short_description: "Audit a draft or paper-like report skeptically."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use review to perform this isomer-deepsci-review task."

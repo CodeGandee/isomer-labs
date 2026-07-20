@@ -214,7 +214,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to create a Toolbox skill for this task: before DeepSci experiment agents run benchmarks, they should classify the evidence plan as real measurement, proxy measurement, inference, or assumption. I want this to be strict by default, but one topic should be able to relax it.
+> Use $isomer-op-entrypoint use toolbox to create a Toolbox skill for this task: before DeepSci experiment agents run benchmarks, they should classify the evidence plan as real measurement, proxy measurement, inference, or assumption. I want this to be strict by default, but one topic should be able to relax it.
 
 AI (visible response):
 

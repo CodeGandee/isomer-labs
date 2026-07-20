@@ -130,7 +130,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
+> Use $isomer-op-entrypoint use toolbox to initialize a Toolbox that makes DeepSci review agents reject any claim that lacks real-hardware evidence. I want it strict by default but let topics relax it to proxy-inference if they document the limitation.
 
 AI:
 
@@ -170,7 +170,7 @@ AI:
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to convert `extern/orphan/bench-evidence-skill` into a Toolbox. It currently tells experiment agents to save `evidence.md` and has a hard-coded strict mode. Make it configurable and use Isomer storage.
+> Use $isomer-op-entrypoint use toolbox to convert `extern/orphan/bench-evidence-skill` into a Toolbox. It currently tells experiment agents to save `evidence.md` and has a hard-coded strict mode. Make it configurable and use Isomer storage.
 
 AI:
 
@@ -200,7 +200,7 @@ AI:
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to edit callback declarations for Toolbox `gpu-evidence-quality` by drafting an entry at insertion point `isomer-deepsci-experiment/begin` with source type `skill_dir`.
+> Use $isomer-op-entrypoint use toolbox to edit callback declarations for Toolbox `gpu-evidence-quality` by drafting an entry at insertion point `isomer-deepsci-experiment/begin` with source type `skill_dir`.
 
 AI:
 

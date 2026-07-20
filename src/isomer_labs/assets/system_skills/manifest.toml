@@ -1,235 +1,643 @@
-schema_version = "isomer-skillset-manifest.v2"
-
-[groups.core]
-description = "Core Isomer operator, service, and miscellaneous skills."
-kind = "core"
-always_available = true
-minimum_compatible_skill_version = "0.3.0"
-skills = [
-  "misc/isomer-misc-bounded-run-tips",
-  "misc/isomer-misc-nvidia-tools",
-  "misc/isomer-misc-pkg-specifics",
-  "misc/isomer-misc-tool-packs",
-  "research/isomer-research-idea-recording",
-  "research/isomer-research-operation-set-recording",
-  "operator/isomer-op-entrypoint",
-  "operator/isomer-op-gui-mgr",
-  "operator/isomer-op-project-mgr",
-  "operator/isomer-op-system-skill-mgr",
-  "operator/isomer-op-switch-identity",
-  "operator/isomer-op-toolbox-mgr",
-  "operator/isomer-op-topic-creator",
-  "operator/isomer-op-topic-mgr",
-  "operator/isomer-op-topic-team-specialize",
-  "operator/isomer-op-welcome",
-  "service/isomer-srv-agent-env-setup",
-  "service/isomer-srv-houmao-interop",
-  "service/isomer-srv-resolve-pkg-repo",
-  "service/isomer-srv-topic-env-setup",
-  "service/isomer-srv-topic-service-agent-support",
-]
-
-[groups.deepsci]
-description = "DeepScientist-derived production research paradigm skills."
-kind = "extension"
-extension_id = "deepsci"
-entry_skill = "isomer-deepsci-pipeline"
-commands = [
-  "empirical-pass",
-  "hypothesis-pass",
-  "list-passes",
-  "paper-pass",
-  "polish-pass",
-  "rebuttal-pass",
-  "revision-pass",
-  "submission-pass",
-]
-always_available = false
-minimum_compatible_skill_version = "0.3.0"
-skills = [
-  "research-paradigm/deepsci/isomer-deepsci-analysis",
-  "research-paradigm/deepsci/isomer-deepsci-baseline",
-  "research-paradigm/deepsci/isomer-deepsci-decision",
-  "research-paradigm/deepsci/isomer-deepsci-experiment",
-  "research-paradigm/deepsci/isomer-deepsci-figure-polish",
-  "research-paradigm/deepsci/isomer-deepsci-finalize",
-  "research-paradigm/deepsci/isomer-deepsci-idea",
-  "research-paradigm/deepsci/isomer-deepsci-nature-data",
-  "research-paradigm/deepsci/isomer-deepsci-nature-figure",
-  "research-paradigm/deepsci/isomer-deepsci-nature-paper2ppt",
-  "research-paradigm/deepsci/isomer-deepsci-nature-polishing",
-  "research-paradigm/deepsci/isomer-deepsci-optimize",
-  "research-paradigm/deepsci/isomer-deepsci-paper-outline",
-  "research-paradigm/deepsci/isomer-deepsci-paper-plot",
-  "research-paradigm/deepsci/isomer-deepsci-pipeline",
-  "research-paradigm/deepsci/isomer-deepsci-rebuttal",
-  "research-paradigm/deepsci/isomer-deepsci-review",
-  "research-paradigm/deepsci/isomer-deepsci-science",
-  "research-paradigm/deepsci/isomer-deepsci-scout",
-  "research-paradigm/deepsci/isomer-deepsci-shared",
-  "research-paradigm/deepsci/isomer-deepsci-workspace-mgr",
-  "research-paradigm/deepsci/isomer-deepsci-write",
-]
-
-[groups.kaoju]
-description = "Evidence-led literature, codebase, dataset, model, and first-hand survey skills."
-kind = "extension"
-extension_id = "kaoju"
-entry_skill = "isomer-kaoju-pipeline"
-commands = [
-  "choose-directions",
-  "build-reading-list",
-  "ingest-reading-item",
-  "draft-paper",
-  "manage-paper-template",
-  "build-paper-pdf",
-  "export-survey-wiki",
-  "ingest-source-code",
-  "prepare-code-run",
-  "run-code-trial",
-  "landscape-pass",
-  "curated-intake-pass",
-  "direction-expansion-pass",
-  "theory-comparison-pass",
-  "method-trial-pass",
-  "comparative-pass",
-  "audit-survey-pass",
-  "paper-pass",
-  "create-paper-template",
-  "manage-survey",
-  "manage-dataset",
-]
-always_available = false
-minimum_compatible_skill_version = "0.3.0"
-skills = [
-  "research-paradigm/kaoju/isomer-kaoju-pipeline",
-  "research-paradigm/kaoju/isomer-kaoju-shared",
-  "research-paradigm/kaoju/isomer-kaoju-workspace-mgr",
-  "research-paradigm/kaoju/isomer-kaoju-frame",
-  "research-paradigm/kaoju/isomer-kaoju-discover",
-  "research-paradigm/kaoju/isomer-kaoju-acquire",
-  "research-paradigm/kaoju/isomer-kaoju-examine",
-  "research-paradigm/kaoju/isomer-kaoju-reproduce",
-  "research-paradigm/kaoju/isomer-kaoju-trial",
-  "research-paradigm/kaoju/isomer-kaoju-compare",
-  "research-paradigm/kaoju/isomer-kaoju-audit",
-  "research-paradigm/kaoju/isomer-kaoju-synthesize",
-  "research-paradigm/kaoju/isomer-kaoju-write",
-  "research-paradigm/kaoju/isomer-kaoju-export",
-]
+schema_version = "isomer-skillset-manifest.v3"
 
 [callback_insertion_point_stages.begin]
 label = "Begin"
-description = "After mandatory context or entry-fit checks and before the first skill-specific action."
+description = "After mandatory context or entry-fit checks and before the first capability-specific action."
 
 [callback_insertion_point_stages.end]
 label = "End"
 description = "After tentative outputs exist and before final response, handoff, or treating the workflow as complete."
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-analysis"]
+[[packs]]
+pack_id = "core"
+description = "Core Isomer operator, service, and shared support pack."
+kind = "core"
+source_path = "operator/isomer-op-entrypoint"
+entry_skill = "isomer-op-entrypoint"
+always_available = true
+minimum_compatible_skill_version = "0.3.0"
+public_commands = ["help", "show-options", "show-extensions", "choose-path", "show-skill-map", "next-step", "start-research-manually", "start-research-by-agent-team", "start-deepsci-research", "start-kaoju-survey", "project", "gui", "identity", "system-skills", "toolbox", "topic-create", "topic-manage", "topic-team", "package-specifics", "tool-packs"]
+protected_members = ["isomer-op-welcome", "isomer-op-project-mgr", "isomer-op-gui-mgr", "isomer-op-switch-identity", "isomer-op-system-skill-mgr", "isomer-op-toolbox-mgr", "isomer-op-topic-creator", "isomer-op-topic-mgr", "isomer-op-topic-team-specialize", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup", "isomer-srv-resolve-pkg-repo", "isomer-srv-houmao-interop", "isomer-srv-topic-service-agent-support", "isomer-misc-bounded-run-tips", "isomer-misc-nvidia-tools", "isomer-misc-pkg-specifics", "isomer-misc-tool-packs", "isomer-research-idea-recording", "isomer-research-operation-set-recording"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[packs]]
+pack_id = "deepsci"
+description = "Hypothesis-driven production research extension pack."
+kind = "extension"
+extension_id = "deepsci"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint"
+entry_skill = "isomer-ext-deepsci-entrypoint"
+always_available = false
+minimum_compatible_skill_version = "0.3.0"
+public_commands = ["empirical-pass", "hypothesis-pass", "list-passes", "paper-pass", "polish-pass", "rebuttal-pass", "revision-pass", "submission-pass", "help"]
+protected_members = ["isomer-deepsci-analysis", "isomer-deepsci-baseline", "isomer-deepsci-decision", "isomer-deepsci-experiment", "isomer-deepsci-figure-polish", "isomer-deepsci-finalize", "isomer-deepsci-idea", "isomer-deepsci-nature-data", "isomer-deepsci-nature-figure", "isomer-deepsci-nature-paper2ppt", "isomer-deepsci-nature-polishing", "isomer-deepsci-optimize", "isomer-deepsci-paper-outline", "isomer-deepsci-paper-plot", "isomer-deepsci-rebuttal", "isomer-deepsci-review", "isomer-deepsci-science", "isomer-deepsci-scout", "isomer-deepsci-shared", "isomer-deepsci-workspace-mgr", "isomer-deepsci-write"]
+legacy_aliases = ["isomer-deepsci-pipeline"]
+callback_insertion_points = ["begin", "end"]
+[[packs]]
+pack_id = "kaoju"
+description = "Evidence-led literature, codebase, dataset, model, and first-hand survey extension pack."
+kind = "extension"
+extension_id = "kaoju"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint"
+entry_skill = "isomer-ext-kaoju-entrypoint"
+always_available = false
+minimum_compatible_skill_version = "0.3.0"
+public_commands = ["choose-directions", "build-reading-list", "ingest-reading-item", "draft-paper", "manage-paper-template", "build-paper-pdf", "export-survey-wiki", "ingest-source-code", "prepare-code-run", "run-code-trial", "landscape-pass", "curated-intake-pass", "direction-expansion-pass", "theory-comparison-pass", "method-trial-pass", "comparative-pass", "audit-survey-pass", "paper-pass", "create-paper-template", "manage-survey", "manage-dataset", "help"]
+protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-frame", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-write"]
+legacy_aliases = ["isomer-kaoju-pipeline"]
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-baseline"]
+[[capabilities]]
+logical_id = "isomer-op-welcome"
+pack_id = "core"
+area = "operator"
+member_name = "welcome"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-welcome"
+invocation_designator = "isomer-op-entrypoint->welcome"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-project-mgr"
+pack_id = "core"
+area = "operator"
+member_name = "project"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-project-mgr"
+invocation_designator = "isomer-op-entrypoint->project"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-gui-mgr"
+pack_id = "core"
+area = "operator"
+member_name = "gui"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-gui-mgr"
+invocation_designator = "isomer-op-entrypoint->gui"
+dependencies = ["isomer-op-project-mgr"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-switch-identity"
+pack_id = "core"
+area = "operator"
+member_name = "identity"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-switch-identity"
+invocation_designator = "isomer-op-entrypoint->identity"
+dependencies = ["isomer-op-project-mgr"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-system-skill-mgr"
+pack_id = "core"
+area = "operator"
+member_name = "system-skills"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-system-skill-mgr"
+invocation_designator = "isomer-op-entrypoint->system-skills"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-toolbox-mgr"
+pack_id = "core"
+area = "operator"
+member_name = "toolbox"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-toolbox-mgr"
+invocation_designator = "isomer-op-entrypoint->toolbox"
+dependencies = ["isomer-op-project-mgr"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-topic-creator"
+pack_id = "core"
+area = "operator"
+member_name = "topic-create"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-topic-creator"
+invocation_designator = "isomer-op-entrypoint->topic-create"
+dependencies = ["isomer-op-project-mgr", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup", "isomer-srv-topic-service-agent-support"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-topic-mgr"
+pack_id = "core"
+area = "operator"
+member_name = "topic-manage"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-topic-mgr"
+invocation_designator = "isomer-op-entrypoint->topic-manage"
+dependencies = ["isomer-op-project-mgr", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup", "isomer-misc-pkg-specifics"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-op-topic-team-specialize"
+pack_id = "core"
+area = "operator"
+member_name = "topic-team"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-topic-team-specialize"
+invocation_designator = "isomer-op-entrypoint->topic-team"
+dependencies = ["isomer-op-topic-creator", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-srv-topic-env-setup"
+pack_id = "core"
+area = "service"
+member_name = "topic-env"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-srv-topic-env-setup"
+invocation_designator = "isomer-op-entrypoint->topic-env"
+dependencies = ["isomer-srv-resolve-pkg-repo", "isomer-misc-pkg-specifics", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-srv-agent-env-setup"
+pack_id = "core"
+area = "service"
+member_name = "agent-env"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-srv-agent-env-setup"
+invocation_designator = "isomer-op-entrypoint->agent-env"
+dependencies = ["isomer-srv-topic-env-setup"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-srv-resolve-pkg-repo"
+pack_id = "core"
+area = "service"
+member_name = "package-repo"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-srv-resolve-pkg-repo"
+invocation_designator = "isomer-op-entrypoint->package-repo"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-srv-houmao-interop"
+pack_id = "core"
+area = "service"
+member_name = "houmao"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-srv-houmao-interop"
+invocation_designator = "isomer-op-entrypoint->houmao"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-srv-topic-service-agent-support"
+pack_id = "core"
+area = "service"
+member_name = "topic-service"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-srv-topic-service-agent-support"
+invocation_designator = "isomer-op-entrypoint->topic-service"
+dependencies = ["isomer-srv-houmao-interop", "isomer-srv-agent-env-setup"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-misc-bounded-run-tips"
+pack_id = "core"
+area = "shared"
+member_name = "bounded-run"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-misc-bounded-run-tips"
+invocation_designator = "isomer-op-entrypoint->bounded-run"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-misc-nvidia-tools"
+pack_id = "core"
+area = "shared"
+member_name = "nvidia"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-misc-nvidia-tools"
+invocation_designator = "isomer-op-entrypoint->nvidia"
+dependencies = ["isomer-misc-bounded-run-tips", "isomer-srv-resolve-pkg-repo", "isomer-misc-pkg-specifics"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-misc-pkg-specifics"
+pack_id = "core"
+area = "shared"
+member_name = "package-specifics"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-misc-pkg-specifics"
+invocation_designator = "isomer-op-entrypoint->package-specifics"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-misc-tool-packs"
+pack_id = "core"
+area = "shared"
+member_name = "tool-packs"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-misc-tool-packs"
+invocation_designator = "isomer-op-entrypoint->tool-packs"
+dependencies = ["isomer-misc-pkg-specifics"]
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-research-idea-recording"
+pack_id = "core"
+area = "shared"
+member_name = "research-ideas"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-research-idea-recording"
+invocation_designator = "isomer-op-entrypoint->research-ideas"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-research-operation-set-recording"
+pack_id = "core"
+area = "shared"
+member_name = "operation-sets"
+source_path = "operator/isomer-op-entrypoint/subskills/isomer-research-operation-set-recording"
+invocation_designator = "isomer-op-entrypoint->operation-sets"
+dependencies = []
+legacy_aliases = []
+callback_insertion_points = []
+
+[[capabilities]]
+logical_id = "isomer-deepsci-analysis"
+pack_id = "deepsci"
+area = "research"
+member_name = "analysis"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-analysis"
+invocation_designator = "isomer-ext-deepsci-entrypoint->analysis"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-decision"]
+[[capabilities]]
+logical_id = "isomer-deepsci-baseline"
+pack_id = "deepsci"
+area = "research"
+member_name = "baseline"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-baseline"
+invocation_designator = "isomer-ext-deepsci-entrypoint->baseline"
+dependencies = ["isomer-deepsci-shared", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-experiment"]
+[[capabilities]]
+logical_id = "isomer-deepsci-decision"
+pack_id = "deepsci"
+area = "research"
+member_name = "decision"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-decision"
+invocation_designator = "isomer-ext-deepsci-entrypoint->decision"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-figure-polish"]
+[[capabilities]]
+logical_id = "isomer-deepsci-experiment"
+pack_id = "deepsci"
+area = "research"
+member_name = "experiment"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-experiment"
+invocation_designator = "isomer-ext-deepsci-entrypoint->experiment"
+dependencies = ["isomer-deepsci-shared", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-finalize"]
+[[capabilities]]
+logical_id = "isomer-deepsci-figure-polish"
+pack_id = "deepsci"
+area = "research"
+member_name = "figure-polish"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-figure-polish"
+invocation_designator = "isomer-ext-deepsci-entrypoint->figure-polish"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-idea"]
+[[capabilities]]
+logical_id = "isomer-deepsci-finalize"
+pack_id = "deepsci"
+area = "research"
+member_name = "finalize"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-finalize"
+invocation_designator = "isomer-ext-deepsci-entrypoint->finalize"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-data"]
+[[capabilities]]
+logical_id = "isomer-deepsci-idea"
+pack_id = "deepsci"
+area = "research"
+member_name = "idea"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-idea"
+invocation_designator = "isomer-ext-deepsci-entrypoint->idea"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-figure"]
+[[capabilities]]
+logical_id = "isomer-deepsci-nature-data"
+pack_id = "deepsci"
+area = "research"
+member_name = "nature-data"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-nature-data"
+invocation_designator = "isomer-ext-deepsci-entrypoint->nature-data"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-paper2ppt"]
+[[capabilities]]
+logical_id = "isomer-deepsci-nature-figure"
+pack_id = "deepsci"
+area = "research"
+member_name = "nature-figure"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-nature-figure"
+invocation_designator = "isomer-ext-deepsci-entrypoint->nature-figure"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-nature-polishing"]
+[[capabilities]]
+logical_id = "isomer-deepsci-nature-paper2ppt"
+pack_id = "deepsci"
+area = "research"
+member_name = "nature-paper2ppt"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-nature-paper2ppt"
+invocation_designator = "isomer-ext-deepsci-entrypoint->nature-paper2ppt"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-optimize"]
+[[capabilities]]
+logical_id = "isomer-deepsci-nature-polishing"
+pack_id = "deepsci"
+area = "research"
+member_name = "nature-polishing"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-nature-polishing"
+invocation_designator = "isomer-ext-deepsci-entrypoint->nature-polishing"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-paper-outline"]
+[[capabilities]]
+logical_id = "isomer-deepsci-optimize"
+pack_id = "deepsci"
+area = "research"
+member_name = "optimize"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-optimize"
+invocation_designator = "isomer-ext-deepsci-entrypoint->optimize"
+dependencies = ["isomer-deepsci-shared", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-paper-plot"]
+[[capabilities]]
+logical_id = "isomer-deepsci-paper-outline"
+pack_id = "deepsci"
+area = "research"
+member_name = "paper-outline"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-paper-outline"
+invocation_designator = "isomer-ext-deepsci-entrypoint->paper-outline"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-pipeline"]
+[[capabilities]]
+logical_id = "isomer-deepsci-paper-plot"
+pack_id = "deepsci"
+area = "research"
+member_name = "paper-plot"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-paper-plot"
+invocation_designator = "isomer-ext-deepsci-entrypoint->paper-plot"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-rebuttal"]
+[[capabilities]]
+logical_id = "isomer-deepsci-rebuttal"
+pack_id = "deepsci"
+area = "research"
+member_name = "rebuttal"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-rebuttal"
+invocation_designator = "isomer-ext-deepsci-entrypoint->rebuttal"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-review"]
+[[capabilities]]
+logical_id = "isomer-deepsci-review"
+pack_id = "deepsci"
+area = "research"
+member_name = "review"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-review"
+invocation_designator = "isomer-ext-deepsci-entrypoint->review"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-science"]
+[[capabilities]]
+logical_id = "isomer-deepsci-science"
+pack_id = "deepsci"
+area = "research"
+member_name = "science"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-science"
+invocation_designator = "isomer-ext-deepsci-entrypoint->science"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-scout"]
+[[capabilities]]
+logical_id = "isomer-deepsci-scout"
+pack_id = "deepsci"
+area = "research"
+member_name = "scout"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-scout"
+invocation_designator = "isomer-ext-deepsci-entrypoint->scout"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-shared"]
+[[capabilities]]
+logical_id = "isomer-deepsci-shared"
+pack_id = "deepsci"
+area = "research"
+member_name = "shared"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-shared"
+invocation_designator = "isomer-ext-deepsci-entrypoint->shared"
+dependencies = ["isomer-research-idea-recording", "isomer-research-operation-set-recording"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-workspace-mgr"]
+[[capabilities]]
+logical_id = "isomer-deepsci-workspace-mgr"
+pack_id = "deepsci"
+area = "research"
+member_name = "workspace"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-workspace-mgr"
+invocation_designator = "isomer-ext-deepsci-entrypoint->workspace"
+dependencies = ["isomer-deepsci-shared", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/deepsci/isomer-deepsci-write"]
+[[capabilities]]
+logical_id = "isomer-deepsci-write"
+pack_id = "deepsci"
+area = "research"
+member_name = "write"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/subskills/isomer-deepsci-write"
+invocation_designator = "isomer-ext-deepsci-entrypoint->write"
+dependencies = ["isomer-deepsci-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-pipeline"]
+[[capabilities]]
+logical_id = "isomer-kaoju-acquire"
+pack_id = "kaoju"
+area = "research"
+member_name = "acquire"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-acquire"
+invocation_designator = "isomer-ext-kaoju-entrypoint->acquire"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-shared"]
+[[capabilities]]
+logical_id = "isomer-kaoju-audit"
+pack_id = "kaoju"
+area = "research"
+member_name = "audit"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-audit"
+invocation_designator = "isomer-ext-kaoju-entrypoint->audit"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-workspace-mgr"]
+[[capabilities]]
+logical_id = "isomer-kaoju-compare"
+pack_id = "kaoju"
+area = "research"
+member_name = "compare"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-compare"
+invocation_designator = "isomer-ext-kaoju-entrypoint->compare"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-frame"]
+[[capabilities]]
+logical_id = "isomer-kaoju-discover"
+pack_id = "kaoju"
+area = "research"
+member_name = "discover"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-discover"
+invocation_designator = "isomer-ext-kaoju-entrypoint->discover"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-discover"]
+[[capabilities]]
+logical_id = "isomer-kaoju-examine"
+pack_id = "kaoju"
+area = "research"
+member_name = "examine"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-examine"
+invocation_designator = "isomer-ext-kaoju-entrypoint->examine"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-acquire"]
+[[capabilities]]
+logical_id = "isomer-kaoju-export"
+pack_id = "kaoju"
+area = "research"
+member_name = "export"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-export"
+invocation_designator = "isomer-ext-kaoju-entrypoint->export"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-examine"]
+[[capabilities]]
+logical_id = "isomer-kaoju-frame"
+pack_id = "kaoju"
+area = "research"
+member_name = "frame"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-frame"
+invocation_designator = "isomer-ext-kaoju-entrypoint->frame"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-reproduce"]
+[[capabilities]]
+logical_id = "isomer-kaoju-reproduce"
+pack_id = "kaoju"
+area = "research"
+member_name = "reproduce"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-reproduce"
+invocation_designator = "isomer-ext-kaoju-entrypoint->reproduce"
+dependencies = ["isomer-kaoju-shared", "isomer-srv-topic-env-setup", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-trial"]
+[[capabilities]]
+logical_id = "isomer-kaoju-shared"
+pack_id = "kaoju"
+area = "research"
+member_name = "shared"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-shared"
+invocation_designator = "isomer-ext-kaoju-entrypoint->shared"
+dependencies = ["isomer-research-idea-recording", "isomer-research-operation-set-recording"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-compare"]
+[[capabilities]]
+logical_id = "isomer-kaoju-synthesize"
+pack_id = "kaoju"
+area = "research"
+member_name = "synthesize"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-synthesize"
+invocation_designator = "isomer-ext-kaoju-entrypoint->synthesize"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-audit"]
+[[capabilities]]
+logical_id = "isomer-kaoju-trial"
+pack_id = "kaoju"
+area = "research"
+member_name = "trial"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-trial"
+invocation_designator = "isomer-ext-kaoju-entrypoint->trial"
+dependencies = ["isomer-kaoju-shared", "isomer-srv-topic-env-setup", "isomer-misc-bounded-run-tips"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-synthesize"]
+[[capabilities]]
+logical_id = "isomer-kaoju-workspace-mgr"
+pack_id = "kaoju"
+area = "research"
+member_name = "workspace"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-workspace-mgr"
+invocation_designator = "isomer-ext-kaoju-entrypoint->workspace"
+dependencies = ["isomer-kaoju-shared", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-write"]
-callback_insertion_points = ["begin", "end"]
-
-[skill_metadata."research-paradigm/kaoju/isomer-kaoju-export"]
+[[capabilities]]
+logical_id = "isomer-kaoju-write"
+pack_id = "kaoju"
+area = "research"
+member_name = "write"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-write"
+invocation_designator = "isomer-ext-kaoju-entrypoint->write"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
 callback_insertion_points = ["begin", "end"]

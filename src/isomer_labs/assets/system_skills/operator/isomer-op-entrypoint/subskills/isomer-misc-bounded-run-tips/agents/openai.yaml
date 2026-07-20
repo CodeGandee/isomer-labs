@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-misc-bounded-run-tips"
+  short_description: "Classify operation risk and plan bounded execution"
+  default_prompt: "Use $isomer-op-entrypoint use bounded-run to perform this isomer-misc-bounded-run-tips task."

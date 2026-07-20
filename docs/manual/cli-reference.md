@@ -35,7 +35,7 @@ Normal failure output does not include Python tracebacks. Use root-level `--debu
 
 ### System Skill Installation Commands
 
-The `system-skills` namespace discovers and installs packaged Isomer system skills from the released Python package into local coding-agent skill roots:
+The `system-skills` namespace discovers and installs packaged Isomer public skill packs from the released Python package into local coding-agent skill roots:
 
 - `system-skills extensions list`
 - `system-skills extensions show <extension-id>`
@@ -45,7 +45,9 @@ The `system-skills` namespace discovers and installs packaged Isomer system skil
 - `system-skills upgrade`
 - `system-skills uninstall`
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`, and every target-resolving operation requires `--target`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact current working directory and does not search ancestor Git or Isomer roots. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`. The `all` target expands to every concrete target and deduplicates identical physical roots. Every packaged skill carries its PEP 440 Isomer release version in `agents/openai.yaml`; version 3 install receipts store sorted target-scope bindings and per-skill version snapshots, and status reports receipt drift and compatibility against package-owned minimum floors.
+The three public installation units are `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint`. Core owns 20 protected members, DeepSci owns 21, and Kaoju owns 13. `system-skills list` and extension discovery distinguish public packs, public commands, protected logical ids, scoped members, aliases, dependencies, and compatibility metadata. Protected members are parent-routed nested bundles rather than ordinary top-level install units.
+
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`, and every target-resolving operation requires `--target`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact current working directory and does not search ancestor Git or Isomer roots. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`. The `all` target expands to every concrete target and deduplicates identical physical roots. Every public and protected skill carries its PEP 440 Isomer release version in `agents/openai.yaml`. Receipt v4 stores one record per public pack plus its ordered protected inventory; status reports receipt drift, missing or extra nested material, and compatibility against package-owned minimum floors.
 
 | Target | Project Scope | User Scope |
 | --- | --- | --- |
@@ -54,7 +56,7 @@ Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`,
 | `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
 | `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
 
-**Side effects:** `install` copies selected packaged skills by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Packaged skill names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. `upgrade` refreshes selected skills from the current package and removes stale skill paths tracked in the target-root manifest, which supports package upgrades that rename or delete skills. `uninstall` removes selected packaged skill names and updates the target-root manifest. `extensions list`, `extensions show`, `list`, and `status` are read-only.
+**Side effects:** `install` copies selected complete packs by default, or symlinks them with `--mode symlink`, and tracks the target skill root in `isomer-labs-skill-manifest.json`. Public pack names are reserved install slots. If a selected same-name path already exists, `install` preserves it unless `--force` is supplied. An extension selector includes core. A public `--skill` selector resolves to its pack; a protected logical id or old pipeline alias is accepted only as a deprecated selector for its complete owner pack. `upgrade` stages and validates complete packs, writes receipt v4, then removes only exact stale top-level paths tracked by a legacy receipt. `uninstall` removes a receipt-owned public pack and refuses single-member removal. `extensions list`, `extensions show`, `list`, and `status` are read-only.
 
 ```bash
 isomer-cli system-skills list
@@ -72,7 +74,9 @@ isomer-cli --print-json system-skills status --target generic --scope project
 isomer-cli system-skills uninstall --target codex --scope project
 ```
 
-Migration: an install without `--scope` now selects Project scope, and explicit `--scope project` remains equivalent. Use `--scope user` for user-wide installation, and keep explicit scope on status, upgrade, and uninstall. Replace an old command such as `--target kimi-code --home .kimi-code/skills` with `--target kimi-code` or `--target kimi-code --scope project`; replace `--target kimi-code --home ~/.kimi-code/skills` with `--target kimi-code --scope user`. The public installer does not accept arbitrary roots. Use host-native installation for custom destinations and keep `internals inspect-system-skill-root --skill-root <root>` for provider-neutral read-only verification.
+Migration: an install without `--scope` selects Project scope, and explicit `--scope project` remains equivalent. Use `--scope user` for user-wide installation, and keep explicit scope on status, upgrade, and uninstall. Replace an old command such as `--target kimi-code --home .kimi-code/skills` with `--target kimi-code` or `--target kimi-code --scope project`; replace `--target kimi-code --home ~/.kimi-code/skills` with `--target kimi-code --scope user`. The public installer does not accept arbitrary roots. Use host-native installation for custom destinations and keep `internals inspect-system-skill-root --skill-root <root>` for provider-neutral read-only verification.
+
+Receipt v1 through v3 readers retain old flat paths as legacy evidence without claiming nested pack integrity. Managed upgrade preserves the old receipt and projections if staging or validation fails. After receipt v4 is committed, cleanup removes only legacy paths tracked by the old receipt. It preserves untracked lookalike paths and reports exact `stale_retained` paths when cleanup is partial. Refresh the agent host or start a new session after installation or upgrade because current-session discovery may be cached.
 
 ### Internal System Skill Inspection Commands
 
@@ -81,15 +85,15 @@ The `internals` namespace exposes provider-neutral, read-only primitives for ver
 - `internals inspect-system-skill-root`
 - `internals classify-system-skill-inventory`
 
-`inspect-system-skill-root` requires one explicit `--skill-root` and accepts `--category core|extensions|all`, `--extension <id>`, and `--group <name>` filters. It inspects no parent, home, plugin, provider configuration, or conventional tool path. The result distinguishes absent roots, current and legacy receipts, malformed or unsupported receipts, copy and symlink projections, broken or invalid projections, unmanaged same-name directories, family coverage, and compatibility state.
+`inspect-system-skill-root` requires one explicit `--skill-root` and accepts `--category core|extensions|all`, `--extension <id>`, and `--group <name>` filters. It inspects no parent, home, plugin, provider configuration, or conventional tool path. The result distinguishes absent roots, receipt v4 and legacy flat receipts, malformed or unsupported receipts, copy and symlink public projections, broken or invalid projections, unmanaged same-name directories, protected nested coverage, missing logical ids, receipt drift, and compatibility state. Ambient top-level siblings are reported without recursive classification.
 
-`classify-system-skill-inventory` accepts repeated `--skill-name` values and optional versioned JSON through `--inventory-json <file>` or `--inventory-json -` for stdin. Structured input uses `isomer-system-skill-inventory.v1`. The command maps supplied names to package-catalog groups and reports complete, partial, missing, and unmatched ambient entries without inspecting the supplied paths.
+`classify-system-skill-inventory` accepts repeated `--skill-name` values and optional versioned JSON through `--inventory-json <file>` or `--inventory-json -` for stdin. Structured input uses `isomer-system-skill-inventory.v1`. A recognized public name reports `entrypoint_seen`; an old flat protected name or pipeline alias reports a legacy observation and candidate owner pack. Name-only inventory never proves complete protected integrity. Unknown names remain unmatched ambient entries, and supplied paths are not inspected.
 
-**Side effects:** none. Both commands return the standard output wrapper, `mutated: false`, and the `isomer-internal-system-skill-inspection.v1` payload contract.
+**Side effects:** none. Both commands return the standard output wrapper, `mutated: false`, and the `isomer-internal-system-skill-inspection.v2` payload contract.
 
 ```bash
 isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --extension kaoju
-isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-kaoju-pipeline --skill-name isomer-kaoju-shared
+isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-ext-kaoju-entrypoint --skill-name isomer-kaoju-trial
 isomer-cli --print-json internals classify-system-skill-inventory --inventory-json inventory.json
 ```
 
@@ -97,7 +101,7 @@ isomer-cli --print-json internals classify-system-skill-inventory --inventory-js
 
 The `ext research` namespace manages GUI-readable research records and idea lineage metadata:
 
-The top-level `ext` namespace contains native runtime and compatibility commands. It is distinct from installable agent-skill extensions, which are discovered with `isomer-cli system-skills extensions`. Kaoju research decisions are orchestrated through the installed `$isomer-kaoju-pipeline` skill; deterministic MyST paper and wiki operations use `ext kaoju`.
+The top-level `ext` namespace contains native runtime and compatibility commands. It is distinct from installable agent-skill extensions, which are discovered with `isomer-cli system-skills extensions`. Kaoju research decisions are orchestrated through `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`; deterministic MyST paper and wiki operations use `ext kaoju`.
 
 - `ext research ideas generation upsert`
 - `ext research ideas graph`
@@ -926,9 +930,14 @@ isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind 
 isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind latex --from publisher-template --metadata-file latex-template.json --actor agent:writer
 isomer-cli --print-json ext kaoju paper template show --topic my-topic --kind latex
 isomer-cli --print-json ext kaoju paper template export --topic my-topic --kind latex --actor agent:writer
+isomer-cli --print-json ext kaoju paper template exports --topic my-topic --kind latex
 isomer-cli --print-json ext kaoju paper template update --topic my-topic --kind latex --from topic-workspace/intent/derived/writing-template/latex/main --expected-state template-state-... --actor agent:writer
+isomer-cli --print-json ext kaoju paper template file put --topic my-topic --kind latex --path sections/method.tex --from updated-method.tex --expected-state template-state-... --actor agent:writer
+isomer-cli --print-json ext kaoju paper template file remove --topic my-topic --kind latex --path sections/obsolete.tex --expected-state template-state-... --actor agent:writer
 isomer-cli --print-json ext kaoju paper template create --topic my-topic --kind content --name main-before-change --from-template main --actor agent:writer
 isomer-cli --print-json ext kaoju paper template metadata patch --topic my-topic --kind latex --patch-file latex-template.json --expected-state template-state-... --actor agent:writer
+isomer-cli --print-json ext kaoju paper template archive --topic my-topic --kind latex --name old-publisher --expected-state template-state-... --actor agent:writer --reason superseded
+isomer-cli --print-json ext kaoju paper template delete --topic my-topic --kind latex --name old-publisher --expected-state template-state-... --actor agent:writer
 isomer-cli --print-json ext kaoju paper template migrate --topic my-topic --kind content
 isomer-cli --print-json ext kaoju paper template migrate --topic my-topic --kind latex --apply --record paper-tex-template-2 --metadata-file latex-template.json --actor agent:writer
 
@@ -1096,6 +1105,8 @@ These intentionally incomplete or invalid invocations exercise the CLI's command
 isomer-cli --print-json ext research ideas list --topic my-topic
 isomer-cli --print-json ext research ideas graph --topic my-topic
 isomer-cli --print-json ext research ideas validate --topic my-topic
+isomer-cli --print-json ext kaoju paper template show --topic my-topic --kind latex --name main
+isomer-cli --print-json ext kaoju paper template export --topic my-topic --kind latex --name main --actor agent:writer
 isomer-cli --print-json ext research records list --topic my-topic
 isomer-cli --print-json ext research records show <record-id> --topic my-topic
 isomer-cli --print-json ext research records create --topic my-topic --record-kind artifact
@@ -1192,6 +1203,14 @@ isomer-cli project --root /path/to/project team-profiles validate topic-workspac
 `migrate-status` and `migrate-kaoju-direction-set <record-id>` preview by default and mutate only with `--apply`. Preview preserves current data. Kaoju migration preserves direction ids as aliases and never invents disposition reasons or lineage.
 
 `steer` is the explicit composite mutation for `--action explore` or `--action explore-instead`. It requires target identity, actor, and idempotency key. Explore-instead also requires repeatable `--replace-idea-id` and rationale. Expected revision, expected facets, replacement dispositions, closure reasons, reopening confirmation, Gate policy, adapter routing, prompt, and `--no-dispatch` are available for deterministic operator workflows. See [Research Idea Portfolio](research-idea-portfolio.md) for examples and semantics.
+
+```bash
+isomer-cli --print-json ext research ideas decision-context --topic my-topic --idea-id idea-1
+isomer-cli --print-json ext research ideas decision-options upsert --topic my-topic --decision-record-id decision-1 --idea-id idea-1 --outcome selected --actor agent:reviewer
+isomer-cli --print-json ext research ideas migrate-kaoju-direction-set --topic my-topic direction-set-1
+isomer-cli --print-json ext research ideas transition --topic my-topic idea-1 --facet exploration_state --expected-from proposed --to exploring --actor agent:researcher --rationale "Begin the accepted direction."
+isomer-cli --print-json ext research ideas traverse --topic my-topic --root-idea-id idea-1 --direction descendants
+```
 
 ## Side-effect Summary
 

@@ -1,0 +1,22 @@
+---
+skill_invocation_notation: >
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
+---
+
+# Merge Paper Template
+
+Route: `isomer-ext-kaoju-entrypoint->manage-paper-template()->merge()`. The containing Kaoju entrypoint owns this command's resources.
+
+## Workflow
+
+1. Resolve one role, target, inputs, authorization boundary, and current target token.
+2. Inspect both inputs and ask about every material unresolved structure, composition, provenance, or licensing choice.
+3. Construct and validate a clean selected-role candidate directory.
+4. Apply that candidate through the ordinary token-guarded update operation; no generic CLI merge exists.
+
+If the request does not map cleanly to these steps, use the native planning tool to build and execute a bounded plan from the parent manager contract without inventing another command.

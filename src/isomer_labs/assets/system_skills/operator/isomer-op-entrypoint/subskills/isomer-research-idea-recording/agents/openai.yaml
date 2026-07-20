@@ -1,0 +1,10 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-research-idea-recording"
+  short_description: "Record canonical research idea portfolio state"
+  default_prompt: "Use $isomer-op-entrypoint use research-ideas to perform this isomer-research-idea-recording task."
+
+policy:
+  allow_implicit_invocation: true

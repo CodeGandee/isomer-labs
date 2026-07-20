@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-acquire"
+  short_description: "Acquire pinned survey materials safely."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use acquire to perform this isomer-kaoju-acquire task."

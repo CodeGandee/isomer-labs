@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -11,13 +12,16 @@ from isomer_labs.skills.system_assets import (
     SystemSkillAssetError,
     callback_insertion_point_stage_names,
     has_system_skill_callback_insertion_point,
+    iter_system_skill_capabilities,
     iter_system_skill_callback_insertion_points,
     iter_system_skill_extensions,
     iter_system_skill_groups,
     iter_system_skill_paths,
     load_system_skill_manifest,
     materialize_system_skills,
+    parse_system_skill_manifest,
     resolve_system_skill,
+    resolve_system_skill_capability,
     system_skills_root,
 )
 from isomer_labs.kaoju.contracts import load_contract
@@ -37,40 +41,47 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertEqual((True, False, False), tuple(group.always_available for group in groups))
         self.assertEqual((None, "deepsci", "kaoju"), tuple(group.extension_id for group in groups))
         paths = iter_system_skill_paths()
-        old_houmao_interop_path = "operator/" + "isomer-op-" + "houmao-interop"
-        self.assertIn("operator/isomer-op-entrypoint", paths)
-        self.assertIn("operator/isomer-op-gui-mgr", paths)
-        self.assertIn("operator/isomer-op-project-mgr", paths)
-        self.assertIn("operator/isomer-op-toolbox-mgr", paths)
-        self.assertNotIn("operator/isomer-op-toolbox-creator", paths)
-        self.assertIn("service/isomer-srv-houmao-interop", paths)
-        self.assertIn("research/isomer-research-idea-recording", paths)
-        self.assertIn("research/isomer-research-operation-set-recording", paths)
-        self.assertNotIn(old_houmao_interop_path, paths)
-        self.assertIn("research-paradigm/deepsci/isomer-deepsci-write", paths)
-        self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", paths)
-        self.assertIn("research-paradigm/kaoju/isomer-kaoju-synthesize", paths)
+        self.assertEqual(
+            (
+                "operator/isomer-op-entrypoint",
+                "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+                "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint",
+            ),
+            paths,
+        )
+        capabilities = iter_system_skill_capabilities()
+        self.assertEqual((20, 21, 13), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
+        self.assertEqual(54, len(capabilities))
         for skill_path in paths:
-            skill = resolve_system_skill(skill_path)
-            self.assertTrue(skill.joinpath("SKILL.md").is_file(), skill_path)
+            self.assertTrue(resolve_system_skill(skill_path).joinpath("SKILL.md").is_file(), skill_path)
+        for capability in capabilities:
+            skill = resolve_system_skill_capability(capability.logical_id)
+            self.assertTrue(skill.joinpath("SKILL.md").is_file(), capability.logical_id)
+            self.assertTrue(skill.joinpath("agents", "openai.yaml").is_file(), capability.logical_id)
 
     def test_manifest_lists_system_extensions(self) -> None:
         extensions = iter_system_skill_extensions()
         self.assertEqual(("deepsci", "kaoju"), tuple(extension.extension_id for extension in extensions))
         self.assertEqual(("deepsci", "kaoju"), tuple(extension.group for extension in extensions))
-        self.assertEqual(("isomer-deepsci-pipeline", "isomer-kaoju-pipeline"), tuple(extension.entry_skill for extension in extensions))
+        self.assertEqual(("isomer-ext-deepsci-entrypoint", "isomer-ext-kaoju-entrypoint"), tuple(extension.entry_skill for extension in extensions))
         self.assertEqual("empirical-pass", extensions[0].commands[0])
         contract = load_contract()
-        expected_commands = (*contract.survey_intents, *contract.compatibility_procedures, *(name for name in contract.manager_actions if name not in contract.survey_intents))
+        expected_commands = (
+            *contract.survey_intents,
+            *contract.compatibility_procedures,
+            *(name for name in contract.manager_actions if name not in contract.survey_intents),
+            "help",
+        )
         self.assertEqual(expected_commands, extensions[1].commands)
-        self.assertIn("research-paradigm/deepsci/isomer-deepsci-scout", extensions[0].skills)
-        self.assertEqual(14, len(extensions[1].skills))
-        self.assertIn("research-paradigm/kaoju/isomer-kaoju-pipeline", extensions[1].skills)
+        self.assertEqual(("research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",), extensions[0].skills)
+        self.assertEqual(13, len(extensions[1].protected_members))
+        self.assertIn("isomer-kaoju-synthesize", extensions[1].protected_members)
+        self.assertEqual(("isomer-kaoju-pipeline",), extensions[1].legacy_aliases)
 
     def test_extension_pipeline_entrypoints_require_upfront_planning(self) -> None:
         for skill_path in (
-            "research-paradigm/deepsci/isomer-deepsci-pipeline",
-            "research-paradigm/kaoju/isomer-kaoju-pipeline",
+            "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint",
         ):
             with self.subTest(skill_path=skill_path):
                 text = resolve_system_skill(skill_path).joinpath("SKILL.md").read_text(encoding="utf-8")
@@ -79,16 +90,54 @@ class SystemSkillAssetTests(unittest.TestCase):
                 self.assertIn("use your internal todo list or planning tool to create a plan", text)
                 self.assertLess(text.index("## Plan First"), text.index("## Overview"))
 
+    def test_public_entrypoints_accept_command_task_only_and_empty_help_forms(self) -> None:
+        for skill_path, public_name in (
+            ("operator/isomer-op-entrypoint", "isomer-op-entrypoint"),
+            ("research-paradigm/deepsci/isomer-ext-deepsci-entrypoint", "isomer-ext-deepsci-entrypoint"),
+            ("research-paradigm/kaoju/isomer-ext-kaoju-entrypoint", "isomer-ext-kaoju-entrypoint"),
+        ):
+            with self.subTest(public_name=public_name):
+                text = resolve_system_skill(skill_path).joinpath("SKILL.md").read_text(encoding="utf-8")
+                self.assertIn(f"${public_name} use <subcommand> to <task>", text)
+                self.assertIn("task-only", text)
+                self.assertIn("Empty invocation", text)
+                self.assertIn("proceed", text)
+
+    def test_kaoju_grouped_managers_have_explicit_nested_command_pages(self) -> None:
+        kaoju = resolve_system_skill("research-paradigm/kaoju/isomer-ext-kaoju-entrypoint")
+        expected_pages = (
+            "commands/manage-survey/list.md",
+            "commands/manage-survey/show.md",
+            "commands/manage-survey/status.md",
+            "commands/manage-survey/export.md",
+            "commands/manage-dataset/register.md",
+            "commands/manage-dataset/list.md",
+            "commands/manage-dataset/show.md",
+            "commands/manage-dataset/refresh.md",
+            "commands/manage-dataset/remove.md",
+            "commands/manage-paper-template/file.md",
+            "commands/manage-paper-template/file/put.md",
+            "commands/manage-paper-template/file/remove.md",
+            "commands/manage-paper-template/metadata.md",
+            "commands/manage-paper-template/metadata/patch.md",
+        )
+        for relative in expected_pages:
+            self.assertTrue(kaoju.joinpath(*Path(relative).parts).is_file(), relative)
+        parent = kaoju.joinpath("commands", "manage-paper-template.md").read_text(encoding="utf-8")
+        file_parent = kaoju.joinpath("commands", "manage-paper-template", "file.md").read_text(encoding="utf-8")
+        self.assertIn("isomer-ext-kaoju-entrypoint->manage-paper-template()->file()", parent)
+        self.assertIn("isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()", file_parent)
+        self.assertIn("--kind content|latex", parent)
+        self.assertNotIn("->content", parent)
+        self.assertNotIn("->latex", parent)
+
     def test_manifest_declares_callback_insertion_points(self) -> None:
         self.assertEqual(("begin", "end"), callback_insertion_point_stage_names())
         points = iter_system_skill_callback_insertion_points(include_core=True, include_all_extensions=True)
         self.assertEqual(72, len(points))
+        self.assertEqual(("isomer-ext-deepsci-entrypoint", "begin"), (points[0].target_skill, points[0].stage))
         self.assertEqual(
-            ("isomer-deepsci-analysis", "begin"),
-            (points[0].target_skill, points[0].stage),
-        )
-        self.assertEqual(
-            ("isomer-kaoju-export", "end"),
+            ("isomer-kaoju-write", "end"),
             (points[-1].target_skill, points[-1].stage),
         )
         scout_begin = iter_system_skill_callback_insertion_points(
@@ -107,6 +156,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         )
         self.assertEqual(1, len(kaoju_begin))
         self.assertTrue(has_system_skill_callback_insertion_point("isomer-kaoju-pipeline", "begin"))
+        self.assertTrue(has_system_skill_callback_insertion_point("isomer-ext-kaoju-entrypoint", "begin"))
         self.assertFalse(has_system_skill_callback_insertion_point("isomer-op-entrypoint", "begin"))
 
     def test_manifest_parse_and_callback_lookup_are_process_cached(self) -> None:
@@ -130,42 +180,38 @@ class SystemSkillAssetTests(unittest.TestCase):
 
     def test_manifest_rejects_invalid_group_metadata(self) -> None:
         manifest = deepcopy(load_system_skill_manifest())
-        del manifest["groups"]["core"]["kind"]
-        with patch.object(system_assets, "load_system_skill_manifest", return_value=manifest):
-            with self.assertRaisesRegex(SystemSkillAssetError, "kind"):
-                iter_system_skill_groups()
+        del manifest["packs"][0]["kind"]
+        with self.assertRaisesRegex(SystemSkillAssetError, "kind"):
+            parse_system_skill_manifest(manifest)
 
     def test_manifest_rejects_invalid_extension_discovery_metadata(self) -> None:
+        def kaoju(manifest: dict[str, object]) -> dict[str, object]:
+            return next(pack for pack in manifest["packs"] if pack["pack_id"] == "kaoju")  # type: ignore[index, union-attr]
+
         mutations = (
-            ("missing entry", lambda manifest: manifest["groups"]["kaoju"].pop("entry_skill"), "entry_skill"),
+            ("missing entry", lambda manifest: kaoju(manifest).pop("entry_skill"), "entry_skill"),
             (
                 "unknown entry",
-                lambda manifest: manifest["groups"]["kaoju"].__setitem__("entry_skill", "isomer-kaoju-missing"),
+                lambda manifest: kaoju(manifest).__setitem__("entry_skill", "isomer-kaoju-missing"),
                 "entry_skill",
             ),
             (
                 "invalid command",
-                lambda manifest: manifest["groups"]["kaoju"].__setitem__("commands", ["Not A Command"]),
-                "commands",
+                lambda manifest: kaoju(manifest).__setitem__("public_commands", ["Not A Command"]),
+                "public_commands",
             ),
             (
                 "duplicate command",
-                lambda manifest: manifest["groups"]["kaoju"].__setitem__("commands", ["landscape-pass", "landscape-pass"]),
-                "duplicate commands",
-            ),
-            (
-                "core metadata",
-                lambda manifest: manifest["groups"]["core"].__setitem__("entry_skill", "isomer-op-entrypoint"),
-                "must not define extension entry metadata",
+                lambda manifest: kaoju(manifest).__setitem__("public_commands", ["landscape-pass", "landscape-pass"]),
+                "duplicate public commands",
             ),
         )
         for label, mutate, diagnostic in mutations:
             with self.subTest(label=label):
                 manifest = deepcopy(load_system_skill_manifest())
                 mutate(manifest)
-                with patch.object(system_assets, "load_system_skill_manifest", return_value=manifest):
-                    with self.assertRaisesRegex(SystemSkillAssetError, diagnostic):
-                        iter_system_skill_groups()
+                with self.assertRaisesRegex(SystemSkillAssetError, diagnostic):
+                    parse_system_skill_manifest(manifest)
 
     def test_materialize_selected_group_preserves_relative_paths(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -173,34 +219,37 @@ class SystemSkillAssetTests(unittest.TestCase):
             result = materialize_system_skills(target, groups=("core",))
             self.assertEqual(("core",), result.groups)
             self.assertTrue((target / "manifest.toml").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "SKILL.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "agents" / "openai.yaml").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-entrypoint" / "references" / "extension-skill-index.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "SKILL.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "agents" / "openai.yaml").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "help.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-gui-mgr" / "commands" / "api-reference.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-project-mgr" / "SKILL.md").is_file())
-            system_skill_manager = target / "operator" / "isomer-op-system-skill-mgr" / "SKILL.md"
+            core = target / "isomer-op-entrypoint"
+            self.assertTrue((core / "SKILL.md").is_file())
+            self.assertTrue((core / "agents" / "openai.yaml").is_file())
+            self.assertTrue((core / "references" / "extension-skill-index.md").is_file())
+            gui = core / "subskills" / "isomer-op-gui-mgr"
+            self.assertTrue((gui / "SKILL.md").is_file())
+            self.assertTrue((gui / "agents" / "openai.yaml").is_file())
+            self.assertTrue((gui / "commands" / "help.md").is_file())
+            self.assertTrue((gui / "commands" / "api-reference.md").is_file())
+            self.assertTrue((core / "subskills" / "isomer-op-project-mgr" / "SKILL.md").is_file())
+            system_skill_manager = core / "subskills" / "isomer-op-system-skill-mgr" / "SKILL.md"
             self.assertTrue(system_skill_manager.is_file())
             self.assertIn(
                 "Direct low-level install defaults to project scope when `--scope` is omitted.",
                 system_skill_manager.read_text(encoding="utf-8"),
             )
-            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "SKILL.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "agents" / "openai.yaml").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "commands" / "help.md").is_file())
-            self.assertTrue((target / "operator" / "isomer-op-toolbox-mgr" / "commands" / "author-toolbox.md").is_file())
-            self.assertFalse((target / "operator" / "isomer-op-toolbox-creator").exists())
-            old_houmao_interop_name = "isomer-op-" + "houmao-interop"
-            self.assertFalse((target / "operator" / old_houmao_interop_name).exists())
-            self.assertTrue((target / "service" / "isomer-srv-houmao-interop" / "SKILL.md").is_file())
-            self.assertTrue((target / "service" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
-            self.assertTrue((target / "research" / "isomer-research-idea-recording" / "SKILL.md").is_file())
-            self.assertTrue((target / "research" / "isomer-research-idea-recording" / "references" / "recording-contract.md").is_file())
-            self.assertTrue((target / "research" / "isomer-research-operation-set-recording" / "SKILL.md").is_file())
-            self.assertTrue((target / "research" / "isomer-research-operation-set-recording" / "references" / "manifest-contract.md").is_file())
-            self.assertFalse((target / "research-paradigm").exists())
+            toolbox = core / "subskills" / "isomer-op-toolbox-mgr"
+            self.assertTrue((toolbox / "SKILL.md").is_file())
+            self.assertTrue((toolbox / "agents" / "openai.yaml").is_file())
+            self.assertTrue((toolbox / "commands" / "help.md").is_file())
+            self.assertTrue((toolbox / "commands" / "author-toolbox.md").is_file())
+            self.assertFalse((core / "subskills" / "isomer-op-toolbox-creator").exists())
+            self.assertTrue((core / "subskills" / "isomer-srv-houmao-interop" / "SKILL.md").is_file())
+            self.assertTrue((core / "subskills" / "isomer-srv-topic-env-setup" / "SKILL.md").is_file())
+            ideas = core / "subskills" / "isomer-research-idea-recording"
+            self.assertTrue((ideas / "SKILL.md").is_file())
+            self.assertTrue((ideas / "references" / "recording-contract.md").is_file())
+            operations = core / "subskills" / "isomer-research-operation-set-recording"
+            self.assertTrue((operations / "SKILL.md").is_file())
+            self.assertTrue((operations / "references" / "manifest-contract.md").is_file())
+            self.assertFalse((target / "isomer-ext-deepsci-entrypoint").exists())
             self.assertFalse((target / "dev").exists())
 
     def test_materialize_kaoju_group_includes_support_files_without_deepsci(self) -> None:
@@ -208,36 +257,85 @@ class SystemSkillAssetTests(unittest.TestCase):
             target = Path(tmp)
             result = materialize_system_skills(target, groups=("core", "kaoju"))
             self.assertEqual(("core", "kaoju"), result.groups)
-            kaoju = target / "research-paradigm" / "kaoju"
-            self.assertEqual(
-                14,
-                len(tuple(path for path in kaoju.glob("isomer-kaoju-*") if path.is_dir())),
-            )
-            self.assertTrue((kaoju / "isomer-kaoju-pipeline" / "commands" / "landscape-pass.md").is_file())
-            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "evidence-contract.md").is_file())
-            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
-            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "artifact-recording.md").is_file())
-            self.assertTrue((kaoju / "isomer-kaoju-shared" / "references" / "research-idea-recording.md").is_file())
-            neutral_recording = target / "research" / "isomer-research-idea-recording" / "SKILL.md"
+            kaoju = target / "isomer-ext-kaoju-entrypoint"
+            subskills = kaoju / "subskills"
+            self.assertEqual(13, len(tuple(path for path in subskills.glob("isomer-kaoju-*") if path.is_dir())))
+            self.assertTrue((kaoju / "commands" / "landscape-pass.md").is_file())
+            shared = subskills / "isomer-kaoju-shared"
+            self.assertTrue((shared / "references" / "evidence-contract.md").is_file())
+            self.assertTrue((shared / "references" / "artifact-semantics.md").is_file())
+            self.assertTrue((shared / "references" / "artifact-recording.md").is_file())
+            self.assertTrue((shared / "references" / "research-idea-recording.md").is_file())
+            neutral_recording = target / "isomer-op-entrypoint" / "subskills" / "isomer-research-idea-recording" / "SKILL.md"
             self.assertTrue(neutral_recording.is_file())
             self.assertNotIn("isomer-deepsci", neutral_recording.read_text(encoding="utf-8"))
-            binding_pages = tuple(kaoju.glob("isomer-kaoju-*/artifact-bindings.md"))
-            self.assertEqual(13, len(binding_pages))
+            binding_pages = tuple(subskills.glob("isomer-kaoju-*/artifact-bindings.md"))
+            self.assertEqual(12, len(binding_pages))
             self.assertFalse((kaoju / "contracts").exists())
-            for skill_dir in kaoju.glob("isomer-kaoju-*"):
+            for skill_dir in subskills.glob("isomer-kaoju-*"):
                 self.assertFalse(skill_dir.is_symlink(), skill_dir)
                 self.assertTrue((skill_dir / "SKILL.md").is_file(), skill_dir)
             for path in kaoju.rglob("*.md"):
                 text = path.read_text(encoding="utf-8")
                 self.assertNotIn("../contracts", text, path)
                 self.assertNotIn("contracts/bindings.v2.json", text, path)
-            self.assertFalse((target / "research-paradigm" / "deepsci").exists())
+            self.assertFalse((target / "isomer-ext-deepsci-entrypoint").exists())
+
+    def test_packaged_tree_has_only_three_public_skill_roots_and_no_shims(self) -> None:
+        root = system_skills_root()
+        public_paths = (
+            "operator/isomer-op-entrypoint",
+            "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint",
+        )
+        for public_path in public_paths:
+            self.assertTrue(resolve_system_skill(public_path).joinpath("SKILL.md").is_file(), public_path)
+
+        for obsolete_path in (
+            "operator/isomer-op-project-mgr",
+            "service/isomer-srv-topic-env-setup",
+            "misc/isomer-misc-bounded-run-tips",
+            "research/isomer-research-idea-recording",
+            "research-paradigm/deepsci/isomer-deepsci-pipeline",
+            "research-paradigm/deepsci/isomer-deepsci-scout",
+            "research-paradigm/kaoju/isomer-kaoju-pipeline",
+            "research-paradigm/kaoju/isomer-kaoju-write",
+        ):
+            target = root
+            for part in Path(obsolete_path).parts:
+                target = target.joinpath(part)
+            self.assertFalse(target.exists(), obsolete_path)
+
+    def test_kaoju_machine_resources_remain_package_owned(self) -> None:
+        pack = resolve_system_skill("research-paradigm/kaoju/isomer-ext-kaoju-entrypoint")
+        writer = resolve_system_skill_capability("isomer-kaoju-write")
+        self.assertFalse(pack.joinpath("resources").exists())
+        self.assertFalse(writer.joinpath("resources", "survey-process.v2.json").exists())
+        process_resource = (
+            Path(__file__).resolve().parents[2]
+            / "src"
+            / "isomer_labs"
+            / "kaoju"
+            / "resources"
+            / "survey-process.v2.json"
+        )
+        self.assertTrue(process_resource.is_file())
+        process = json.loads(process_resource.read_text(encoding="utf-8"))
+        self.assertEqual("isomer-ext-kaoju-entrypoint", process["entry_skill"])
+        self.assertIn("template_roles", process)
+        self.assertIn("paper_templates", process["implementation_decisions"])
+        self.assertIn("KAOJU:PAPER-TEMPLATE-LATEX", json.dumps(process))
+        entrypoint = pack.joinpath("SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("isomer-cli --print-json ext kaoju process show", entrypoint)
 
     def test_research_idea_recording_contract_is_producer_neutral_and_facet_first(self) -> None:
-        skill = resolve_system_skill("research/isomer-research-idea-recording")
+        skill = resolve_system_skill_capability("isomer-research-idea-recording")
         skill_text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         contract = skill.joinpath("references", "recording-contract.md").read_text(encoding="utf-8")
-        self.assertIn("$isomer-research-idea-recording", skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8"))
+        self.assertIn(
+            "$isomer-op-entrypoint use research-ideas",
+            skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8"),
+        )
         self.assertIn("research_idea_effects", contract)
         self.assertIn("exploration_state", contract)
         self.assertIn("decision options", contract.lower())
@@ -247,7 +345,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertNotIn("isomer-deepsci", skill_text)
 
     def test_gui_mgr_skill_identity_commands_and_api_reference(self) -> None:
-        skill = resolve_system_skill("operator/isomer-op-gui-mgr")
+        skill = resolve_system_skill_capability("isomer-op-gui-mgr")
         skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         agent_yaml = skill.joinpath("agents", "openai.yaml").read_text(encoding="utf-8")
         self.assertIn("name: isomer-op-gui-mgr", skill_md)
@@ -258,7 +356,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("isomer-cli project web serve --root <project-root>", skill_md)
         self.assertNotIn("pixi run isomer-cli", skill_md)
         self.assertIn('display_name: "isomer-op-gui-mgr"', agent_yaml)
-        self.assertIn("$isomer-op-gui-mgr", agent_yaml)
+        self.assertIn("$isomer-op-entrypoint use gui", agent_yaml)
 
         for command_name in (
             "help",
@@ -314,29 +412,33 @@ class SystemSkillAssetTests(unittest.TestCase):
     def test_gui_mgr_is_discoverable_from_welcome_and_entrypoint(self) -> None:
         entrypoint = resolve_system_skill("operator/isomer-op-entrypoint")
         system_index = entrypoint.joinpath("references", "system-skill-index.md").read_text(encoding="utf-8")
-        self.assertIn("isomer-op-gui-mgr", system_index)
+        self.assertIn("isomer-op-entrypoint->gui", system_index)
         self.assertIn("Project Web GUI lifecycle", system_index)
         self.assertIn("backend API reference", system_index)
 
-        welcome = resolve_system_skill("operator/isomer-op-welcome")
+        welcome = resolve_system_skill_capability("isomer-op-welcome")
         for reference_name in ("help", "show-options", "choose-path", "show-skill-map"):
             reference = welcome.joinpath("references", f"{reference_name}.md").read_text(encoding="utf-8")
-            self.assertIn("isomer-op-gui-mgr", reference, reference_name)
+            self.assertTrue(
+                "isomer-op-entrypoint->gui" in reference or "$isomer-op-entrypoint use gui" in reference,
+                reference_name,
+            )
+            self.assertNotIn("isomer-op-gui-mgr", reference, reference_name)
         welcome_skill = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Project Web GUI", welcome_skill)
-        self.assertIn("isomer-op-gui-mgr", welcome_skill)
+        self.assertIn("isomer-op-entrypoint->gui", welcome_skill)
 
     def test_extensions_and_entrypoint_are_discoverable_from_welcome(self) -> None:
-        welcome = resolve_system_skill("operator/isomer-op-welcome")
+        welcome = resolve_system_skill_capability("isomer-op-welcome")
         skill_text = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
         for term in (
             "start-deepsci-research",
             "start-kaoju-survey",
             "show-extensions",
             "isomer-op-entrypoint",
-            "isomer-op-system-skill-mgr",
-            "isomer-deepsci-pipeline",
-            "isomer-kaoju-pipeline",
+            "isomer-op-entrypoint->system-skills",
+            "isomer-ext-deepsci-entrypoint",
+            "isomer-ext-kaoju-entrypoint",
         ):
             self.assertIn(term, skill_text)
 
@@ -346,15 +448,15 @@ class SystemSkillAssetTests(unittest.TestCase):
             "project system-extensions list",
             "catalog-known",
             "Project-declared",
-            "Host-usable",
-            "isomer-op-system-skill-mgr",
+            "entrypoint_seen",
+            "isomer-op-entrypoint->system-skills",
         ):
             self.assertIn(term, extension_reference)
 
         deepsci_path = welcome.joinpath("references", "start-deepsci-research.md").read_text(encoding="utf-8")
         kaoju_path = welcome.joinpath("references", "start-kaoju-survey.md").read_text(encoding="utf-8")
-        self.assertIn("isomer-deepsci-pipeline", deepsci_path)
-        self.assertIn("isomer-kaoju-pipeline", kaoju_path)
+        self.assertIn("isomer-ext-deepsci-entrypoint", deepsci_path)
+        self.assertIn("isomer-ext-kaoju-entrypoint", kaoju_path)
         self.assertIn("execution topology", deepsci_path)
         self.assertIn("execution topology", kaoju_path)
 
@@ -364,30 +466,29 @@ class SystemSkillAssetTests(unittest.TestCase):
         input_surfaces = entrypoint.joinpath("references", "input-surfaces.md").read_text(encoding="utf-8")
         routing_rules = entrypoint.joinpath("references", "routing-rules.md").read_text(encoding="utf-8")
         extension_index = entrypoint.joinpath("references", "extension-skill-index.md").read_text(encoding="utf-8")
-        self.assertIn("isomer-kaoju-workspace-mgr", skill_text)
-        self.assertIn("$isomer-kaoju-*", input_surfaces)
-        self.assertIn("isomer-kaoju-pipeline", routing_rules)
+        self.assertIn("isomer-ext-kaoju-entrypoint->workspace", skill_text)
+        self.assertIn("$isomer-ext-kaoju-entrypoint", input_surfaces)
+        self.assertIn("isomer-ext-kaoju-entrypoint", routing_rules)
         for name in (
-            "isomer-kaoju-pipeline",
-            "isomer-kaoju-shared",
-            "isomer-kaoju-workspace-mgr",
-            "isomer-kaoju-frame",
-            "isomer-kaoju-discover",
-            "isomer-kaoju-acquire",
-            "isomer-kaoju-examine",
-            "isomer-kaoju-reproduce",
-            "isomer-kaoju-trial",
-            "isomer-kaoju-compare",
-            "isomer-kaoju-audit",
-            "isomer-kaoju-synthesize",
-            "isomer-kaoju-write",
-            "isomer-kaoju-export",
+            "isomer-ext-kaoju-entrypoint",
+            "isomer-ext-kaoju-entrypoint->shared",
+            "isomer-ext-kaoju-entrypoint->workspace",
+            "isomer-ext-kaoju-entrypoint->frame",
+            "isomer-ext-kaoju-entrypoint->discover",
+            "isomer-ext-kaoju-entrypoint->acquire",
+            "isomer-ext-kaoju-entrypoint->examine",
+            "isomer-ext-kaoju-entrypoint->reproduce",
+            "isomer-ext-kaoju-entrypoint->trial",
+            "isomer-ext-kaoju-entrypoint->compare",
+            "isomer-ext-kaoju-entrypoint->audit",
+            "isomer-ext-kaoju-entrypoint->synthesize",
+            "isomer-ext-kaoju-entrypoint->write",
+            "isomer-ext-kaoju-entrypoint->export",
         ):
             self.assertIn(name, extension_index)
 
     def test_toolbox_mgr_skill_identity_and_command_pages(self) -> None:
-        skill_path = "operator/isomer-op-toolbox-mgr"
-        skill = resolve_system_skill(skill_path)
+        skill = resolve_system_skill_capability("isomer-op-toolbox-mgr")
         skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         self.assertIn("name: isomer-op-toolbox-mgr", skill_md)
         self.assertNotIn("name: isomer-op-toolbox-creator", skill_md)
@@ -413,7 +514,7 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertIn("## Workflow", command.read_text(encoding="utf-8"), command_name)
 
     def test_topic_service_agent_support_declares_lifecycle_routes(self) -> None:
-        skill = resolve_system_skill("service/isomer-srv-topic-service-agent-support")
+        skill = resolve_system_skill_capability("isomer-srv-topic-service-agent-support")
         skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         for route_name in (
             "prepare-topic-service-master",
@@ -431,7 +532,7 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertIn(route_name, skill_md)
 
     def test_houmao_interop_routes_through_isomer_skill_context(self) -> None:
-        skill = resolve_system_skill("service/isomer-srv-houmao-interop")
+        skill = resolve_system_skill_capability("isomer-srv-houmao-interop")
         skill_md = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
         self.assertIn("isomer-cli --print-json project integrations houmao skill-context <route-name>", skill_md)
         self.assertIn("houmao_skill_path", skill_md)
@@ -439,7 +540,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertTrue(skill.joinpath("references", "skill-context.md").is_file())
 
     def test_topic_creator_reports_disabled_houmao_skip(self) -> None:
-        skill = resolve_system_skill("operator/isomer-op-topic-creator")
+        skill = resolve_system_skill_capability("isomer-op-topic-creator")
         setup_actors = skill.joinpath("references", "setup-actors.md").read_text(encoding="utf-8")
         finalize = skill.joinpath("references", "finalize.md").read_text(encoding="utf-8")
         status = skill.joinpath("references", "status.md").read_text(encoding="utf-8")
@@ -449,11 +550,11 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("disabled Houmao integration as a skip state", status)
 
     def test_pixi_wrapper_tool_command_shape_guidance_is_packaged(self) -> None:
-        topic_env = resolve_system_skill("service/isomer-srv-topic-env-setup")
+        topic_env = resolve_system_skill_capability("isomer-srv-topic-env-setup")
         derive = topic_env.joinpath("references", "derive-env-gate.md").read_text(encoding="utf-8")
         verify = topic_env.joinpath("references", "verify-env-gate.md").read_text(encoding="utf-8")
-        bounded = resolve_system_skill("misc/isomer-misc-bounded-run-tips").joinpath("SKILL.md").read_text(encoding="utf-8")
-        nvidia = resolve_system_skill("misc/isomer-misc-nvidia-tools").joinpath("SKILL.md").read_text(encoding="utf-8")
+        bounded = resolve_system_skill_capability("isomer-misc-bounded-run-tips").joinpath("SKILL.md").read_text(encoding="utf-8")
+        nvidia = resolve_system_skill_capability("isomer-misc-nvidia-tools").joinpath("SKILL.md").read_text(encoding="utf-8")
 
         for text in (derive, verify, bounded):
             self.assertIn("wrapper tools", text)

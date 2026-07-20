@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-workspace-mgr"
+  short_description: "Check Kaoju workspace readiness."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use workspace to perform this isomer-kaoju-workspace-mgr task."

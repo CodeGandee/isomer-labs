@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-frame"
+  short_description: "Frame a bounded Kaoju survey."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use frame to perform this isomer-kaoju-frame task."

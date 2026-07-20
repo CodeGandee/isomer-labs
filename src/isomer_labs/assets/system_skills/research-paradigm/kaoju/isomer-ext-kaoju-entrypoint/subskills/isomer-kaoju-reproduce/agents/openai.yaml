@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-reproduce"
+  short_description: "Run bounded paper-method trials."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use reproduce to perform this isomer-kaoju-reproduce task."

@@ -183,7 +183,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to install `skillset/toolboxes/gpu-evidence-quality` into the current Isomer Labs Project for all topics.
+> Use $isomer-op-entrypoint use toolbox to install `skillset/toolboxes/gpu-evidence-quality` into the current Isomer Labs Project for all topics.
 
 AI (visible response):
 

@@ -1,7 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-srv-houmao-interop"
-  short_description: "Provide service-routed Houmao adapter support"
-  default_prompt: "Use $isomer-srv-houmao-interop to provide bounded Houmao adapter support for Isomer Labs project constructs."

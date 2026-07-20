@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-misc-pkg-specifics"
+  short_description: "Package source routing and variant checks"
+  default_prompt: "Use $isomer-op-entrypoint use package-specifics to perform this isomer-misc-pkg-specifics task."

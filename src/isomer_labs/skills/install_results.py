@@ -115,6 +115,7 @@ class SystemSkillUpgradeResult:
     refreshed: tuple[InstalledSystemSkill, ...]
     stale_removed: tuple[InstalledSystemSkill, ...]
     stale_absent: tuple[str, ...]
+    stale_retained: tuple[ExistingSystemSkillPath, ...]
     projection_mode_override: ProjectionMode | None
     manifest: SystemSkillRootManifest | None
     diagnostics: tuple[Diagnostic, ...]
@@ -137,5 +138,7 @@ class SystemSkillUpgradeResult:
             "stale_removed": [record.to_json() for record in self.stale_removed],
             "stale_removed_skills": [record.name for record in self.stale_removed],
             "stale_absent_skills": list(self.stale_absent),
+            "stale_retained": [record.to_json() for record in self.stale_retained],
+            "migration_status": "partial_cleanup" if self.stale_retained else "complete",
             "selection": self.selection.to_json(),
         }

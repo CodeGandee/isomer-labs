@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-srv-topic-env-setup"
+  short_description: "Prepare enclosed Isomer Pixi environments"
+  default_prompt: "Use $isomer-op-entrypoint use topic-env to perform this isomer-srv-topic-env-setup task."

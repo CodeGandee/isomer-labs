@@ -7,7 +7,7 @@ Define a coherent set of user-facing use cases for the Kaoju evidence-led survey
 ## Non-Goals
 
 - Re-implementing the underlying Kaoju stage skills (frame, discover, acquire, examine, audit, synthesize, write).
-- Replacing the existing `isomer-kaoju-pipeline` public procedures.
+- Replacing the existing `isomer-ext-kaoju-entrypoint` public procedures.
 - Defining a new storage backend or artifact format; use existing `kaoju:*` semantic ids.
 - Covering DeepSci hypothesis-driven research workflows.
 
@@ -49,5 +49,5 @@ Define a coherent set of user-facing use cases for the Kaoju evidence-led survey
 ## Decisions
 
 - Direction proposal is agent-driven, clarification-first for material ambiguity, and subject to explicit human selection before the direction set becomes accepted input.
-- `isomer-kaoju-pipeline` remains a thin intent router to capability-owning Kaoju skills. The skills use typed `isomer-cli project` and `isomer-cli ext kaoju` services for deterministic operations defined by the OpenSpec design.
+- `isomer-ext-kaoju-entrypoint` remains a thin intent router to capability-owning Kaoju skills. The skills use typed `isomer-cli project` and `isomer-cli ext kaoju` services for deterministic operations defined by the OpenSpec design.
 - The use cases do not introduce another top-level workflow skill. They are public intent procedures with compatibility routes from existing pipeline procedures and operator-facing documentation.

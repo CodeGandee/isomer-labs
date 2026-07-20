@@ -15,7 +15,7 @@
       ],
       "producer": "isomer-kaoju-workspace-mgr",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Revise the current scoped record when accepted state changes."
     },
@@ -28,7 +28,7 @@
       ],
       "producer": "isomer-kaoju-workspace-mgr",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Revise the current scoped record when accepted state changes."
     },
@@ -57,7 +57,7 @@
       "producer": "isomer-kaoju-frame",
       "consumers": [
         "isomer-kaoju-discover",
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Revise the current scoped record when accepted state changes."
     },
@@ -81,9 +81,9 @@
       "minimum_content": [
         "explicit clarify, proceed, pause, reject, or stop decision."
       ],
-      "producer": "isomer-kaoju-pipeline",
+      "producer": "isomer-ext-kaoju-entrypoint",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Append a new record for each accepted event or change."
     },
@@ -97,7 +97,7 @@
       "producer": "isomer-kaoju-discover",
       "consumers": [
         "isomer-kaoju-audit",
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Revise the current scoped record when accepted state changes."
     },
@@ -251,7 +251,7 @@
       ],
       "producer": "isomer-kaoju-acquire",
       "consumers": [
-        "isomer-kaoju-pipeline",
+        "isomer-ext-kaoju-entrypoint",
         "isomer-kaoju-audit"
       ],
       "update_intent": "Append a new record for each accepted event or change."
@@ -376,9 +376,9 @@
       "minimum_content": [
         "complete, paused, or blocked outcome with accepted refs, limitations, and resume point."
       ],
-      "producer": "isomer-kaoju-pipeline",
+      "producer": "isomer-ext-kaoju-entrypoint",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "update_intent": "Append a new record for each accepted event or change."
     },

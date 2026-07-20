@@ -21,8 +21,10 @@ from isomer_labs.project.callback_keys import (
     valid_callback_id,
 )
 from isomer_labs.skills.system_assets import (
+    SystemSkillAssetError,
     callback_insertion_point_stage_names,
     has_system_skill_callback_insertion_point,
+    normalize_system_skill_identity,
 )
 
 
@@ -46,6 +48,16 @@ SECRET_KEY_TERMS = (
 SECRET_VALUE_RE = re.compile(
     r"(?i)\b(?:api[_-]?key|token|password|secret|credential|private[_-]?key|access[_-]?key)\b\s*[:=]\s*['\"]?[A-Za-z0-9_./+=-]{8,}"
 )
+
+
+def canonical_callback_target(skill: str) -> str:
+    """Normalize current and legacy callback targets without rewriting stored provenance."""
+
+    try:
+        _kind, canonical, _deprecated = normalize_system_skill_identity(skill)
+    except SystemSkillAssetError:
+        return skill
+    return canonical
 
 
 @dataclass(frozen=True)

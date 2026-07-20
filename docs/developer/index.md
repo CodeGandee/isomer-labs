@@ -6,6 +6,7 @@ The developer guide explains how Isomer Labs is built and maintained. It assumes
 - [Storage Layer](storage-layer.md)
 - [Team Repositories](team-repositories.md)
 - [Packaged System Skills](packaged-system-skills.md)
+- [System Skill Migration](system-skill-migration.md)
 - [UI Contracts](ui-contracts.md)
 - [Release Process](release-process.md)
 - [Testing](testing.md)

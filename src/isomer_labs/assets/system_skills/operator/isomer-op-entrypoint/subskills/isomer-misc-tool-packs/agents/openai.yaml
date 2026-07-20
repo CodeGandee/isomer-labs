@@ -1,0 +1,9 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-misc-tool-packs"
+  short_description: "Resolve named Isomer installable toolsets"
+  default_prompt: "Use $isomer-op-entrypoint use tool-packs to perform this isomer-misc-tool-packs task."
+policy:
+  allow_implicit_invocation: false

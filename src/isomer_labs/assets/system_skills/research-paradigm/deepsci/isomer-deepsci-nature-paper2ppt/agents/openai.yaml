@@ -1,8 +1,0 @@
-metadata:
-  version: "0.4.0"
-  thanks_to: "https://github.com/ResearAI/DeepScientist"
-
-interface:
-  display_name: "isomer-deepsci-nature-paper2ppt"
-  short_description: "Build a Chinese PPTX from a scientific paper."
-  default_prompt: "Use $isomer-deepsci-nature-paper2ppt to build a complete Chinese PPTX presentation from a scientific paper, preprint, PDF, article text, abstract, figure legends, or reading notes."

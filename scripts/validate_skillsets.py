@@ -17,6 +17,12 @@ from packaging.version import InvalidVersion, Version
 import yaml
 
 import validate_research_paradigm_skillset as research_validator
+from isomer_labs.skills.system_assets import (
+    SYSTEM_SKILL_MANIFEST_V3,
+    SystemSkillAssetError,
+    SystemSkillCatalog,
+    parse_system_skill_manifest,
+)
 
 
 FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
@@ -36,7 +42,22 @@ WELCOME_SKILL = "isomer-op-welcome"
 PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
 HOUMAO_INTEROP_SERVICE_SKILL = "isomer-srv-houmao-interop"
 SYSTEM_SKILL_TEMPLATE_CODE = "SKL007"
+SYSTEM_SKILL_INVOCATION_CODE = "SKL009"
 SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS = frozenset({"org", "migrate", "templates"})
+SYSTEM_SKILL_PRIVATE_RESOURCE_DIRS = frozenset({"assets", "references", "scripts", "templates"})
+SKILL_INVOCATION_NOTATION = (
+    "Skill and subskill entrypoints use bare object paths: `X` invokes skill X and "
+    "`X->Y->Z` invokes subskill Z. Subcommands use parenthesized components: "
+    "`X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of "
+    "subskill Y, and `X->parent()->child()` invokes child subcommand child exposed "
+    "by parent subcommand parent. Intermediate subcommands act as object generators. "
+    "Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints."
+)
+SYSTEM_SKILL_OBJECT_DESIGNATOR_RE = re.compile(
+    r"\bisomer-(?:op|ext-[a-z0-9-]+)-entrypoint"
+    r"(?:->[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\(\))?)+"
+)
+SYSTEM_SKILL_ROLE_ROUTE_COMPONENTS = frozenset({"content", "latex"})
 
 MIGRATED_OPERATOR_SKILLS = (
     "isomer-rsch-project-aware",
@@ -738,8 +759,8 @@ WELCOME_REQUIRED_SKILL_TERMS = (
     "isomer-misc-tool-packs",
     "isomer-op-entrypoint",
     "isomer-op-system-skill-mgr",
-    "isomer-deepsci-pipeline",
-    "isomer-kaoju-pipeline",
+    "isomer-ext-deepsci-entrypoint",
+    "isomer-ext-kaoju-entrypoint",
     "catalog-known",
     "Project-declared",
     "host-usable",
@@ -784,8 +805,8 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "visible usage paths first",
         "start-deepsci-research",
         "start-kaoju-survey",
-        "isomer-deepsci-pipeline",
-        "isomer-kaoju-pipeline",
+        "isomer-ext-deepsci-entrypoint",
+        "isomer-ext-kaoju-entrypoint",
         "isomer-op-system-skill-mgr",
         "Use $isomer-op-entrypoint",
         "execution topology",
@@ -807,8 +828,8 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
         "Host-usable",
         "isomer-op-system-skill-mgr",
         "Use $isomer-op-entrypoint",
-        "isomer-deepsci-pipeline",
-        "isomer-kaoju-pipeline",
+        "isomer-ext-deepsci-entrypoint",
+        "isomer-ext-kaoju-entrypoint",
         "isomer-cli ext",
     ),
     "choose-path.md": (
@@ -876,19 +897,19 @@ WELCOME_REFERENCE_REQUIRED_TERMS = {
     ),
     "start-deepsci-research.md": (
         "hypothesis-driven production research",
-        "isomer-deepsci-pipeline",
+        "isomer-ext-deepsci-entrypoint",
         "Use $isomer-op-entrypoint",
         "isomer-op-system-skill-mgr",
-        "isomer-deepsci-workspace-mgr",
+        "isomer-ext-deepsci-entrypoint->workspace",
         "execution topology",
         "Mutation Boundary",
     ),
     "start-kaoju-survey.md": (
         "evidence-led survey",
-        "isomer-kaoju-pipeline",
+        "isomer-ext-kaoju-entrypoint",
         "Use $isomer-op-entrypoint",
         "isomer-op-system-skill-mgr",
-        "isomer-kaoju-workspace-mgr",
+        "isomer-ext-kaoju-entrypoint->workspace",
         "execution topology",
         "Mutation Boundary",
     ),
@@ -1029,6 +1050,7 @@ SYSTEM_SKILL_MANAGER_REFERENCES = (
     "reconcile-extensions.md",
     "install-extension.md",
     "status.md",
+    "upgrade.md",
     "repair.md",
 )
 
@@ -1043,10 +1065,12 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "reconcile-extensions",
     "install-extension",
     "status",
+    "upgrade",
     "repair",
     "Project declaration",
-    "Managed explicit root",
-    "Live inventory",
+    "Current v4 receipt",
+    "Explicit-root verification",
+    "Limited live inventory",
     "isomer-cli internals inspect-system-skill-root",
     "isomer-cli internals classify-system-skill-inventory",
     "isomer-cli project system-extensions remember",
@@ -1055,7 +1079,7 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "idempotent",
     "one operator root or inventory",
     "partial outcome",
-    "host refresh is required",
+    "require a host refresh or new session",
     "--scope <selected-scope>",
     "Direct low-level install defaults to project scope",
     "always passes `--scope <selected-scope>`",
@@ -1079,7 +1103,7 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "always passes `--scope <selected-scope>`",
         "Read `skill_root`",
         "Never call `forget`",
-        "host refresh is required",
+        "require a host refresh",
     ),
     "detect-extensions.md": ("read-only", "Project", "project-scope skill roots", "host-visible skill names"),
     "reconcile-extensions.md": ("additive", "Project", "remember", "Never infer removal"),
@@ -1093,9 +1117,17 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
         "Read the resolved skill root",
         "Verify with",
         "registration",
-        "host refresh is required",
+        "require a host refresh or new session",
     ),
     "status.md": ("non-mutating", "declarations", "host-known roots", "stale user-controlled state"),
+    "upgrade.md": (
+        "supported legacy receipt",
+        "stages and validates",
+        "current v4 receipt",
+        "stale_retained",
+        "old receipt and projections remain intact",
+        "host refresh or new session",
+    ),
     "repair.md": ("stale declaration", "malformed", "obsolete", "newer-than-CLI", "explicit user request"),
 }
 
@@ -1961,6 +1993,17 @@ class Diagnostic:
         return f"{self.path}:{self.line}: {self.code} {self.message}"
 
 
+@dataclass(frozen=True)
+class PackagedSkillRecord:
+    """One manifest-declared public pack or protected capability bundle."""
+
+    path: Path
+    skill_name: str
+    public_skill: str
+    kind: str
+    pack_id: str
+
+
 def find_repo_root(start: Path) -> Path:
     current = start.resolve()
     if current.is_file():
@@ -2226,6 +2269,22 @@ def parse_frontmatter(lines: tuple[str, ...]) -> dict[str, str]:
     return fields
 
 
+def parse_yaml_frontmatter(path: Path) -> dict[str, Any]:
+    """Parse one Markdown YAML frontmatter mapping."""
+
+    lines = read_lines(path)
+    if not lines or lines[0].strip() != "---":
+        return {}
+    end = next((index for index, line in enumerate(lines[1:], start=1) if line.strip() == "---"), None)
+    if end is None:
+        return {}
+    try:
+        parsed = yaml.safe_load("\n".join(lines[1:end]))
+    except yaml.YAMLError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
 def parse_interface_fields(lines: tuple[str, ...]) -> dict[str, tuple[str, int]]:
     fields: dict[str, tuple[str, int]] = {}
     in_interface = False
@@ -2254,70 +2313,169 @@ def add(
     diagnostics.append(Diagnostic(relpath(path, repo_root), max(line, 1), code, message))
 
 
-def packaged_skill_dirs(repo_root: Path, diagnostics: list[Diagnostic] | None = None) -> tuple[Path, ...]:
+def _read_packaged_manifest(repo_root: Path, diagnostics: list[Diagnostic]) -> dict[str, Any] | None:
     manifest_path = repo_root / "skillset" / "manifest.toml"
-    local_diagnostics = diagnostics if diagnostics is not None else []
     if not manifest_path.exists():
-        add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest is required")
-        return ()
+        add(diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest is required")
+        return None
     try:
-        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+        return tomllib.loads(manifest_path.read_text(encoding="utf-8"))
     except tomllib.TOMLDecodeError as exc:
-        add(local_diagnostics, repo_root, manifest_path, exc.lineno, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest must be valid TOML")
+        add(diagnostics, repo_root, manifest_path, exc.lineno, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest must be valid TOML")
+        return None
+
+
+def packaged_system_skill_catalog(
+    repo_root: Path, diagnostics: list[Diagnostic] | None = None
+) -> SystemSkillCatalog | None:
+    """Parse the repository's current manifest v3 catalog when present."""
+
+    local_diagnostics = diagnostics if diagnostics is not None else []
+    manifest = _read_packaged_manifest(repo_root, local_diagnostics)
+    if manifest is None or manifest.get("schema_version") != SYSTEM_SKILL_MANIFEST_V3:
+        return None
+    try:
+        return parse_system_skill_manifest(manifest)
+    except SystemSkillAssetError as exc:
+        add(
+            local_diagnostics,
+            repo_root,
+            repo_root / "skillset" / "manifest.toml",
+            1,
+            SYSTEM_SKILL_TEMPLATE_CODE,
+            f"packaged system-skill manifest v3 is invalid: {exc}",
+        )
+        return None
+
+
+def packaged_capability_dir(repo_root: Path, logical_id: str, legacy_area: str) -> Path:
+    """Resolve a protected capability in v3 while retaining flat-fixture support."""
+
+    catalog = packaged_system_skill_catalog(repo_root)
+    if catalog is not None:
+        try:
+            capability = catalog.capability_by_logical_id(logical_id)
+        except SystemSkillAssetError:
+            pass
+        else:
+            return repo_root / "skillset" / capability.source_path
+    return repo_root / "skillset" / legacy_area / logical_id
+
+
+def packaged_skill_records(
+    repo_root: Path, diagnostics: list[Diagnostic] | None = None
+) -> tuple[PackagedSkillRecord, ...]:
+    """Enumerate public packs and protected capabilities from the manifest."""
+
+    local_diagnostics = diagnostics if diagnostics is not None else []
+    manifest = _read_packaged_manifest(repo_root, local_diagnostics)
+    if manifest is None:
         return ()
 
-    groups = manifest.get("groups")
-    if not isinstance(groups, dict):
-        add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, "packaged system-skill manifest must contain a groups table")
-        return ()
-
-    repository_root = repo_root.resolve()
-    skill_dirs: list[Path] = []
-    seen: set[Path] = set()
-    for group_name, raw_group in groups.items():
-        if not isinstance(raw_group, dict):
-            add(local_diagnostics, repo_root, manifest_path, 1, SYSTEM_SKILL_TEMPLATE_CODE, f"manifest group {group_name!r} must be a table")
-            continue
-        raw_skills = raw_group.get("skills")
-        if not isinstance(raw_skills, list) or not all(isinstance(item, str) and item for item in raw_skills):
+    raw_records: list[tuple[str, str, str, str, str]] = []
+    if manifest.get("schema_version") == SYSTEM_SKILL_MANIFEST_V3:
+        try:
+            catalog = parse_system_skill_manifest(manifest)
+        except SystemSkillAssetError as exc:
             add(
                 local_diagnostics,
                 repo_root,
-                manifest_path,
+                repo_root / "skillset" / "manifest.toml",
                 1,
                 SYSTEM_SKILL_TEMPLATE_CODE,
-                f"manifest group {group_name!r} skills must be a list of non-empty strings",
+                f"packaged system-skill manifest v3 is invalid: {exc}",
+            )
+            return ()
+        raw_records.extend(
+            (pack.source_path, pack.entry_skill, pack.entry_skill, "public", pack.pack_id) for pack in catalog.packs
+        )
+        raw_records.extend(
+            (
+                capability.source_path,
+                capability.logical_id,
+                catalog.pack_by_id(capability.pack_id).entry_skill,
+                "protected",
+                capability.pack_id,
+            )
+            for capability in catalog.capabilities
+        )
+    else:
+        groups = manifest.get("groups")
+        if not isinstance(groups, dict):
+            add(
+                local_diagnostics,
+                repo_root,
+                repo_root / "skillset" / "manifest.toml",
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                "packaged system-skill manifest must contain a groups table",
+            )
+            return ()
+        for group_name, raw_group in groups.items():
+            if not isinstance(raw_group, dict):
+                add(
+                    local_diagnostics,
+                    repo_root,
+                    repo_root / "skillset" / "manifest.toml",
+                    1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"manifest group {group_name!r} must be a table",
+                )
+                continue
+            raw_skills = raw_group.get("skills")
+            if not isinstance(raw_skills, list) or not all(isinstance(item, str) and item for item in raw_skills):
+                add(
+                    local_diagnostics,
+                    repo_root,
+                    repo_root / "skillset" / "manifest.toml",
+                    1,
+                    SYSTEM_SKILL_TEMPLATE_CODE,
+                    f"manifest group {group_name!r} skills must be a list of non-empty strings",
+                )
+                continue
+            raw_records.extend(
+                (raw_skill, Path(raw_skill).name, Path(raw_skill).name, "legacy", str(group_name))
+                for raw_skill in raw_skills
+            )
+
+    repository_root = repo_root.resolve()
+    records: list[PackagedSkillRecord] = []
+    seen: set[Path] = set()
+    for raw_skill, skill_name, public_skill, kind, pack_id in raw_records:
+        relative_skill = Path(raw_skill)
+        if relative_skill.is_absolute() or ".." in relative_skill.parts:
+            add(
+                local_diagnostics,
+                repo_root,
+                repo_root / "skillset" / "manifest.toml",
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"manifest skill path {raw_skill!r} must be a relative path without parent traversal",
             )
             continue
-        for raw_skill in raw_skills:
-            relative_skill = Path(raw_skill)
-            if relative_skill.is_absolute() or ".." in relative_skill.parts:
-                add(
-                    local_diagnostics,
-                    repo_root,
-                    manifest_path,
-                    1,
-                    SYSTEM_SKILL_TEMPLATE_CODE,
-                    f"manifest skill path {raw_skill!r} must be a relative path without parent traversal",
-                )
-                continue
-            skill_dir = repo_root / "skillset" / raw_skill
-            resolved = skill_dir.resolve()
-            if not resolved.is_relative_to(repository_root):
-                add(
-                    local_diagnostics,
-                    repo_root,
-                    manifest_path,
-                    1,
-                    SYSTEM_SKILL_TEMPLATE_CODE,
-                    f"manifest skill path {raw_skill!r} must resolve inside the repository",
-                )
-                continue
-            if resolved in seen:
-                continue
-            seen.add(resolved)
-            skill_dirs.append(skill_dir)
-    return tuple(skill_dirs)
+        skill_dir = repo_root / "skillset" / raw_skill
+        resolved = skill_dir.resolve()
+        if not resolved.is_relative_to(repository_root):
+            add(
+                local_diagnostics,
+                repo_root,
+                repo_root / "skillset" / "manifest.toml",
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"manifest skill path {raw_skill!r} must resolve inside the repository",
+            )
+            continue
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        records.append(PackagedSkillRecord(skill_dir, skill_name, public_skill, kind, pack_id))
+    return tuple(records)
+
+
+def packaged_skill_dirs(repo_root: Path, diagnostics: list[Diagnostic] | None = None) -> tuple[Path, ...]:
+    """Return every manifest-declared public or protected bundle path."""
+
+    return tuple(record.path for record in packaged_skill_records(repo_root, diagnostics))
 
 
 def active_skill_markdown_pages(skill_dir: Path) -> tuple[Path, ...]:
@@ -2325,6 +2483,8 @@ def active_skill_markdown_pages(skill_dir: Path) -> tuple[Path, ...]:
     for path in skill_dir.rglob("*.md"):
         relative = path.relative_to(skill_dir)
         if any(part in SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS for part in relative.parts):
+            continue
+        if "subskills" in relative.parts:
             continue
         pages.append(path)
     return tuple(sorted(pages))
@@ -2520,13 +2680,23 @@ def _validate_troubleshooting(
 
 def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    for skill_dir in packaged_skill_dirs(repo_root, diagnostics):
+    for record in packaged_skill_records(repo_root, diagnostics):
+        skill_dir = record.path
         skill_md = skill_dir / "SKILL.md"
         if not skill_md.exists():
             add(diagnostics, repo_root, skill_md, 1, SYSTEM_SKILL_TEMPLATE_CODE, "manifest-declared skill must contain SKILL.md")
             continue
         skill_lines = read_lines(skill_md)
         frontmatter = parse_frontmatter(skill_lines)
+        if frontmatter.get("name") != record.skill_name:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                first_line_containing(skill_lines, "name:"),
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"frontmatter name must match manifest identity {record.skill_name!r}",
+            )
         description = frontmatter.get("description", "")
         if not description.startswith("Use when"):
             add(
@@ -2548,6 +2718,16 @@ def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
                     f"SKILL.md must contain exactly one ## {heading} section",
                 )
         _validate_current_workflow(skill_md, skill_lines, repo_root, diagnostics, require_near_top=True)
+        if record.kind != "legacy":
+            validate_manifest(
+                skill_dir,
+                repo_root,
+                diagnostics,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                manifest_required=True,
+                invocation_skill=record.public_skill,
+            )
+        validate_active_skill_references(skill_dir, repo_root, diagnostics, SYSTEM_SKILL_TEMPLATE_CODE)
 
         subcommand_refs = _subcommand_markdown_refs(skill_dir, skill_lines)
         for page in active_skill_markdown_pages(skill_dir):
@@ -2619,7 +2799,12 @@ def clean_reference(raw: str) -> str | None:
     if "://" in value or value.startswith("#"):
         return None
     value = value.split("#", 1)[0].strip()
+    if not value:
+        return None
+    value = value.split(maxsplit=1)[0]
     value = value.strip(".,;:)")
+    if "<" in value or ">" in value:
+        return None
     if any(value.startswith(prefix) for prefix in LOCAL_REFERENCE_PREFIXES):
         return value
     return None
@@ -2676,6 +2861,7 @@ def validate_manifest(
     code: str,
     *,
     manifest_required: bool,
+    invocation_skill: str | None = None,
 ) -> None:
     skill_name = skill_dir.name
     manifest = skill_dir / "agents" / "openai.yaml"
@@ -2693,10 +2879,26 @@ def validate_manifest(
     elif display_name[0] != skill_name:
         add(diagnostics, repo_root, manifest, display_name[1], code, f"interface.display_name must be '{skill_name}'")
     default_prompt = fields.get("default_prompt")
+    expected_invocations = {invocation_skill or skill_name}
+    if invocation_skill is None:
+        if skill_name.startswith(("isomer-op-", "isomer-srv-", "isomer-misc-", "isomer-research-")):
+            expected_invocations.add("isomer-op-entrypoint")
+        elif skill_name.startswith("isomer-deepsci-"):
+            expected_invocations.add("isomer-ext-deepsci-entrypoint")
+        elif skill_name.startswith("isomer-kaoju-"):
+            expected_invocations.add("isomer-ext-kaoju-entrypoint")
     if default_prompt is None:
         add(diagnostics, repo_root, manifest, 1, code, "interface.default_prompt is required")
-    elif f"${skill_name}" not in default_prompt[0]:
-        add(diagnostics, repo_root, manifest, default_prompt[1], code, f"interface.default_prompt must invoke ${skill_name}")
+    elif not any(f"${expected_invocation}" in default_prompt[0] for expected_invocation in expected_invocations):
+        expected = " or ".join(f"${name}" for name in sorted(expected_invocations))
+        add(
+            diagnostics,
+            repo_root,
+            manifest,
+            default_prompt[1],
+            code,
+            f"interface.default_prompt must invoke {expected}",
+        )
 
 
 def validate_release_version_metadata(
@@ -2742,6 +2944,304 @@ def validate_local_references(skill_dir: Path, repo_root: Path, diagnostics: lis
             target = (skill_dir / reference).resolve()
             if not target.is_relative_to(skill_root) or not target.exists():
                 add(diagnostics, repo_root, skill_md, line_number, code, f"local reference '{reference}' does not exist inside {skill_dir.name}")
+
+
+def validate_active_skill_references(
+    skill_dir: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+    code: str,
+) -> None:
+    """Validate active bundle-local references and private-resource ownership."""
+
+    skill_root = skill_dir.resolve()
+    for page in active_skill_markdown_pages(skill_dir):
+        for line_number, line in enumerate(read_lines(page), start=1):
+            for reference in local_references_from_line(line):
+                target = (skill_dir / reference).resolve()
+                if not target.is_relative_to(skill_root) or not target.exists():
+                    add(
+                        diagnostics,
+                        repo_root,
+                        page,
+                        line_number,
+                        code,
+                        f"local reference '{reference}' does not exist inside {skill_dir.name}",
+                    )
+            for match in MARKDOWN_LINK_RE.finditer(line):
+                destination = match.group(1).split()[0].strip("<>")
+                if "://" in destination or destination.startswith("#"):
+                    continue
+                destination = destination.split("#", 1)[0]
+                if not destination:
+                    continue
+                target = (
+                    (skill_dir / destination).resolve()
+                    if any(destination.startswith(prefix) for prefix in LOCAL_REFERENCE_PREFIXES)
+                    else (page.parent / destination).resolve()
+                )
+                if not target.is_relative_to(skill_root):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        page,
+                        line_number,
+                        code,
+                        "active protected resources must not resolve through a parent or sibling bundle",
+                    )
+
+    commands_root = skill_dir / "commands"
+    if commands_root.is_dir():
+        for candidate in sorted(commands_root.rglob("*")):
+            if not candidate.is_dir():
+                continue
+            relative = candidate.relative_to(commands_root)
+            if any(part in SYSTEM_SKILL_PRIVATE_RESOURCE_DIRS for part in relative.parts):
+                add(
+                    diagnostics,
+                    repo_root,
+                    candidate,
+                    1,
+                    code,
+                    "a command must use its containing skill resources instead of owning a private resource root",
+                )
+
+
+def _route_command_page(
+    repo_root: Path,
+    catalog: SystemSkillCatalog,
+    pack_entry: str,
+    components: tuple[tuple[str, bool], ...],
+) -> tuple[Path, tuple[str, ...], bool]:
+    """Return command owner root, command names, and protected-owner posture."""
+
+    pack = catalog.pack_for_public_skill(pack_entry)
+    owner_root = repo_root / "skillset" / pack.source_path
+    protected_owner = not components[0][1]
+    command_components = components
+    if protected_owner:
+        capability = catalog.capability_for_member(pack.pack_id, components[0][0])
+        owner_root = repo_root / "skillset" / capability.source_path
+        command_components = components[1:]
+    return owner_root, tuple(component for component, _is_command in command_components), protected_owner
+
+
+def _detail_page(owner_root: Path, command_names: tuple[str, ...]) -> Path:
+    if not command_names:
+        return owner_root / "SKILL.md"
+    return owner_root / "commands" / Path(*command_names[:-1]) / f"{command_names[-1]}.md"
+
+
+def _page_declares_child(parent_page: Path, child_designator: str) -> bool:
+    if not parent_page.is_file():
+        return False
+    lines = read_lines(parent_page)
+    return any(
+        child_designator in line
+        for index in _h2_indices(lines, "Subcommands")
+        for line in _h2_section(lines, index)
+    )
+
+
+def _validate_object_designator(
+    repo_root: Path,
+    catalog: SystemSkillCatalog,
+    path: Path,
+    line_number: int,
+    designator: str,
+    diagnostics: list[Diagnostic],
+) -> None:
+    raw_parts = designator.split("->")
+    public_skill = raw_parts[0]
+    try:
+        pack = catalog.pack_for_public_skill(public_skill)
+    except SystemSkillAssetError:
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            line_number,
+            SYSTEM_SKILL_INVOCATION_CODE,
+            f"object designator uses undeclared public entrypoint {public_skill!r}",
+        )
+        return
+
+    components = tuple((part.removesuffix("()"), part.endswith("()")) for part in raw_parts[1:])
+    if any(name in SYSTEM_SKILL_ROLE_ROUTE_COMPONENTS for name, _is_command in components):
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            line_number,
+            SYSTEM_SKILL_INVOCATION_CODE,
+            "content and latex are role parameters, not invocation route components",
+        )
+    first_name, first_is_command = components[0]
+    if first_is_command:
+        if first_name not in pack.public_commands:
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                line_number,
+                SYSTEM_SKILL_INVOCATION_CODE,
+                f"public command {first_name!r} is not declared by pack {pack.pack_id!r}",
+            )
+    else:
+        try:
+            catalog.capability_for_member(pack.pack_id, first_name)
+        except SystemSkillAssetError:
+            message = (
+                f"{first_name!r} is a declared command and must use ()"
+                if first_name in pack.public_commands
+                else f"bare protected member {first_name!r} is not declared by pack {pack.pack_id!r}"
+            )
+            add(diagnostics, repo_root, path, line_number, SYSTEM_SKILL_INVOCATION_CODE, message)
+
+    if any(not is_command for _name, is_command in components[1:]):
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            line_number,
+            SYSTEM_SKILL_INVOCATION_CODE,
+            "a command chain must not return to a bare component; every command component requires ()",
+        )
+        return
+
+    try:
+        owner_root, command_names, protected_owner = _route_command_page(
+            repo_root, catalog, public_skill, components
+        )
+    except SystemSkillAssetError:
+        return
+    if not command_names:
+        return
+
+    child_page = _detail_page(owner_root, command_names)
+    has_object_parent = protected_owner or len(command_names) > 1
+    if has_object_parent and not child_page.is_file():
+        add(
+            diagnostics,
+            repo_root,
+            path,
+            line_number,
+            SYSTEM_SKILL_INVOCATION_CODE,
+            f"command route {designator!r} has no detail page at {relpath(child_page, repo_root)}",
+        )
+    if has_object_parent:
+        parent_page = _detail_page(owner_root, command_names[:-1])
+        if not _page_declares_child(parent_page, designator):
+            add(
+                diagnostics,
+                repo_root,
+                path,
+                line_number,
+                SYSTEM_SKILL_INVOCATION_CODE,
+                f"immediate parent {relpath(parent_page, repo_root)} does not declare child route {designator!r}",
+            )
+
+
+def validate_system_skill_invocations(repo_root: Path) -> list[Diagnostic]:
+    """Validate protected visibility, object notation, and nested command routes."""
+
+    diagnostics: list[Diagnostic] = []
+    catalog = packaged_system_skill_catalog(repo_root, diagnostics)
+    if catalog is None:
+        return sorted(set(diagnostics))
+
+    page_paths: set[Path] = set()
+    for record in packaged_skill_records(repo_root, diagnostics):
+        page_paths.update(active_skill_markdown_pages(record.path))
+    for page in sorted(page_paths):
+        lines = read_lines(page)
+        page_designators: list[tuple[int, str]] = []
+        for line_number, line in enumerate(lines, start=1):
+            for match in SYSTEM_SKILL_OBJECT_DESIGNATOR_RE.finditer(line):
+                page_designators.append((line_number, match.group(0)))
+        if page_designators:
+            frontmatter = parse_yaml_frontmatter(page)
+            notation = frontmatter.get("skill_invocation_notation")
+            if not isinstance(notation, str) or notation.strip() != SKILL_INVOCATION_NOTATION:
+                add(
+                    diagnostics,
+                    repo_root,
+                    page,
+                    1,
+                    SYSTEM_SKILL_INVOCATION_CODE,
+                    "active page with an object designator must use the exact standard skill_invocation_notation frontmatter",
+                )
+            for line_number, designator in page_designators:
+                _validate_object_designator(repo_root, catalog, page, line_number, designator, diagnostics)
+
+    logical_ids = tuple(sorted((capability.logical_id for capability in catalog.capabilities), key=len, reverse=True))
+    direct_protected_re = re.compile(r"\$(?:" + "|".join(re.escape(item) for item in logical_ids) + r")(?![a-z0-9-])")
+    protected_wildcard_re = re.compile(r"\$isomer-(?:op|srv|misc|research|deepsci|kaoju)-\*")
+    for record in packaged_skill_records(repo_root, diagnostics):
+        for path in sorted(record.path.rglob("*")):
+            if not path.is_file() or path.suffix not in {".md", ".yaml", ".yml"}:
+                continue
+            relative = path.relative_to(record.path)
+            if any(part in SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS for part in relative.parts):
+                continue
+            for line_number, line in enumerate(read_lines(path), start=1):
+                if "--skill" in line or "logical_id" in line or "target_skill" in line:
+                    continue
+                if direct_protected_re.search(line) or protected_wildcard_re.search(line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        SYSTEM_SKILL_INVOCATION_CODE,
+                        "active user guidance must invoke the owning public entrypoint instead of a protected logical id",
+                    )
+
+    for pack in catalog.packs:
+        pack_root = repo_root / "skillset" / pack.source_path
+        expected_skill_pages = {pack_root.resolve() / "SKILL.md"}
+        expected_skill_pages.update(
+            (repo_root / "skillset" / capability.source_path).resolve() / "SKILL.md"
+            for capability in catalog.capabilities
+            if capability.pack_id == pack.pack_id
+        )
+        for skill_page in sorted(pack_root.rglob("SKILL.md")):
+            relative = skill_page.relative_to(pack_root)
+            if any(part in SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS for part in relative.parts):
+                continue
+            if skill_page.resolve() not in expected_skill_pages:
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_page,
+                    1,
+                    SYSTEM_SKILL_INVOCATION_CODE,
+                    "nested SKILL.md is not declared as a protected capability in manifest v3",
+                )
+
+    for pack_id, shared_logical_id, shared_member in (
+        ("deepsci", "isomer-deepsci-shared", "shared"),
+        ("kaoju", "isomer-kaoju-shared", "shared"),
+    ):
+        try:
+            pack = catalog.pack_by_id(pack_id)
+        except SystemSkillAssetError:
+            continue
+        shared_designator = f"{pack.entry_skill}->{shared_member}"
+        for capability in catalog.capabilities:
+            if capability.pack_id != pack_id or capability.logical_id == shared_logical_id:
+                continue
+            skill_md = repo_root / "skillset" / capability.source_path / "SKILL.md"
+            if skill_md.is_file() and shared_designator not in skill_md.read_text(encoding="utf-8"):
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_md,
+                    1,
+                    SYSTEM_SKILL_INVOCATION_CODE,
+                    f"common {pack_id} procedures must route through protected member {shared_designator!r}",
+                )
+    return sorted(set(diagnostics))
 
 
 def iter_active_ref_files(repo_root: Path) -> Iterable[Path]:
@@ -3583,7 +4083,7 @@ def _line_is_allowed_entrypoint_service_boundary(line: str) -> bool:
 
 def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
-    skill_dir = repo_root / "skillset" / "operator" / SYSTEM_SKILL_MANAGER_SKILL
+    skill_dir = packaged_capability_dir(repo_root, SYSTEM_SKILL_MANAGER_SKILL, "operator")
     skill_md = skill_dir / "SKILL.md"
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_md, 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} is required")
@@ -3598,24 +4098,32 @@ def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
         add(diagnostics, repo_root, skill_md, 2, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} frontmatter name must match the skill folder")
     if not frontmatter.get("description"):
         add(diagnostics, repo_root, skill_md, 3, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} frontmatter description is required")
-    validate_manifest(skill_dir, repo_root, diagnostics, "OPS014", manifest_required=True)
+    validate_manifest(
+        skill_dir,
+        repo_root,
+        diagnostics,
+        "OPS014",
+        manifest_required=True,
+        invocation_skill=ENTRYPOINT_SKILL,
+    )
     validate_local_references(skill_dir, repo_root, diagnostics, "OPS014")
     add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS014", require_contract=True)
 
     for term in SYSTEM_SKILL_MANAGER_REQUIRED_TERMS:
         if term not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "# Isomer"), "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must document '{term}'")
-    declaration_index = text.find("Project declaration")
-    receipt_index = text.find("Managed explicit root")
-    inventory_index = text.find("Live inventory")
-    if not 0 <= declaration_index < receipt_index < inventory_index:
+    declaration_index = text.find("**Project declaration**")
+    receipt_index = text.find("**Current v4 receipt**")
+    root_index = text.find("**Explicit-root verification**")
+    inventory_index = text.find("**Limited live inventory**")
+    if not 0 <= declaration_index < receipt_index < root_index < inventory_index:
         add(
             diagnostics,
             repo_root,
             skill_md,
             first_line_containing(lines, "## Evidence Order"),
             "OPS014",
-            f"{SYSTEM_SKILL_MANAGER_SKILL} must preserve declaration, managed-root receipt, then live-inventory order",
+            f"{SYSTEM_SKILL_MANAGER_SKILL} must preserve declaration, current-v4 receipt, explicit-root, then live-inventory order",
         )
 
     references_dir = skill_dir / "references"
@@ -4253,9 +4761,35 @@ def validate_package_specifics_skill(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_all(repo_root: Path) -> list[Diagnostic]:
+def validate_manifest_v3_skillset(repo_root: Path) -> list[Diagnostic]:
+    """Validate the manifest-v3 pack tree without applying retired flat-layout rules."""
+
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(validate_packaged_skill_template(repo_root))
+    diagnostics.extend(validate_system_skill_invocations(repo_root))
+    roots = packaged_skill_dirs(repo_root, diagnostics)
+    diagnostics.extend(validate_split_output_contract_docs(repo_root, roots, code="SKL010"))
+    diagnostics.extend(validate_chat_output_presentation(repo_root, roots, code="SKL006"))
+    diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, roots, code="SKL004"))
+    diagnostics.extend(
+        validate_system_skill_repository_boundary(
+            repo_root,
+            (*roots, repo_root / "skillset" / "toolboxes"),
+        )
+    )
+    return sorted(set(diagnostics))
+
+
+def validate_all(repo_root: Path) -> list[Diagnostic]:
+    diagnostics: list[Diagnostic] = []
+    manifest = _read_packaged_manifest(repo_root, diagnostics)
+    if manifest is None:
+        return sorted(set(diagnostics))
+    if manifest.get("schema_version") == SYSTEM_SKILL_MANIFEST_V3:
+        diagnostics.extend(validate_manifest_v3_skillset(repo_root))
+        return sorted(set(diagnostics))
+    diagnostics.extend(validate_packaged_skill_template(repo_root))
+    diagnostics.extend(validate_system_skill_invocations(repo_root))
     diagnostics.extend(
         Diagnostic(item.path, item.line, item.code, item.message)
         for item in research_validator.validate_skillset(repo_root / "skillset" / "research-paradigm", repo_root)
@@ -4303,7 +4837,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     repo_root = args.repo_root.resolve() if args.repo_root else find_repo_root(Path.cwd())
-    if args.scope == "research":
+    if packaged_system_skill_catalog(repo_root) is not None:
+        diagnostics = validate_manifest_v3_skillset(repo_root)
+    elif args.scope == "research":
         diagnostics = [
             Diagnostic(item.path, item.line, item.code, item.message)
             for item in research_validator.validate_skillset(repo_root / "skillset" / "research-paradigm", repo_root)

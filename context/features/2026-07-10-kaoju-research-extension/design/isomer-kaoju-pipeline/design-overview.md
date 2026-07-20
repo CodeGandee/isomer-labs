@@ -4,14 +4,14 @@
 
 ```yaml
 ---
-name: isomer-kaoju-pipeline
+name: isomer-ext-kaoju-entrypoint
 description: Use when a Research Topic needs a bounded literature or codebase survey, curated source intake, related-work expansion, theory comparison, method trial, empirical comparison, dataset registration, or evidence audit.
 ---
 ```
 
 ## Purpose
 
-`isomer-kaoju-pipeline` is the user-facing coordinator for the optional Kaoju (考据) research-paradigm extension. It composes focused `isomer-kaoju-*` stage skills to determine what existing literature, code, datasets, models, and first-hand Runs establish, then writes survey artifacts with durable provenance.
+`isomer-ext-kaoju-entrypoint` is the user-facing coordinator for the optional Kaoju (考据) research-paradigm extension. It composes focused `isomer-kaoju-*` stage skills to determine what existing literature, code, datasets, models, and first-hand Runs establish, then writes survey artifacts with durable provenance.
 
 The key orchestration rule is: execute one bounded survey procedure, preserve each stage's evidence and blocker semantics, and return one terminal report without starting an autonomous next loop.
 
@@ -48,7 +48,7 @@ Foundational principle: reported, located, inspected, executed, reproduced, and 
 
 ## Core Workflow
 
-When `isomer-kaoju-pipeline` is invoked, execute these steps in order.
+When `isomer-ext-kaoju-entrypoint` is invoked, execute these steps in order.
 
 1. **Resolve the survey procedure.** Match the request to one procedural subcommand and load the current survey, dataset, source, evidence, and resource context.
 2. **Clarify when requested.** In `clarification-first` mode, inspect available context, ask one material A/B/C/D question at a time, and wait for an explicit Proceed Decision before mutation or research Runs.
@@ -128,7 +128,7 @@ Stage skills remain directly invokable for composition and testing, but their di
 sequenceDiagram
   autonumber
   actor U as Researcher
-  participant P as isomer-kaoju-pipeline
+  participant P as isomer-ext-kaoju-entrypoint
   participant H as Helper managers
   participant S as Kaoju stage skills
   participant O as External owners
@@ -195,7 +195,7 @@ Red flags requiring correction, pause, or a blocker include:
 
 User Prompt:
 
-> Use `$isomer-kaoju-pipeline landscape-pass` to survey speculative decoding. Give me the related works, main directions, code and model links, disputes, and open gaps.
+> Use `$isomer-ext-kaoju-entrypoint use landscape-pass to survey speculative decoding`. Give me the related works, main directions, code and model links, disputes, and open gaps.
 
 AI:
 
@@ -205,7 +205,7 @@ AI:
 
 User Prompt:
 
-> Use `$isomer-kaoju-pipeline comparative-pass` for methods A, B, and C. Ask me before you start expensive work.
+> Use `$isomer-ext-kaoju-entrypoint use comparative-pass to compare methods A, B, and C`. Ask me before you start expensive work.
 
 AI:
 

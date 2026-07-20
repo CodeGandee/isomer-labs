@@ -1,8 +1,0 @@
-metadata:
-  version: "0.4.0"
-  thanks_to: "https://github.com/ResearAI/DeepScientist"
-
-interface:
-  display_name: "isomer-deepsci-nature-figure"
-  short_description: "Create or polish Nature-grade figures in Python or R."
-  default_prompt: "Use $isomer-deepsci-nature-figure to create, revise, audit, or polish a Nature/high-impact journal figure with one selected backend: Python or R."

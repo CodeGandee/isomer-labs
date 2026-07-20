@@ -1,0 +1,8 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-deepsci-workspace-mgr"
+  short_description: "Prepare production DeepSci research workspace storage bootstrap."
+  default_prompt: "Use $isomer-ext-deepsci-entrypoint use workspace to perform this isomer-deepsci-workspace-mgr task."

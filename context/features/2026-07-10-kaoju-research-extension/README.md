@@ -10,7 +10,7 @@ Design an optional built-in Isomer system-skill extension named `kaoju` (考据)
 
 - [Use Cases](usecases/README.md)
 - [Design](design/README.md)
-- [Kaoju Pipeline and Skill Family Design Overview](design/isomer-kaoju-pipeline/design-overview.md)
+- [Kaoju Pipeline and Skill Family Design Overview](design/isomer-ext-kaoju-entrypoint/design-overview.md)
 - [ADR 0001: Use Literature-First Related-Work Catalogs](adrs/0001-use-literature-first-related-work-catalogs.md)
 - [ADR 0002: Survey Five Source Classes](adrs/0002-survey-five-source-classes.md)
 - [ADR 0003: Separate Capability Probes from Reproduction](adrs/0003-separate-capability-probes-from-reproduction.md)

@@ -35,7 +35,7 @@ The second layer explains why importing the missing outputs can repair the Recor
 - **Lineage is reconstructed, not captured**. The relationship between the selected hypothesis, the idea exploration sweep, the microbenchmarks, the predictor validation, and the SASS-grounded follow-up was only established by a later manual step. If that step had been skipped, the provenance chain would have been broken.
 - **Records are not queryable during research**. While the files exist in the actor workspace, they do not appear in `ext research records list`, `ext research ideas query`, or lineage queries until someone manually imports them. This defeats the purpose of a canonical research database.
 - **Risk of loss or duplication**. Plain generated files are not tracked by the research record index. They can be overwritten, moved, or duplicated without the system noticing.
-- **Skill intent is unclear**. The production DeepSci skills (`isomer-deepsci-pipeline`, `isomer-deepsci-idea`, `isomer-deepsci-experiment`, `isomer-deepsci-analysis`) emphasize durable records and lineage in their documentation, but the actual operation-set outputs from helper passes were not persisted as records. This suggests the skills either do not instruct agents to record plain operation-set outputs, or the instruction is not strong enough to be followed.
+- **Skill intent is unclear**. The production DeepSci skills (`isomer-ext-deepsci-entrypoint`, `isomer-deepsci-idea`, `isomer-deepsci-experiment`, `isomer-deepsci-analysis`) emphasize durable records and lineage in their documentation, but the actual operation-set outputs from helper passes were not persisted as records. This suggests the skills either do not instruct agents to record plain operation-set outputs, or the instruction is not strong enough to be followed.
 
 ## Correct intent
 
@@ -84,7 +84,7 @@ This resolution does not change canonical Research Idea facets, lifecycle, decis
 
 The following recommendations were recorded with the incident. The implemented resolution follows the terminal-gate and focused-skill intent while replacing automatic scanning or inferred lineage with an explicit manifest, authored semantics, and verification receipt.
 
-1. Update `isomer-deepsci-pipeline` and the focused production DeepSci skills to include an explicit final step: "persist operation-set deliverables as durable research records with lineage" before returning the terminal report.
+1. Update `isomer-ext-deepsci-entrypoint` and the focused production DeepSci skills to include an explicit final step: "persist operation-set deliverables as durable research records with lineage" before returning the terminal report.
 2. Provide a helper command or skill (e.g., `isomer-op-project-mgr record-operation-set`) that wraps the common case of importing an operation-set output directory into the research database.
 3. Add a quality gate to pipeline terminal reports: verify that all non-temporary operation-set outputs are queryable as records.
 4. Document the expectation in `AGENTS.md` and the operator skill instructions so that every agent understands that plain files in `worker-output/sets/` are not the final durable artifact unless explicitly marked disposable.
@@ -97,7 +97,7 @@ The following recommendations were recorded with the incident. The implemented r
    - Validate the resulting graph and report missing parents or orphan files.
    This keeps lineage construction as a first-class, testable capability rather than relying on every agent to remember the right CLI incantations.
 
-6. Integrate the scan-and-build-lineage skill into the standard workflow of skills that generate ideas (for example, `isomer-deepsci-idea`, `isomer-deepsci-pipeline` idea stages, and any helper operation set that produces candidate routes). After an idea-generation stage finishes, the skill should scan the operation-set output directory, create or update Research Ideas for each candidate, and wire `derived_from`, `selected_from`, `follow_up_to`, and `subsumes` edges automatically. This makes lineage a built-in step rather than a separate manual cleanup pass.
+6. Integrate the scan-and-build-lineage skill into the standard workflow of skills that generate ideas (for example, `isomer-deepsci-idea`, `isomer-ext-deepsci-entrypoint` idea stages, and any helper operation set that produces candidate routes). After an idea-generation stage finishes, the skill should scan the operation-set output directory, create or update Research Ideas for each candidate, and wire `derived_from`, `selected_from`, `follow_up_to`, and `subsumes` edges automatically. This makes lineage a built-in step rather than a separate manual cleanup pass.
 
 ## Related records
 

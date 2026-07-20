@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-shared"
+  short_description: "Apply shared Kaoju evidence contracts."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use shared to perform this isomer-kaoju-shared task."

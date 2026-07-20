@@ -39,6 +39,7 @@ PACKAGE_SIZE_TRANSITIONS = {
     "cli/commands/project.py",
     "models/__init__.py",
     "project/doctor.py",
+    "project/skill_callback_commands.py",
     "project/skill_callbacks.py",
     "project/toolboxes.py",
     "records/index.py",
@@ -53,6 +54,8 @@ PACKAGE_SIZE_TRANSITIONS = {
     "workspace/manifest.py",
     "workspace/path_resolution.py",
     "workspace/reset.py",
+    "skills/installer.py",
+    "skills/system_assets.py",
 }
 
 CANONICAL_RUNTIME_FILES = {

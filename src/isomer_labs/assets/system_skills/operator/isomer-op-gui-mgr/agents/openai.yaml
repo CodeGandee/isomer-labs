@@ -1,9 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-op-gui-mgr"
-  short_description: "Manage Project Web GUI lifecycle guidance, API reference, refresh, and troubleshooting."
-  default_prompt: "Use $isomer-op-gui-mgr help to start, inspect, refresh, debug, or troubleshoot the Project Web GUI."
-policy:
-  allow_implicit_invocation: true

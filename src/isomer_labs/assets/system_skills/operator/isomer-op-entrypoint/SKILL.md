@@ -1,36 +1,72 @@
 ---
 name: isomer-op-entrypoint
 description: Use when a Project Operator needs an informed-user entrypoint to route a concrete prompt, file, topic task, actor or agent task, extension-skill request, or Isomer CLI need to the correct Isomer system skill or CLI surface and proceed.
+skill_invocation_notation: >
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
 ---
 
 # Isomer Operator Entrypoint
 
 ## Overview
 
-Use this skill as the informed-user route-and-proceed dispatcher for Isomer system skills and Isomer CLI functionality. It selects the smallest correct owner skill, extension skill, or CLI family for the user's concrete task, then proceeds with that route unless the user only asked for help or route explanation.
+Use this public pack as the route-and-proceed dispatcher for core Isomer work. It resolves public subcommands or task-only requests to protected operator, service, and shared members, optional public extension entrypoints, or an Isomer CLI family. Empty invocation executes `help`.
 
 ## When to Use
 
-Use this skill when the user already knows Isomer enough to provide a task, prompt, file, Research Topic, Topic Actor, Agent, DeepSci research request, Kaoju survey request, or CLI-shaped operation, but wants the Project Operator to decide which Isomer surface to use next. Do not use this skill as the first-run welcome menu; use `isomer-op-welcome` for read-only orientation, visible usage paths, and safe owner-skill recommendations without execution.
+Use this skill for a task, prompt, file, Research Topic, Topic Actor, Agent, DeepSci request, Kaoju request, CLI-shaped operation, or first-run orientation. The protected `welcome` member supplies the read-only menu and orientation routines through this public entrypoint.
 
-Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-project-mgr`, system-skill extension detection, reconciliation, installation, status, and repair belong to `isomer-op-system-skill-mgr`, Project Web GUI lifecycle and backend API reference belongs to `isomer-op-gui-mgr`, topic creation belongs to `isomer-op-topic-creator`, initialized-topic management belongs to `isomer-op-topic-mgr`, identity posture belongs to `isomer-op-switch-identity`, project-local Toolbox management belongs to `isomer-op-toolbox-mgr`, Topic Team Specialization belongs to `isomer-op-topic-team-specialize`, DeepSci bootstrap belongs to `isomer-deepsci-workspace-mgr`, Kaoju readiness belongs to `isomer-kaoju-workspace-mgr`, and research work belongs to the selected `isomer-deepsci-*` or `isomer-kaoju-*` skill.
+Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-entrypoint->project`, system-skill lifecycle belongs to `isomer-op-entrypoint->system-skills`, Project Web GUI work belongs to `isomer-op-entrypoint->gui`, topic creation belongs to `isomer-op-entrypoint->topic-create`, initialized-topic management belongs to `isomer-op-entrypoint->topic-manage`, identity posture belongs to `isomer-op-entrypoint->identity`, project-local Toolbox management belongs to `isomer-op-entrypoint->toolbox`, and Topic Team Specialization belongs to `isomer-op-entrypoint->topic-team`. DeepSci bootstrap uses `isomer-ext-deepsci-entrypoint->workspace`, Kaoju readiness uses `isomer-ext-kaoju-entrypoint->workspace`, and focused research uses the selected protected member of its public extension pack.
 
 ## Workflow
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Parse the task input**. Identify whether the user supplied a plain prompt, file path, Project root, Research Topic, Topic Workspace, Topic Actor, Agent, Domain Agent Team Template, DeepSci stage, Kaoju survey intent, CLI action, or explicit skill name. See [references/input-surfaces.md](references/input-surfaces.md).
+1. **Parse the public invocation and task input**. Accept `$isomer-op-entrypoint use <subcommand> to <task>`, a concrete task-only request, or empty invocation. Empty invocation selects `help`. Identify any supplied file, Project root, Research Topic, Topic Workspace, Topic Actor, Agent, Domain Agent Team Template, extension intent, CLI action, or logical capability id. See [references/input-surfaces.md](references/input-surfaces.md).
 2. **Run safe context discovery when useful**. Prefer read-only evidence such as `isomer-cli project self queries`, `isomer-cli project self show`, `isomer-cli project validate`, `isomer-cli doctor`, `isomer-cli project topics list`, `isomer-cli project context show`, or Workspace Path Resolution commands before ambiguous mutation. See [references/cli-index.md](references/cli-index.md).
-3. **Check optional-extension availability**. Before selecting a DeepSci or Kaoju route, trust an existing Project declaration and attempt that route. For an undeclared extension, delegate ordered receipt and live-inventory resolution to `isomer-op-system-skill-mgr detect-extensions` or `reconcile-extensions` when the concrete request authorizes Project bookkeeping. Do not encode provider discovery paths in this entrypoint.
-4. **Establish formal Agent Team intent before specialization**. Select `isomer-op-topic-team-specialize` only when the user explicitly invokes that skill or a named specialization route, or when the prompt or authoritative Project context establishes a formal Agent Team target. Name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence used. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish Agent Team intent.
-5. **Classify exactly one route**. Use [references/routing-rules.md](references/routing-rules.md), [references/system-skill-index.md](references/system-skill-index.md), and [references/extension-skill-index.md](references/extension-skill-index.md) to select one owner skill, extension skill, or CLI family.
+3. **Check optional-extension availability**. Before selecting a DeepSci or Kaoju route, treat an existing Project declaration as authoritative routing intent and attempt that public entrypoint. When current-host usability must be established, route ordered v4 receipt, explicit-root, and limited live-inventory resolution through `isomer-op-entrypoint->system-skills`. Only verified current-v4 pack evidence can support additive registration. Do not encode provider discovery paths in this entrypoint.
+4. **Establish formal Agent Team intent before specialization**. Select `isomer-op-entrypoint->topic-team` only when the user explicitly invokes its public route or the prompt or authoritative Project context establishes a formal Agent Team target. Name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, selected formal-team material, or equivalent evidence used. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish Agent Team intent.
+5. **Classify exactly one route**. Resolve a public command, one catalog-declared protected member, one public extension entrypoint, or one CLI family. Use [references/routing-rules.md](references/routing-rules.md), [references/system-skill-index.md](references/system-skill-index.md), and [references/extension-skill-index.md](references/extension-skill-index.md).
 6. **Check owner boundaries**. Confirm the selected route owns the requested work, service skills are only bounded support unless explicitly invoked, misc helpers are explicit helper routes, and retired operator compatibility skills are not active routes.
 7. **Preflight target prerequisites**. Before target mutation, let the selected owner resolve its required artifacts, accepted inputs, readiness evidence, and known producer routes. See [references/prerequisite-recovery.md](references/prerequisite-recovery.md).
 8. **Route prerequisite recovery**. If a producible prerequisite is missing and run-to is not explicitly authorized, stop before prerequisite mutation, report `paused`, and offer run-to-target, next-prerequisite-only, alternate-route, and stop choices. If run-to is authorized, use the native planning tool to execute the target-scoped dependency closure through its owners and resume the original target. See [references/prerequisite-recovery.md](references/prerequisite-recovery.md).
-9. **Proceed with the selected route**. Unless the user asked only for route explanation, load the selected owner skill or reference, follow its workflow, or run the selected CLI command family with the required read-only or mutation posture. Do not stop after only listing candidate routes. During authorized run-to, preserve each owner's separate mutation, Run, checkpoint, Gate, and terminal-report boundaries.
+9. **Proceed with the selected route**. Unless the user asked only for route explanation, invoke the selected protected member through its catalog designator, invoke the selected public extension, load the parent-owned command page, or run the selected CLI command family. Do not stop after only listing candidate routes. During authorized run-to, preserve each owner's separate mutation, Run, checkpoint, Gate, and terminal-report boundaries.
 10. **Report the entrypoint result** using **Essential Output** by default and **Complete Output** when requested. Stop run-to after the original target completes or at a nondelegable boundary; do not continue into later recommended work.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan from this skill, the route references, current user request, available Project context, owner boundaries, and blockers, then execute the plan or stop on a concrete blocker.
+
+## Public Commands
+
+Use `$isomer-op-entrypoint use <subcommand> to <task>`. Public help exposes `help`, the protected operator-member route keys, `package-specifics`, `tool-packs`, and the visible welcome routines. Service and recording members remain task-selected support routes rather than ordinary first-click commands.
+
+## Protected Subskills
+
+| Member | Logical ID | Area | Use For | Internal Designator |
+| --- | --- | --- | --- | --- |
+| `welcome` | `isomer-op-welcome` | operator | Read-only help and orientation | `isomer-op-entrypoint->welcome` |
+| `project` | `isomer-op-project-mgr` | operator | Project lifecycle | `isomer-op-entrypoint->project` |
+| `gui` | `isomer-op-gui-mgr` | operator | Project Web GUI | `isomer-op-entrypoint->gui` |
+| `identity` | `isomer-op-switch-identity` | operator | Topic Actor or Agent posture | `isomer-op-entrypoint->identity` |
+| `system-skills` | `isomer-op-system-skill-mgr` | operator | System-skill lifecycle | `isomer-op-entrypoint->system-skills` |
+| `toolbox` | `isomer-op-toolbox-mgr` | operator | Project-local Toolboxes | `isomer-op-entrypoint->toolbox` |
+| `topic-create` | `isomer-op-topic-creator` | operator | Research Topic initialization | `isomer-op-entrypoint->topic-create` |
+| `topic-manage` | `isomer-op-topic-mgr` | operator | Initialized Research Topic management | `isomer-op-entrypoint->topic-manage` |
+| `topic-team` | `isomer-op-topic-team-specialize` | operator | Formal Topic Agent Team specialization | `isomer-op-entrypoint->topic-team` |
+| `topic-env` | `isomer-srv-topic-env-setup` | service | Topic Workspace environment support | `isomer-op-entrypoint->topic-env` |
+| `agent-env` | `isomer-srv-agent-env-setup` | service | Agent Workspace environment support | `isomer-op-entrypoint->agent-env` |
+| `package-repo` | `isomer-srv-resolve-pkg-repo` | service | Package repository resolution | `isomer-op-entrypoint->package-repo` |
+| `houmao` | `isomer-srv-houmao-interop` | service | Bounded Houmao interoperability | `isomer-op-entrypoint->houmao` |
+| `topic-service` | `isomer-srv-topic-service-agent-support` | service | Topic Service Agent support | `isomer-op-entrypoint->topic-service` |
+| `bounded-run` | `isomer-misc-bounded-run-tips` | shared | Resource-bounded execution guidance | `isomer-op-entrypoint->bounded-run` |
+| `nvidia` | `isomer-misc-nvidia-tools` | shared | NVIDIA toolchain guidance | `isomer-op-entrypoint->nvidia` |
+| `package-specifics` | `isomer-misc-pkg-specifics` | shared | Package caveats | `isomer-op-entrypoint->package-specifics` |
+| `tool-packs` | `isomer-misc-tool-packs` | shared | Named dependency bundles | `isomer-op-entrypoint->tool-packs` |
+| `research-ideas` | `isomer-research-idea-recording` | shared | Research Idea recording | `isomer-op-entrypoint->research-ideas` |
+| `operation-sets` | `isomer-research-operation-set-recording` | shared | Operation Set closeout | `isomer-op-entrypoint->operation-sets` |
 
 ## Reference Pages
 
@@ -60,16 +96,16 @@ When this skill proceeds through another owner skill, compose the final answer a
 ## Operational Contract
 
 - Prefer read-only context discovery before ambiguous mutation. Proceed only when the task implies action and the selected owner workflow or CLI command family owns that action.
-- Preserve an explicit user invocation for optional extensions and trust a Project declaration before discovery. If a declared route later cannot load, report stale user-controlled state and delegate repair to `isomer-op-system-skill-mgr`. For undeclared routes, let that owner use host-known explicit roots and live inventory, perform additive registration only in authorized mutation workflows, and return repair, installation, or refresh guidance for missing, partial, unversioned, malformed, receipt drift, obsolete, or newer-than-CLI state.
-- Keep `isomer-op-welcome` read-only. Use it for welcome menus and safe recommendations; use `isomer-op-entrypoint` for informed-user routing and execution.
-- Treat service skills such as `isomer-srv-topic-env-setup`, `isomer-srv-agent-env-setup`, `isomer-srv-houmao-interop`, `isomer-srv-resolve-pkg-repo`, and `isomer-srv-topic-service-agent-support` as bounded support routes. Route normal user-facing requests through the owning operator workflow before service delegation unless the user explicitly invokes a service skill.
-- Mention `isomer-misc-tool-packs` only when explicitly requested as a named helper route. Package install, update, or removal requests for a Topic Workspace belong to `isomer-op-topic-mgr` or the relevant environment setup workflow.
+- Preserve an explicit user invocation for optional extensions and treat a Project declaration as authoritative routing intent. If a declared route later cannot load, report stale user-controlled state and delegate repair to `isomer-op-entrypoint->system-skills`. Let that owner inspect current v4 receipts and host-known explicit roots before using live inventory as limited observation evidence. It performs additive registration only for verified current-v4 packs in authorized mutation workflows and returns migration, repair, installation, or refresh guidance for legacy, entrypoint-only, missing, partial, unversioned, malformed, receipt drift, obsolete, or newer-than-CLI state.
+- Keep `isomer-op-entrypoint->welcome` read-only. Use it for welcome menus and safe recommendations; use the public entrypoint for informed-user routing and execution.
+- Treat `isomer-op-entrypoint->topic-env`, `isomer-op-entrypoint->agent-env`, `isomer-op-entrypoint->houmao`, `isomer-op-entrypoint->package-repo`, and `isomer-op-entrypoint->topic-service` as bounded support routes. Route normal user-facing requests through the owning operator workflow before service delegation.
+- Mention `isomer-op-entrypoint->tool-packs` only when explicitly requested as a named helper route. Package install, update, or removal requests for a Topic Workspace belong to `isomer-op-entrypoint->topic-manage` or the relevant environment setup workflow.
 
 ## Operational Notes
 
 - It routes to owner skills and CLI families, then follows their workflows and guardrails.
 - If the user did not explicitly invoke specialization, require the prompt or authoritative context to identify a formal Agent Team target and require the requested action to apply to that team.
-- Route ordinary topic preparation to `isomer-op-topic-creator`, initialized-topic operations to `isomer-op-topic-mgr`, and other launch or readiness work to its actual owner.
+- Route ordinary topic preparation to `isomer-op-entrypoint->topic-create`, initialized-topic operations to `isomer-op-entrypoint->topic-manage`, and other launch or readiness work to its actual owner.
 - Retired routes include `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, and old `isomer-admin-*` compatibility names.
 - Installed operators should invoke global `isomer-cli` directly.
 - Select the best route, proceed, or report the blocker.

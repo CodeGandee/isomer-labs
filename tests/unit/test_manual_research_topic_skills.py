@@ -3,12 +3,26 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from isomer_labs.skills.system_assets import SystemSkillAssetError, resolve_system_skill_capability
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def read_repo_file(relative_path: str) -> str:
-    return (REPO_ROOT / relative_path).read_text(encoding="utf-8")
+    path = REPO_ROOT / relative_path
+    if path.is_file():
+        return path.read_text(encoding="utf-8")
+    parts = Path(relative_path).parts
+    for index, part in enumerate(parts):
+        if not part.startswith("isomer-"):
+            continue
+        try:
+            skill = resolve_system_skill_capability(part)
+        except SystemSkillAssetError:
+            continue
+        return skill.joinpath(*parts[index + 1 :]).read_text(encoding="utf-8")
+    raise FileNotFoundError(path)
 
 
 class ManualResearchTopicSkillContractTests(unittest.TestCase):
@@ -174,7 +188,7 @@ class ManualResearchTopicSkillContractTests(unittest.TestCase):
             combined,
             (
                 "Establish formal Agent Team intent before specialization",
-                "explicitly invokes that skill or a named specialization route",
+                "explicitly invokes its public route",
                 "`prepare the topic <topic-name>` with no formal Agent Team target",
                 "contextually selected formal Agent Team",
                 "Generic topic preparation, launch-facing work, readiness gaps, missing summaries, or missing Agent Workspaces do not establish Agent Team intent",

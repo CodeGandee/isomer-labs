@@ -34,12 +34,23 @@ class KaojuContract:
     """Checked public process inventory and implementation decisions for Kaoju."""
 
     schema_version: str
+    entry_skill: str
     skills: tuple[str, ...]
+    protected_members: tuple["KaojuProtectedMember", ...]
     survey_intents: tuple[str, ...]
     compatibility_procedures: tuple[str, ...]
     manager_actions: dict[str, tuple[str, ...]]
     binding_queries: dict[str, str]
     raw: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class KaojuProtectedMember:
+    """One stable protected Kaoju capability reported by the process contract."""
+
+    logical_id: str
+    member_name: str
+    invocation_designator: str
 
 
 @dataclass(frozen=True)
@@ -92,6 +103,8 @@ def load_contract() -> KaojuContract:
     raw = _load_json(CONTRACT_RESOURCE)
     required = (
         "schema_version",
+        "entry_skill",
+        "protected_members",
         "skills",
         "survey_intents",
         "compatibility_procedures",
@@ -102,6 +115,32 @@ def load_contract() -> KaojuContract:
     if missing:
         raise ValueError(f"Kaoju survey-process contract is missing: {', '.join(missing)}")
     skills = _unique_strings(raw["skills"], "skills")
+    entry_skill = str(raw["entry_skill"])
+    if entry_skill != "isomer-ext-kaoju-entrypoint" or not skills or skills[0] != entry_skill:
+        raise ValueError("Kaoju contract entry_skill must be the first public skill and use the extension entrypoint name.")
+    raw_members = raw["protected_members"]
+    if not isinstance(raw_members, list):
+        raise ValueError("Kaoju protected_members must be a list.")
+    protected_members: list[KaojuProtectedMember] = []
+    for index, item in enumerate(raw_members):
+        if not isinstance(item, dict):
+            raise ValueError(f"Kaoju protected_members[{index}] must be an object.")
+        logical_id = str(item.get("logical_id", ""))
+        member_name = str(item.get("member_name", ""))
+        invocation_designator = str(item.get("invocation_designator", ""))
+        if not logical_id or not member_name:
+            raise ValueError(f"Kaoju protected_members[{index}] must define logical_id and member_name.")
+        if invocation_designator != f"{entry_skill}->{member_name}":
+            raise ValueError(f"Kaoju protected member {logical_id!r} has a noncanonical invocation designator.")
+        protected_members.append(KaojuProtectedMember(logical_id, member_name, invocation_designator))
+    if len(protected_members) != 13:
+        raise ValueError(f"Kaoju contract must declare thirteen protected members, found {len(protected_members)}.")
+    if len({item.logical_id for item in protected_members}) != len(protected_members):
+        raise ValueError("Kaoju protected member logical ids must be unique.")
+    if len({item.member_name for item in protected_members}) != len(protected_members):
+        raise ValueError("Kaoju protected member names must be unique within the public pack.")
+    if tuple(item.logical_id for item in protected_members) != skills[1:]:
+        raise ValueError("Kaoju protected member mapping must match the ordered protected skill inventory.")
     intents = _unique_strings(raw["survey_intents"], "survey_intents")
     compatibility = _unique_strings(raw["compatibility_procedures"], "compatibility_procedures")
     if len(skills) != 14:
@@ -129,7 +168,9 @@ def load_contract() -> KaojuContract:
         raise ValueError("Kaoju process resources cannot expose artifact aliases or physical registry paths.")
     return KaojuContract(
         schema_version=str(raw["schema_version"]),
+        entry_skill=entry_skill,
         skills=skills,
+        protected_members=tuple(protected_members),
         survey_intents=intents,
         compatibility_procedures=compatibility,
         manager_actions=managers,

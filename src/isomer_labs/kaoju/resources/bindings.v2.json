@@ -11,7 +11,7 @@
       "content_mode": "structured_file",
       "producer": "isomer-kaoju-workspace-mgr",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [
         "binding_index"
@@ -44,7 +44,7 @@
       "content_mode": "structured_file",
       "producer": "isomer-kaoju-workspace-mgr",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [],
       "revision_mode": "current_state",
@@ -109,7 +109,7 @@
       "producer": "isomer-kaoju-frame",
       "consumers": [
         "isomer-kaoju-discover",
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [
         "survey_contract"
@@ -172,9 +172,9 @@
       "profile_ref": "isomer:research/record-format/profile/kaoju/decision/proceed-decision/v1",
       "semantic_label": "topic.records.artifacts",
       "content_mode": "structured_file",
-      "producer": "isomer-kaoju-pipeline",
+      "producer": "isomer-ext-kaoju-entrypoint",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [
         "run"
@@ -208,7 +208,7 @@
       "producer": "isomer-kaoju-discover",
       "consumers": [
         "isomer-kaoju-audit",
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [
         "survey_contract"
@@ -583,7 +583,7 @@
       "content_mode": "structured_file",
       "producer": "isomer-kaoju-acquire",
       "consumers": [
-        "isomer-kaoju-pipeline",
+        "isomer-ext-kaoju-entrypoint",
         "isomer-kaoju-audit"
       ],
       "relationships": [
@@ -885,9 +885,9 @@
       "profile_ref": "isomer:research/record-format/profile/kaoju/control/survey-terminal-report/v1",
       "semantic_label": "topic.records.views",
       "content_mode": "structured_file",
-      "producer": "isomer-kaoju-pipeline",
+      "producer": "isomer-ext-kaoju-entrypoint",
       "consumers": [
-        "isomer-kaoju-pipeline"
+        "isomer-ext-kaoju-entrypoint"
       ],
       "relationships": [
         "run"

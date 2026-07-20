@@ -1,9 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-misc-tool-packs"
-  short_description: "Resolve named Isomer installable toolsets"
-  default_prompt: "Use $isomer-misc-tool-packs to resolve install toolset paper-writing into a dependency contract."
-policy:
-  allow_implicit_invocation: false

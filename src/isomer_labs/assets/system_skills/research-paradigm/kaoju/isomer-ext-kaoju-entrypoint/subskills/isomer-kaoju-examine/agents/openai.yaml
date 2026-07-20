@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-examine"
+  short_description: "Inspect survey sources at exact locators."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use examine to perform this isomer-kaoju-examine task."

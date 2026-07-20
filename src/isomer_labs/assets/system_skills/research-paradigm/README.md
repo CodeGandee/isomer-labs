@@ -1,102 +1,33 @@
-# Research Paradigm Skills
+# Research Paradigm Public Packs
 
-This subtree contains two optional production research-paradigm families for Isomer Labs. `deepsci/` supports hypothesis-driven new-method research; `kaoju/` supports evidence-led surveys of literature, codebases, datasets, and models, including governed first-hand trials when a survey question requires them. Retired `v1` and temporary `v2` skill roots are intentionally absent.
+This subtree contains two optional public extension packs:
 
-## Production Families
+| Paradigm | Public Pack Path | Protected Inventory |
+| --- | --- | --- |
+| DeepSci | `deepsci/isomer-ext-deepsci-entrypoint/` | 21 `isomer-deepsci-*` logical capabilities below `subskills/` |
+| Kaoju | `kaoju/isomer-ext-kaoju-entrypoint/` | 13 `isomer-kaoju-*` logical capabilities below `subskills/` |
 
-| Path | Role |
-| --- | --- |
-| `deepsci/isomer-deepsci-<purpose>/` | Hypothesis-driven research stages, experiments, analysis, decisions, writing, and publication support. |
-| `kaoju/isomer-kaoju-<purpose>/` | Literature-first survey framing, discovery, material acquisition, source examination, reproduction, comparison, audit, and synthesis. |
+DeepSci develops or evaluates a research route around a hypothesis and comparator. Kaoju maps and verifies existing literature, code, datasets, and models, including governed first-hand trials when a survey question requires them. A task may hand accepted evidence between paradigms, but each retains its own process and evidence contract.
 
-Kaoju maps and verifies existing work. DeepSci develops or evaluates a research route around a hypothesis and comparator. A task may hand evidence between families, but each family retains its own procedure and evidence contract.
+Users invoke only the public entrypoints:
 
-## Production DeepSci Layout
+```text
+$isomer-ext-deepsci-entrypoint use hypothesis-pass to evaluate a selected idea
+$isomer-ext-kaoju-entrypoint use landscape-pass to map a field
+```
 
-| Path | Role |
-| --- | --- |
-| `deepsci/isomer-deepsci-<purpose>/` | Active production research-method and companion skills. Durable extension artifacts use exact uppercase identifiers such as `DEEPSCI:RESEARCH-FRAME` and `DEEPSCI:PAPER-CONTRACT`. |
-| Analysis notes | Design notes used while adapting upstream research-method skills. This is not an active runtime input for installed skills. |
-| `licenses/` | Shared license material for adapted upstream content. |
+Task-only invocation may route to a protected member without exposing that member as a top-level host skill. Internal routing uses bare member designators such as `isomer-ext-deepsci-entrypoint->experiment` and `isomer-ext-kaoju-entrypoint->examine`. Public and nested command components always use `()` in object notation.
 
-The root directory does not contain active flat `isomer-deepsci-*` skill folders. New research work should target `deepsci/` and suffixless skill names such as `isomer-deepsci-scout`.
+## Protected Bundle Ownership
 
-DeepSci and Kaoju are domain extension families, not a generic extension bucket. Domain extensions use the `isomer-<extension-name>-<purpose>` convention described in the packaged system-skill README: `isomer-deepsci-<purpose>` and `isomer-kaoju-<purpose>`. Cross-domain helper interfaces remain under `isomer-misc-*`.
+Each protected member remains a self-contained skill bundle with its stable logical id. Resources used by one capability belong inside that bundle. Shared family procedures route through the protected `shared` member. Data or machine services shared across several bundles remain package-owned and are queried through `isomer-cli ext <extension-id>`.
 
-## Production Kaoju Layout
+DeepSci traceability material may remain below a protected bundle in `migrate/`, `org/`, passive templates, provenance files, and license notices. Active runtime resources must remain directly linked and bundle-local.
 
-The Kaoju family contains one pipeline, shared and workspace contracts, and focused frame, discover, acquire, examine, reproduce, compare, audit, and synthesize skills. Its pipeline exposes seven bounded survey procedures, grouped `manage-survey` and `manage-dataset` helpers, and `help`. Generic repository maintenance, environment repair, and resume behavior remain context inside a selected survey procedure.
+Kaoju process, semantic, binding, schema, named-template, composition, migration, validation, build, and wiki resources remain under `isomer_labs.kaoju`. The public pack and protected `write` member query those services rather than copying their data.
 
-Kaoju repository acquisition is prompt-sensitive external user or agent work. Skills honor exact user procedures or select source-appropriate commands, verify the resulting source and immutable identity outside Isomer, register the existing path under a non-main `topic.repos.*` label, and then record typed research provenance. Isomer APIs do not choose or execute repository commands or clean partial external content.
+## Identity and Installation
 
-Active Kaoju guidance lives in `SKILL.md`, `agents/openai.yaml`, and directly linked local `commands/` or `references/`. It uses existing Topic Workspace, provider, environment, execution, Gate, and research-recording owners rather than defining a Kaoju runtime database or provider.
+Protected logical ids remain callback, binding, provenance, and private-projection identities. The old `isomer-deepsci-pipeline` and `isomer-kaoju-pipeline` names are selection and callback-normalization aliases only. No compatibility folder is installed.
 
-## Core Research Skills
-
-| Skill | Purpose |
-| --- | --- |
-| `isomer-deepsci-shared` | Shared production loop and semantic placeholder contract. |
-| `isomer-deepsci-scout` | Clarify the research frame, metric direction, comparator neighborhood, and next route. |
-| `isomer-deepsci-baseline` | Establish the comparator and metric basis, or state a waiver or blocker. |
-| `isomer-deepsci-idea` | Select one falsifiable hypothesis from the current frame and comparator. |
-| `isomer-deepsci-optimize` | Manage algorithm-first candidate frontiers and promote one route. |
-| `isomer-deepsci-experiment` | Test one selected hypothesis and interpret the result. |
-| `isomer-deepsci-analysis` | Run focused follow-up analysis for a result. |
-| `isomer-deepsci-decision` | Make one evidence-backed route choice. |
-| `isomer-deepsci-finalize` | Summarize final claims, limits, and next action. |
-| `isomer-deepsci-science` | Check scientific computation, data, package, simulation, or model validity. |
-
-The production loop is `Frame -> Comparator -> Hypothesis -> Experiment -> Analysis -> Decision -> Finalize`. `isomer-deepsci-optimize` overlays hypothesis, experiment, and analysis when candidate search is the work. `isomer-deepsci-science` supports any stage whose trust depends on scientific computation or data validity.
-
-## Workspace Bootstrap Skill
-
-| Skill | Purpose |
-| --- | --- |
-| `isomer-deepsci-workspace-mgr` | Prepare the post-specialization research bootstrap contract, including workspace context, semantic label planning, placeholder binding, Agent Workspace access posture, validation, and blockers. |
-
-Run this skill after Topic Team Specialization and standard Topic Workspace initialization, before ordinary production research skills start writing durable placeholder bodies. The Topic Service Master may perform this pass from the Topic Workspace cwd; when that optional agent is not running, the Project Operator Session or Operator Agent performs the same bounded work.
-
-## Paper Writing Skills
-
-| Skill | Purpose |
-| --- | --- |
-| `isomer-deepsci-write` | Draft or revise paper, report, summary, and manuscript text from bounded evidence. |
-| `isomer-deepsci-paper-outline` | Build or repair a paper-native outline, claim boundary, method abstraction, and writing plan. |
-| `isomer-deepsci-paper-plot` | Adapt bundled plotting templates into first-pass publication figures. |
-| `isomer-deepsci-figure-polish` | Render, inspect, revise, export, and record durable academic figures. |
-| `isomer-deepsci-review` | Audit a substantial draft or paper-like report and route concrete fixes. |
-| `isomer-deepsci-rebuttal` | Normalize reviewer feedback, route required fixes, and assemble a response package. |
-| `isomer-deepsci-nature-data` | Prepare Nature-style Data Availability statements, repository plans, dataset citations, and FAIR metadata checks. |
-| `isomer-deepsci-nature-figure` | Create, revise, audit, or polish Nature-grade figures with one selected Python or R backend. |
-| `isomer-deepsci-nature-paper2ppt` | Build a complete Chinese PPTX presentation from a scientific paper or paper-derived notes. |
-| `isomer-deepsci-nature-polishing` | Polish, restructure, or translate academic prose into Nature-leaning English without hiding evidence gaps. |
-
-These paper-writing skills were refactor-migrated from the paper-writing source analysis index. Each target directory may keep source provenance under `org/`, a local migration plan under `migrate/`, copied runtime support files, and an `agents/openai.yaml` manifest.
-
-## Runtime and Traceability Layout
-
-Active execution guidance lives in each skill's `SKILL.md`, `agents/openai.yaml`, directly linked `references/`, active `assets/`, and active `scripts/`. Migration and traceability material lives under `migrate/`, `org/analysis/`, `org/src/`, passive `templates/`, provenance files, license notices, and deferred-resource notes. Those files preserve review history and source context; they are not required runtime inputs when invoking an installed skill.
-
-## Extension Artifact Identity Contract
-
-Every durable extension artifact uses exact uppercase `EXTENSION-NAME:WHAT` identity. DeepSci uses `DEEPSCI:WHAT`; Kaoju uses `KAOJU:WHAT`. Skills, registries, binding pages, commands, record metadata, schemas, source constants, and tests preserve the same value without wrappers, aliases, case conversion, or inferred prefixes.
-
-DeepSci semantic inventories remain in bundle-local registry pages such as `migrate/placeholders.md`, and their storage mappings remain in the owning skill's `placeholder-bindings.md`. The filenames retain their migration history; the identifiers inside them use only the uppercase canonical form.
-
-## Skill and Shared Resource Ownership
-
-A resource used by one skill belongs inside that skill directory and local links must stay below that directory. Data shared by several skills belongs to the extension package and agents query it through `isomer-cli ext <extension-name>` commands. Common command processes and evidence procedures belong in the extension's `<prefix>-shared` skill. Bundle-local summaries are non-authoritative projections and must name the extension query that owns the data.
-
-Installed skills must not depend on sibling skill files, parent traversal, a family-root registry, a source checkout, or a package-data path. Private implementation resources may remain packaged outside materialized skill directories when only extension code loads them.
-
-## Retired Generations
-
-The retired `v1` skills and temporary `v2` paths are no longer active and are not kept as compatibility aliases. Use git history for historical reference.
-
-## Skill Writing Constraints
-
-Production `SKILL.md` files should use valid frontmatter with `name` and `description`, a near-top `## Workflow`, numbered workflow steps, semantic inputs, semantic outputs, guardrails, and explicit reference routing when references exist. The `agents/openai.yaml` manifest must use the same suffixless skill name in `interface.display_name` and `interface.default_prompt`.
-
-Do not add unbounded active storage, runtime, scheduler, provider, lifecycle, or concrete path binding to method guidance. If a skill needs to name a durable extension artifact, add or reuse an exact uppercase canonical identifier owned by its extension.
-
-Operator skills belong under `skillset/operator/` with `isomer-op-*` names. Service skills belong under `skillset/service/` with `isomer-srv-*` names.
+Install with `--extension deepsci` or `--extension kaoju`. Each selector installs core plus the complete selected extension pack. Refresh the agent host or start a new session before assuming the public entrypoint is live.

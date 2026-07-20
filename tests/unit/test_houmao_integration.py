@@ -18,6 +18,7 @@ from isomer_labs.project.houmao_integration import (
     houmao_integration_state,
 )
 from isomer_labs.project.topic_service_master import TOPIC_SERVICE_MASTER_NAME_MAX_LENGTH, derive_topic_service_master_names
+from isomer_labs.skills.system_assets import resolve_system_skill_capability
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -334,12 +335,15 @@ class HoumaoIntegrationTests(unittest.TestCase):
         self.assertEqual("isomer-tsm-alpha-specialist", identity["topic_service_master"]["suggested_names"]["specialist_name"])
 
     def test_system_skill_assets_require_suggested_names_and_binding(self) -> None:
-        service_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "service"
-        operator_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "operator"
-        prepare = (service_root / "isomer-srv-topic-service-agent-support" / "references" / "prepare-topic-service-master.md").read_text(encoding="utf-8")
-        launch = (service_root / "isomer-srv-topic-service-agent-support" / "references" / "launch-topic-service-master.md").read_text(encoding="utf-8")
-        interop = (service_root / "isomer-srv-houmao-interop" / "references" / "skill-context.md").read_text(encoding="utf-8")
-        setup = (operator_root / "isomer-op-topic-creator" / "references" / "setup-actors.md").read_text(encoding="utf-8")
+        topic_service = resolve_system_skill_capability("isomer-srv-topic-service-agent-support")
+        prepare = topic_service.joinpath("references", "prepare-topic-service-master.md").read_text(encoding="utf-8")
+        launch = topic_service.joinpath("references", "launch-topic-service-master.md").read_text(encoding="utf-8")
+        interop = resolve_system_skill_capability("isomer-srv-houmao-interop").joinpath(
+            "references", "skill-context.md"
+        ).read_text(encoding="utf-8")
+        setup = resolve_system_skill_capability("isomer-op-topic-creator").joinpath(
+            "references", "setup-actors.md"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("topic_service_master.suggested_names", prepare)
         self.assertIn("binding record", prepare)

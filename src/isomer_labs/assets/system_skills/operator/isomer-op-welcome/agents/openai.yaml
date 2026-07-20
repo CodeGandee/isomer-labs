@@ -1,9 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-op-welcome"
-  short_description: "Shows Isomer workflows, research paradigms, extensions, and active owner routes."
-  default_prompt: "Use $isomer-op-welcome show-options to choose an Isomer Labs operator workflow."
-policy:
-  allow_implicit_invocation: false

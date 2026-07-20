@@ -6,6 +6,22 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+### Added
+
+- Added the `isomer-skillset-manifest.v3` public-pack and protected-capability catalog with stable logical ids, scoped invocation designators, dependency closure, callback stages, aliases, and compatibility floors.
+- Added `isomer-labs-skill-manifest.v4` installation receipts with nested protected-member inventory, pack-integrity verification, staged legacy migration, safe stale cleanup, and rollback-preserving failure behavior.
+
+### Changed
+
+- Compacted packaged system skills into three user-facing packs: `$isomer-op-entrypoint`, `$isomer-ext-deepsci-entrypoint`, and `$isomer-ext-kaoju-entrypoint`. The 20 core, 21 DeepSci, and 13 Kaoju internal capabilities now remain self-contained protected subskills beneath their owning pack.
+- Standardized object-style invocation so skills and subskills use bare components, commands use `()`, and nested parent commands act as object generators for chains such as `manage-paper-template()->file()->put()`.
+- Updated callback discovery, Skill Binding Projection, extension-query contracts, installer selection, inspection, operator recovery, and Isomer-Houmao private projection to resolve protected members by stable logical identity instead of flat package paths.
+- Converted grouped Kaoju survey, dataset, and paper-template managers to explicit nested command routes while preserving role-specific content-template and LaTeX-template behavior.
+
+### Breaking
+
+- Stopped advertising or installing protected logical ids as independent top-level user skills. Invoke the owning public entrypoint instead; legacy DeepSci and Kaoju pipeline names remain deprecated selectors for complete-pack migration, and refreshed installations require an agent-host refresh or a new session.
+
 ## [0.4.0] - 2026-07-17
 
 This release adds the Research Idea portfolio workflow, run-to prerequisite recovery, external repository registration, named Kaoju template exchange, and Project Web lazy loading.

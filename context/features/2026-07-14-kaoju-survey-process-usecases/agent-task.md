@@ -42,7 +42,7 @@ Before implementing individual use cases, ensure every workflow can:
 Choose one public surface for the workflow layer and implement it consistently:
 
 - Option A: a new top-level system skill, e.g. `isomer-kaoju-workflow` or `isomer-kaoju-surveyor`, with one subcommand per use case.
-- Option B: new subcommands under the existing `isomer-kaoju-pipeline` skill.
+- Option B: new subcommands under the existing `isomer-ext-kaoju-entrypoint` skill.
 - Option C: operator-level recipes in `isomer-op-entrypoint` that dispatch to the Kaoju stage skills.
 
 Document the chosen surface in `design/public-interfaces.md`. Each command must accept a `--topic <topic>` argument and, where applicable, a `--direction`, `--reading-item`, `--paper`, or `--repo` argument.
@@ -162,7 +162,7 @@ Each evidence pack should include:
 ## Out Of Scope
 
 - Re-implementing the underlying Kaoju stage skills (frame, discover, acquire, examine, audit, synthesize, write).
-- Replacing the existing `isomer-kaoju-pipeline` public procedures.
+- Replacing the existing `isomer-ext-kaoju-entrypoint` public procedures.
 - Defining a new storage backend or artifact format; use existing `kaoju:*` semantic ids.
 - Covering DeepSci hypothesis-driven research workflows.
 - Low-level web search provider implementation details.
@@ -171,7 +171,7 @@ Each evidence pack should include:
 
 ## Decisions
 
-- `isomer-kaoju-pipeline` owns thin intent routing; the frame, discover, acquire, examine, audit, synthesize, write, export, and trial skills own research behavior. No new all-in-one top-level skill owns the lifecycle.
+- `isomer-ext-kaoju-entrypoint` owns thin intent routing; the frame, discover, acquire, examine, audit, synthesize, write, export, and trial skills own research behavior. No new all-in-one top-level skill owns the lifecycle.
 - Skills expose research intents and use typed `isomer-cli` services for deterministic operations. Operator recipes document common sequences without becoming a second execution authority.
 - Direction proposal is agent-driven and clarification-first for material ambiguity, and the human explicitly confirms the accepted direction set.
 - Missing Kaoju bindings and formats are added through the versioned binding registry, Artifact Format Profiles, validators, and migrations before producers emit the new records. Agents do not invent partial state-DB schemas at runtime.

@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-op-topic-creator"
+  short_description: "Create Topic Actor-ready Isomer topics"
+  default_prompt: "Use $isomer-op-entrypoint use topic-create to perform this isomer-op-topic-creator task."

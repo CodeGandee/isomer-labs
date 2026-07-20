@@ -1,8 +1,75 @@
 {
   "schema_version": "isomer-kaoju-survey-process.v2",
-  "entry_skill": "isomer-kaoju-pipeline",
+  "entry_skill": "isomer-ext-kaoju-entrypoint",
+  "protected_members": [
+    {
+      "logical_id": "isomer-kaoju-shared",
+      "member_name": "shared",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->shared"
+    },
+    {
+      "logical_id": "isomer-kaoju-workspace-mgr",
+      "member_name": "workspace",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->workspace"
+    },
+    {
+      "logical_id": "isomer-kaoju-frame",
+      "member_name": "frame",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->frame"
+    },
+    {
+      "logical_id": "isomer-kaoju-discover",
+      "member_name": "discover",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->discover"
+    },
+    {
+      "logical_id": "isomer-kaoju-acquire",
+      "member_name": "acquire",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->acquire"
+    },
+    {
+      "logical_id": "isomer-kaoju-examine",
+      "member_name": "examine",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->examine"
+    },
+    {
+      "logical_id": "isomer-kaoju-reproduce",
+      "member_name": "reproduce",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->reproduce"
+    },
+    {
+      "logical_id": "isomer-kaoju-trial",
+      "member_name": "trial",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->trial"
+    },
+    {
+      "logical_id": "isomer-kaoju-compare",
+      "member_name": "compare",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->compare"
+    },
+    {
+      "logical_id": "isomer-kaoju-audit",
+      "member_name": "audit",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->audit"
+    },
+    {
+      "logical_id": "isomer-kaoju-synthesize",
+      "member_name": "synthesize",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->synthesize"
+    },
+    {
+      "logical_id": "isomer-kaoju-write",
+      "member_name": "write",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->write"
+    },
+    {
+      "logical_id": "isomer-kaoju-export",
+      "member_name": "export",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->export"
+    }
+  ],
   "skills": [
-    "isomer-kaoju-pipeline",
+    "isomer-ext-kaoju-entrypoint",
     "isomer-kaoju-shared",
     "isomer-kaoju-workspace-mgr",
     "isomer-kaoju-frame",

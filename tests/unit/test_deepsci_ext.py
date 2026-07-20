@@ -19,6 +19,7 @@ from isomer_labs.deepsci_ext.record_formats import (
     canonical_record_format_ref,
     register_deepsci_record_format_provider,
 )
+from isomer_labs.skills.system_assets import iter_system_skill_capabilities, resolve_system_skill, resolve_system_skill_capability
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -134,7 +135,13 @@ class DeepScientistCompatibilityExtensionTests(unittest.TestCase):
         resolver = ArtifactFormatResolver(registry)
         active = {canonical_record_format_ref(profile_name, "profile") for profile_name in active_deepsci_binding_profile_names()}
         discovered: set[str] = set()
-        for binding in sorted((REPO_ROOT / "skillset" / "research-paradigm" / "deepsci").glob("*/placeholder-bindings.md")):
+        pack_root = resolve_system_skill("research-paradigm/deepsci/isomer-ext-deepsci-entrypoint")
+        binding_paths = [pack_root / "placeholder-bindings.md"]
+        binding_paths.extend(
+            resolve_system_skill_capability(capability.logical_id) / "placeholder-bindings.md"
+            for capability in iter_system_skill_capabilities("deepsci")
+        )
+        for binding in sorted(path for path in binding_paths if path.is_file()):
             for line in binding.read_text(encoding="utf-8").splitlines():
                 if not (line.startswith("| DEEPSCI:") or line.startswith("| `DEEPSCI:")):
                     continue

@@ -71,7 +71,11 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
             }
             lines = [
                 f"Kaoju process: {contract.schema_version}",
-                f"Entry skill: {contract.raw['entry_skill']}",
+                f"Entry skill: {contract.entry_skill}",
+                "Protected members: "
+                + ", ".join(
+                    f"{member.logical_id}={member.invocation_designator}" for member in contract.protected_members
+                ),
                 f"Binding list: {contract.binding_queries['list']}",
                 f"Binding describe: {contract.binding_queries['describe']}",
                 f"Survey intents: {', '.join(contract.survey_intents)}",

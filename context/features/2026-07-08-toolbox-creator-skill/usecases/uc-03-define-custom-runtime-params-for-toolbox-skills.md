@@ -203,7 +203,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to define runtime params for Toolbox `gpu-evidence-quality`. Its experiment callback should use `evidence/mode`, with allowed values `strict` and `relaxed`, defaulting to `strict`.
+> Use $isomer-op-entrypoint use toolbox to define runtime params for Toolbox `gpu-evidence-quality`. Its experiment callback should use `evidence/mode`, with allowed values `strict` and `relaxed`, defaulting to `strict`.
 
 AI (visible response):
 

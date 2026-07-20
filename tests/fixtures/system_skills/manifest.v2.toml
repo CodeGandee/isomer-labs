@@ -1,0 +1,25 @@
+schema_version = "isomer-skillset-manifest.v2"
+
+[groups.core]
+description = "Legacy flat core fixture."
+kind = "core"
+always_available = true
+minimum_compatible_skill_version = "0.3.0"
+skills = ["operator/isomer-op-entrypoint"]
+
+[groups.deepsci]
+description = "Legacy flat extension fixture."
+kind = "extension"
+extension_id = "deepsci"
+entry_skill = "isomer-deepsci-pipeline"
+commands = ["empirical-pass"]
+always_available = false
+minimum_compatible_skill_version = "0.3.0"
+skills = ["research-paradigm/deepsci/isomer-deepsci-pipeline"]
+
+[callback_insertion_point_stages.begin]
+label = "Begin"
+description = "Legacy begin stage."
+
+[skill_metadata."research-paradigm/deepsci/isomer-deepsci-pipeline"]
+callback_insertion_points = ["begin"]

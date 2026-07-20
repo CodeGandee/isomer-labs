@@ -14,7 +14,7 @@ Ask the agent to compare candidate models against the topic goal, choose the mos
 
 User Action:
 
-> $isomer-deepsci-pipeline to get into even more detail of hardware modeling, take a look at AccelSim, read its NVIDIA GPU simulation implementation, get ideas, pick a minimal workflow and proceed
+> $isomer-ext-deepsci-entrypoint use hypothesis-pass to deepen the hardware model by inspecting AccelSim's NVIDIA GPU simulation implementation, deriving ideas, selecting a minimal workflow, and proceeding
 
 AI:
 
@@ -24,7 +24,7 @@ AI:
 
 User Prompt:
 
-> Follow the selected pass in `isomer-deepsci-pipeline` and propose more detailed execution-flow analytical models. Do idea -> experiment -> paper update for three rounds.
+> Follow the selected pass in `isomer-ext-deepsci-entrypoint` and propose more detailed execution-flow analytical models. Do idea -> experiment -> paper update for three rounds.
 
 AI:
 
@@ -70,7 +70,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-deepsci-pipeline design experiment to prove critical-path saturation, collect hard evidence, and present it in paper text
+> $isomer-ext-deepsci-entrypoint use empirical-pass to test critical-path saturation, collect hard evidence, and present it in the paper
 
 User Prompt:
 

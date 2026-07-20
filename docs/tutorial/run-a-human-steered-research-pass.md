@@ -14,7 +14,7 @@ Prompt the agent with the research move you want, or explicitly invoke the DeepS
 
 User Action:
 
-> $isomer-deepsci-pipeline list passes
+> $isomer-ext-deepsci-entrypoint use list-passes to show the available passes
 
 AI:
 
@@ -86,7 +86,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-deepsci-pipeline hypothesis-pass
+> $isomer-ext-deepsci-entrypoint use hypothesis-pass to run one human-steered hypothesis pass
 
 User Prompt:
 
@@ -102,7 +102,7 @@ User Prompt:
 
 ## Under the Hood
 
-The agent may use `isomer-op-entrypoint`, `isomer-deepsci-pipeline`, or individual DeepSci skills such as `isomer-deepsci-scout`, `isomer-deepsci-idea`, `isomer-deepsci-experiment`, and `isomer-deepsci-analysis`. Those skills use `isomer-cli` internally to resolve latest context, write records, attach lineage, and render readable views.
+The agent may use `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, or individual DeepSci skills such as `isomer-deepsci-scout`, `isomer-deepsci-idea`, `isomer-deepsci-experiment`, and `isomer-deepsci-analysis`. Those skills use `isomer-cli` internally to resolve latest context, write records, attach lineage, and render readable views.
 
 ## What Good Looks Like
 

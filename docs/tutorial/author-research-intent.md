@@ -14,7 +14,7 @@ Ask the agent to create the topic, then refine the intent until it names the tar
 
 User Action:
 
-> $isomer-op-welcome
+> $isomer-op-entrypoint use help to show the available research paths
 
 AI:
 
@@ -66,7 +66,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-op-topic-creator clarify-research-intent
+> $isomer-op-entrypoint use topic-create to clarify the research intent
 
 User Prompt:
 

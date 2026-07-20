@@ -46,8 +46,8 @@ class FamilyConfig:
     required_binding_fields: tuple[str, ...] = ()
 
 
-SKILL_NAME_RE = re.compile(r"^isomer-deepsci-[a-z0-9]+(?:-[a-z0-9]+)*$")
-KAOJU_SKILL_NAME_RE = re.compile(r"^isomer-kaoju-[a-z0-9]+(?:-[a-z0-9]+)*$")
+SKILL_NAME_RE = re.compile(r"^(?:isomer-deepsci-[a-z0-9]+(?:-[a-z0-9]+)*|isomer-ext-deepsci-entrypoint)$")
+KAOJU_SKILL_NAME_RE = re.compile(r"^(?:isomer-kaoju-[a-z0-9]+(?:-[a-z0-9]+)*|isomer-ext-kaoju-entrypoint)$")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 FRONTMATTER_RE = re.compile(r"^([A-Za-z0-9_-]+):\s*(.*?)\s*$")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
@@ -71,6 +71,7 @@ DEEPSCI_THANKS_TO = "https://github.com/ResearAI/DeepScientist"
 
 EXPECTED_DEEPSCI_SKILLS = frozenset(
     {
+        "isomer-ext-deepsci-entrypoint",
         "isomer-deepsci-analysis",
         "isomer-deepsci-baseline",
         "isomer-deepsci-decision",
@@ -97,13 +98,13 @@ EXPECTED_DEEPSCI_SKILLS = frozenset(
 
 EXPECTED_KAOJU_SKILLS = frozenset(
     {
+        "isomer-ext-kaoju-entrypoint",
         "isomer-kaoju-acquire",
         "isomer-kaoju-audit",
         "isomer-kaoju-compare",
         "isomer-kaoju-discover",
         "isomer-kaoju-examine",
         "isomer-kaoju-frame",
-        "isomer-kaoju-pipeline",
         "isomer-kaoju-reproduce",
         "isomer-kaoju-shared",
         "isomer-kaoju-synthesize",
@@ -119,7 +120,7 @@ FAMILY_CONFIGS = (
         key="deepsci",
         root_name="deepsci",
         name_pattern=SKILL_NAME_RE,
-        name_shape="isomer-deepsci-*",
+        name_shape="isomer-deepsci-* or isomer-ext-deepsci-entrypoint",
         expected_skills=EXPECTED_DEEPSCI_SKILLS,
         max_workflow_line=MAX_DEEPSCI_WORKFLOW_LINE,
         required=True,
@@ -128,7 +129,7 @@ FAMILY_CONFIGS = (
         key="kaoju",
         root_name="kaoju",
         name_pattern=KAOJU_SKILL_NAME_RE,
-        name_shape="isomer-kaoju-*",
+        name_shape="isomer-kaoju-* or isomer-ext-kaoju-entrypoint",
         expected_skills=EXPECTED_KAOJU_SKILLS,
         max_workflow_line=40,
         required=False,
@@ -144,7 +145,7 @@ FAMILY_CONFIGS = (
                 "isomer-kaoju-discover",
                 "isomer-kaoju-examine",
                 "isomer-kaoju-frame",
-                "isomer-kaoju-pipeline",
+                "isomer-ext-kaoju-entrypoint",
                 "isomer-kaoju-reproduce",
                 "isomer-kaoju-synthesize",
                 "isomer-kaoju-workspace-mgr",
@@ -237,7 +238,7 @@ EXPECTED_KAOJU_SHARED_REFERENCES = frozenset(
 
 PREREQUISITE_RECOVERY_CONTRACTS = (
     (
-        Path("kaoju/isomer-kaoju-pipeline/SKILL.md"),
+        Path("kaoju/isomer-ext-kaoju-entrypoint/SKILL.md"),
         (
             "Preflight target prerequisites",
             "ordinary target request",
@@ -252,7 +253,7 @@ PREREQUISITE_RECOVERY_CONTRACTS = (
             "stops after that target",
         ),
         (
-            "$isomer-kaoju-shared",
+            "isomer-ext-kaoju-entrypoint->shared",
             "shared Prerequisite Recovery reference",
             "global or session-wide",
             "merge prerequisite Runs",
@@ -270,7 +271,7 @@ PREREQUISITE_RECOVERY_CONTRACTS = (
         ("references/prerequisite-recovery.md",),
     ),
     (
-        Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+        Path("deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"),
         (
             "Preflight target prerequisites",
             "ordinary target request",
@@ -285,7 +286,7 @@ PREREQUISITE_RECOVERY_CONTRACTS = (
             "stops after the named target",
         ),
         (
-            "$isomer-deepsci-shared",
+            "isomer-ext-deepsci-entrypoint->shared",
             "shared Prerequisite Recovery reference",
             "global or session-wide",
             "merge prerequisite Runs",
@@ -342,7 +343,7 @@ PREREQUISITE_RECOVERY_REFERENCE_TERMS = {
         "separate Runs",
         "Do not continue beyond the original target",
     ),
-    Path("deepsci/isomer-deepsci-pipeline/references/transition-rules.md"): (
+    Path("deepsci/isomer-ext-deepsci-entrypoint/references/transition-rules.md"): (
         "known in-scope focused skill or pass can produce or repair it",
         "unavailable external state change",
         "run to the target",
@@ -352,7 +353,7 @@ PREREQUISITE_RECOVERY_REFERENCE_TERMS = {
         "separate Run",
         "nondelegable human Gate",
     ),
-    Path("deepsci/isomer-deepsci-pipeline/references/terminal-report-template.md"): (
+    Path("deepsci/isomer-ext-deepsci-entrypoint/references/terminal-report-template.md"): (
         "`paused` prerequisite recovery",
         "unavailable external state change",
         "explicitly authorized target-scoped run-to controller",
@@ -561,7 +562,7 @@ KAOJU_FORBIDDEN_ACTIVE_PATTERNS = (
     ("provider-specific runtime binding", re.compile(r"\b(?:Tavily|Semantic Scholar|Crossref|GitHub|GitLab|Hugging Face|arXiv API)\b", re.I)),
     ("feature-design runtime dependency", re.compile(r"\bcontext/features/[^\s)`\"']+")),
     ("OpenSpec runtime dependency", re.compile(r"\bopenspec/changes/[^\s)`\"']+")),
-    ("retired research skill namespace", re.compile(r"\bisomer-(?:ext|rsch)-[a-z0-9-]+\b")),
+    ("retired research skill namespace", re.compile(r"\bisomer-rsch-[a-z0-9-]+\b")),
 )
 
 REPOSITORY_BOUNDARY_EXACT_PATTERNS = (
@@ -716,7 +717,7 @@ CALLBACK_MANAGEMENT_ONLY_FIELDS = (
 )
 DEEPSCI_CLOSEOUT_REQUIRED_TERMS = (
     "operation set closeout",
-    "$isomer-research-operation-set-recording",
+    "isomer-op-entrypoint->operation-sets",
     "complete",
     "receipt",
     "durable record refs",
@@ -733,7 +734,7 @@ DEEPSCI_FILE_ONLY_TERMINAL_RE = re.compile(
 DEEPSCI_CLOSEOUT_REFERENCE_TERMS = {
     Path("deepsci/isomer-deepsci-shared/references/operation-set-closeout.md"): (
         "after the owning production DeepSci skill has applied all end callbacks",
-        "$isomer-research-operation-set-recording",
+        "isomer-op-entrypoint->operation-sets",
         "record_payload",
         "record_attachment",
         "disposable",
@@ -744,7 +745,7 @@ DEEPSCI_CLOSEOUT_REFERENCE_TERMS = {
         "closeout: paused",
         "exact resume command",
     ),
-    Path("deepsci/isomer-deepsci-pipeline/references/transition-rules.md"): (
+    Path("deepsci/isomer-ext-deepsci-entrypoint/references/transition-rules.md"): (
         "verified durable record ref",
         "verified `complete` acceptance receipt id",
         "closeout: not_applicable",
@@ -752,7 +753,7 @@ DEEPSCI_CLOSEOUT_REFERENCE_TERMS = {
         "status is `paused`",
         "acceptance resume point",
     ),
-    Path("deepsci/isomer-deepsci-pipeline/references/terminal-report-template.md"): (
+    Path("deepsci/isomer-ext-deepsci-entrypoint/references/terminal-report-template.md"): (
         "`accepted_record_refs`",
         "`pipeline_closeout`",
         "`acceptance_receipt_id`",
@@ -1168,8 +1169,15 @@ def validate_skill_layout(
     if not frontmatter.get("description"):
         add(diagnostics, repo_root, skill_md, 3, "RPS007", "frontmatter description is required")
     if family.key == "kaoju":
-        if set(frontmatter) != {"name", "description"}:
-            add(diagnostics, repo_root, skill_md, 1, "RPS018", "Kaoju frontmatter must contain only name and description")
+        if not set(frontmatter) <= {"name", "description", "skill_invocation_notation"}:
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                1,
+                "RPS018",
+                "Kaoju frontmatter may contain only name, description, and skill_invocation_notation",
+            )
         if not frontmatter.get("description", "").startswith("Use when"):
             add(diagnostics, repo_root, skill_md, 3, "RPS018", "Kaoju frontmatter description must start with 'Use when'")
 
@@ -1276,7 +1284,14 @@ def validate_manifest(skill_dir: Path, repo_root: Path, diagnostics: list[Diagno
     default_prompt = fields.get("default_prompt")
     if default_prompt is None:
         add(diagnostics, repo_root, manifest, 1, "RPS006", "interface.default_prompt is required")
-    elif f"${skill_name}" not in default_prompt[0]:
+    elif not any(
+        invocation in default_prompt[0]
+        for invocation in (
+            f"${skill_name}",
+            *(('$isomer-ext-deepsci-entrypoint',) if SKILL_NAME_RE.fullmatch(skill_name) else ()),
+            *(('$isomer-ext-kaoju-entrypoint',) if KAOJU_SKILL_NAME_RE.fullmatch(skill_name) else ()),
+        )
+    ):
         add(
             diagnostics,
             repo_root,
@@ -2257,7 +2272,10 @@ def is_deepsci_attribution_line(document: Document, line: str) -> bool:
     return (
         document.path.name == "openai.yaml"
         and document.path.parent.name == "agents"
-        and any(part.startswith("isomer-deepsci-") for part in document.path.parts)
+        and any(
+            part.startswith("isomer-deepsci-") or part == "isomer-ext-deepsci-entrypoint"
+            for part in document.path.parts
+        )
         and line.strip() == f'thanks_to: "{DEEPSCI_THANKS_TO}"'
     )
 
@@ -2302,7 +2320,7 @@ def validate_kaoju_command_page(
     if workflow_line is None:
         add(diagnostics, repo_root, path, 1, "RPS018", "Kaoju command page must contain ## Workflow")
         return
-    if workflow_line > 20:
+    if workflow_line > 40:
         add(diagnostics, repo_root, path, workflow_line, "RPS018", "Kaoju command ## Workflow must appear near the top")
     numbers = workflow_step_numbers(lines, workflow_line)
     if len(numbers) < 2 or numbers[0] != 1:
@@ -2317,7 +2335,7 @@ def load_kaoju_process_contract(
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> dict[str, object] | None:
-    path = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
+    path = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     try:
         contract = load_contract()
         raw = contract.raw
@@ -2345,7 +2363,7 @@ def validate_kaoju_package_contract(
     diagnostics: list[Diagnostic],
     contract: dict[str, object],
 ) -> None:
-    contract_path = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
+    contract_path = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
     intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
     if len(skills) != 14:
@@ -2353,7 +2371,7 @@ def validate_kaoju_package_contract(
     if len(intents) != 10:
         add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare ten survey intents, found {len(intents)}")
 
-    actual_skills = tuple(path.name for path in kaoju_root.iterdir() if path.is_dir() and path.name.startswith("isomer-kaoju-"))
+    actual_skills = tuple(path.name for path in kaoju_root.iterdir() if path.is_dir() and KAOJU_SKILL_NAME_RE.match(path.name))
     if set(actual_skills) != set(skills):
         add(diagnostics, repo_root, contract_path, 1, "RPS026", "Kaoju contract skill inventory differs from packaged skill directories")
 
@@ -2380,7 +2398,7 @@ def validate_kaoju_command_surface(
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
-    pipeline = kaoju_root / "isomer-kaoju-pipeline"
+    pipeline = kaoju_root / "isomer-ext-kaoju-entrypoint"
     command_root = pipeline / "commands"
     if not command_root.exists():
         add(diagnostics, repo_root, command_root, 1, "RPS018", "Kaoju pipeline commands directory is missing")
@@ -2504,7 +2522,7 @@ def validate_kaoju_resource_and_shared_routing(
 ) -> None:
     """Enforce extension-query data access and the family shared-procedure route."""
 
-    pipeline = kaoju_root / "isomer-kaoju-pipeline" / "SKILL.md"
+    pipeline = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     if pipeline.exists():
         text = pipeline.read_text(encoding="utf-8")
         if "isomer-cli --print-json ext kaoju process show" not in text:
@@ -2520,8 +2538,15 @@ def validate_kaoju_resource_and_shared_routing(
     for skill_dir in sorted(path for path in kaoju_root.glob("isomer-kaoju-*") if path.is_dir()):
         skill_md = skill_dir / "SKILL.md"
         if skill_dir.name != "isomer-kaoju-shared" and skill_md.exists():
-            if "isomer-kaoju-shared" not in skill_md.read_text(encoding="utf-8"):
-                add(diagnostics, repo_root, skill_md, 1, "RPS029", "common Kaoju procedure must route through isomer-kaoju-shared")
+            if "isomer-ext-kaoju-entrypoint->shared" not in skill_md.read_text(encoding="utf-8"):
+                add(
+                    diagnostics,
+                    repo_root,
+                    skill_md,
+                    1,
+                    "RPS029",
+                    "common Kaoju procedure must route through isomer-ext-kaoju-entrypoint->shared",
+                )
         binding_page = skill_dir / "artifact-bindings.md"
         if binding_page.exists() and len(read_lines(binding_page)) > 25:
             add(diagnostics, repo_root, binding_page, 1, "RPS024", "producer binding projection is oversized and competes with extension query authority")

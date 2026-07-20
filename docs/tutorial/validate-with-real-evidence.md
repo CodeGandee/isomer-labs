@@ -38,7 +38,7 @@ AI:
 
 User Action:
 
-> $isomer-op-topic-mgr tighten the topic requirement, we must have theoretical vs actual run data
+> $isomer-op-entrypoint use topic-manage to tighten the topic requirement so it requires theoretical and actual-run data
 
 AI:
 
@@ -78,7 +78,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-deepsci-pipeline design experiment to prove these, collect hard evidence, and present them in appendix and main text
+> $isomer-ext-deepsci-entrypoint use empirical-pass to design experiments for these claims, collect hard evidence, and present it in the appendix and main text
 
 User Prompt:
 

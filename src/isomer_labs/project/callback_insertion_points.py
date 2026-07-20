@@ -25,8 +25,12 @@ class CallbackInsertionPointRecord:
             "id": f"{self.point.target_skill}/{self.point.stage}",
             "target_skill": self.point.target_skill,
             "skill_path": self.point.skill_path,
+            "nested_path": self.point.skill_path,
             "group": self.point.group,
+            "pack_id": self.point.pack_id,
             "group_kind": self.point.group_kind,
+            "public_skill": self.point.public_skill,
+            "invocation_designator": self.point.invocation_designator,
             "stage": self.point.stage,
             "stage_label": self.point.stage_label,
             "description": self.point.description,
@@ -35,6 +39,8 @@ class CallbackInsertionPointRecord:
         }
         if self.point.extension_id is not None:
             data["extension_id"] = self.point.extension_id
+        if self.point.member_name is not None:
+            data["member_name"] = self.point.member_name
         return data
 
 

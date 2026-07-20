@@ -111,7 +111,7 @@ flowchart TD
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Sources as Discover, Acquire,<br/>and Examine
   participant Execute as isomer-kaoju-reproduce
   participant Records as Workspace Runtime<br/>and Research Records

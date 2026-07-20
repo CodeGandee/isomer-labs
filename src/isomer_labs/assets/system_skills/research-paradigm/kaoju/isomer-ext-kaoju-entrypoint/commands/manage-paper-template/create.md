@@ -1,0 +1,22 @@
+---
+skill_invocation_notation: >
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
+---
+
+# Create Paper Template
+
+Route: `isomer-ext-kaoju-entrypoint->manage-paper-template()->create()`. The containing Kaoju entrypoint owns this command's resources.
+
+## Workflow
+
+1. Resolve `--kind content|latex`, the role-local target name, and one assessed source directory.
+2. Validate the source tree and role-specific content or LaTeX composition contract.
+3. Run `template create --kind KIND --name NAME --from PATH`; never turn a missing update target into create silently.
+4. Report stable and audit refs, token, digest, diagnostics, and next action.
+
+If the request does not map cleanly to these steps, use the native planning tool to build and execute a bounded plan from the parent manager contract without inventing another command.

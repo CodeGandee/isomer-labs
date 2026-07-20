@@ -2,28 +2,28 @@
 
 Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers and technical reports as primary related works, links repositories and datasets as typed materials, and supports governed first-hand code trials without confusing a capability probe with reproduction evidence.
 
-## Skill Inventory
+## Public Pack and Protected Inventory
 
-| Skill | Responsibility |
+| Identity or Route | Responsibility |
 | --- | --- |
-| `isomer-kaoju-pipeline` | Route one user intent or retained compatibility procedure and preserve its Run checkpoint. |
-| `isomer-kaoju-shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
-| `isomer-kaoju-workspace-mgr` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
-| `isomer-kaoju-frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
-| `isomer-kaoju-discover` | Build direction-scoped, version-aware reading lists and discovery provenance. |
-| `isomer-kaoju-acquire` | Resolve materials and source relationships, orchestrate external repository acquisition, verify immutable identity, then register and record accepted evidence. |
-| `isomer-kaoju-examine` | Inspect papers and code at exact locators while separating source statements from interpretation. |
-| `isomer-kaoju-reproduce` | Handle only genuine reproduction claims under the stronger fidelity contract. |
-| `isomer-kaoju-compare` | Build source-grounded theory or governed empirical comparisons. |
-| `isomer-kaoju-audit` | Diagnose coverage, identity, evidence, contradiction, and fairness defects. |
-| `isomer-kaoju-synthesize` | Write accepted survey conclusions without exceeding the evidence boundary. |
-| `isomer-kaoju-write` | Maintain canonical MyST paper state and derived Markdown, TeX, PDF, and publication outputs. |
-| `isomer-kaoju-trial` | Prepare governed environments and run separately approved bounded source-code trials. |
-| `isomer-kaoju-export` | Export accepted state-DB records to the package-owned LLM Wiki representation and viewer. |
+| `isomer-ext-kaoju-entrypoint` | Public pack that routes one user intent or retained compatibility procedure and preserves its Run checkpoint. |
+| `isomer-ext-kaoju-entrypoint->shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
+| `isomer-ext-kaoju-entrypoint->workspace` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
+| `isomer-ext-kaoju-entrypoint->frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
+| `isomer-ext-kaoju-entrypoint->discover` | Build direction-scoped, version-aware reading lists and discovery provenance. |
+| `isomer-ext-kaoju-entrypoint->acquire` | Resolve materials and source relationships, orchestrate external repository acquisition, verify immutable identity, then register and record accepted evidence. |
+| `isomer-ext-kaoju-entrypoint->examine` | Inspect papers and code at exact locators while separating source statements from interpretation. |
+| `isomer-ext-kaoju-entrypoint->reproduce` | Handle only genuine reproduction claims under the stronger fidelity contract. |
+| `isomer-ext-kaoju-entrypoint->compare` | Build source-grounded theory or governed empirical comparisons. |
+| `isomer-ext-kaoju-entrypoint->audit` | Diagnose coverage, identity, evidence, contradiction, and fairness defects. |
+| `isomer-ext-kaoju-entrypoint->synthesize` | Write accepted survey conclusions without exceeding the evidence boundary. |
+| `isomer-ext-kaoju-entrypoint->write` | Maintain canonical MyST paper state and derived Markdown, TeX, PDF, and publication outputs. |
+| `isomer-ext-kaoju-entrypoint->trial` | Prepare governed environments and run separately approved bounded source-code trials. |
+| `isomer-ext-kaoju-entrypoint->export` | Export accepted state-DB records to the package-owned LLM Wiki representation and viewer. |
 
 ## User-Intent Surface
 
-The entry skill exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
+The public entrypoint accepts `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`. It exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
 
 Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` constructs a mutable named content template. `manage-paper-template` resolves content versus LaTeX role before managing either namespace.
 
@@ -78,4 +78,4 @@ Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJ
 
 ## Installation
 
-Install the optional extension with the system-skill selector for extension id `kaoju`. Core skills remain included; DeepSci stays absent unless selected separately or all extensions are requested.
+Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 13 protected members. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.

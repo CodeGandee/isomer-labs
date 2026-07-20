@@ -175,8 +175,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         deepsci_root = target / "deepsci"
         for name in sorted(validator.EXPECTED_DEEPSCI_SKILLS):
             self.write_skill(deepsci_root, name, v2=True)
-        if "isomer-deepsci-pipeline" not in validator.EXPECTED_DEEPSCI_SKILLS:
-            self.write_skill(deepsci_root, "isomer-deepsci-pipeline", v2=True)
+        if "isomer-ext-deepsci-entrypoint" not in validator.EXPECTED_DEEPSCI_SKILLS:
+            self.write_skill(deepsci_root, "isomer-ext-deepsci-entrypoint", v2=True)
         write(
             deepsci_root / "isomer-deepsci-shared" / "references" / "semantic-placeholders.md",
             """
@@ -228,13 +228,13 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
             Run this contract after the owning production DeepSci skill has applied all end callbacks.
 
-            Invoke $isomer-research-operation-set-recording. Classify record_payload, record_attachment, and disposable outputs. Pass exact research_idea_effects through the atomic record write. Do not infer Idea Lineage Edges from record lineage.
+            Invoke isomer-op-entrypoint->operation-sets. Classify record_payload, record_attachment, and disposable outputs. Pass exact research_idea_effects through the atomic record write. Do not infer Idea Lineage Edges from record lineage.
 
             Return closeout: complete with the receipt and durable refs, closeout: not_applicable only without an operation set, or closeout: paused with diagnostics and the exact resume command.
             """,
         )
         write(
-            deepsci_root / "isomer-deepsci-pipeline" / "references" / "transition-rules.md",
+            deepsci_root / "isomer-ext-deepsci-entrypoint" / "references" / "transition-rules.md",
             """
             # Stage Transition Rules
 
@@ -246,7 +246,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             """,
         )
         write(
-            deepsci_root / "isomer-deepsci-pipeline" / "references" / "terminal-report-template.md",
+            deepsci_root / "isomer-ext-deepsci-entrypoint" / "references" / "terminal-report-template.md",
             """
             # Pipeline Terminal Report Template
 
@@ -256,7 +256,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         return root, target
 
     def add_valid_kaoju(self, target: Path) -> Path:
-        source = (
+        source_pack = (
             REPO_ROOT
             / "src"
             / "isomer_labs"
@@ -264,9 +264,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             / "system_skills"
             / "research-paradigm"
             / "kaoju"
+            / "isomer-ext-kaoju-entrypoint"
         )
         destination = target / "kaoju"
-        shutil.copytree(source, destination)
+        destination.mkdir(parents=True)
+        shutil.copytree(
+            source_pack,
+            destination / "isomer-ext-kaoju-entrypoint",
+            ignore=shutil.ignore_patterns("subskills"),
+        )
+        for subskill in sorted((source_pack / "subskills").iterdir()):
+            if subskill.is_dir():
+                shutil.copytree(subskill, destination / subskill.name)
         return destination
 
     def write_skill(
@@ -291,7 +300,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             if v2
             else "3. **Record output**. Use Research Topic, Artifacts, and Decision Records."
         )
-        if name == "isomer-deepsci-pipeline":
+        if name == "isomer-ext-deepsci-entrypoint":
             output_step += (
                 " Preflight target prerequisites. For an ordinary target request, offer Run to the target, Execute the next prerequisite only, Inspect or choose another route, and Stop before invoking a producer. "
                 "Only after explicit target-scoped run-to authorization, use the native planning tool and let the current agent act as the external controller. Invoke a separate pass Run. Never add a loop or backward edge, and the controller stops after the named target. "
@@ -306,7 +315,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             "Follow returned instructions within this skill, `isomer-deepsci-shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow."
         )
         closeout_step = (
-            "5. **Close the operation set**. After end callbacks, invoke `$isomer-deepsci-shared`, follow its Operation Set Closeout reference, and invoke `$isomer-research-operation-set-recording`. "
+            "5. **Close the operation set**. After end callbacks, invoke `isomer-ext-deepsci-entrypoint->shared`, follow its Operation Set Closeout reference, and invoke `isomer-op-entrypoint->operation-sets`. "
             "Require a `complete` receipt and durable record refs, or report `closeout: not_applicable` when no operation set was opened. Return `paused` with diagnostics and the exact resume command when verification fails."
         )
         shared_worker_policy = (
@@ -318,8 +327,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             else ""
         )
         routing_line = f"- `{reference}` for local terminology." if reference else "- Read `isomer-deepsci-shared` for placeholder semantics."
-        if name == "isomer-deepsci-pipeline":
-            routing_line += " Use `$isomer-deepsci-shared` and its shared Prerequisite Recovery reference."
+        if name == "isomer-ext-deepsci-entrypoint":
+            routing_line += " Use `isomer-ext-deepsci-entrypoint->shared` and its shared Prerequisite Recovery reference."
         elif name == "isomer-deepsci-shared":
             routing_line += " Read `references/prerequisite-recovery.md` for recovery coordination."
         write(
@@ -425,7 +434,8 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             / "research-paradigm"
             / "deepsci"
         )
-        active_skills = sorted(path for path in deepsci_root.glob("isomer-deepsci-*") if (path / "SKILL.md").is_file())
+        pack_root = deepsci_root / "isomer-ext-deepsci-entrypoint"
+        active_skills = [pack_root, *sorted(path for path in (pack_root / "subskills").iterdir() if (path / "SKILL.md").is_file())]
         self.assertEqual(22, len(active_skills))
         for skill_dir in active_skills:
             with self.subTest(skill=skill_dir.name):
@@ -458,7 +468,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_prerequisite_recovery_regressions_are_rejected(self) -> None:
         cases = {
             "troubleshooting-only": (
-                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                Path("deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"),
                 lambda text: text.replace("Preflight target prerequisites", "Check target inputs", 1)
                 + "\n## Troubleshooting Guide\n\nPreflight target prerequisites.\n",
             ),
@@ -471,15 +481,15 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
                 lambda text: text + "\nRun-to is a global session-wide yes-to-all setting.\n",
             ),
             "merged-runs": (
-                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                Path("deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"),
                 lambda text: text + "\nMerge prerequisite and target work into one Run.\n",
             ),
             "skipped-gates": (
-                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                Path("deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"),
                 lambda text: text + "\nSkip every Gate during run-to.\n",
             ),
             "post-target-continuation": (
-                Path("deepsci/isomer-deepsci-pipeline/SKILL.md"),
+                Path("deepsci/isomer-ext-deepsci-entrypoint/SKILL.md"),
                 lambda text: text + "\nContinue after the named target into recommended work.\n",
             ),
             "never-chain": (
@@ -553,7 +563,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             ),
             "shared-procedure-bypass": (
                 "isomer-kaoju-audit/SKILL.md",
-                lambda path: path.write_text(path.read_text(encoding="utf-8").replace("isomer-kaoju-shared", "local-contract"), encoding="utf-8"),
+                lambda path: path.write_text(
+                    path.read_text(encoding="utf-8").replace("isomer-ext-kaoju-entrypoint->shared", "local-contract"),
+                    encoding="utf-8",
+                ),
                 "RPS029",
             ),
         }
@@ -650,7 +663,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)
         write(
-            kaoju / "isomer-kaoju-pipeline" / "commands" / "source-audit.md",
+            kaoju / "isomer-ext-kaoju-entrypoint" / "commands" / "source-audit.md",
             """
             # Source Audit
 
@@ -767,7 +780,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
     def test_deepsci_pipeline_cannot_progress_from_partial_acceptance(self) -> None:
         root, target = self.make_valid_skillset()
-        transition_rules = target / "deepsci" / "isomer-deepsci-pipeline" / "references" / "transition-rules.md"
+        transition_rules = target / "deepsci" / "isomer-ext-deepsci-entrypoint" / "references" / "transition-rules.md"
         text = transition_rules.read_text(encoding="utf-8").replace("A `partial` receipt means status is `paused`", "A pending receipt may continue")
         transition_rules.write_text(text, encoding="utf-8")
 
@@ -919,7 +932,11 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_packaged_deepsci_identity_inventory_is_complete_and_clean(self) -> None:
         packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm"
         deepsci_root = packaged_root / "deepsci"
-        skill_dirs = [(path, "deepsci") for path in sorted(deepsci_root.glob("isomer-deepsci-*")) if path.is_dir()]
+        pack_root = deepsci_root / "isomer-ext-deepsci-entrypoint"
+        skill_dirs = [
+            (pack_root, "deepsci"),
+            *((path, "deepsci") for path in sorted((pack_root / "subskills").iterdir()) if path.is_dir()),
+        ]
         diagnostics: list[object] = []
         identities = validator.validate_deepsci_identity_inventory(skill_dirs, REPO_ROOT, diagnostics)
         self.assertEqual([], messages(diagnostics))
@@ -958,17 +975,18 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertEqual([], messages(active_diagnostics))
 
     def test_deepsci_skills_teach_canonical_lineage_recording(self) -> None:
-        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci"
-        shared_ref = packaged_root / "isomer-deepsci-shared" / "references" / "artifact-lineage-recording.md"
+        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci" / "isomer-ext-deepsci-entrypoint"
+        subskills_root = packaged_root / "subskills"
+        shared_ref = subskills_root / "isomer-deepsci-shared" / "references" / "artifact-lineage-recording.md"
         self.assertTrue(shared_ref.exists(), shared_ref)
         shared_text = shared_ref.read_text(encoding="utf-8")
         self.assertIn("--parents-json", shared_text)
         self.assertIn("generation group", shared_text)
         for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-finalize"):
-            skill_text = (packaged_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            skill_text = (subskills_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("Lineage reminder", skill_text)
             self.assertTrue("--parents-json" in skill_text or "artifact-lineage-recording.md" in skill_text)
-            binding_text = (packaged_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
+            binding_text = (subskills_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
             self.assertIn("Canonical lineage metadata", binding_text)
             self.assertIn("--lineage-kind", binding_text)
         self.assertIn("isomer-deepsci-nature-paper2ppt", validator.EXPECTED_DEEPSCI_SKILLS)
@@ -976,20 +994,21 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("isomer-deepsci-workspace-mgr", validator.EXPECTED_DEEPSCI_SKILLS)
 
     def test_deepsci_skills_teach_exact_research_idea_source_paths(self) -> None:
-        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci"
-        shared_ref = packaged_root / "isomer-deepsci-shared" / "references" / "research-idea-recording.md"
+        packaged_root = REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills" / "research-paradigm" / "deepsci" / "isomer-ext-deepsci-entrypoint"
+        subskills_root = packaged_root / "subskills"
+        shared_ref = subskills_root / "isomer-deepsci-shared" / "references" / "research-idea-recording.md"
         self.assertTrue(shared_ref.exists(), shared_ref)
         shared_text = shared_ref.read_text(encoding="utf-8")
         self.assertIn("--source-json-path", shared_text)
         self.assertIn("$.sections.raw_ideas[<index>]", shared_text)
         self.assertIn("$.sections.filter_notes", shared_text)
         for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-rebuttal", "isomer-deepsci-finalize"):
-            skill_text = (packaged_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            skill_text = (subskills_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("Idea-recording reminder", skill_text)
             self.assertIn("source", skill_text.lower())
             self.assertIn("rendered Markdown", skill_text)
         for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision"):
-            binding_text = (packaged_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
+            binding_text = (subskills_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
             self.assertIn("Canonical idea metadata", binding_text)
             self.assertIn("--source-json-path", binding_text)
             self.assertIn("rendered Markdown", binding_text)

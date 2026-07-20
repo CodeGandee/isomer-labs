@@ -1,8 +1,0 @@
-metadata:
-  version: "0.4.0"
-  thanks_to: "https://github.com/ResearAI/DeepScientist"
-
-interface:
-  display_name: "isomer-deepsci-nature-data"
-  short_description: "Prepare Nature-style data availability material."
-  default_prompt: "Use $isomer-deepsci-nature-data to prepare or audit a Nature-ready Data Availability statement, repository plan, dataset citations, and FAIR metadata."

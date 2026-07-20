@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Literal
 
 from packaging.version import InvalidVersion, Version
@@ -13,8 +14,12 @@ from isomer_labs.core.diagnostics import Diagnostic
 
 
 SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
-SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v3"
-LEGACY_SKILL_MANIFEST_SCHEMAS = ("isomer-labs-skill-manifest.v1", "isomer-labs-skill-manifest.v2")
+SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v4"
+LEGACY_SKILL_MANIFEST_SCHEMAS = (
+    "isomer-labs-skill-manifest.v1",
+    "isomer-labs-skill-manifest.v2",
+    "isomer-labs-skill-manifest.v3",
+)
 ProjectionMode = Literal["copy", "symlink"]
 SystemSkillScope = Literal["user", "project"]
 
@@ -31,8 +36,56 @@ class SystemSkillManifestBinding:
 
 
 @dataclass(frozen=True)
+class SystemSkillManifestMemberRecord:
+    """One protected member expected inside a receipt-owned public pack."""
+
+    logical_id: str
+    relative_path: str
+    invocation_designator: str
+    skill_version: str
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "logical_id": self.logical_id,
+            "relative_path": self.relative_path,
+            "invocation_designator": self.invocation_designator,
+            "skill_version": self.skill_version,
+        }
+
+
+@dataclass(frozen=True)
 class SystemSkillManifestRecord:
-    """One skill record tracked in the target-root receipt."""
+    """One public pack projection, or one read-only legacy flat record."""
+
+    name: str
+    source_path: str
+    projection_mode: ProjectionMode
+    skill_version: str | None = None
+    pack_id: str | None = None
+    package_version: str | None = None
+    protected_members: tuple[SystemSkillManifestMemberRecord, ...] = ()
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "name": self.name,
+            "source_path": self.source_path,
+            "projection_mode": self.projection_mode,
+            "skill_version": self.skill_version,
+        }
+        if self.pack_id is not None:
+            data.update(
+                {
+                    "pack_id": self.pack_id,
+                    "package_version": self.package_version,
+                    "protected_members": [member.to_json() for member in self.protected_members],
+                }
+            )
+        return data
+
+
+@dataclass(frozen=True)
+class SystemSkillLegacyPathRecord:
+    """One obsolete receipt-tracked top-level path retained for bounded cleanup."""
 
     name: str
     source_path: str
@@ -60,6 +113,7 @@ class SystemSkillRootManifest:
     updated_at: str
     skills: tuple[SystemSkillManifestRecord, ...]
     bindings: tuple[SystemSkillManifestBinding, ...] = ()
+    legacy_paths: tuple[SystemSkillLegacyPathRecord, ...] = ()
     legacy_target: str | None = None
 
     @property
@@ -93,6 +147,7 @@ class SystemSkillRootManifest:
             "updated_at": self.updated_at,
             "skills": [record.to_json() for record in self.skills],
             "skill_names": [record.name for record in self.skills],
+            "legacy_paths": [record.to_json() for record in self.legacy_paths],
             "path": str(self.path),
         }
 
@@ -146,7 +201,7 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
         skill_version = item.get("skill_version")
         if not isinstance(name, str) or not isinstance(source_path, str) or projection_mode not in {"copy", "symlink"}:
             return _malformed(manifest_path, f"Isomer skill manifest skill record {index} is invalid.")
-        if schema_version in {SKILL_MANIFEST_SCHEMA, "isomer-labs-skill-manifest.v2"}:
+        if schema_version != "isomer-labs-skill-manifest.v1":
             if skill_version is not None and (not isinstance(skill_version, str) or not _is_pep440_version(skill_version)):
                 return _malformed(
                     manifest_path,
@@ -154,18 +209,44 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
                 )
         if schema_version == "isomer-labs-skill-manifest.v1":
             skill_version = None
+        pack_id: str | None = None
+        record_package_version: str | None = None
+        protected_members: list[SystemSkillManifestMemberRecord] = []
+        if schema_version == SKILL_MANIFEST_SCHEMA:
+            pack_id = item.get("pack_id") if isinstance(item.get("pack_id"), str) else None
+            record_package_version = item.get("package_version") if isinstance(item.get("package_version"), str) else None
+            raw_members = item.get("protected_members")
+            if pack_id is None or not pack_id or not isinstance(raw_members, list):
+                return _malformed(manifest_path, f"Isomer skill manifest pack record {index} is invalid.")
+            for member_index, raw_member in enumerate(raw_members):
+                member = _parse_member_record(raw_member)
+                if member is None:
+                    return _malformed(
+                        manifest_path,
+                        f"Isomer skill manifest pack record {index} protected member {member_index} is invalid.",
+                    )
+                protected_members.append(member)
+            if len({member.logical_id for member in protected_members}) != len(protected_members):
+                return _malformed(manifest_path, f"Isomer skill manifest pack record {index} has duplicate logical ids.")
+            if len({member.relative_path for member in protected_members}) != len(protected_members):
+                return _malformed(manifest_path, f"Isomer skill manifest pack record {index} has duplicate member paths.")
         skills.append(
             SystemSkillManifestRecord(
                 name=name,
                 source_path=source_path,
                 projection_mode=projection_mode,
                 skill_version=skill_version if isinstance(skill_version, str) else None,
+                pack_id=pack_id,
+                package_version=record_package_version,
+                protected_members=tuple(protected_members),
             )
         )
+    if len({record.name for record in skills}) != len(skills):
+        return _malformed(manifest_path, "Isomer skill manifest pack or skill names must be unique.")
 
     bindings: list[SystemSkillManifestBinding] = []
     manifest_target = raw.get("target")
-    if schema_version == SKILL_MANIFEST_SCHEMA:
+    if schema_version in {SKILL_MANIFEST_SCHEMA, "isomer-labs-skill-manifest.v3"}:
         raw_bindings = raw.get("bindings")
         if not isinstance(raw_bindings, list) or not raw_bindings:
             return _malformed(manifest_path, "Isomer skill manifest `bindings` field must be a non-empty list.")
@@ -180,6 +261,21 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
         if len(set(bindings)) != len(bindings):
             return _malformed(manifest_path, "Isomer skill manifest bindings must be unique.")
 
+    legacy_paths: list[SystemSkillLegacyPathRecord] = []
+    if schema_version == SKILL_MANIFEST_SCHEMA:
+        raw_legacy_paths = raw.get("legacy_paths", [])
+        if not isinstance(raw_legacy_paths, list):
+            return _malformed(manifest_path, "Isomer skill manifest `legacy_paths` field must be a list.")
+        for index, item in enumerate(raw_legacy_paths):
+            legacy = _parse_legacy_path_record(item)
+            if legacy is None:
+                return _malformed(manifest_path, f"Isomer skill manifest legacy path record {index} is invalid.")
+            legacy_paths.append(legacy)
+        if len({record.name for record in legacy_paths}) != len(legacy_paths):
+            return _malformed(manifest_path, "Isomer skill manifest legacy path names must be unique.")
+        if {record.name for record in skills} & {record.name for record in legacy_paths}:
+            return _malformed(manifest_path, "Current pack and legacy path names must not overlap.")
+
     package_name = raw.get("package_name")
     package_version = raw.get("package_version")
     installed_by = raw.get("installed_by")
@@ -193,12 +289,63 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
         updated_at=updated_at if isinstance(updated_at, str) else "",
         skills=tuple(skills),
         bindings=tuple(sorted(bindings)),
+        legacy_paths=tuple(legacy_paths),
         legacy_target=(manifest_target if isinstance(manifest_target, str) else target_name)
-        if schema_version in LEGACY_SKILL_MANIFEST_SCHEMAS
+        if schema_version in {"isomer-labs-skill-manifest.v1", "isomer-labs-skill-manifest.v2"}
         else None,
     )
     status: Literal["current", "legacy"] = "current" if schema_version == SKILL_MANIFEST_SCHEMA else "legacy"
     return SystemSkillManifestInspection(status, manifest_path, manifest, ())
+
+
+def _parse_member_record(value: object) -> SystemSkillManifestMemberRecord | None:
+    if not isinstance(value, dict):
+        return None
+    logical_id = value.get("logical_id")
+    relative_path = value.get("relative_path")
+    invocation_designator = value.get("invocation_designator")
+    skill_version = value.get("skill_version")
+    if (
+        not isinstance(logical_id, str)
+        or not logical_id
+        or not isinstance(relative_path, str)
+        or not _is_safe_relative_path(relative_path)
+        or not relative_path.startswith("subskills/")
+        or not isinstance(invocation_designator, str)
+        or not invocation_designator
+        or not isinstance(skill_version, str)
+        or not _is_pep440_version(skill_version)
+    ):
+        return None
+    return SystemSkillManifestMemberRecord(logical_id, relative_path, invocation_designator, skill_version)
+
+
+def _parse_legacy_path_record(value: object) -> SystemSkillLegacyPathRecord | None:
+    if not isinstance(value, dict):
+        return None
+    name = value.get("name")
+    source_path = value.get("source_path")
+    projection_mode = value.get("projection_mode")
+    skill_version = value.get("skill_version")
+    if (
+        not isinstance(name, str)
+        or not name
+        or not isinstance(source_path, str)
+        or projection_mode not in {"copy", "symlink"}
+        or (skill_version is not None and (not isinstance(skill_version, str) or not _is_pep440_version(skill_version)))
+    ):
+        return None
+    return SystemSkillLegacyPathRecord(
+        name=name,
+        source_path=source_path,
+        projection_mode=projection_mode,
+        skill_version=skill_version if isinstance(skill_version, str) else None,
+    )
+
+
+def _is_safe_relative_path(value: str) -> bool:
+    path = PurePosixPath(value)
+    return bool(value) and not path.is_absolute() and all(part not in {"", ".", ".."} for part in path.parts)
 
 
 def _malformed(path: Path, message: str) -> SystemSkillManifestInspection:
@@ -230,6 +377,8 @@ __all__ = [
     "SKILL_MANIFEST_FILENAME",
     "SKILL_MANIFEST_SCHEMA",
     "SystemSkillManifestInspection",
+    "SystemSkillLegacyPathRecord",
+    "SystemSkillManifestMemberRecord",
     "SystemSkillManifestRecord",
     "SystemSkillRootManifest",
     "inspect_system_skill_receipt",

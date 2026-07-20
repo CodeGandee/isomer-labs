@@ -1,7 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-kaoju-pipeline"
-  short_description: "Route one bounded Kaoju survey procedure."
-  default_prompt: "Use $isomer-kaoju-pipeline to select and run the bounded survey procedure that matches the request."

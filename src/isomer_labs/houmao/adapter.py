@@ -46,6 +46,11 @@ from isomer_labs.runtime.records import (
     SignalObservationRecord,
     utc_timestamp,
 )
+from isomer_labs.skills.system_assets import (
+    SystemSkillAssetError,
+    materialize_system_skill_private_projection,
+    normalize_system_skill_identity,
+)
 
 
 HOUMAO_EXECUTION_ADAPTER_REF = "execution-adapter:houmao"
@@ -464,6 +469,9 @@ class HoumaoMaterializedAgent:
     specialist_payload_path: Path
     profile_payload_path: Path
     launch_payload_path: Path
+    skill_projection_root: Path | None
+    skill_projection_manifest_path: Path | None
+    projected_skill_ids: tuple[str, ...]
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -477,6 +485,11 @@ class HoumaoMaterializedAgent:
             "specialist_payload_path": str(self.specialist_payload_path),
             "profile_payload_path": str(self.profile_payload_path),
             "launch_payload_path": str(self.launch_payload_path),
+            "skill_projection_root": str(self.skill_projection_root) if self.skill_projection_root is not None else None,
+            "skill_projection_manifest_path": (
+                str(self.skill_projection_manifest_path) if self.skill_projection_manifest_path is not None else None
+            ),
+            "projected_skill_ids": list(self.projected_skill_ids),
         }
 
 
@@ -795,7 +808,30 @@ class HoumaoAdapterFacade:
             specialist_payload_path = agent_root / "specialist.json"
             profile_payload_path = agent_root / "profile.json"
             launch_payload_path = agent_root / "launch.json"
-            system_prompt_path.write_text(_system_prompt(profile, agent.agent_role_id, role_binding), encoding="utf-8")
+            (
+                skill_projection_root,
+                skill_projection_manifest_path,
+                projected_skill_ids,
+                projected_skill_files,
+            ) = _materialize_role_system_skills(
+                agent_root,
+                role_binding,
+                diagnostics,
+                agent_role_id=agent.agent_role_id,
+            )
+            if has_errors(diagnostics):
+                continue
+            system_prompt_path.write_text(
+                _system_prompt(
+                    profile,
+                    agent.agent_role_id,
+                    role_binding,
+                    skill_projection_root=skill_projection_root,
+                    skill_projection_manifest_path=skill_projection_manifest_path,
+                    projected_skill_ids=projected_skill_ids,
+                ),
+                encoding="utf-8",
+            )
             _write_json_file(
                 specialist_payload_path,
                 {
@@ -846,6 +882,9 @@ class HoumaoAdapterFacade:
                     specialist_payload_path=specialist_payload_path,
                     profile_payload_path=profile_payload_path,
                     launch_payload_path=launch_payload_path,
+                    skill_projection_root=skill_projection_root,
+                    skill_projection_manifest_path=skill_projection_manifest_path,
+                    projected_skill_ids=projected_skill_ids,
                 )
             )
             for path, kind in (
@@ -862,6 +901,21 @@ class HoumaoAdapterFacade:
                         editable_policy="user_editable",
                         agent_instance_id=agent.id,
                         kind=kind,
+                    )
+                )
+            for path in projected_skill_files:
+                material_refs.append(
+                    MaterialFileRef(
+                        path=str(path.resolve(strict=False)),
+                        digest=file_digest(path),
+                        source="isomer_system_skill_projection",
+                        editable_policy="isomer_managed",
+                        agent_instance_id=agent.id,
+                        kind=(
+                            "protected_skill_projection_manifest"
+                            if path == skill_projection_manifest_path
+                            else "protected_skill_projection_file"
+                        ),
                     )
                 )
 
@@ -2407,14 +2461,146 @@ def _write_json_file(path: Path, payload: Mapping[str, object]) -> None:
     path.write_text(json.dumps(redact_payload(dict(payload)), indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def _system_prompt(profile: TopicAgentTeamProfile, agent_role_id: str, role_binding: Any | None) -> str:
+def _materialize_role_system_skills(
+    agent_root: Path,
+    role_binding: Any | None,
+    diagnostics: list[Diagnostic],
+    *,
+    agent_role_id: str,
+) -> tuple[Path | None, Path | None, tuple[str, ...], tuple[Path, ...]]:
+    """Project catalog-known role skills and their dependencies into generated launch material."""
+
+    required = tuple(str(item) for item in getattr(role_binding, "required_skills", ()))
+    optional = tuple(str(item) for item in getattr(role_binding, "optional_skills", ()))
+    requested_kind: dict[str, str] = {}
+    logical_ids: list[str] = []
+    for kind, identifiers in (("required", required), ("optional", optional)):
+        for identifier in identifiers:
+            try:
+                identity_kind, canonical_id, _deprecated = normalize_system_skill_identity(identifier)
+            except SystemSkillAssetError:
+                if identifier.startswith("isomer-"):
+                    diagnostics.append(
+                        _adapter_diagnostic(
+                            "ISO098",
+                            "error" if kind == "required" else "warning",
+                            f"Agent Role {kind} skill {identifier!r} is not a catalog-known protected logical id.",
+                            field=f"role_bindings.{agent_role_id}.{kind}_skills",
+                        )
+                    )
+                continue
+            if identity_kind != "capability":
+                diagnostics.append(
+                    _adapter_diagnostic(
+                        "ISO098",
+                        "error",
+                        f"Agent Role skill binding {identifier!r} names a public pack; bind protected logical ids instead.",
+                        field=f"role_bindings.{agent_role_id}.{kind}_skills",
+                    )
+                )
+                continue
+            if canonical_id not in requested_kind:
+                logical_ids.append(canonical_id)
+                requested_kind[canonical_id] = kind
+            elif kind == "required":
+                requested_kind[canonical_id] = "required"
+    if has_errors(diagnostics) or not logical_ids:
+        return None, None, (), ()
+
+    final_root = agent_root / "system-skills"
+    staging_root = agent_root / ".system-skills.staging"
+    backup_root = agent_root / ".system-skills.backup"
+    _remove_generated_projection_path(staging_root)
+    _remove_generated_projection_path(backup_root)
+    try:
+        materialization = materialize_system_skill_private_projection(staging_root, logical_ids)
+        projection_records: list[dict[str, object]] = []
+        projected_ids = tuple(item.logical_id for item in materialization.projections)
+        for projection in materialization.projections:
+            projection_records.append(
+                {
+                    "logical_id": projection.logical_id,
+                    "pack_id": projection.pack_id,
+                    "public_skill": projection.public_skill,
+                    "nested_source_path": projection.source_path,
+                    "projected_path": projection.projected_path,
+                    "invocation_designator": projection.invocation_designator,
+                    "dependencies": list(projection.dependencies),
+                    "minimum_compatible_version": projection.minimum_compatible_version,
+                    "requested_as": requested_kind.get(projection.logical_id, "dependency"),
+                }
+            )
+        staging_manifest_path = staging_root / "projection.json"
+        _write_json_file(
+            staging_manifest_path,
+            {
+                "schema_version": "isomer-houmao-protected-skill-projection.v1",
+                "agent_role_id": agent_role_id,
+                "skill_binding_projection_ref": getattr(role_binding, "skill_binding_projection_ref", None),
+                "requested_required_skills": list(required),
+                "requested_optional_skills": list(optional),
+                "projected_root": str(final_root.resolve(strict=False)),
+                "protected_members": projection_records,
+            },
+        )
+        if final_root.exists() or final_root.is_symlink():
+            final_root.rename(backup_root)
+        try:
+            staging_root.rename(final_root)
+        except OSError:
+            if backup_root.exists() or backup_root.is_symlink():
+                backup_root.rename(final_root)
+            raise
+        _remove_generated_projection_path(backup_root)
+    except (OSError, SystemSkillAssetError) as exc:
+        _remove_generated_projection_path(staging_root)
+        diagnostics.append(
+            _adapter_diagnostic(
+                "ISO098",
+                "error",
+                f"Could not materialize protected system skills for Agent Role {agent_role_id!r}: {exc}",
+                field=f"role_bindings.{agent_role_id}.skill_binding_projection_ref",
+                path=final_root,
+            )
+        )
+        return None, None, (), ()
+
+    manifest_path = final_root / "projection.json"
+    projected_files = tuple(sorted(path for path in final_root.rglob("*") if path.is_file()))
+    return final_root, manifest_path, projected_ids, projected_files
+
+
+def _remove_generated_projection_path(path: Path) -> None:
+    """Remove one exact adapter-owned staging, backup, or projection path."""
+
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.exists():
+        shutil.rmtree(path)
+
+
+def _system_prompt(
+    profile: TopicAgentTeamProfile,
+    agent_role_id: str,
+    role_binding: Any | None,
+    *,
+    skill_projection_root: Path | None = None,
+    skill_projection_manifest_path: Path | None = None,
+    projected_skill_ids: tuple[str, ...] = (),
+) -> str:
     payload = {
         "topic_agent_team_profile_id": profile.id,
         "research_topic_id": profile.research_topic_id,
         "agent_role_id": agent_role_id,
         "agent_profile_ref": getattr(role_binding, "agent_profile_ref", None),
+        "skill_binding_projection_ref": getattr(role_binding, "skill_binding_projection_ref", None),
         "required_skills": getattr(role_binding, "required_skills", []),
         "optional_skills": getattr(role_binding, "optional_skills", []),
+        "protected_skill_projection": {
+            "root": str(skill_projection_root) if skill_projection_root is not None else None,
+            "manifest": str(skill_projection_manifest_path) if skill_projection_manifest_path is not None else None,
+            "logical_ids": list(projected_skill_ids),
+        },
     }
     return (
         "# Isomer Agent Instance Launch Material\n\n"

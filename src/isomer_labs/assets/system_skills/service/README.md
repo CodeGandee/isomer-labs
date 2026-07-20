@@ -1,12 +1,13 @@
-# Service Skills
+# Protected Service Capabilities
 
-This subtree contains Service Team skills for bounded operational support. Service skills use the `isomer-srv-<purpose>` naming convention and are intended for Service Agent Instances, Topic Service Agents, and optional Topic Service Masters. If no Topic Service Master is started for a Topic Workspace, the Project Operator Session or Operator Agent performs the same bounded Topic Workspace manager duties directly.
+Service capabilities retain `isomer-srv-<purpose>` logical identities, but their active bundles now live below `operator/isomer-op-entrypoint/subskills/`. This directory contains no independently installed service skills.
 
-| Skill | Purpose |
-| --- | --- |
-| `isomer-srv-agent-env-setup` | Prepare Git-backed Agent Workspace worktrees and cwd readiness from Topic Workspace, Topic Main Development Repository, and projection predecessor evidence plus `topic.intent.agent_env_requirements` or an explicit agent env target spec. |
-| `isomer-srv-houmao-interop` | Provide bounded service-routed Houmao adapter support for loop explanation, customization guidance, Domain Agent Team Template mapping, mailbox and gateway support, and runtime inspection at the command of a Project Operator Session, Operator Agent, Topic Service Agent, Topic Service Master, or Service Request. |
-| `isomer-srv-topic-env-setup` | Prepare or check Topic Workspace Pixi setup, Topic Main Development Repository readiness, canonical external repositories, external repo projections, and topic-level predecessor evidence; it does not prove per-Agent Workspace cwd readiness. |
-| `isomer-srv-topic-service-agent-support` | Guide Topic Service Agents and optional Topic Service Masters through bounded Topic Workspace management, Topic Team Specialization support, environment readiness, work-agent setup, monitoring, diagnostics, and support Artifacts. |
+| Logical ID | Core Member Route | Responsibility |
+| --- | --- | --- |
+| `isomer-srv-topic-env-setup` | `isomer-op-entrypoint->topic-env` | Topic Workspace, Topic Main Development Repository, external repository projection, and environment predecessor readiness |
+| `isomer-srv-agent-env-setup` | `isomer-op-entrypoint->agent-env` | Agent Workspace worktree creation and cwd proof after topic-level predecessors exist |
+| `isomer-srv-resolve-pkg-repo` | `isomer-op-entrypoint->package-repo` | Bounded package repository and channel resolution |
+| `isomer-srv-houmao-interop` | `isomer-op-entrypoint->houmao` | Bounded Isomer-facing Houmao adapter support |
+| `isomer-srv-topic-service-agent-support` | `isomer-op-entrypoint->topic-service` | Topic Service Agent and optional Topic Service Master lifecycle support |
 
-Service skills act at the command of a Project Operator Session or Operator Agent through a Service Request. They must not own Research Topics, Research Claims, Gates, Decision Records, research task routing, or Agent Team Instance membership.
+Normal user requests enter through `$isomer-op-entrypoint use <subcommand> to <task>` and an operator owner delegates service work. Service capabilities do not own Research Topics, Research Claims, Gates, Decision Records, research routing, or Agent Team Instance membership.

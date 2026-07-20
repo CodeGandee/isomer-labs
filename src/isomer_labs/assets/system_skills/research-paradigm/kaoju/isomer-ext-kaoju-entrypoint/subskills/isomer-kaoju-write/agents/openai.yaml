@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-write"
+  short_description: "Write a publication-ready paper from audited Kaoju survey evidence."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use write to perform this isomer-kaoju-write task."

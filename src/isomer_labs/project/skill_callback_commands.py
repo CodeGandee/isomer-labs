@@ -21,6 +21,7 @@ from isomer_labs.project.skill_callbacks import (
     _ensure_registry_ref,
     _missing_source_diagnostic,
     _write_callback_registry,
+    canonical_callback_target,
     default_callback_registry_path,
     load_callback_registry,
     managed_prompt_path,
@@ -29,6 +30,7 @@ from isomer_labs.project.skill_callbacks import (
 )
 from isomer_labs.project.toolbox_callbacks import load_toolbox_callback_manifest
 from isomer_labs.project.toolboxes import effective_toolbox_status, ensure_toolbox_registration
+from isomer_labs.skills.system_assets import SystemSkillAssetError, system_skill_catalog
 
 
 @dataclass(frozen=True)
@@ -53,7 +55,7 @@ class CallbackCommandResult:
             "ok": self.ok,
             "mutated": self.mutated,
             "project_root": str(project_root),
-            "callbacks": [callback.to_json(project_root) for callback in self.callbacks],
+            "callbacks": [_callback_explained_json(callback, project_root) for callback in self.callbacks],
             "registry_refs": [ref.to_json(project_root) for ref in self.registry_refs],
         }
         if self.callback is not None:
@@ -81,6 +83,45 @@ class CallbackCommandResult:
         }
 
 
+def _callback_explained_json(callback: UserSkillCallback, project_root: Path) -> dict[str, object]:
+    """Return full callback data with current catalog routing metadata."""
+
+    data = callback.to_json(project_root)
+    catalog = system_skill_catalog()
+    try:
+        kind, canonical_id, deprecated = catalog.normalize_identity(callback.skill)
+        if kind == "pack":
+            pack = catalog.pack_for_public_skill(canonical_id)
+            data.update(
+                {
+                    "target_skill": canonical_id,
+                    "pack_id": pack.pack_id,
+                    "public_skill": pack.entry_skill,
+                    "nested_path": pack.source_path,
+                    "member_name": None,
+                    "invocation_designator": pack.entry_skill,
+                    "deprecated_target_alias": deprecated,
+                }
+            )
+        else:
+            capability = catalog.capability_by_logical_id(canonical_id)
+            pack = catalog.pack_by_id(capability.pack_id)
+            data.update(
+                {
+                    "target_skill": capability.logical_id,
+                    "pack_id": pack.pack_id,
+                    "public_skill": pack.entry_skill,
+                    "nested_path": capability.source_path,
+                    "member_name": capability.member_name,
+                    "invocation_designator": capability.invocation_designator,
+                    "deprecated_target_alias": deprecated,
+                }
+            )
+    except SystemSkillAssetError:
+        pass
+    return data
+
+
 def register_user_skill_callback(
     state: ProjectState,
     context: EffectiveTopicContext | None,
@@ -98,6 +139,17 @@ def register_user_skill_callback(
     project = state.project
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(_callback_identity_diagnostics(skill=skill, stage=stage, scope=scope, callback_id=callback_id))
+    canonical_skill = canonical_callback_target(skill)
+    if canonical_skill != skill:
+        diagnostics.append(
+            Diagnostic(
+                code="ISO103",
+                severity="warning",
+                concept="User Skill Callback",
+                field="skill",
+                message=f"Callback target {skill!r} is deprecated or noncanonical; storing canonical target {canonical_skill!r}.",
+            )
+        )
     if scope == "research_topic" and context is None:
         diagnostics.append(
             Diagnostic(
@@ -161,7 +213,7 @@ def register_user_skill_callback(
     )
     callback = UserSkillCallback(
         id=effective_id,
-        skill=skill,
+        skill=canonical_skill,
         stage=stage,
         scope=scope,
         status="active",
@@ -184,7 +236,7 @@ def register_user_skill_callback(
         callbacks=(callback,),
         callback=callback,
         registry_refs=(ref,),
-        diagnostics=(),
+        diagnostics=tuple(diagnostics),
     )
 
 
@@ -259,6 +311,7 @@ def install_toolbox_callbacks(
     prompt_materials: list[tuple[Path, str]] = []
     for entry in manifest.callbacks:
         installed_key = f"{manifest.toolbox_id}:{entry.installed_key_suffix}"
+        canonical_target_skill = canonical_callback_target(entry.target_skill)
         diagnostics.extend(
             _callback_identity_diagnostics(
                 skill=entry.target_skill,
@@ -289,7 +342,7 @@ def install_toolbox_callbacks(
         planned_callbacks.append(
             UserSkillCallback(
                 id=installed_key,
-                skill=entry.target_skill,
+                skill=canonical_target_skill,
                 stage=entry.stage,
                 scope=scope,
                 status="active",
@@ -504,9 +557,16 @@ def resolve_user_skill_callbacks(
     diagnostics.extend(_duplicate_active_callback_diagnostics(load_results))
     selected: tuple[UserSkillCallback, ...] = ()
     if not has_errors(diagnostics):
+        canonical_skill = canonical_callback_target(skill)
         selected = tuple(
             sorted(
-                (callback for callback in callbacks if callback.active and callback.skill == skill and callback.stage == stage),
+                (
+                    callback
+                    for callback in callbacks
+                    if callback.active
+                    and canonical_callback_target(callback.skill) == canonical_skill
+                    and callback.stage == stage
+                ),
                 key=_callback_sort_key,
             )
         )

@@ -2,17 +2,24 @@ from __future__ import annotations
 
 from copy import deepcopy
 from importlib.resources import files
+from importlib.resources.abc import Traversable
 import json
 from pathlib import Path
 import re
 import unittest
 
 from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, validate_binding_registry_document
+from isomer_labs.skills.system_assets import resolve_system_skill, resolve_system_skill_capability
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-KAOJU_ROOT = REPO_ROOT / "src/isomer_labs/assets/system_skills/research-paradigm/kaoju"
 CATALOG_PATH = REPO_ROOT / "src/isomer_labs/artifact_formats/assets/research_record_formats/profiles/kaoju.v1.json"
+
+
+def resolve_kaoju_skill(identity: str) -> Traversable:
+    if identity == "isomer-ext-kaoju-entrypoint":
+        return resolve_system_skill("research-paradigm/kaoju/isomer-ext-kaoju-entrypoint")
+    return resolve_system_skill_capability(identity)
 
 
 def resource_json(name: str) -> dict[str, object]:
@@ -26,7 +33,9 @@ class KaojuArtifactBindingTests(unittest.TestCase):
     def test_registry_profiles_summaries_and_producers_have_bidirectional_coverage(self) -> None:
         bindings = load_binding_registry()
         contract = load_contract()
-        summary_text = (KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-semantics.md").read_text(encoding="utf-8")
+        summary_text = resolve_system_skill_capability("isomer-kaoju-shared").joinpath(
+            "references", "artifact-semantics.md"
+        ).read_text(encoding="utf-8")
         summary_ids = set(re.findall(r"`(KAOJU:[A-Z0-9-]+)`", summary_text))
         self.assertEqual(set(bindings), summary_ids)
 
@@ -50,7 +59,7 @@ class KaojuArtifactBindingTests(unittest.TestCase):
         for producer, expected in produced_by.items():
             if producer not in contract.skills:
                 continue
-            page = KAOJU_ROOT / producer / "artifact-bindings.md"
+            page = resolve_kaoju_skill(producer).joinpath("artifact-bindings.md")
             text = page.read_text(encoding="utf-8")
             match = re.search(r"(?m)^Produced semantic ids:\s*(.+)$", text)
             self.assertIsNotNone(match, producer)
@@ -76,9 +85,10 @@ class KaojuArtifactBindingTests(unittest.TestCase):
                 self.assertTrue(validate_binding_registry_document(fixture, schema=schema))
 
     def test_workspace_and_shared_contract_cover_scoped_db_only_artifacts(self) -> None:
-        workspace = (KAOJU_ROOT / "isomer-kaoju-workspace-mgr/SKILL.md").read_text(encoding="utf-8")
-        shared = (KAOJU_ROOT / "isomer-kaoju-shared/SKILL.md").read_text(encoding="utf-8")
-        recording = (KAOJU_ROOT / "isomer-kaoju-shared/references/artifact-recording.md").read_text(encoding="utf-8")
+        workspace = resolve_system_skill_capability("isomer-kaoju-workspace-mgr").joinpath("SKILL.md").read_text(encoding="utf-8")
+        shared_root = resolve_system_skill_capability("isomer-kaoju-shared")
+        shared = shared_root.joinpath("SKILL.md").read_text(encoding="utf-8")
+        recording = shared_root.joinpath("references", "artifact-recording.md").read_text(encoding="utf-8")
         for term in ("Workspace Runtime", "state DB", "scope", "directory", "Run", "Gate"):
             self.assertIn(term.casefold(), (workspace + shared + recording).casefold(), term)
         self.assertIn("A repaired or adapted Run never revises a faithful Run", recording)

@@ -73,7 +73,7 @@ The researcher proceeds with the reviewed protocol and asks Kaoju to produce the
 ## Main Flow
 
 1. The researcher requests an actual-run comparison of named methods A, B, C, and any additional candidates.
-2. `isomer-kaoju-pipeline` selects `comparative-pass` with `comparison_mode: empirical` and `comparison_phase: intent`, preserving the original request and blocking candidate preparation and research Runs.
+2. `isomer-ext-kaoju-entrypoint` selects `comparative-pass` with `comparison_mode: empirical` and `comparison_phase: intent`, preserving the original request and blocking candidate preparation and research Runs.
 3. The pipeline loads the Related-Work Catalog, Field Summary, Theory Comparison Artifacts, Claim-Evidence Ledger, Paper-Code Mappings, Material Manifests, prior Comparison Intent Documents, Reproduction Verdicts, Runs, environment records, and current resource constraints.
 4. `isomer-kaoju-frame` resolves stable candidate identities and separates the user's requested outcome, preferred constraints, and success criteria from Kaoju's proposed judgments.
 5. `isomer-kaoju-compare` derives the comparison question and candidate eligibility dimensions from the field's task semantics, established benchmarks, reported claims, known quality constraints, and survey evidence. When field context is weak, `isomer-kaoju-discover` performs bounded non-mutating source discovery and records the resulting metric or benchmark basis before protocol finalization.
@@ -156,7 +156,7 @@ flowchart TD
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Compare as isomer-kaoju-compare
   participant Records as Research Records
   participant Prepare as Acquire, Environment,<br/>and Reproduce Owners

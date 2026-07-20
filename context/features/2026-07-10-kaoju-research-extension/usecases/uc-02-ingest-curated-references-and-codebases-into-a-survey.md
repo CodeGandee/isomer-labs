@@ -57,7 +57,7 @@ The researcher accepts the evidence-backed survey update after intake audit.
 
 ## Main Flow
 
-1. The researcher invokes `isomer-kaoju-pipeline curated-intake-pass` with a target survey and a list of references, codebases, or other source locators, optionally stating why each item matters.
+1. The researcher invokes `isomer-ext-kaoju-entrypoint curated-intake-pass` with a target survey and a list of references, codebases, or other source locators, optionally stating why each item matters.
 2. `isomer-kaoju-frame` creates a Curated Source Intake Contract containing the original list, target survey refs, themes or questions, requested depth, resource and access limits, stopping rule, and `execution_allowed: false` unless the user requested another pass.
 3. The pipeline loads the current Related-Work Catalog, Field Summary, Claim-Evidence Ledger, Material Manifest, and prior source identities so the intake can update existing work rather than duplicate it.
 4. `isomer-kaoju-discover` resolves canonical identities, source types, versions, work families, and supported paper-to-code or artifact relationships. Discovery remains limited to identity and relationship resolution rather than broad survey expansion.
@@ -112,7 +112,7 @@ flowchart LR
 sequenceDiagram
   autonumber
   actor User as Researcher
-  participant Pipeline as isomer-kaoju-pipeline
+  participant Pipeline as isomer-ext-kaoju-entrypoint
   participant Discover as isomer-kaoju-discover
   participant Acquire as isomer-kaoju-acquire
   participant Examine as isomer-kaoju-examine

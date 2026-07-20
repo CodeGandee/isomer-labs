@@ -232,7 +232,7 @@ def _with_template_context(
     payload["deprecation"] = {
         "code": "research_templates_noncanonical",
         "message": "ext research templates preserves historical LaTeX inspection and repair only; it does not create canonical Kaoju paper state.",
-        "migration": "Use $isomer-kaoju-pipeline create-paper-template for canonical MyST and ext kaoju paper for exchange, derivation, TeX initialization, and PDF builds.",
+        "migration": "Use $isomer-ext-kaoju-entrypoint create-paper-template for canonical MyST and ext kaoju paper for exchange, derivation, TeX initialization, and PDF builds.",
     }
     click.echo(dumps_raw_json(payload))
     return 0

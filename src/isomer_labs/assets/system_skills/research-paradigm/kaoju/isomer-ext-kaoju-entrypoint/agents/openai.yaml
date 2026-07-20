@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-ext-kaoju-entrypoint"
+  short_description: "Route one bounded Kaoju survey procedure."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use help to list Kaoju procedures, or use a public command to perform the survey task."

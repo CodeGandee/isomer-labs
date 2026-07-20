@@ -11,14 +11,18 @@ import tomlkit
 from isomer_labs.core.diagnostics import Diagnostic
 from isomer_labs.models import Project
 from isomer_labs.skills.inspection import inspect_explicit_system_skill_root
-from isomer_labs.skills.system_assets import iter_system_skill_extensions
+from isomer_labs.skills.system_assets import iter_system_skill_extensions, system_skill_catalog
 
 
 @dataclass(frozen=True)
 class ProjectSystemExtension:
     extension_id: str
     group: str
+    pack_id: str
+    entry_skill: str
     description: str
+    public_commands: tuple[str, ...]
+    protected_members: tuple[dict[str, object], ...]
     declared_installed: bool
     installation_verified: bool = False
 
@@ -26,7 +30,11 @@ class ProjectSystemExtension:
         return {
             "extension_id": self.extension_id,
             "group": self.group,
+            "pack_id": self.pack_id,
+            "entry_skill": self.entry_skill,
             "description": self.description,
+            "public_commands": list(self.public_commands),
+            "protected_members": [dict(member) for member in self.protected_members],
             "declared_installed": self.declared_installed,
             "installation_verified": self.installation_verified,
             "availability_basis": "project_manifest_user_declared" if self.declared_installed else "catalog_known_not_declared",
@@ -82,8 +90,8 @@ class ProjectSystemExtensionDetectionResult:
             "diagnostics": [diagnostic.to_json() for diagnostic in self.diagnostics],
             "declaration_mutation": "none; detection is advisory",
             "operator_guidance": (
-                "Pass only skill roots known to the current agent host. Use isomer-op-system-skill-mgr "
-                "to reconcile receipt or live-inventory evidence."
+                "Pass only skill roots known to the current agent host. Use the system-skills route of "
+                "isomer-op-entrypoint to reconcile receipt or live-inventory evidence."
             ),
         }
 
@@ -172,11 +180,26 @@ def _project_extension_rows(project: Project) -> tuple[ProjectSystemExtension, .
 
 def _extension_rows(declared: list[str]) -> tuple[ProjectSystemExtension, ...]:
     declared_ids = set(declared)
+    catalog = system_skill_catalog()
     return tuple(
         ProjectSystemExtension(
             extension_id=extension.extension_id,
             group=extension.group,
+            pack_id=(pack := catalog.pack_for_extension(extension.extension_id)).pack_id,
+            entry_skill=pack.entry_skill,
             description=extension.description,
+            public_commands=pack.public_commands,
+            protected_members=tuple(
+                {
+                    "logical_id": capability.logical_id,
+                    "member_name": capability.member_name,
+                    "nested_path": capability.source_path,
+                    "invocation_designator": capability.invocation_designator,
+                    "dependencies": list(capability.dependencies),
+                }
+                for capability in catalog.capabilities
+                if capability.pack_id == pack.pack_id
+            ),
             declared_installed=extension.extension_id in declared_ids,
         )
         for extension in iter_system_skill_extensions()

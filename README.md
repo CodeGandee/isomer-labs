@@ -79,7 +79,7 @@ The Project Manifest records where each Topic Workspace lives, while `topic-work
 
 ## Install System Skills
 
-Install packaged Isomer skills with `isomer-cli system-skills install`. The core group includes the entrypoint and `isomer-op-system-skill-mgr`; together they route known tasks and reconcile optional extensions from the current operator host.
+Install packaged Isomer skills with `isomer-cli system-skills install`. The core installation unit is the public `isomer-op-entrypoint` pack. Operator, service, shared-support, and research-recording capabilities, including system-skill management, remain protected members routed by that parent.
 
 Discover optional agent-skill extensions and inspect their entry skills, public commands, and installation guidance before selecting one:
 
@@ -104,13 +104,13 @@ Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`.
 
 Use project scope for skills confined to the current working directory. Choose user scope intentionally when the skills should be available to the selected host across Projects.
 
-Install the DeepSci extension when a project needs the research pipeline skills:
+Install the DeepSci extension when a project needs hypothesis-driven production research. The selector installs core plus the complete `isomer-ext-deepsci-entrypoint` pack:
 
 ```bash
 isomer-cli system-skills install --target codex --extension deepsci
 ```
 
-Install Kaoju when a project needs evidence-led literature and codebase surveys, first-hand method trials, or controlled comparisons. After installation, enter the extension through `$isomer-kaoju-pipeline` rather than `isomer-cli ext kaoju`.
+Install Kaoju when a project needs evidence-led literature and codebase surveys, first-hand method trials, or controlled comparisons. The selector installs core plus the complete `isomer-ext-kaoju-entrypoint` pack:
 
 ```bash
 isomer-cli system-skills install --target codex --extension kaoju
@@ -131,7 +131,7 @@ isomer-cli --print-json project system-extensions detect --skill-root /explicit/
 isomer-cli project system-extensions remember kaoju
 ```
 
-For normal agent-driven operation, use `$isomer-op-system-skill-mgr`. It trusts existing Project declarations, checks Isomer receipts in roots known to the current host, falls back to the host-visible skill inventory, and adds complete extensions to the Project during authorized reconciliation or installation unless the user opts out. It never removes a declaration because a different agent lacks the same installation. A new installation may require a new turn, thread, or host-native skill reload.
+For normal agent-driven operation, use `$isomer-op-entrypoint use system-skills to <task>`. The protected manager reads Project declarations, current v4 receipts, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v4 complete packs and never removes a declaration because another agent lacks the same installation. Refresh the host or start a new session after installation or upgrade.
 
 ## Getting Started With CLI Agent
 
@@ -143,7 +143,7 @@ The user starts with a concrete research goal and wants the agent to turn it int
 
 User Action:
 
-> $isomer-op-topic-creator create topic: Investigate the concrete research question and define the expected evidence.
+> $isomer-op-entrypoint use topic-create to create a topic that investigates the concrete research question and defines the expected evidence
 
 AI:
 
@@ -155,7 +155,7 @@ The user wants the agent to set up only what the topic needs, verify the environ
 
 User Action:
 
-> $isomer-op-topic-creator run-to setup-topic-env
+> $isomer-op-entrypoint use topic-create to run through setup-topic-env
 
 AI:
 
@@ -167,7 +167,7 @@ The user wants one controlled research pass, not unattended automation, and expe
 
 User Action:
 
-> $isomer-deepsci-pipeline empirical-pass
+> $isomer-ext-deepsci-entrypoint use empirical-pass to run one bounded research pass
 
 AI:
 
@@ -191,7 +191,7 @@ The user wants the accepted records turned into a readable paper artifact, with 
 
 User Action:
 
-> $isomer-deepsci-pipeline paper-pass
+> $isomer-ext-deepsci-entrypoint use paper-pass to draft the paper from accepted records
 
 AI:
 

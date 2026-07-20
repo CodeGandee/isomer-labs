@@ -1349,8 +1349,11 @@ def _render_callback_insertion_point_result(title: str, payload: dict[str, objec
         if not isinstance(point, dict):
             continue
         extension = f", extension={point.get('extension_id')}" if point.get("extension_id") is not None else ""
+        member = f", member={point.get('member_name')}" if point.get("member_name") is not None else ""
         lines.append(
-            f"- {point.get('target_skill')}/{point.get('stage')} ({point.get('group')}{extension}, {point.get('availability_basis')})"
+            f"- {point.get('target_skill')}/{point.get('stage')} "
+            f"({point.get('pack_id')}{extension}{member}, {point.get('availability_basis')}): "
+            f"{point.get('invocation_designator')} [{point.get('nested_path')}]"
         )
     return lines
 
@@ -1365,7 +1368,12 @@ def _render_system_extensions_result(title: str, payload: dict[str, object]) -> 
         if not isinstance(extension, dict):
             continue
         declared = "declared" if extension.get("declared_installed") is True else "not declared"
-        lines.append(f"- {extension.get('extension_id')} ({extension.get('group')}, {declared}, not filesystem-verified)")
+        protected_members = extension.get("protected_members")
+        protected_count = len(protected_members) if isinstance(protected_members, list) else 0
+        lines.append(
+            f"- {extension.get('extension_id')} ({extension.get('group')}, {declared}, not filesystem-verified): "
+            f"{extension.get('entry_skill')} with {protected_count} protected members"
+        )
     return lines
 
 

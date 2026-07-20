@@ -1,25 +1,47 @@
 # Packaged System Skills
 
-System skills live under `src/isomer_labs/assets/system_skills/` and are packaged with the Python distribution. They teach agents how to operate Isomer projects, create research intent, manage topic workspaces, use DeepSci workflows, and route tasks through the operator entrypoint.
+Isomer distributes three public system-skill packs. Each pack is one top-level host installation unit with protected capabilities nested below `subskills/`.
 
-Discover optional packaged agent-skill extensions before installation. The focused inspection output includes the manifest-owned description, entry skill, public commands, packaged skills, and install and status command shapes:
+| Pack | Public Skill | Contents |
+| --- | --- | --- |
+| Core | `isomer-op-entrypoint` | 20 protected operator, service, shared-support, and research-recording capabilities |
+| DeepSci | `isomer-ext-deepsci-entrypoint` | 21 protected hypothesis-driven research capabilities |
+| Kaoju | `isomer-ext-kaoju-entrypoint` | 13 protected evidence-led survey capabilities |
+
+Ordinary users invoke only these public skills. The accepted prompt form is `$<entrypoint> use <subcommand> to <task>`. A concrete task-only invocation is also valid, and an empty invocation selects help.
+
+```text
+$isomer-op-entrypoint use project to validate this Project
+$isomer-ext-deepsci-entrypoint use empirical-pass to test the selected hypothesis
+$isomer-ext-kaoju-entrypoint use build-reading-list to assemble evidence for the survey
+```
+
+Protected means parent-routed and omitted from ordinary top-level host discovery. It does not mean encrypted, unreadable, or authorization-protected. Any agent that receives a complete public pack can read its nested files. Use selective private projection when an Agent Role should receive fewer capabilities.
+
+## Installation
+
+Discover the package catalog before installation:
 
 ```bash
+isomer-cli system-skills list
 isomer-cli system-skills extensions list
 isomer-cli system-skills extensions show deepsci
 isomer-cli system-skills extensions show kaoju
 ```
 
-Released-package installation should use `isomer-cli system-skills install`, which reads packaged resources from the installed Python package and projects flat skill directories into supported agent-tool skill roots:
+Install the core pack or core plus one extension pack:
 
 ```bash
 isomer-cli system-skills install --target codex
 isomer-cli system-skills install --target codex --extension deepsci
 isomer-cli system-skills install --target codex --extension kaoju
-isomer-cli system-skills install --target codex --scope user
+isomer-cli system-skills install --target codex --all-extensions
+isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
-Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`, and every target-resolving operation requires `--target`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact process working directory and does not search upward for Git or Isomer metadata. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`.
+Extension selection includes the core pack. Copy and symlink modes always project a selected public pack as one complete top-level directory. They never place a protected member beside its parent.
+
+Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. When `--scope` is omitted, installation defaults to Project scope at the exact process working directory. `--scope user` is the only user-wide installation route. Status, upgrade, and uninstall require an explicit `--scope user|project`.
 
 | Target | Project Scope | User Scope |
 | --- | --- | --- |
@@ -28,13 +50,119 @@ Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`,
 | `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
 | `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
 
-The `all` target expands to all four logical targets and groups normalized identical roots before mutation. For example, Codex and generic project bindings produce one operation at `<cwd>/.agents/skills`.
+The `all` target expands to all concrete targets and deduplicates identical physical roots. The installer does not provide an arbitrary path override. Use a host-native mechanism for plugin, extra, or custom destinations.
 
-Packaged skill names are reserved install slots in each target skill root. Every packaged skill stores the Isomer release version, including release candidates, in `agents/openai.yaml` at `metadata.version`. Successful mutations update `<skill-root>/isomer-labs-skill-manifest.json` with the Isomer package version, sorted target-scope bindings, source paths, projection modes, tracked skill names, and per-skill version snapshots. Receipt versions 1 and 2 remain readable as legacy evidence; the next authorized mutation migrates the root to version 3 with the effective target-scope binding. If a selected same-name path already exists, `system-skills install` preserves it unless `--force` is supplied.
+`--skill <public-entrypoint>` selects its complete pack. During the migration window, a protected logical id or old pipeline alias is accepted as a deprecated selector and resolves to its complete owning pack. It does not install the named protected capability alone. `uninstall` refuses protected-member removal because a managed public pack is the ownership unit.
 
-Compatibility policy belongs to `src/isomer_labs/assets/system_skills/manifest.toml`. Each group declares `minimum_compatible_skill_version`, and an optional per-skill `minimum_compatible_version` overrides that floor. Status compares versions with PEP 440: older skills at or above the floor remain compatible, skills below the floor are obsolete, and skills newer than the CLI require a CLI upgrade before automatic routing. Legacy unversioned receipts remain readable but unverified until upgrade.
+## Manifest and Identity Layers
 
-Use `system-skills upgrade` after installing a newer Isomer CLI package when packaged skills may have been renamed or removed. Upgrade reads the target-root manifest, refreshes the currently selected packaged skills, and removes stale manifest-tracked skill paths that are no longer in the selected set:
+`src/isomer_labs/assets/system_skills/manifest.toml` uses `isomer-skillset-manifest.v3`. It separates four identity layers:
+
+1. Public skill identity names the host-discoverable installation unit.
+2. Pack id names the catalog and receipt unit: `core`, `deepsci`, or `kaoju`.
+3. Protected logical id remains stable for callbacks, Skill Binding Projection, provenance, compatibility selectors, and private projection.
+4. Scoped member name and invocation designator describe parent routing without replacing the logical id.
+
+The nested source path is package layout, not provider-neutral identity. Bindings and durable records store logical ids rather than pack filesystem paths.
+
+## Protected Capability Map
+
+The manifest is authoritative. This table documents all 54 current mappings.
+
+| Pack | Protected Logical ID | Member | Invocation Designator |
+| --- | --- | --- | --- |
+| `core` | `isomer-op-welcome` | `welcome` | `isomer-op-entrypoint->welcome` |
+| `core` | `isomer-op-project-mgr` | `project` | `isomer-op-entrypoint->project` |
+| `core` | `isomer-op-gui-mgr` | `gui` | `isomer-op-entrypoint->gui` |
+| `core` | `isomer-op-switch-identity` | `identity` | `isomer-op-entrypoint->identity` |
+| `core` | `isomer-op-system-skill-mgr` | `system-skills` | `isomer-op-entrypoint->system-skills` |
+| `core` | `isomer-op-toolbox-mgr` | `toolbox` | `isomer-op-entrypoint->toolbox` |
+| `core` | `isomer-op-topic-creator` | `topic-create` | `isomer-op-entrypoint->topic-create` |
+| `core` | `isomer-op-topic-mgr` | `topic-manage` | `isomer-op-entrypoint->topic-manage` |
+| `core` | `isomer-op-topic-team-specialize` | `topic-team` | `isomer-op-entrypoint->topic-team` |
+| `core` | `isomer-srv-topic-env-setup` | `topic-env` | `isomer-op-entrypoint->topic-env` |
+| `core` | `isomer-srv-agent-env-setup` | `agent-env` | `isomer-op-entrypoint->agent-env` |
+| `core` | `isomer-srv-resolve-pkg-repo` | `package-repo` | `isomer-op-entrypoint->package-repo` |
+| `core` | `isomer-srv-houmao-interop` | `houmao` | `isomer-op-entrypoint->houmao` |
+| `core` | `isomer-srv-topic-service-agent-support` | `topic-service` | `isomer-op-entrypoint->topic-service` |
+| `core` | `isomer-misc-bounded-run-tips` | `bounded-run` | `isomer-op-entrypoint->bounded-run` |
+| `core` | `isomer-misc-nvidia-tools` | `nvidia` | `isomer-op-entrypoint->nvidia` |
+| `core` | `isomer-misc-pkg-specifics` | `package-specifics` | `isomer-op-entrypoint->package-specifics` |
+| `core` | `isomer-misc-tool-packs` | `tool-packs` | `isomer-op-entrypoint->tool-packs` |
+| `core` | `isomer-research-idea-recording` | `research-ideas` | `isomer-op-entrypoint->research-ideas` |
+| `core` | `isomer-research-operation-set-recording` | `operation-sets` | `isomer-op-entrypoint->operation-sets` |
+| `deepsci` | `isomer-deepsci-analysis` | `analysis` | `isomer-ext-deepsci-entrypoint->analysis` |
+| `deepsci` | `isomer-deepsci-baseline` | `baseline` | `isomer-ext-deepsci-entrypoint->baseline` |
+| `deepsci` | `isomer-deepsci-decision` | `decision` | `isomer-ext-deepsci-entrypoint->decision` |
+| `deepsci` | `isomer-deepsci-experiment` | `experiment` | `isomer-ext-deepsci-entrypoint->experiment` |
+| `deepsci` | `isomer-deepsci-figure-polish` | `figure-polish` | `isomer-ext-deepsci-entrypoint->figure-polish` |
+| `deepsci` | `isomer-deepsci-finalize` | `finalize` | `isomer-ext-deepsci-entrypoint->finalize` |
+| `deepsci` | `isomer-deepsci-idea` | `idea` | `isomer-ext-deepsci-entrypoint->idea` |
+| `deepsci` | `isomer-deepsci-nature-data` | `nature-data` | `isomer-ext-deepsci-entrypoint->nature-data` |
+| `deepsci` | `isomer-deepsci-nature-figure` | `nature-figure` | `isomer-ext-deepsci-entrypoint->nature-figure` |
+| `deepsci` | `isomer-deepsci-nature-paper2ppt` | `nature-paper2ppt` | `isomer-ext-deepsci-entrypoint->nature-paper2ppt` |
+| `deepsci` | `isomer-deepsci-nature-polishing` | `nature-polishing` | `isomer-ext-deepsci-entrypoint->nature-polishing` |
+| `deepsci` | `isomer-deepsci-optimize` | `optimize` | `isomer-ext-deepsci-entrypoint->optimize` |
+| `deepsci` | `isomer-deepsci-paper-outline` | `paper-outline` | `isomer-ext-deepsci-entrypoint->paper-outline` |
+| `deepsci` | `isomer-deepsci-paper-plot` | `paper-plot` | `isomer-ext-deepsci-entrypoint->paper-plot` |
+| `deepsci` | `isomer-deepsci-rebuttal` | `rebuttal` | `isomer-ext-deepsci-entrypoint->rebuttal` |
+| `deepsci` | `isomer-deepsci-review` | `review` | `isomer-ext-deepsci-entrypoint->review` |
+| `deepsci` | `isomer-deepsci-science` | `science` | `isomer-ext-deepsci-entrypoint->science` |
+| `deepsci` | `isomer-deepsci-scout` | `scout` | `isomer-ext-deepsci-entrypoint->scout` |
+| `deepsci` | `isomer-deepsci-shared` | `shared` | `isomer-ext-deepsci-entrypoint->shared` |
+| `deepsci` | `isomer-deepsci-workspace-mgr` | `workspace` | `isomer-ext-deepsci-entrypoint->workspace` |
+| `deepsci` | `isomer-deepsci-write` | `write` | `isomer-ext-deepsci-entrypoint->write` |
+| `kaoju` | `isomer-kaoju-acquire` | `acquire` | `isomer-ext-kaoju-entrypoint->acquire` |
+| `kaoju` | `isomer-kaoju-audit` | `audit` | `isomer-ext-kaoju-entrypoint->audit` |
+| `kaoju` | `isomer-kaoju-compare` | `compare` | `isomer-ext-kaoju-entrypoint->compare` |
+| `kaoju` | `isomer-kaoju-discover` | `discover` | `isomer-ext-kaoju-entrypoint->discover` |
+| `kaoju` | `isomer-kaoju-examine` | `examine` | `isomer-ext-kaoju-entrypoint->examine` |
+| `kaoju` | `isomer-kaoju-export` | `export` | `isomer-ext-kaoju-entrypoint->export` |
+| `kaoju` | `isomer-kaoju-frame` | `frame` | `isomer-ext-kaoju-entrypoint->frame` |
+| `kaoju` | `isomer-kaoju-reproduce` | `reproduce` | `isomer-ext-kaoju-entrypoint->reproduce` |
+| `kaoju` | `isomer-kaoju-shared` | `shared` | `isomer-ext-kaoju-entrypoint->shared` |
+| `kaoju` | `isomer-kaoju-synthesize` | `synthesize` | `isomer-ext-kaoju-entrypoint->synthesize` |
+| `kaoju` | `isomer-kaoju-trial` | `trial` | `isomer-ext-kaoju-entrypoint->trial` |
+| `kaoju` | `isomer-kaoju-workspace-mgr` | `workspace` | `isomer-ext-kaoju-entrypoint->workspace` |
+| `kaoju` | `isomer-kaoju-write` | `write` | `isomer-ext-kaoju-entrypoint->write` |
+
+## Invocation Grammar
+
+A skill or subskill component is bare. A command component always has `()`.
+
+```text
+isomer-op-entrypoint
+isomer-op-entrypoint->project
+isomer-op-entrypoint->project->init-project()
+isomer-ext-kaoju-entrypoint->manage-survey()->list()
+isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()
+```
+
+Parent commands act as object generators. In `skill->cmd_parent()->cmd_child()`, the child is the invoked subcommand declared by `cmd_parent()`; the chain does not execute the parent's standalone terminal workflow first. Once a command component appears, a later bare component is invalid. A command and subskill may share a name because `X->Y()` names the command and `X->Y` names the subskill.
+
+Use private resource ownership to decide how to author a capability. A unit that owns its own `SKILL.md` metadata, `agents/`, scripts, references, templates, assets, or another private resource root is a protected subskill. A procedure that uses only resources owned by its containing bundle is a command, including a parent command with child commands. Triggers or workflow importance do not override this resource-boundary test.
+
+## Dependency Closure and Private Projection
+
+Each protected capability declares logical-id dependencies. Catalog resolution returns the selected capabilities and their transitive closure in deterministic order, including cross-pack dependencies. It also returns each member's owning pack, nested source path, scoped member, and invocation designator.
+
+Ordinary installation ignores that selective surface and installs complete public packs. Internal Agent Role, Agent Profile, Topic Actor, and Service Agent adapters may instead project only a requested protected capability closure. The Isomer-Houmao adapter materializes each selected nested bundle as a flat logical-id directory in the role-private skill root, without granting parent or sibling filesystem access, and writes projection metadata that records the pack, nested source, invocation designator, dependencies, and binding reference.
+
+Provider-neutral Skill Binding Projection continues to store logical ids. It does not store the nested package layout.
+
+## Callback Identity
+
+Callback registration, resolution, and stored provenance continue to target protected logical ids such as `isomer-deepsci-scout`. Callback insertion-point discovery and explained output add the owning pack, nested path, scoped member, and invocation designator. Each protected member resolves its own `begin` and `end` callbacks at the same workflow boundaries after the public parent routes to it.
+
+Old pipeline callback targets normalize to `isomer-ext-deepsci-entrypoint` or `isomer-ext-kaoju-entrypoint` for current resolution. Historical stored provenance remains unchanged.
+
+## Receipts, Status, and Migration
+
+Managed roots use `isomer-labs-skill-manifest.v4`. Each receipt record represents one public pack and includes its public name, pack id, source path, projection mode, package and skill versions, extension id, and ordered protected inventory. Every protected inventory row records logical id, relative nested path, invocation designator, and version.
+
+Status verifies the public entrypoint, projection mode, receipt identity, every protected member identity and version, missing members, extra protected paths, and compatibility. A top-level name alone cannot make a pack complete.
+
+Readers retain v1 through v3 support as legacy flat evidence. They report tracked paths and candidate owner packs without inventing nested integrity. Use managed upgrade to migrate:
 
 ```bash
 isomer-cli system-skills upgrade --target codex --scope project
@@ -42,45 +170,47 @@ isomer-cli system-skills upgrade --target codex --scope project --extension deep
 isomer-cli system-skills upgrade --target codex --scope project --extension kaoju
 ```
 
-## Migrating Existing Commands
+Upgrade validates destination conflicts, stages complete new packs, validates their material, and writes receipt v4 before removing old paths. If staging or validation fails, the old receipt and projections remain intact. Cleanup removes only exact obsolete top-level paths tracked by the old receipt. Untracked lookalike directories are preserved. A cleanup failure returns exact `stale_retained` paths, `migration_status=partial_cleanup`, and repair guidance while retaining bounded legacy evidence in receipt v4.
 
-An install without `--scope` now selects Project scope, and explicit `--scope project` remains equivalent. Use `--scope user` for user-wide installation. Status, upgrade, and uninstall remain scope-explicit.
+After install or upgrade, refresh the agent host or start a new session. A running host may cache old skill discovery, so file and receipt success do not prove current-session activation.
 
-The former exact-root override is no longer public. Migrate `--target kimi-code --home .kimi-code/skills` to `--target kimi-code` or `--target kimi-code --scope project`, and migrate `--target kimi-code --home ~/.kimi-code/skills` to `--target kimi-code --scope user`. Arbitrary plugin, extra, and custom roots do not map to a scope; use the host's native installation mechanism for those destinations. Explicit-root inspection remains available through `internals inspect-system-skill-root`.
+See [System Skill Migration](system-skill-migration.md) for the operator migration checklist.
 
-The internal inspection namespace lets version-aligned system skills inspect one agent-supplied root or classify a host-supplied live inventory without knowing receipt filenames, schemas, or extension membership:
+## Explicit Inspection
+
+Version-aligned skills can inspect a host-supplied root or a host-supplied name inventory without embedding provider paths:
 
 ```bash
 isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --category extensions
 isomer-cli --print-json internals inspect-system-skill-root --skill-root /explicit/agent/skill-root --extension kaoju
-isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-kaoju-pipeline --skill-name isomer-kaoju-shared
+isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-ext-kaoju-entrypoint
 ```
 
-Both commands are read-only, return `mutated: false`, and use `isomer-internal-system-skill-inspection.v1`. Root inspection reads only the supplied root. It reports current or legacy receipt state, real-directory and symlink projections, broken links, unmanaged same-name directories, complete or partial family coverage, and version compatibility. Inventory classification maps only names supplied by the current host; optional paths remain descriptive input and are not scanned.
+These read-only commands return `mutated: false` and use `isomer-internal-system-skill-inspection.v2`. Explicit-root inspection can verify v4 receipt and nested pack integrity, report legacy flat receipt rows, and leave ambient top-level siblings unclassified. Live inventory is deliberately limited: a public name yields `entrypoint_seen`, and old protected names yield legacy observations. Neither proves complete protected coverage.
 
-Within an initialized Project, direct detection accepts only explicit skill roots. With no root, it reports catalog and declaration state without filesystem discovery:
+Project declarations are authoritative routing intent, not current-host integrity evidence. The protected system-skill manager evaluates Project declaration, current v4 receipt, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v4 complete packs.
+
+## Namespace Rules
+
+Reserve these public forms:
+
+- `isomer-op-entrypoint` is the sole public core pack.
+- `isomer-ext-<extension-id>-entrypoint` is the public form for an optional extension pack.
+
+Protected logical ids retain responsibility-oriented forms such as `isomer-op-*`, `isomer-srv-*`, `isomer-misc-*`, `isomer-research-*`, `isomer-deepsci-*`, and `isomer-kaoju-*`. Do not use `isomer-ext-*` for protected helpers or arbitrary capability buckets. Do not add top-level compatibility shim folders for protected ids or the old pipeline aliases.
+
+## Authoring and Release Checks
+
+Every public pack and protected member remains a complete skill bundle and must resolve its local resources without parent or sibling access. Shared family procedures route through the family's protected `shared` member rather than duplicated prose or sibling paths.
+
+All 57 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
+
+Run these checks before release:
 
 ```bash
-isomer-cli --print-json project system-extensions detect
-isomer-cli --print-json project system-extensions detect --skill-root /explicit/agent/skill-root
+pixi run validate-skills
+pixi run lint
+pixi run typecheck
+pixi run test
+pixi run python -c "import isomer_labs"
 ```
-
-Direct `project init`, low-level `system-skills install`, and internal inspection do not register extensions. The core `isomer-op-system-skill-mgr` skill adds operator-aware automation because the working agent knows its own project-scope roots and live inventory. It trusts Project declarations first, then complete compatible Isomer receipts in host-supplied roots, then complete live-inventory families. During operator-controlled Project initialization, explicit reconciliation, extension installation, or a concrete extension-use request, it remembers complete extensions additively unless the user opts out. It never forgets a declaration because another agent exposes a different inventory.
-
-Core operator skills include `isomer-op-entrypoint` for informed routing, `isomer-op-system-skill-mgr` for extension management, and `isomer-op-welcome` for first-time project orientation. Optional extension skills include the DeepSci family under `research-paradigm/deepsci/` and the Kaoju survey family under `research-paradigm/kaoju/`.
-
-Project declarations are authoritative claimed state, not proof that every current agent host can load the extension. A declared-but-unavailable route is stale user-controlled state and receives repair advice without automatic removal. Receipt and projection compatibility remains advisory beneath a declaration. Newly installed skills may require a new turn, thread, or host-native reload; operator workflows report `host_refresh_required` instead of claiming current-session activation.
-
-Select `deepsci` for hypothesis-driven research that develops or evaluates a new route. Select `kaoju` for evidence-led literature and codebase surveys, including source examination, separately approved bounded source-code trials, genuine reproduction when the stronger contract is met, and controlled comparisons. Selecting one extension includes core skills and that family only; use the existing all-extensions selector or select both when an agent needs both families.
-
-The CLI `ext` namespace owns native runtime and compatibility commands such as `ext research`, the DeepScientist compatibility adapter, and deterministic `ext kaoju paper` and `ext kaoju wiki` services. Packaged DeepSci and Kaoju agent-skill extensions are discovered under `system-skills extensions` and orchestrated through their installed entry skills. Kaoju research decisions start with `$isomer-kaoju-pipeline`; `ext kaoju paper template --kind content|latex` provides independent named content-template and LaTeX-template CRUD, concurrency, audit, migration, and working-copy exchange while the agent owns arbitrary tree preparation. Other `ext kaoju` commands validate canonical MyST, compose exact LaTeX stock, report drift, build PDFs, export, deploy, or launch already selected state.
-
-Kaoju keeps its shared process, semantic, binding, and schema data under the extension implementation in `isomer_labs.kaoju`. Agents query that data through context-free `ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` commands. `isomer-kaoju-shared` retains common procedure guidance, and each producer's `artifact-bindings.md` is a concise non-authoritative bundle-local projection. Installation copies only manifest-listed skill directories; no skill depends on a sibling family-root contract directory. DeepSci and Kaoju durable artifact identities use exact uppercase `EXTENSION-NAME:WHAT` values.
-
-Kaoju's optional extension contains fourteen skills. `isomer-kaoju-pipeline` routes ten user intents, while `isomer-kaoju-trial` owns bounded environment and code-trial work, `isomer-kaoju-reproduce` owns only genuine reproduction, and `isomer-kaoju-export` owns package-local wiki output. Skills query Workspace Runtime rather than scan directories for durable records. Repository work is deliberately different from Isomer-owned executable operations: the user or agent runs fit-for-purpose Git, provider, copy, or extraction commands outside Isomer, verifies source identity and the immutable result, calls `project repos register`, then records sanitized evidence with `project artifacts`. Isomer-owned package mutation, smoke, trial, document-build, and viewer operations may still cross registered Execution Adapter Command Requests. Houmao may implement launch, mailbox, gateway, inspection, or a Service Dispatch Form, but it remains an adapter detail and must not enter Kaoju schema or CLI terms.
-
-`npx skills add` remains useful when testing a single source-checkout skill directory directly, but it is no longer the public recommended path for released Isomer packages. Repository-root discovery can still find repository-local OpenSpec development skills, so do not document repository-root `npx skills add CodeGandee/isomer-labs --skill isomer-op-entrypoint` as a packaged Isomer install path.
-
-Keep each skill in the supported skill format. Workflow-oriented skills should present their workflow as ordered steps that an agent follows from start to finish, not as detached callback reminders.
-
-When adding a new skill, update the README, the tutorial page for skill installation, and any CLI or packaging tests that assert packaged asset paths.

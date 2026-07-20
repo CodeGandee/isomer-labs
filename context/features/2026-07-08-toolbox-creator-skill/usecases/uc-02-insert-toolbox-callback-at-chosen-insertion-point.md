@@ -197,7 +197,7 @@ These examples show only the visible user prompt and the AI response content tha
 
 User Prompt:
 
-> Use $isomer-op-toolbox-mgr to insert a callback into `isomer-deepsci-experiment/begin`. The Toolbox is `gpu-evidence-quality`, and for topic `cuda-kernel-study` it should remind experiment agents to classify evidence before they run benchmarks.
+> Use $isomer-op-entrypoint use toolbox to insert a callback into `isomer-deepsci-experiment/begin`. The Toolbox is `gpu-evidence-quality`, and for topic `cuda-kernel-study` it should remind experiment agents to classify evidence before they run benchmarks.
 
 AI (visible response):
 

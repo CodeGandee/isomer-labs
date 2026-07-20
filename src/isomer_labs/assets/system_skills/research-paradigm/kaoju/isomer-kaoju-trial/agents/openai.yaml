@@ -1,7 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-kaoju-trial"
-  short_description: "Prepare and run governed code trials."
-  default_prompt: "Use $isomer-kaoju-trial to prepare a recorded environment or run one separately approved bounded code trial."

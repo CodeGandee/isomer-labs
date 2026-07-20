@@ -115,8 +115,13 @@ def packaged_extension_skill_owners() -> dict[str, str]:
 
     owners: dict[str, str] = {}
     for extension in iter_system_skill_extensions():
-        for skill_path in extension.skills:
-            skill_name = PurePosixPath(skill_path).name
+        skill_names = {
+            extension.entry_skill,
+            *extension.protected_members,
+            *extension.legacy_aliases,
+            *(PurePosixPath(skill_path).name for skill_path in extension.skills),
+        }
+        for skill_name in skill_names:
             prior = owners.setdefault(skill_name, extension.extension_id)
             if prior != extension.extension_id:
                 raise ArtifactIdentityError(

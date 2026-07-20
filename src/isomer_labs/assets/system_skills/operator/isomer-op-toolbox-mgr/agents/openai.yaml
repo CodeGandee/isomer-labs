@@ -1,9 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-op-toolbox-mgr"
-  short_description: "Create and manage project-local Isomer Toolboxes."
-  default_prompt: "Use $isomer-op-toolbox-mgr help to create, convert, install, inspect, or manage a project-local Toolbox."
-policy:
-  allow_implicit_invocation: true

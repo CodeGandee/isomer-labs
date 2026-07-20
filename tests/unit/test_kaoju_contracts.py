@@ -31,7 +31,14 @@ class KaojuContractTests(unittest.TestCase):
         contract = load_contract()
         self.assertEqual(14, len(contract.skills))
         self.assertEqual(10, len(contract.survey_intents))
-        self.assertEqual("isomer-kaoju-pipeline", contract.skills[0])
+        self.assertEqual("isomer-ext-kaoju-entrypoint", contract.entry_skill)
+        self.assertEqual("isomer-ext-kaoju-entrypoint", contract.skills[0])
+        self.assertEqual(13, len(contract.protected_members))
+        self.assertEqual(tuple(contract.skills[1:]), tuple(item.logical_id for item in contract.protected_members))
+        self.assertEqual(
+            "isomer-ext-kaoju-entrypoint->trial",
+            next(item.invocation_designator for item in contract.protected_members if item.logical_id == "isomer-kaoju-trial"),
+        )
         self.assertEqual(
             {
                 "list": "isomer-cli --print-json ext kaoju bindings list",
@@ -163,6 +170,12 @@ class KaojuContractTests(unittest.TestCase):
         self.assertIn("LaTeX source is canonical paper state", raw["supersession"]["replaced_requirements"])
         decisions = raw["implementation_decisions"]
         self.assertEqual("5.1.0", decisions["myst_parser"]["locked_selection"])
+        self.assertEqual("KAOJU:PAPER-TEMPLATE-LATEX", decisions["paper_templates"]["latex_identity"])
+        self.assertEqual(
+            "report working-copy, stocked-template, and paper-local repair drift without automatic propagation",
+            decisions["paper_templates"]["drift_policy"],
+        )
+        self.assertEqual(["preamble", "marker", "include"], raw["template_roles"]["latex"]["composition_modes"])
         self.assertEqual("independent-compatible-implementation", decisions["wiki_viewer"]["decision"])
 
 

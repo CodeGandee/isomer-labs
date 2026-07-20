@@ -21,7 +21,7 @@ Repository preparation has four ordered phases:
 
 User Action:
 
-> $isomer-op-topic-creator run-to setup-topic-env
+> $isomer-op-entrypoint use topic-create to run through setup-topic-env
 
 AI:
 
@@ -103,7 +103,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-srv-topic-env-setup verify-env-gate
+> $isomer-op-entrypoint use topic-create to verify the topic environment Gate
 
 User Prompt:
 

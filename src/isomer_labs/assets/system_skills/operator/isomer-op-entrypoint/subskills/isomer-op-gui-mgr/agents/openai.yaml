@@ -1,0 +1,9 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-op-gui-mgr"
+  short_description: "Manage Project Web GUI lifecycle guidance, API reference, refresh, and troubleshooting."
+  default_prompt: "Use $isomer-op-entrypoint use gui to perform this isomer-op-gui-mgr task."
+policy:
+  allow_implicit_invocation: true

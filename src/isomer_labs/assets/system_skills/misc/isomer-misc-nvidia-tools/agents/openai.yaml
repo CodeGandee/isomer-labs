@@ -1,7 +1,0 @@
-metadata:
-  version: "0.4.0"
-
-interface:
-  display_name: "isomer-misc-nvidia-tools"
-  short_description: "Pixi CUDA/C++ environment setup"
-  default_prompt: "Use $isomer-misc-nvidia-tools to set up Pixi CUDA/C++ build environments and NVIDIA package/runtime wiring. Use $isomer-misc-bounded-run-tips for bounded CUDA compile settings."

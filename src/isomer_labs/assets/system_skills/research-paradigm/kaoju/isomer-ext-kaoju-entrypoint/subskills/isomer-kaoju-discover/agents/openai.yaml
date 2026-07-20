@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-discover"
+  short_description: "Discover version-aware survey materials."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use discover to perform this isomer-kaoju-discover task."

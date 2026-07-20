@@ -8,13 +8,13 @@ You have model records, experiment evidence, and a research claim. In the runnin
 
 ## Task
 
-Ask the agent to write or revise the paper from accepted evidence, then inspect the rendered output. The main entrypoint is often a manual `isomer-deepsci-pipeline` skill invocation, followed by ordinary prompts that correct the paper as you inspect it.
+Ask the agent to write or revise the paper from accepted evidence, then inspect the rendered output. The main entrypoint is often a manual `isomer-ext-deepsci-entrypoint` skill invocation, followed by ordinary prompts that correct the paper as you inspect it.
 
 ## Example Interaction
 
 User Action:
 
-> $isomer-deepsci-pipeline finalize and write a paper
+> $isomer-ext-deepsci-entrypoint use paper-pass to finalize and write the paper from accepted evidence
 
 AI:
 
@@ -98,7 +98,7 @@ Useful steering prompts:
 
 User Action:
 
-> $isomer-deepsci-pipeline proceed to write or update the pdf paper, pick a workflow
+> $isomer-ext-deepsci-entrypoint use paper-pass to write or update the PDF paper and select the applicable workflow
 
 User Prompt:
 

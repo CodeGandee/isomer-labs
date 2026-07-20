@@ -24,7 +24,12 @@ from isomer_labs.skills.installer import (
     uninstall_system_skills,
     upgrade_system_skills,
 )
-from isomer_labs.skills.system_assets import SystemSkillExtension, iter_system_skill_extensions, iter_system_skill_groups
+from isomer_labs.skills.system_assets import (
+    SystemSkillExtension,
+    iter_system_skill_extensions,
+    iter_system_skill_groups,
+    system_skill_catalog,
+)
 
 
 def register_system_skill_commands(app: click.Group) -> None:
@@ -370,13 +375,19 @@ def _result_diagnostics(results: Sequence[Any]) -> list[Diagnostic]:
 
 
 def _render_list(payload: dict[str, object]) -> list[str]:
-    lines = ["Packaged Isomer system skills:"]
-    for group in _mapping_list(payload.get("groups")):
-        extension = group.get("extension_id")
-        suffix = f" extension={extension}" if extension else ""
-        lines.append(f"- {group.get('name')} ({group.get('kind')}{suffix})")
-        for skill in _string_list(group.get("skills")):
-            lines.append(f"  - {skill}")
+    lines = ["Packaged Isomer public skill packs:"]
+    for pack in _mapping_list(payload.get("skills")):
+        extension = pack.get("extension_id")
+        suffix = f", extension={extension}" if extension else ""
+        lines.append(f"- {pack.get('name')} (pack={pack.get('pack_id')}, {pack.get('group_kind')}{suffix})")
+        commands = _string_list(pack.get("public_commands"))
+        lines.append(f"  public commands: {', '.join(commands) or '(none)'}")
+        lines.append("  protected members:")
+        for member in _mapping_list(pack.get("protected_members")):
+            lines.append(
+                f"    - {member.get('logical_id')} ({member.get('member_name')}): "
+                f"{member.get('invocation_designator')} [{member.get('relative_path')}]"
+            )
     lines.append(f"Targets: {', '.join(_string_list(payload.get('supported_targets')))}")
     lines.append(f"Scopes: {', '.join(_string_list(payload.get('supported_scopes')))}")
     return lines
@@ -385,13 +396,28 @@ def _render_list(payload: dict[str, object]) -> list[str]:
 def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
     extension_id = extension.extension_id
     entry_skill = extension.entry_skill
+    catalog = system_skill_catalog()
+    pack = catalog.pack_for_extension(extension_id)
+    protected_members = [
+        {
+            "logical_id": capability.logical_id,
+            "member_name": capability.member_name,
+            "invocation_designator": capability.invocation_designator,
+            "source_path": capability.source_path,
+            "dependencies": list(capability.dependencies),
+        }
+        for capability in catalog.capabilities
+        if capability.pack_id == pack.pack_id
+    ]
     return {
         "extension_id": extension_id,
         "group": extension.group,
+        "pack_id": pack.pack_id,
         "description": extension.description,
         "entry_skill": entry_skill,
         "commands": list(extension.commands),
         "skills": [Path(skill_path).name for skill_path in extension.skills],
+        "protected_members": protected_members,
         "install_command": (
             f"isomer-cli system-skills install --target <target> --extension {extension_id}"
         ),
@@ -421,11 +447,16 @@ def _render_extension_show(extension: dict[str, object]) -> list[str]:
     ]
     invocation = extension.get("invocation")
     for command in _string_list(extension.get("commands")):
-        lines.append(f"- {invocation} {command}")
+        lines.append(f"- {invocation} use {command} to <task>")
     lines.extend(
         (
-            "Skills:",
+            "Public packs:",
             *[f"- {skill}" for skill in _string_list(extension.get("skills"))],
+            "Protected members:",
+            *[
+                f"- {member.get('logical_id')}: {member.get('invocation_designator')}"
+                for member in _mapping_list(extension.get("protected_members"))
+            ],
             f"Install: {extension.get('install_command')}",
             f"Status: {extension.get('status_command')}",
             "This is an agent-skill extension; runtime and compatibility CLI commands are listed under isomer-cli ext --help.",
@@ -445,6 +476,14 @@ def _render_statuses(statuses: list[dict[str, object]]) -> list[str]:
             lines.append("  invalid projections:")
             for projection in invalid:
                 lines.append(f"    - {projection.get('name')}: {projection.get('path')} ({projection.get('path_kind')})")
+        for pack in _mapping_list(status.get("installed")):
+            lines.append(
+                f"  pack {pack.get('name')}: {pack.get('pack_status')} "
+                f"({len(_mapping_list(pack.get('protected_members')))} protected members)"
+            )
+            missing_members = _string_list(pack.get("missing_protected_members"))
+            if missing_members:
+                lines.append(f"    missing protected members: {', '.join(missing_members)}")
         manifest = status.get("manifest")
         if isinstance(manifest, dict):
             lines.append(f"  manifest: {manifest.get('path')}")
@@ -481,6 +520,11 @@ def _render_upgrades(results: list[dict[str, object]]) -> list[str]:
         stale_absent = _string_list(result.get("stale_absent_skills"))
         if stale_absent:
             lines.append(f"  stale absent: {', '.join(stale_absent)}")
+        retained = _mapping_list(result.get("stale_retained"))
+        if retained:
+            lines.append("  stale retained for repair:")
+            for item in retained:
+                lines.append(f"    - {item.get('name')}: {item.get('path')}")
         manifest = result.get("manifest")
         if isinstance(manifest, dict):
             lines.append(f"  manifest: {manifest.get('path')}")

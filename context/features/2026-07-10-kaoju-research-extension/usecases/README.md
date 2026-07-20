@@ -44,7 +44,7 @@ The use cases follow user goals rather than creating one use case per implementa
 | `isomer-kaoju-compare` | Source-grounded comparison in `UC-04`, empirical intent and results phases in `UC-06`, and registered-dataset reuse planning in `UC-07`. |
 | `isomer-kaoju-audit` | Coverage and claim checks in `UC-01` through `UC-06`, plus full survey evidence audit in `UC-09`. |
 | `isomer-kaoju-synthesize` | Field Summary in `UC-01`, survey deltas in `UC-02` and `UC-03`, Theory Comparison Artifact integration in `UC-04`, trial Findings in `UC-05`, empirical comparison integration in `UC-06`, and final dossier synthesis in `UC-09`. |
-| `isomer-kaoju-pipeline` | `landscape-pass` in `UC-01`, `curated-intake-pass` in `UC-02`, `direction-expansion-pass` in `UC-03`, `theory-comparison-pass` in `UC-04`, `method-trial-pass` in `UC-05`, `comparative-pass` in `UC-06`, and the shared clarification-first checkpoint in `UC-08`. |
+| `isomer-ext-kaoju-entrypoint` | `landscape-pass` in `UC-01`, `curated-intake-pass` in `UC-02`, `direction-expansion-pass` in `UC-03`, `theory-comparison-pass` in `UC-04`, `method-trial-pass` in `UC-05`, `comparative-pass` in `UC-06`, and the shared clarification-first checkpoint in `UC-08`. |
 
 ## Boundary Notes
 

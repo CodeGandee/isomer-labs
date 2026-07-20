@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-compare"
+  short_description: "Compare surveyed methods with evidence."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use compare to perform this isomer-kaoju-compare task."

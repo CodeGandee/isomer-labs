@@ -4,6 +4,6 @@ metadata:
 interface:
   display_name: "isomer-op-entrypoint"
   short_description: "Routes informed Isomer tasks to the right system skill or CLI surface and proceeds."
-  default_prompt: "Use $isomer-op-entrypoint to route this Isomer task to the right system skill or CLI surface and proceed."
+  default_prompt: "Use $isomer-op-entrypoint use help to see core Isomer routes, or use a public subcommand to perform the task."
 policy:
   allow_implicit_invocation: false
