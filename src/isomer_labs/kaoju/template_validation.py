@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 from typing import Mapping
 
 from isomer_labs.kaoju.artifacts import KaojuServiceError
@@ -13,6 +14,16 @@ from isomer_labs.kaoju.template_support import (
     template_tree_digest,
     validate_template_relative_path,
 )
+
+
+_VENUE_CONTRACTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "ieee-transactions": (
+        "IEEEtran",
+        ("\\title{", "\\author{", "\\begin{abstract}", "\\begin{IEEEkeywords}"),
+    ),
+}
+
+_SOURCE_ENTRYPOINT_RE = re.compile(r"^\s*%\s*source entrypoint:\s*(\S+\.tex)\s*$", re.IGNORECASE)
 
 
 def validate_authored_metadata(
@@ -138,6 +149,68 @@ def _validate_latex_contract(metadata: Mapping[str, object], *, root: Path) -> N
                 "The LaTeX entrypoint does not include the declared generated body path.",
             )
         _require_complete_latex_document(text)
+    _validate_venue_constructs(latex, text=text, mode=mode)
+    _reject_reference_only_shim(latex, entrypoint=entrypoint, root=root, text=text)
+
+
+def _validate_venue_constructs(
+    latex: Mapping[str, object],
+    *,
+    text: str,
+    mode: str,
+) -> None:
+    venue = latex.get("venue")
+    if venue is None:
+        return
+    if not isinstance(venue, str) or not venue.strip():
+        raise KaojuServiceError("latex_template_venue_invalid", "LaTeX venue metadata must be a non-empty string when declared.")
+    spec = _VENUE_CONTRACTS.get(venue.strip())
+    if spec is None:
+        return
+    document_class, constructs = spec
+    if f"{{{document_class}}}" not in text:
+        raise KaojuServiceError(
+            "latex_template_venue_class_missing",
+            f"Template declares venue {venue!r} but the entrypoint does not use document class {document_class}.",
+        )
+    if mode == "preamble":
+        return
+    missing = [construct for construct in constructs if construct not in text]
+    if missing:
+        raise KaojuServiceError(
+            "latex_template_venue_constructs_missing",
+            f"Template declares venue {venue!r} but the entrypoint lacks required constructs: {', '.join(missing)}.",
+            ("Adopt the real venue template tree that carries its title, author, abstract, and keywords constructs.",),
+        )
+
+
+def _reject_reference_only_shim(
+    latex: Mapping[str, object],
+    *,
+    entrypoint: Path,
+    root: Path,
+    text: str,
+) -> None:
+    referenced: list[str] = []
+    provenance = latex.get("source_provenance")
+    if isinstance(provenance, dict):
+        for key in ("upstream_entrypoint", "entrypoint"):
+            candidate = provenance.get(key)
+            if isinstance(candidate, str) and candidate.endswith(".tex"):
+                referenced.append(candidate)
+    for line in text.splitlines():
+        match = _SOURCE_ENTRYPOINT_RE.match(line)
+        if match:
+            referenced.append(match.group(1))
+    tree_files = {path.relative_to(root).as_posix() for path in root.rglob("*") if path.is_file()}
+    entrypoint_name = entrypoint.relative_to(root).as_posix()
+    missing = sorted({name for name in referenced if name != entrypoint_name and name not in tree_files and Path(name).name not in {Path(item).name for item in tree_files}})
+    if missing:
+        raise KaojuServiceError(
+            "latex_template_reference_only",
+            f"The template references an external venue entrypoint that is not packed in the tree: {', '.join(missing)}.",
+            ("Adopt the real venue template tree so the referenced entrypoint source is part of the stored content.",),
+        )
 
 
 def _require_complete_latex_document(text: str) -> None:

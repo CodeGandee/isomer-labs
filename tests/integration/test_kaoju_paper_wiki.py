@@ -184,7 +184,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             "citation-map-1",
             "isomer-kaoju-write",
             relationships={"paper_draft": "paper-draft-1", "evidence": "source-digest-1"},
-            sections={"citations": {"paper-one": {"source_ref": "source-digest-1"}}, "displays": {"throughput": {"artifact_ref": "paper-display-1", "role": "figure", "evidence_refs": ["source-digest-1"], "caption_status": "verified", "insertion_locator": "method comparison"}}},
+            sections={"citations": [{"cite_key": "paper-one", "title": "Paper One", "source_identity": "arxiv:0000.00001", "source_digest_ref": "source-digest-1", "display_role": "primary_source"}], "displays": {"throughput": {"artifact_ref": "paper-display-1", "role": "figure", "evidence_refs": ["source-digest-1"], "caption_status": "verified", "insertion_locator": "method comparison"}}},
             scope="paper-main",
         )
         structure = self.root / "inputs/paper-structure.md"
@@ -235,37 +235,42 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         draft = self.root / "inputs/paper-draft.md"
         write(
             draft,
-            """
-            # Title
-            Evidence-Led Systems Survey
+            """---
+title: "Evidence-Led Systems Survey"
+authors:
+  - name: "Integration Agent"
+---
 
-            ## Abstract
-            This survey summarizes accepted evidence {cite}`paper-one`.
+# Title
+Evidence-Led Systems Survey
 
-            ## Introduction
-            The question and boundary are explicit.
+## Abstract
+This survey summarizes accepted evidence {cite}`paper-one`.
 
-            ## Background
-            This section defines the mechanism.
+## Introduction
+The question and boundary are explicit.
 
-            ## Related Work
-            Accepted works remain version-aware.
+## Background
+This section defines the mechanism.
 
-            ## Method Comparison
-            The comparison preserves non-comparable cells.
+## Related Work
+Accepted works remain version-aware.
 
-            ## Discussion
-            Contradictions and limitations remain visible.
+## Method Comparison
+The comparison preserves non-comparable cells.
 
-            ## Conclusion
-            The conclusion is calibrated to the evidence.
+## Discussion
+Contradictions and limitations remain visible.
 
-            ## References
-            {cite}`paper-one`
+## Conclusion
+The conclusion is calibrated to the evidence.
 
-            ## Appendix Details
-            Grounded optional detail that requires orphan confirmation.
-            """,
+## References
+{cite}`paper-one`
+
+## Appendix Details
+Grounded optional detail that requires orphan confirmation.
+""",
         )
         self.put_file(
             "KAOJU:PAPER-DRAFT-MYST",
@@ -470,6 +475,19 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         composed_root = Path(str(composed_record["record"]["content_path"])).parent
         self.assertTrue((composed_root / "fixture.cls").is_file())
         self.assertTrue((composed_root / "surveyfixture.sty").is_file())
+        composed_text = (composed_root / "paper.tex").read_text(encoding="utf-8")
+        self.assertFalse(any(line.strip() == "---" for line in composed_text.splitlines()))
+        self.assertIn("% ISOMER_FILL_TITLE: Evidence-Led Systems Survey", composed_text)
+        self.assertNotIn("\\title{Survey Paper}", composed_text)
+        self.assertNotIn("\\section{Title}", composed_text)
+        self.assertNotIn("\\section{Abstract}", composed_text)
+        fill_manifest = json.loads((composed_root / ".isomer-kaoju-tex-fill.json").read_text(encoding="utf-8"))
+        self.assertEqual("isomer-kaoju-tex-fill.v1", fill_manifest["schema_version"])
+        self.assertEqual("Evidence-Led Systems Survey", fill_manifest["frontmatter"]["title"])
+        self.assertEqual("This survey summarizes accepted evidence {cite}`paper-one`.", fill_manifest["abstract"])
+        obligations = {item["id"]: item for item in fill_manifest["obligations"]}
+        self.assertEqual({"title", "authors", "abstract", "keywords", "bibliography"}, set(obligations))
+        self.assertEqual("paper-one", obligations["bibliography"]["entries"][0]["cite_key"])
         status, initialized_again = self.paper(
             "init-tex",
             "--draft-ref",
@@ -550,6 +568,26 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
         self.assertEqual(1, status)
         self.assertEqual("paper_template_ref_mismatch", mismatch["error"]["code"])
 
+        status, unfilled = self.paper(
+            "build-pdf",
+            "--draft-tex-ref",
+            str(initialized_again["draft_ref"]),
+            "--paper-line",
+            "paper-main",
+            "--audit-ref",
+            refs["audit"],
+            "--inspected",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("paper_tex_unfilled_obligations", unfilled["error"]["code"])
+
+        status, unfilled_status = self.paper("tex-status", "--draft-tex-ref", str(initialized_again["draft_ref"]))
+        self.assertEqual(0, status, unfilled_status)
+        unfilled_codes = {item["code"] for item in unfilled_status["diagnostics"]}
+        self.assertIn("tex_unfilled_marker", unfilled_codes)
+        self.assertIn("tex_unfilled_title", unfilled_codes)
+        self.assertIn("tex_unfilled_bibliography", unfilled_codes)
+
         revised_latex = self.root / "inputs/latex-template-revised"
         write(revised_latex / "template.tex", "\\documentclass{fixture}\n\\usepackage{surveyfixture}\n% revised stock\n")
         write(revised_latex / "fixture.cls", (latex_tree / "fixture.cls").read_text(encoding="utf-8"))
@@ -574,8 +612,16 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
 
         repaired_tree = self.root / "actor/repaired-tex-draft"
         shutil.copytree(composed_root, repaired_tree, ignore=shutil.ignore_patterns(".isomer-artifact-manifest.json"))
-        with (repaired_tree / "paper.tex").open("a", encoding="utf-8") as handle:
-            handle.write("% paper-local inspected repair\n")
+        repaired_entrypoint = repaired_tree / "paper.tex"
+        filled_text = "\n".join(
+            line for line in repaired_entrypoint.read_text(encoding="utf-8").splitlines() if not line.startswith("% ISOMER_FILL")
+        )
+        filled_text = filled_text.replace("\\title{}", "\\title{Evidence-Led Systems Survey}").replace("\\author{}", "\\author{Integration Agent}")
+        filled_text = filled_text.replace(
+            "\\end{document}",
+            "\\begin{thebibliography}{9}\n\\bibitem{paper-one} Paper One, arXiv:0000.00001.\n\\end{thebibliography}\n\\end{document}",
+        )
+        repaired_entrypoint.write_text(filled_text + "% paper-local inspected repair\n", encoding="utf-8")
         status, repaired = self.artifact(
             "revise",
             str(initialized_again["draft_ref"]),

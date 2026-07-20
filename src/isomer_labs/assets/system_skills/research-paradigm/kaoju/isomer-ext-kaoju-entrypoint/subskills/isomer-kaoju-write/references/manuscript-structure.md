@@ -10,11 +10,13 @@ Record the profile id, rationale, section order, section jobs, required evidence
 
 ## MyST Requirements
 
-- Use one title and the profile's required heading hierarchy without authored numeric prefixes.
+- Carry the paper title and authors in the MyST YAML frontmatter block, not in a `# Title` body heading; frontmatter is canonical content and feeds the venue title constructs at composition.
+- Keep the abstract as a marked section (an `## Abstract` heading) so composition can lift it into the venue abstract environment; do not treat it as an ordinary numbered section.
+- Use the profile's required heading hierarchy without authored numeric prefixes.
 - Use checked citation roles tied to `KAOJU:CITATION-MAP`.
 - Reference every figure and table as a separate file-backed Artifact through a typed display directive or placeholder.
 - Bind claim-bearing text to accepted source or Run refs and keep supported, challenged, inconclusive, and limited evidence distinct.
-- Keep abstract, acknowledgments, references, appendices, raw blocks, and venue-specific constructs explicit so conversion can diagnose them.
+- Keep abstract, acknowledgments, references, appendices, raw blocks, and venue-specific constructs explicit so composition can map or diagnose them.
 
 ## Derivation Boundary
 

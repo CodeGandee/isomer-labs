@@ -613,6 +613,133 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual("Composed include body.\n", (include_root / "generated/body.tex").read_text(encoding="utf-8"))
         self.assertIn("\\input{generated/body}", (include_root / "paper.tex").read_text(encoding="utf-8"))
 
+    def test_latex_adoption_rejects_reference_only_shim_and_validates_venue_constructs(self) -> None:
+        def latex_metadata(path: Path, contract: dict[str, object]) -> Path:
+            metadata = path
+            _write(metadata, json.dumps({"entrypoint": "paper.tex", "extensions": {"latex": contract}}) + "\n")
+            return metadata
+
+        shim = self.root / "prepared/latex-shim"
+        _write(shim / "paper.tex", "\\documentclass[lettersize,journal]{IEEEtran}\n\\usepackage{amsmath}\n% Source entrypoint: bare_jrnl_new_sample4.tex\n")
+        status, shim_result = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--name",
+            "shim",
+            "--from",
+            str(shim),
+            "--metadata-file",
+            str(
+                latex_metadata(
+                    self.root / "prepared/latex-shim.json",
+                    {
+                        "composition_mode": "preamble",
+                        "generated_entrypoint": "main.tex",
+                        "build_profile": "tectonic",
+                        "source_provenance": {"archive_locator": "tmp/ieee.zip", "upstream_entrypoint": "bare_jrnl_new_sample4.tex"},
+                        "license_posture": "test-only",
+                    },
+                )
+            ),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("latex_template_reference_only", shim_result["error"]["code"])
+
+        wrong_class = self.root / "prepared/latex-wrong-class"
+        _write(wrong_class / "paper.tex", "\\documentclass{article}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n")
+        status, wrong_class_result = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--name",
+            "wrong-class",
+            "--from",
+            str(wrong_class),
+            "--metadata-file",
+            str(
+                latex_metadata(
+                    self.root / "prepared/latex-wrong-class.json",
+                    {
+                        "composition_mode": "marker",
+                        "marker": "% ISOMER_BODY",
+                        "build_profile": "pdflatex",
+                        "source_provenance": "fixture:wrong-class",
+                        "license_posture": "test-only",
+                        "venue": "ieee-transactions",
+                    },
+                )
+            ),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("latex_template_venue_class_missing", wrong_class_result["error"]["code"])
+
+        missing_constructs = self.root / "prepared/latex-missing-constructs"
+        _write(missing_constructs / "paper.tex", "\\documentclass{IEEEtran}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n")
+        status, missing_result = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--name",
+            "missing-constructs",
+            "--from",
+            str(missing_constructs),
+            "--metadata-file",
+            str(
+                latex_metadata(
+                    self.root / "prepared/latex-missing-constructs.json",
+                    {
+                        "composition_mode": "marker",
+                        "marker": "% ISOMER_BODY",
+                        "build_profile": "pdflatex",
+                        "source_provenance": "fixture:missing-constructs",
+                        "license_posture": "test-only",
+                        "venue": "ieee-transactions",
+                    },
+                )
+            ),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("latex_template_venue_constructs_missing", missing_result["error"]["code"])
+
+        complete = self.root / "prepared/latex-complete-venue"
+        _write(
+            complete / "paper.tex",
+            "\\documentclass[journal]{IEEEtran}\n\\begin{document}\n\\title{Fixture}\n\\author{A. Agent}\n\\begin{abstract}Abs.\\end{abstract}\n\\begin{IEEEkeywords}kw\\end{IEEEkeywords}\n% ISOMER_BODY\n\\end{document}\n",
+        )
+        status, complete_result = self.template(
+            "create",
+            "--kind",
+            "latex",
+            "--name",
+            "complete-venue",
+            "--from",
+            str(complete),
+            "--metadata-file",
+            str(
+                latex_metadata(
+                    self.root / "prepared/latex-complete-venue.json",
+                    {
+                        "composition_mode": "marker",
+                        "marker": "% ISOMER_BODY",
+                        "build_profile": "pdflatex",
+                        "source_provenance": "fixture:complete-venue",
+                        "license_posture": "test-only",
+                        "venue": "ieee-transactions",
+                    },
+                )
+            ),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, complete_result)
+
     def test_migration_wraps_one_current_file_and_preserves_legacy_state(self) -> None:
         source = self.root / "prepared/legacy-template.md"
         _write(source, "# Legacy template\n")

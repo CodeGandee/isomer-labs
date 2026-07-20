@@ -32,6 +32,7 @@ DEFAULT_TEMPLATE_NAME = "main"
 EXPORT_METADATA_NAME = ".isomer-template-export.json"
 TEX_SNAPSHOT_MANIFEST_NAME = ".isomer-kaoju-tex-snapshot.json"
 TEX_DRAFT_MANIFEST_NAME = ".isomer-kaoju-tex-draft.json"
+TEX_FILL_MANIFEST_NAME = ".isomer-kaoju-tex-fill.json"
 EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v2"
 LEGACY_EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v1"
 AUDIT_VERSION = "isomer-kaoju-template-mutation-audit.v1"
@@ -143,7 +144,7 @@ def validate_template_relative_path(value: str) -> PurePosixPath:
     path = PurePosixPath(value)
     if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
         raise KaojuServiceError("template_path_invalid", f"Template file path is not a safe relative path: {value!r}")
-    if any(part in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME} for part in path.parts):
+    if any(part in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME, TEX_FILL_MANIFEST_NAME} for part in path.parts):
         raise KaojuServiceError("template_reserved_file", f"Template file path uses a service-reserved name: {value!r}")
     return path
 
@@ -171,7 +172,7 @@ def template_tree_digest(
             continue
         if relative == DIRECTORY_MANIFEST_NAME and allow_internal_manifest:
             continue
-        if path.name in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME}:
+        if path.name in {EXPORT_METADATA_NAME, DIRECTORY_MANIFEST_NAME, TEX_SNAPSHOT_MANIFEST_NAME, TEX_DRAFT_MANIFEST_NAME, TEX_FILL_MANIFEST_NAME}:
             raise KaojuServiceError("template_reserved_file", f"Template tree contains a service-reserved file: {relative}")
         encoded_path = relative.encode("utf-8")
         digest.update(len(encoded_path).to_bytes(8, "big"))

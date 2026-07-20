@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from contextlib import contextmanager
 import hashlib
 from importlib import metadata
@@ -18,29 +17,43 @@ import uuid
 from docutils import nodes  # type: ignore[import-untyped]
 from docutils.core import publish_doctree  # type: ignore[import-untyped]
 from myst_parser.parsers.docutils_ import Parser as MystParser
+import yaml  # type: ignore[import-untyped]
 
 from isomer_labs.kaoju.artifacts import KaojuArtifactService, KaojuServiceError
 from isomer_labs.kaoju.content import checksum_file
 from isomer_labs.kaoju.execution import ExecutionAdapterCommandRequest, command_environment, execute_command_request
 from isomer_labs.kaoju.paper_support import (
+    CITATION_RE,
+    FRONTMATTER_RE,
+    PLACEHOLDER_RE,
+    PaperDiagnostic,
     _compile_log,
     _compose_latex_tree,
+    _extract_abstract,
+    _extract_frontmatter,
+    _fill_obligations,
+    _frontmatter_title_authors,
     _latex_state_identity,
     _load_json,
     _load_tex_manifest,
+    _myst_to_tex,
+    _normalize_heading,
     _paper_tree_digest,
     _record_id,
     _relationships,
     _select_tex_toolchain,
     _semantic_id,
+    _strip_title_heading,
     _structured_payload,
     _tex_command,
     _tree_files,
+    _unfilled_obligations,
     _write_json,
 )
 from isomer_labs.kaoju.templates import KaojuTemplateService
 from isomer_labs.kaoju.template_support import (
     TEX_DRAFT_MANIFEST_NAME,
+    TEX_FILL_MANIFEST_NAME,
     TEX_SNAPSHOT_MANIFEST_NAME,
     validate_template_relative_path,
 )
@@ -48,7 +61,6 @@ from isomer_labs.models import EffectiveTopicContext
 
 
 REQUIRED_PAPER_SECTIONS = (
-    "title",
     "abstract",
     "introduction",
     "background",
@@ -58,30 +70,8 @@ REQUIRED_PAPER_SECTIONS = (
     "conclusion",
     "references",
 )
-PLACEHOLDER_RE = re.compile(r"\{\{([a-zA-Z0-9_.:-]+)\}\}")
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.M)
-CITATION_RE = re.compile(r"\{cite(?::[a-z]+)?\}`([^`]+)`")
 DIRECTIVE_RE = re.compile(r"(?m)^:::\{([^}]+)\}")
-
-
-@dataclass(frozen=True)
-class PaperDiagnostic:
-    """Structured paper diagnostic tied to a file location."""
-
-    code: str
-    message: str
-    line: int
-    column: int = 1
-    severity: str = "error"
-
-    def to_json(self) -> dict[str, object]:
-        return {
-            "code": self.code,
-            "message": self.message,
-            "line": self.line,
-            "column": self.column,
-            "severity": self.severity,
-        }
 
 
 def validate_myst(
@@ -118,6 +108,15 @@ def validate_myst(
             )
         )
     headings = [(match.group(2).strip(), _normalize_heading(match.group(2)), _line_number(text, match.start())) for match in HEADING_RE.finditer(text)]
+    frontmatter_match = FRONTMATTER_RE.match(text)
+    if frontmatter_match:
+        try:
+            parsed_frontmatter = yaml.safe_load(frontmatter_match.group(1))
+        except yaml.YAMLError as exc:
+            diagnostics.append(PaperDiagnostic("myst_frontmatter_invalid", f"MyST frontmatter is not valid YAML: {exc}", 1))
+        else:
+            if not isinstance(parsed_frontmatter, dict):
+                diagnostics.append(PaperDiagnostic("myst_frontmatter_invalid", "MyST frontmatter must be a YAML mapping.", 1))
     normalized = {value for _raw, value, _line in headings}
     for section in required_sections:
         if _normalize_heading(section) not in normalized:
@@ -321,6 +320,11 @@ class KaojuPaperService:
         myst_diagnostics = validate_myst(text)
         if _errors(myst_diagnostics):
             raise KaojuServiceError("paper_myst_invalid", "Canonical MyST draft failed validation before TeX initialization.", tuple(diagnostic.message for diagnostic in _errors(myst_diagnostics)))
+        frontmatter, body = _extract_frontmatter(text)
+        frontmatter_title, frontmatter_authors = _frontmatter_title_authors(frontmatter)
+        abstract_text, body = _extract_abstract(body)
+        body = _strip_title_heading(body, frontmatter_title)
+        bibliography = self._bibliography_entries(citation_refs)
         constructs = sorted(set(DIRECTIVE_RE.findall(text)) | ({"table"} if "|" in text else set()) | ({"citation"} if CITATION_RE.search(text) else set()))
         fingerprint_payload = {
             "latex_template_ref": latex_state.record.id,
@@ -377,14 +381,34 @@ class KaojuPaperService:
                 template_ref = _record_id(template_result)
             draft_tree = temporary / "draft"
             latex_service._copy_canonical_tree(latex_state.root, draft_tree)
-            converted, conversion_diagnostics = _myst_to_tex(text)
+            converted, conversion_diagnostics = _myst_to_tex(body)
             composed_entrypoint = _compose_latex_tree(
                 draft_tree,
                 stock_entrypoint=stock_entrypoint,
                 contract=latex_contract,
                 converted_body=converted,
+                frontmatter=frontmatter,
             )
-            composed_tree_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME})
+            fill_obligations = _fill_obligations(
+                frontmatter_title=frontmatter_title,
+                frontmatter_authors=frontmatter_authors,
+                abstract_text=abstract_text,
+                bibliography=bibliography,
+                conversion_diagnostics=conversion_diagnostics,
+                latex_contract=latex_contract,
+                entrypoint=composed_entrypoint,
+            )
+            fill_manifest = {
+                "schema_version": "isomer-kaoju-tex-fill.v1",
+                "kind": "tex-fill-contract",
+                "source_ref": draft_ref,
+                "entrypoint": composed_entrypoint,
+                "frontmatter": json.loads(json.dumps(frontmatter, default=str)),
+                "abstract": abstract_text,
+                "obligations": fill_obligations,
+            }
+            _write_json(draft_tree / TEX_FILL_MANIFEST_NAME, fill_manifest)
+            composed_tree_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME, TEX_FILL_MANIFEST_NAME})
             draft_manifest = {
                 "schema_version": "isomer-kaoju-tex-draft.v2",
                 "kind": "composed-tex-draft",
@@ -400,6 +424,7 @@ class KaojuPaperService:
                 "composition_contract": latex_contract,
                 "build_profile": build_profile,
                 "citation_inputs": list(citation_refs),
+                "fill_manifest": TEX_FILL_MANIFEST_NAME,
                 "included_files": _tree_files(draft_tree),
                 "initial_composed_tree_digest": composed_tree_digest,
                 "paper_local_repair": False,
@@ -432,6 +457,7 @@ class KaojuPaperService:
             "compatibility_fingerprint": fingerprint,
             "build_ready": False,
             "agent_inspection_required": True,
+            "fill_obligations": fill_obligations,
             "diagnostics": [diagnostic.to_json() for diagnostic in all_diagnostics],
             "affected_refs": [template_ref, _record_id(draft_result)],
         }
@@ -445,7 +471,7 @@ class KaojuPaperService:
         draft_tree = draft_manifest_path.parent
         manifest = _load_tex_manifest(draft_tree, TEX_DRAFT_MANIFEST_NAME)
         recorded_composed_digest = manifest.get("initial_composed_tree_digest")
-        current_composed_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME})
+        current_composed_digest = _paper_tree_digest(draft_tree, excluded={TEX_DRAFT_MANIFEST_NAME, TEX_FILL_MANIFEST_NAME})
         paper_local_repair = current_composed_digest != recorded_composed_digest
         content_identity = manifest.get("content_template")
         content_posture = "unknown"
@@ -516,7 +542,10 @@ class KaojuPaperService:
             "recorded_composed_tree_digest": recorded_composed_digest,
             "current_composed_tree_digest": current_composed_digest,
             "entrypoint": manifest.get("entrypoint"),
-            "diagnostics": [],
+            "diagnostics": [
+                diagnostic.to_json()
+                for diagnostic in _unfilled_obligations(draft_tree, str(manifest.get("entrypoint") or ""))
+            ],
             "next_actions": [],
         }
 
@@ -579,6 +608,13 @@ class KaojuPaperService:
         _audit_path, audit_record = self._record_file(audit_ref, expected={"KAOJU:AUDIT-REPORT"})
         if audit_record.get("status") != "ready":
             raise KaojuServiceError("paper_audit_not_accepted", f"Audit Report {audit_ref} is not accepted and ready; PDF build is blocked.")
+        unfilled = _unfilled_obligations(source_tree, entrypoint.as_posix())
+        if unfilled:
+            raise KaojuServiceError(
+                "paper_tex_unfilled_obligations",
+                "TeX draft has unfilled composition obligations; complete the recorded agent fill before build.",
+                tuple(f"{diagnostic.code} at line {diagnostic.line}: {diagnostic.message}" for diagnostic in unfilled),
+            )
         drift = self.tex_status(draft_tex_ref=draft_tex_ref)
         selected, fallback = _select_tex_toolchain(build_profile)
         if selected is None:
@@ -663,53 +699,50 @@ class KaojuPaperService:
             return {}
         return _load_json(member)
 
+    def _bibliography_entries(self, citation_refs: Sequence[str]) -> list[dict[str, object]]:
+        entries: list[dict[str, object]] = []
+        missing: list[str] = []
+        for ref in citation_refs:
+            path, _record = self._record_file(ref, expected={"KAOJU:CITATION-MAP"})
+            payload = _load_json(path)
+            sections = payload.get("sections")
+            citations = sections.get("citations") if isinstance(sections, dict) else None
+            if not isinstance(citations, list):
+                raise KaojuServiceError("paper_citation_map_invalid", f"Citation map {ref} has no sections.citations list.")
+            for entry in citations:
+                if not isinstance(entry, dict):
+                    continue
+                key = entry.get("cite_key")
+                if not isinstance(key, str) or not key.strip():
+                    continue
+                title = entry.get("title")
+                identity = entry.get("source_identity")
+                if not isinstance(title, str) or not title.strip() or not isinstance(identity, str) or not identity.strip():
+                    missing.append(key)
+                    continue
+                entries.append(
+                    {
+                        "cite_key": key,
+                        "title": title,
+                        "source_identity": identity,
+                        "source_digest_ref": entry.get("source_digest_ref"),
+                        "citation_map_ref": ref,
+                    }
+                )
+        if missing:
+            raise KaojuServiceError(
+                "paper_citation_metadata_missing",
+                f"Citation-map entries lack usable bibliographic metadata (title and source identity): {', '.join(sorted(set(missing)))}.",
+                ("Record title and source identity for the affected keys in the citation map before TeX composition.",),
+            )
+        return entries
+
     @contextmanager
     def _temporary_directory(self, prefix: str) -> Iterator[Path]:
         root = self.context.topic_workspace_path / "tmp" / "kaoju-service"
         root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=prefix, dir=root) as raw:
             yield Path(raw)
-
-
-def _myst_to_tex(text: str) -> tuple[str, list[PaperDiagnostic]]:
-    diagnostics: list[PaperDiagnostic] = []
-    output: list[str] = []
-    in_directive = False
-    for line_number, line in enumerate(text.splitlines(), start=1):
-        heading = re.fullmatch(r"(#{1,6})\s+(.+)", line)
-        if heading:
-            level = len(heading.group(1))
-            command = "section" if level <= 2 else "subsection" if level == 3 else "subsubsection"
-            output.append(f"\\{command}{{{_tex_escape(heading.group(2))}}}")
-            continue
-        directive = re.fullmatch(r"\s*:::\{([^}]+)\}\s*", line)
-        if directive:
-            in_directive = True
-            output.append(f"\\begin{{quote}}\\textbf{{{_tex_escape(directive.group(1).title())}.}}")
-            diagnostics.append(PaperDiagnostic("tex_repair_directive", f"Directive '{directive.group(1)}' was simplified and requires inspection.", line_number, severity="warning"))
-            continue
-        if in_directive and re.fullmatch(r"\s*:::\s*", line):
-            in_directive = False
-            output.append("\\end{quote}")
-            continue
-        if line.lstrip().startswith("|"):
-            diagnostics.append(PaperDiagnostic("tex_repair_table", "Markdown table requires direct TeX table inspection and repair.", line_number, severity="warning"))
-            output.append(f"% ISOMER_REPAIR_TABLE: {_tex_escape(line)}")
-            continue
-        converted = CITATION_RE.sub(lambda match: "\\cite{" + ",".join(key.strip() for key in match.group(1).split(",")) + "}", line)
-        converted = PLACEHOLDER_RE.sub(lambda match: f"\\textbf{{[UNRESOLVED { _tex_escape(match.group(1)) }]}}", converted)
-        if not converted.startswith("\\"):
-            converted = _tex_escape(converted, preserve_commands=True)
-        output.append(converted)
-    return "\n\n".join(output).rstrip() + "\n", diagnostics
-
-
-def _tex_template(document_class: str, venue: str) -> str:
-    return f"\\documentclass{{{_tex_identifier(document_class)}}}\n\\usepackage[utf8]{{inputenc}}\n\\usepackage{{hyperref,graphicx,booktabs,longtable,tabularx}}\n% Venue: {_tex_escape(venue)}\n"
-
-
-def _tex_document(document_class: str, venue: str, body: str) -> str:
-    return _tex_template(document_class, venue) + "\\title{Survey Paper}\n\\author{}\n\\begin{document}\n\\maketitle\n" + body + "\\end{document}\n"
 
 
 def _errors(diagnostics: Sequence[PaperDiagnostic]) -> list[PaperDiagnostic]:
@@ -731,25 +764,9 @@ def _line_number(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
-def _normalize_heading(value: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
-
-
 def _digest_json(value: Mapping[str, object]) -> str:
     encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
-
-
-def _tex_identifier(value: str) -> str:
-    selected = re.sub(r"[^A-Za-z0-9_-]", "", value)
-    return selected or "article"
-
-
-def _tex_escape(value: str, *, preserve_commands: bool = False) -> str:
-    replacements = {"&": "\\&", "%": "\\%", "$": "\\$", "#": "\\#", "_": "\\_", "~": "\\textasciitilde{}", "^": "\\textasciicircum{}"}
-    if not preserve_commands:
-        replacements.update({"\\": "\\textbackslash{}", "{": "\\{", "}": "\\}"})
-    return "".join(replacements.get(character, character) for character in value)
 
 
 def myst_parser_version() -> str:
