@@ -18,7 +18,7 @@ Pipeline execution is a complex process. Before executing any pipeline task, use
 
 ## Overview
 
-`isomer-ext-deepsci-entrypoint` is the public DeepSci pack. It executes one named single-pass procedure or routes a concrete task to one protected DeepSci member while preserving automatic artifact handoffs. Empty invocation executes `help`.
+`isomer-ext-deepsci-entrypoint` is the public DeepSci execution entrypoint. It executes one named single-pass procedure or routes a concrete task to one protected DeepSci member while preserving automatic artifact handoffs. Empty invocation, `help`, and orientation-only requests delegate read-only output to the independent `$isomer-ext-deepsci-welcome` sibling.
 
 Structured payloads use the supported DeepSci v2 display contract: write non-empty top-level `title` and `summary` strings, and give every idea-bearing object that can become a Research Idea its own non-empty `title` and `summary`. Use labels, candidate ids, and aliases only as extra identifiers, not as replacements for display fields.
 
@@ -34,7 +34,7 @@ Use this skill when a research task matches one named pass or a focused DeepSci 
 
 When this skill is invoked, execute the following steps in order.
 
-1. **Resolve the public request**. Accept `$isomer-ext-deepsci-entrypoint use <subcommand> to <task>`, a task-only request, or empty invocation. Empty invocation selects `help`; otherwise select one declared pass or protected member and proceed.
+1. **Resolve the public request**. Accept `$isomer-ext-deepsci-entrypoint use <subcommand> to <task>`, a task-only request, or empty invocation. Empty invocation, `help`, and orientation-only requests delegate to `$isomer-ext-deepsci-welcome` with supplied context intact; otherwise select one declared pass or protected member and proceed.
 2. **Run the latest context preflight**. Before accepting durable inputs or emitting durable records, load or create a `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` for the active Research Topic. Compare prompt memory, chat memory, prior prose, and worker-local files against durable records. Report conflicts instead of silently overwriting durable state.
 3. **Apply begin callbacks**. Resolve `begin` callbacks with `isomer-cli --print-json project skill-callbacks resolve --skill isomer-ext-deepsci-entrypoint --stage begin` after mandatory context or entry-fit checks and before the first skill-specific action. Follow returned instructions within this skill, `isomer-ext-deepsci-entrypoint->shared`, current user request, evidence, gate, and validation constraints; empty callback results continue normally, and conflicts must be reported when they affect the workflow.
 4. **Validate the recipe context**. Build `DEEPSCI:PIPELINE-RECIPE-CONTEXT` from the named pass, optional starting stage, input artifacts, parameters, and budget or checkpoint preferences.

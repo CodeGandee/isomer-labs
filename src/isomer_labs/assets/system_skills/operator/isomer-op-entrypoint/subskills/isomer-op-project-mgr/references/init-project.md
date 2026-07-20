@@ -31,8 +31,8 @@ When this subcommand is selected, execute the following steps in order.
    - Isomer-managed Houmao overlay `.isomer-labs/.houmao/`.
    - Diagnostics and next operator action.
 6. Unless the user explicitly opts out of detected-extension registration, delegate through `isomer-op-entrypoint->system-skills` and select its reconcile-extensions routine after Project initialization succeeds:
-   - Let that owner read Project declarations, inspect current v4 receipt evidence in agent-known project roots, verify explicit-root pack integrity, then classify the current host's live inventory as limited observations.
-   - Let it remember only complete usable public extension packs backed by a current v4 receipt.
+   - Let that owner read Project declarations, inspect current v5 receipt evidence in agent-known project roots, verify explicit-root public-pair pack integrity, then classify the current host's live inventory as limited observations.
+   - Let it remember only complete usable public extension packs backed by a current v5 receipt.
    - If reconciliation fails, preserve the successful Project result, report extension reconciliation as a distinct partial outcome, and offer `$isomer-op-entrypoint use system-skills to reconcile extensions` as the retry route.
    - If the user opts out, skip registration and optionally delegate through `isomer-op-entrypoint->system-skills`, selecting its detect-extensions routine for read-only observations.
 7. State Research Topic creation status:

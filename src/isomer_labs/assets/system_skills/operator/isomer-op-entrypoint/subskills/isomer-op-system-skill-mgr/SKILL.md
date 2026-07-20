@@ -17,7 +17,7 @@ Use this skill for operator-controlled extension discovery, additive reconciliat
 
 1. Resolve the current Project with Project Manifest-backed CLI discovery. If no Project exists, allow read-only catalog and root inspection, but require a selected Project before registration.
 2. Select exactly one subcommand from the table below and load only its detail page plus [references/evidence-and-mutation.md](references/evidence-and-mutation.md).
-3. Apply the evidence ladder in order: read the Project declaration, inspect current v4 receipt evidence in each host-known project root, use explicit-root verification for pack integrity, then classify the host-visible live inventory. A declaration establishes Project routing intent but does not by itself prove current-host usability. A live-inventory name is only an observation.
+3. Apply the evidence ladder in order: read the Project declaration, inspect current v5 receipt evidence in each host-known project root, use explicit-root verification for public-pair and protected pack integrity, then classify the host-visible live inventory. A declaration establishes Project routing intent but does not by itself prove current-host usability. A live-inventory name is only an observation.
 4. Preserve the selected subcommand's mutation posture. Detection and status never mutate. Reconciliation, installation, and repair mutate only when the user request authorizes that operation. For installation, default a Project Operator request to project scope and require explicit user intent before selecting user scope.
 5. Report the evidence basis, compatibility state when known, declaration result, partial outcomes, and host refresh guidance.
 
@@ -28,18 +28,18 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Subcommand | Posture | Use For | Detail |
 | --- | --- | --- | --- |
 | `detect-extensions` | Read-only | Resolve declarations, explicit roots, and live inventory without registering anything | [references/detect-extensions.md](references/detect-extensions.md) |
-| `reconcile-extensions` | Additive mutation unless opted out | Remember complete current-v4 receipt-backed extension packs in the selected Project | [references/reconcile-extensions.md](references/reconcile-extensions.md) |
-| `install-extension` | Authorized installation and additive registration | Install one complete public extension pack for a concrete host target and scope, verify its v4 receipt and nested inventory, and remember it | [references/install-extension.md](references/install-extension.md) |
+| `reconcile-extensions` | Additive mutation unless opted out | Remember complete current-v5 receipt-backed extension packs in the selected Project | [references/reconcile-extensions.md](references/reconcile-extensions.md) |
+| `install-extension` | Authorized installation and additive registration | Install one complete two-public-role extension pack for a concrete host target and scope, verify its v5 receipt and nested inventory, and remember it | [references/install-extension.md](references/install-extension.md) |
 | `status` | Read-only | Summarize declarations, supplied roots, inventory coverage, compatibility, and refresh state | [references/status.md](references/status.md) |
-| `upgrade` | Authorized managed migration | Stage complete public packs, write receipt v4, and clean only receipt-tracked legacy paths | [references/upgrade.md](references/upgrade.md) |
+| `upgrade` | Authorized managed migration | Stage complete public pairs, write receipt v5, and clean only receipt-tracked legacy paths | [references/upgrade.md](references/upgrade.md) |
 | `repair` | Plan-first; mutation only when requested | Diagnose stale declarations, malformed receipts, invalid projections, incompatible versions, or incomplete registration | [references/repair.md](references/repair.md) |
 
 ## Evidence Order
 
 1. **Project declaration**: If the Project Manifest declares the extension, trust it as authoritative Project routing intent. When the task requires execution, continue with the remaining levels to establish current-host usability. If loading later fails, report stale user-controlled state and offer `repair`; never remove the declaration automatically.
-2. **Current v4 receipt**: Ask the host-aware agent for project-scope skill roots it actually knows. Run `isomer-cli internals inspect-system-skill-root --skill-root <root> --extension <extension-id>` for each root. Accept managed installation evidence only when the receipt is current v4, the selected public pack is receipt-tracked, nested protected coverage is complete, and compatibility is usable.
+2. **Current v5 receipt**: Ask the host-aware agent for project-scope skill roots it actually knows. Run `isomer-cli internals inspect-system-skill-root --skill-root <root> --extension <extension-id>` for each root. Accept managed installation evidence only when the receipt is current v5, both ordered public roles are receipt-tracked, nested protected coverage is complete, and compatibility is usable.
 3. **Explicit-root verification**: Use the same inspector's public projection and nested member results. A complete receiptless pack may establish `explicit_root_verified` integrity, but it remains unmanaged and does not authorize registration as a managed install. Treat legacy, partial, invalid, drifted, obsolete, newer-than-CLI, unversioned, malformed, and unsupported-receipt results as migration or repair evidence.
-4. **Limited live inventory**: Submit only host-visible skill names to `isomer-cli internals classify-system-skill-inventory`. A current public name yields `entrypoint_seen` with unverified protected integrity. Old protected names or pipeline aliases yield legacy observations and candidate owning packs. Neither observation proves complete coverage or authorizes automatic Project registration.
+4. **Limited live inventory**: Submit only host-visible skill names to `isomer-cli internals classify-system-skill-inventory`. Current public names yield independent `welcome_seen`, `entrypoint_seen`, or `public_pair_seen` status with unverified receipt and protected integrity. Old protected names or pipeline aliases yield legacy observations and candidate owning packs. None of these observations proves complete coverage or authorizes automatic Project registration.
 5. **Unknown or missing**: Report the missing extension and offer `install-extension` rather than guessing a provider path.
 
 ## Host Context Boundary
@@ -56,7 +56,7 @@ Run `isomer-cli --print-json system-skills install --target <host-known-target> 
 
 Registration is additive and idempotent through `isomer-cli project system-extensions remember <extension-id>`. Never call `forget` because one operator root or inventory lacks an extension. Detection, status, internal inspection, and user opt-out remain non-mutating.
 
-If installation or upgrade succeeds but registration fails, explain that the complete public pack is installed while Project registration remains incomplete. On retry, inspect the v4 receipt and nested inventory first, then finish registration without reinstalling a verified compatible pack. After an installation or upgrade, state that the current agent session may cache old discovery and require a host refresh or new session before claiming live usability.
+If installation or upgrade succeeds but registration fails, explain that the complete public pair is installed while Project registration remains incomplete. On retry, inspect the v5 receipt and nested inventory first, then finish registration without reinstalling a verified compatible pack. After an installation or upgrade, state that the current agent session may cache old discovery and require a host refresh or new session before claiming live usability.
 
 ## Output Contract
 
@@ -87,7 +87,7 @@ Lead with whether the requested extension work is ready, detected, reconciled, i
 - [references/reconcile-extensions.md](references/reconcile-extensions.md): additive Project registration.
 - [references/install-extension.md](references/install-extension.md): selected-root installation, verification, registration, and refresh.
 - [references/status.md](references/status.md): read-only status reporting.
-- [references/upgrade.md](references/upgrade.md): staged v1-v3 to v4 migration and bounded stale cleanup.
+- [references/upgrade.md](references/upgrade.md): staged v1-v4 to v5 migration and bounded stale cleanup.
 - [references/repair.md](references/repair.md): plan-first repair routes and stale declaration handling.
 
 ## Chat Response

@@ -2,15 +2,15 @@
 
 Official non-development Isomer system skills live in this package resource tree. The repository-root `skillset/` directory is a linked authoring view; runtime code must use package-resource helpers rather than derive repository paths.
 
-`manifest.toml` uses `isomer-skillset-manifest.v3` and declares exactly three public packs:
+`manifest.toml` uses `isomer-skillset-manifest.v4` and declares three atomic packs with two ordered public roles each:
 
-| Pack | Public Source | Protected Members |
-| --- | --- | --- |
-| Core | `operator/isomer-op-entrypoint/` | 20 members below `subskills/` |
-| DeepSci | `research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/` | 21 members below `subskills/` |
-| Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 13 members below `subskills/` |
+| Pack | Public Welcome | Execution Entrypoint | Protected Members |
+| --- | --- | --- | --- |
+| Core | `operator/isomer-op-welcome/` | `operator/isomer-op-entrypoint/` | 19 members below entrypoint `subskills/` |
+| DeepSci | `research-paradigm/deepsci/isomer-ext-deepsci-welcome/` | `research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/` | 21 members below entrypoint `subskills/` |
+| Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-welcome/` | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 13 members below entrypoint `subskills/` |
 
-Only `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint` are public host-discoverable skills. Ordinary guidance uses `$<entrypoint> use <subcommand> to <task>` or a task-only invocation. Protected members keep stable logical ids for callbacks, bindings, provenance, compatibility, and private projection, but they are not independent public install units.
+All six welcome and entrypoint siblings are public host-discoverable skills. Use `$<pack>-welcome` for newcomer orientation and typical usage patterns. Use `$<pack>-entrypoint use <subcommand> to <task>` or a task-only entrypoint invocation for concrete work. Selecting either public name installs, upgrades, or removes the complete two-public-role pack. Protected members keep stable logical ids for callbacks, bindings, provenance, compatibility, and private projection, but they are not independent public install units.
 
 Protected is a visibility and routing classification, not a security boundary. A complete installed pack contains readable nested bundles. Role-level minimization uses selective private projection of a protected logical-id dependency closure.
 
@@ -30,7 +30,7 @@ Every active Markdown page that uses object notation declares the standard `skil
 
 ## Namespace Convention
 
-Reserve `isomer-op-entrypoint` for the public core pack and `isomer-ext-<extension-id>-entrypoint` for public extension packs. Protected logical identities retain responsibility prefixes:
+Reserve `isomer-op-welcome` and `isomer-op-entrypoint` for the two core public roles. Reserve `isomer-ext-<extension-id>-welcome` and `isomer-ext-<extension-id>-entrypoint` for extension public roles. Protected logical identities retain responsibility prefixes:
 
 | Prefix | Protected Responsibility |
 | --- | --- |

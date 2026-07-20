@@ -43,15 +43,18 @@ class SystemSkillAssetTests(unittest.TestCase):
         paths = iter_system_skill_paths()
         self.assertEqual(
             (
+                "operator/isomer-op-welcome",
                 "operator/isomer-op-entrypoint",
+                "research-paradigm/deepsci/isomer-ext-deepsci-welcome",
                 "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+                "research-paradigm/kaoju/isomer-ext-kaoju-welcome",
                 "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint",
             ),
             paths,
         )
         capabilities = iter_system_skill_capabilities()
-        self.assertEqual((20, 21, 13), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
-        self.assertEqual(54, len(capabilities))
+        self.assertEqual((19, 21, 13), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
+        self.assertEqual(53, len(capabilities))
         for skill_path in paths:
             self.assertTrue(resolve_system_skill(skill_path).joinpath("SKILL.md").is_file(), skill_path)
         for capability in capabilities:
@@ -73,7 +76,14 @@ class SystemSkillAssetTests(unittest.TestCase):
             "help",
         )
         self.assertEqual(expected_commands, extensions[1].commands)
-        self.assertEqual(("research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",), extensions[0].skills)
+        self.assertEqual(
+            (
+                "research-paradigm/deepsci/isomer-ext-deepsci-welcome",
+                "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+            ),
+            extensions[0].skills,
+        )
+        self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in extensions[0].public_skills))
         self.assertEqual(13, len(extensions[1].protected_members))
         self.assertIn("isomer-kaoju-synthesize", extensions[1].protected_members)
         self.assertEqual(("isomer-kaoju-pipeline",), extensions[1].legacy_aliases)
@@ -158,6 +168,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertTrue(has_system_skill_callback_insertion_point("isomer-kaoju-pipeline", "begin"))
         self.assertTrue(has_system_skill_callback_insertion_point("isomer-ext-kaoju-entrypoint", "begin"))
         self.assertFalse(has_system_skill_callback_insertion_point("isomer-op-entrypoint", "begin"))
+        self.assertFalse(has_system_skill_callback_insertion_point("isomer-ext-kaoju-welcome", "begin"))
 
     def test_manifest_parse_and_callback_lookup_are_process_cached(self) -> None:
         system_assets._load_system_skill_manifest_cached.cache_clear()
@@ -188,6 +199,13 @@ class SystemSkillAssetTests(unittest.TestCase):
         def kaoju(manifest: dict[str, object]) -> dict[str, object]:
             return next(pack for pack in manifest["packs"] if pack["pack_id"] == "kaoju")  # type: ignore[index, union-attr]
 
+        def kaoju_entrypoint(manifest: dict[str, object]) -> dict[str, object]:
+            return next(
+                public
+                for public in manifest["public_skills"]  # type: ignore[union-attr]
+                if public["name"] == "isomer-ext-kaoju-entrypoint"
+            )
+
         mutations = (
             ("missing entry", lambda manifest: kaoju(manifest).pop("entry_skill"), "entry_skill"),
             (
@@ -197,12 +215,12 @@ class SystemSkillAssetTests(unittest.TestCase):
             ),
             (
                 "invalid command",
-                lambda manifest: kaoju(manifest).__setitem__("public_commands", ["Not A Command"]),
-                "public_commands",
+                lambda manifest: kaoju_entrypoint(manifest).__setitem__("public_commands", ["Not A Command"]),
+                "invalid command id",
             ),
             (
                 "duplicate command",
-                lambda manifest: kaoju(manifest).__setitem__("public_commands", ["landscape-pass", "landscape-pass"]),
+                lambda manifest: kaoju_entrypoint(manifest).__setitem__("public_commands", ["landscape-pass", "landscape-pass"]),
                 "duplicate public commands",
             ),
         )
@@ -219,6 +237,9 @@ class SystemSkillAssetTests(unittest.TestCase):
             result = materialize_system_skills(target, groups=("core",))
             self.assertEqual(("core",), result.groups)
             self.assertTrue((target / "manifest.toml").is_file())
+            welcome = target / "isomer-op-welcome"
+            self.assertTrue((welcome / "SKILL.md").is_file())
+            self.assertTrue((welcome / "references" / "show-options.md").is_file())
             core = target / "isomer-op-entrypoint"
             self.assertTrue((core / "SKILL.md").is_file())
             self.assertTrue((core / "agents" / "openai.yaml").is_file())
@@ -281,11 +302,14 @@ class SystemSkillAssetTests(unittest.TestCase):
                 self.assertNotIn("contracts/bindings.v2.json", text, path)
             self.assertFalse((target / "isomer-ext-deepsci-entrypoint").exists())
 
-    def test_packaged_tree_has_only_three_public_skill_roots_and_no_shims(self) -> None:
+    def test_packaged_tree_has_only_six_public_skill_roots_and_no_shims(self) -> None:
         root = system_skills_root()
         public_paths = (
+            "operator/isomer-op-welcome",
             "operator/isomer-op-entrypoint",
+            "research-paradigm/deepsci/isomer-ext-deepsci-welcome",
             "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint",
+            "research-paradigm/kaoju/isomer-ext-kaoju-welcome",
             "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint",
         )
         for public_path in public_paths:
@@ -416,27 +440,26 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertIn("Project Web GUI lifecycle", system_index)
         self.assertIn("backend API reference", system_index)
 
-        welcome = resolve_system_skill_capability("isomer-op-welcome")
-        for reference_name in ("help", "show-options", "choose-path", "show-skill-map"):
+        welcome = resolve_system_skill("operator/isomer-op-welcome")
+        welcome_references = []
+        for reference_name in ("show-options", "choose-path", "show-command-map"):
             reference = welcome.joinpath("references", f"{reference_name}.md").read_text(encoding="utf-8")
-            self.assertTrue(
-                "isomer-op-entrypoint->gui" in reference or "$isomer-op-entrypoint use gui" in reference,
-                reference_name,
-            )
+            welcome_references.append(reference)
             self.assertNotIn("isomer-op-gui-mgr", reference, reference_name)
+        self.assertIn("$isomer-op-entrypoint use gui", "\n".join(welcome_references))
         welcome_skill = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Project Web GUI", welcome_skill)
-        self.assertIn("isomer-op-entrypoint->gui", welcome_skill)
+        self.assertIn("$isomer-op-entrypoint", welcome_skill)
 
     def test_extensions_and_entrypoint_are_discoverable_from_welcome(self) -> None:
-        welcome = resolve_system_skill_capability("isomer-op-welcome")
+        welcome = resolve_system_skill("operator/isomer-op-welcome")
         skill_text = welcome.joinpath("SKILL.md").read_text(encoding="utf-8")
         for term in (
             "start-deepsci-research",
             "start-kaoju-survey",
             "show-extensions",
             "isomer-op-entrypoint",
-            "isomer-op-entrypoint->system-skills",
+            "$isomer-op-entrypoint",
             "isomer-ext-deepsci-entrypoint",
             "isomer-ext-kaoju-entrypoint",
         ):
@@ -446,10 +469,11 @@ class SystemSkillAssetTests(unittest.TestCase):
         for term in (
             "system-skills extensions list",
             "project system-extensions list",
-            "catalog-known",
+            "Catalog-known",
             "Project-declared",
-            "entrypoint_seen",
-            "isomer-op-entrypoint->system-skills",
+            "Welcome-seen",
+            "Entrypoint-seen",
+            "$isomer-op-entrypoint use system-skills",
         ):
             self.assertIn(term, extension_reference)
 
@@ -457,8 +481,8 @@ class SystemSkillAssetTests(unittest.TestCase):
         kaoju_path = welcome.joinpath("references", "start-kaoju-survey.md").read_text(encoding="utf-8")
         self.assertIn("isomer-ext-deepsci-entrypoint", deepsci_path)
         self.assertIn("isomer-ext-kaoju-entrypoint", kaoju_path)
-        self.assertIn("execution topology", deepsci_path)
-        self.assertIn("execution topology", kaoju_path)
+        self.assertIn("topology", deepsci_path)
+        self.assertIn("topology", kaoju_path)
 
     def test_kaoju_is_discoverable_from_operator_entrypoint(self) -> None:
         entrypoint = resolve_system_skill("operator/isomer-op-entrypoint")

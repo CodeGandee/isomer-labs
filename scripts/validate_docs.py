@@ -12,6 +12,7 @@ from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from pathlib import Path
 
 from isomer_labs.cli.examples import COMMAND_EXAMPLES
+from isomer_labs.skills.system_assets import system_skill_catalog
 
 
 REQUIRED_PAGES = [
@@ -62,6 +63,7 @@ SYSTEM_SKILL_SCOPE_PAGES = (
     "docs/manual/cli-reference.md",
     "docs/developer/packaged-system-skills.md",
 )
+SYSTEM_SKILL_MODEL_PAGE = "docs/developer/packaged-system-skills.md"
 SYSTEM_SKILL_STALE_SCOPE_TERMS = (
     "every target-resolving command requires",
     "every install, status, upgrade, and uninstall command requires",
@@ -339,6 +341,73 @@ def check_system_skill_scope_documentation(repo_root: Path) -> list[str]:
     return issues
 
 
+def check_system_skill_manifest_documentation(repo_root: Path) -> list[str]:
+    """Check public skill examples and role documentation against manifest v4."""
+
+    catalog = system_skill_catalog()
+    model_path = repo_root / SYSTEM_SKILL_MODEL_PAGE
+    if not model_path.is_file():
+        return [f"{SYSTEM_SKILL_MODEL_PAGE} is missing"]
+
+    issues: list[str] = []
+    model_content = model_path.read_text(encoding="utf-8")
+    model_lines = model_content.splitlines()
+    if catalog.schema_version not in model_content:
+        issues.append(f"{SYSTEM_SKILL_MODEL_PAGE} must name current schema {catalog.schema_version}")
+    for heading in ("Public Welcome", "Execution Entrypoint"):
+        if heading not in model_content:
+            issues.append(f"{SYSTEM_SKILL_MODEL_PAGE} missing public role heading: {heading}")
+    for pack in catalog.packs:
+        welcome = pack.welcome
+        if welcome is None:
+            issues.append(f"Manifest pack {pack.pack_id} has no welcome role to document")
+            continue
+        if not any(welcome.name in line and pack.entry_skill in line for line in model_lines):
+            issues.append(
+                f"{SYSTEM_SKILL_MODEL_PAGE} must document {welcome.name} and {pack.entry_skill} as one public pair"
+            )
+
+    public_by_name = {
+        public.name: public
+        for pack in catalog.packs
+        for public in pack.public_skills
+    }
+    protected_names = {capability.logical_id for capability in catalog.capabilities}
+    public_pattern = "|".join(re.escape(name) for name in sorted(public_by_name, key=len, reverse=True))
+    command_pattern = re.compile(rf"\$({public_pattern})\s+use\s+([a-z0-9][a-z0-9-]*|<subcommand>)")
+    direct_skill_pattern = re.compile(r"\$(isomer-[a-z0-9][a-z0-9-]*)")
+    paths = [repo_root / "README.md", *iter_docs_markdown(repo_root)]
+    seen_public: set[str] = set()
+    for path in paths:
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        relative = path.relative_to(repo_root)
+        for line_number, line in enumerate(content.splitlines(), start=1):
+            for match in direct_skill_pattern.finditer(line):
+                name = match.group(1)
+                if name in public_by_name:
+                    seen_public.add(name)
+                elif name in protected_names:
+                    issues.append(
+                        f"{relative}:{line_number}: protected skill {name} must not be shown as a direct $ invocation"
+                    )
+            if "isomer-op-entrypoint->welcome" in line:
+                issues.append(f"{relative}:{line_number}: retired protected welcome designator")
+            for match in command_pattern.finditer(line):
+                name, command = match.groups()
+                if command == "<subcommand>":
+                    continue
+                if command not in public_by_name[name].public_commands:
+                    issues.append(
+                        f"{relative}:{line_number}: {command!r} is not a manifest v4 public command of {name}"
+                    )
+    for name in sorted(public_by_name):
+        if name not in seen_public:
+            issues.append(f"Documentation does not include a public invocation for manifest skill {name}")
+    return issues
+
+
 def check_cli_error_example_registry(repo_root: Path) -> list[str]:
     cli_doc = repo_root / CLI_REFERENCE_PAGE
     if not cli_doc.is_file():
@@ -469,6 +538,7 @@ def validate_docs(repo_root: Path, cli_help_workers: int = DEFAULT_CLI_HELP_WORK
         issues.extend(check_cli_coverage(repo_root, commands))
     issues.extend(check_stale_isomer_cli_json_examples(repo_root))
     issues.extend(check_system_skill_scope_documentation(repo_root))
+    issues.extend(check_system_skill_manifest_documentation(repo_root))
     issues.extend(check_cli_error_example_registry(repo_root))
     issues.extend(check_legacy_workspace_paths(repo_root))
     issues.extend(check_semantic_path_documentation(repo_root))

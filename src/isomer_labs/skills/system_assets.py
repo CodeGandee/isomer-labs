@@ -18,9 +18,12 @@ import tomlkit
 SYSTEM_SKILLS_RESOURCE = "assets/system_skills"
 SYSTEM_SKILL_MANIFEST_V2 = "isomer-skillset-manifest.v2"
 SYSTEM_SKILL_MANIFEST_V3 = "isomer-skillset-manifest.v3"
+SYSTEM_SKILL_MANIFEST_V4 = "isomer-skillset-manifest.v4"
 SYSTEM_SKILL_GROUP_KINDS = ("core", "extension")
+SYSTEM_SKILL_PUBLIC_ROLES = ("welcome", "entrypoint")
 SYSTEM_EXTENSION_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SYSTEM_EXTENSION_ENTRYPOINT_RE = re.compile(r"^isomer-ext-([a-z0-9][a-z0-9-]*)-entrypoint$")
+SYSTEM_EXTENSION_WELCOME_RE = re.compile(r"^isomer-ext-([a-z0-9][a-z0-9-]*)-welcome$")
 SYSTEM_EXTENSION_COMMAND_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SYSTEM_SKILL_MEMBER_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 SYSTEM_SKILL_AREA_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -31,21 +34,83 @@ class SystemSkillAssetError(ValueError):
 
 
 @dataclass(frozen=True)
+class SystemSkillPublicSkill:
+    """One public welcome or execution entrypoint in a complete pack."""
+
+    name: str
+    pack_id: str
+    role: str
+    source_path: str
+    public_commands: tuple[str, ...] = ()
+    legacy_aliases: tuple[str, ...] = ()
+    callback_insertion_points: tuple[str, ...] = ()
+    minimum_compatible_version: str = ""
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "name": self.name,
+            "pack_id": self.pack_id,
+            "role": self.role,
+            "source_path": self.source_path,
+            "public_commands": list(self.public_commands),
+            "legacy_aliases": list(self.legacy_aliases),
+            "callback_insertion_points": list(self.callback_insertion_points),
+            "minimum_compatible_version": self.minimum_compatible_version,
+        }
+
+
+@dataclass(frozen=True)
 class SystemSkillPack:
-    """One public, independently installed system-skill pack."""
+    """One atomically installed system-skill pack with ordered public roles."""
 
     pack_id: str
     description: str
     kind: str
-    source_path: str
     entry_skill: str
     always_available: bool
     minimum_compatible_skill_version: str
+    public_skills: tuple[SystemSkillPublicSkill, ...]
     extension_id: str | None = None
-    public_commands: tuple[str, ...] = ()
     protected_members: tuple[str, ...] = ()
-    legacy_aliases: tuple[str, ...] = ()
-    callback_insertion_points: tuple[str, ...] = ()
+
+    @property
+    def entrypoint(self) -> SystemSkillPublicSkill:
+        """Return the designated execution entrypoint record."""
+
+        for public_skill in self.public_skills:
+            if public_skill.name == self.entry_skill:
+                return public_skill
+        raise SystemSkillAssetError(f"Pack {self.pack_id!r} has no entrypoint record for {self.entry_skill!r}.")
+
+    @property
+    def welcome(self) -> SystemSkillPublicSkill | None:
+        """Return the independent welcome record when declared."""
+
+        return next((skill for skill in self.public_skills if skill.role == "welcome"), None)
+
+    @property
+    def source_path(self) -> str:
+        """Return the entrypoint source path for compatibility callers."""
+
+        return self.entrypoint.source_path
+
+    @property
+    def public_commands(self) -> tuple[str, ...]:
+        """Return the entrypoint command inventory for compatibility callers."""
+
+        return self.entrypoint.public_commands
+
+    @property
+    def legacy_aliases(self) -> tuple[str, ...]:
+        """Return entrypoint aliases for compatibility lookup."""
+
+        return self.entrypoint.legacy_aliases
+
+    @property
+    def callback_insertion_points(self) -> tuple[str, ...]:
+        """Return entrypoint callback stages for compatibility callers."""
+
+        return self.entrypoint.callback_insertion_points
 
 
 @dataclass(frozen=True)
@@ -109,6 +174,7 @@ class SystemSkillExtension:
     protected_members: tuple[str, ...] = ()
     source_path: str = ""
     legacy_aliases: tuple[str, ...] = ()
+    public_skills: tuple[SystemSkillPublicSkill, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -142,6 +208,7 @@ class CallbackInsertionPoint:
     description: str
     pack_id: str
     public_skill: str
+    public_role: str
     member_name: str | None
     invocation_designator: str
 
@@ -188,12 +255,21 @@ class SystemSkillCatalog:
         raise SystemSkillAssetError(f"Unknown system-skill pack id: {pack_id}")
 
     def pack_for_public_skill(self, public_skill: str) -> SystemSkillPack:
-        """Return a pack by canonical public entry-skill name."""
+        """Return a pack by either canonical public skill name."""
 
         for pack in self.packs:
-            if pack.entry_skill == public_skill:
+            if any(skill.name == public_skill for skill in pack.public_skills):
                 return pack
         raise SystemSkillAssetError(f"Unknown public system-skill pack: {public_skill}")
+
+    def public_skill_by_name(self, public_skill: str) -> SystemSkillPublicSkill:
+        """Return one public role record by canonical name."""
+
+        for pack in self.packs:
+            for record in pack.public_skills:
+                if record.name == public_skill:
+                    return record
+        raise SystemSkillAssetError(f"Unknown public system skill: {public_skill}")
 
     def pack_for_extension(self, extension_id: str) -> SystemSkillPack:
         """Return an optional pack by extension id."""
@@ -231,10 +307,13 @@ class SystemSkillCatalog:
         """Return ``(kind, canonical_id, deprecated)`` for a catalog identifier."""
 
         for pack in self.packs:
-            if identifier in {pack.pack_id, pack.entry_skill, pack.extension_id}:
+            if identifier in {pack.pack_id, pack.extension_id}:
                 return ("pack", pack.entry_skill, False)
-            if identifier in pack.legacy_aliases:
-                return ("pack", pack.entry_skill, True)
+            for public_skill in pack.public_skills:
+                if identifier == public_skill.name:
+                    return ("pack", pack.entry_skill, False)
+                if identifier in public_skill.legacy_aliases:
+                    return ("pack", pack.entry_skill, True)
         for capability in self.capabilities:
             if identifier == capability.logical_id:
                 return ("capability", capability.logical_id, False)
@@ -311,7 +390,7 @@ def load_system_skill_manifest() -> dict[str, Any]:
 
 
 def parse_system_skill_manifest(manifest: dict[str, Any]) -> SystemSkillCatalog:
-    """Parse a current pack manifest or a supported read-only v2 manifest."""
+    """Parse the current catalog or a supported read-only legacy manifest."""
 
     schema_version = manifest.get("schema_version")
     if schema_version == SYSTEM_SKILL_MANIFEST_V2:
@@ -319,19 +398,23 @@ def parse_system_skill_manifest(manifest: dict[str, Any]) -> SystemSkillCatalog:
             schema_version=SYSTEM_SKILL_MANIFEST_V2,
             legacy_groups=_parse_legacy_system_skill_groups(manifest),
         )
-    if schema_version != SYSTEM_SKILL_MANIFEST_V3:
+    if schema_version not in {SYSTEM_SKILL_MANIFEST_V3, SYSTEM_SKILL_MANIFEST_V4}:
         raise SystemSkillAssetError(f"Unsupported packaged system-skill manifest schema: {schema_version!r}")
     stages = {stage.stage for stage in _parse_callback_stages(manifest)}
-    packs = _parse_system_skill_packs(manifest, stages)
+    packs = (
+        _parse_system_skill_packs_v4(manifest, stages)
+        if schema_version == SYSTEM_SKILL_MANIFEST_V4
+        else _parse_system_skill_packs_v3(manifest, stages)
+    )
     _require_unique((pack.pack_id for pack in packs), "pack ids")
-    _require_unique((pack.entry_skill for pack in packs), "public entry-skill names")
-    _require_unique((pack.source_path for pack in packs), "public pack source paths")
+    _require_unique((skill.name for pack in packs for skill in pack.public_skills), "public skill names")
+    _require_unique((skill.source_path for pack in packs for skill in pack.public_skills), "public skill source paths")
     _require_unique((pack.extension_id for pack in packs if pack.extension_id is not None), "extension ids")
     capabilities = _parse_system_skill_capabilities(manifest, packs, stages)
     _validate_catalog_identities(packs, capabilities)
     _validate_capability_dependencies(capabilities)
     return SystemSkillCatalog(
-        schema_version=SYSTEM_SKILL_MANIFEST_V3,
+        schema_version=str(schema_version),
         packs=packs,
         capabilities=capabilities,
     )
@@ -343,7 +426,9 @@ def system_skill_catalog() -> SystemSkillCatalog:
 
     catalog = parse_system_skill_manifest(_load_system_skill_manifest_cached())
     if catalog.is_legacy:
-        raise SystemSkillAssetError("The packaged system-skill manifest must use schema v3.")
+        raise SystemSkillAssetError("The packaged system-skill manifest must use the current pack schema.")
+    if catalog.schema_version != SYSTEM_SKILL_MANIFEST_V4:
+        raise SystemSkillAssetError("The packaged system-skill manifest must use schema v4.")
     return catalog
 
 
@@ -397,13 +482,14 @@ def iter_system_skill_extensions() -> tuple[SystemSkillExtension, ...]:
                 extension_id=pack.extension_id,
                 group=pack.pack_id,
                 description=pack.description,
-                skills=(pack.source_path,),
+                skills=tuple(skill.source_path for skill in pack.public_skills),
                 entry_skill=pack.entry_skill,
                 commands=pack.public_commands,
                 minimum_compatible_skill_version=pack.minimum_compatible_skill_version,
                 protected_members=pack.protected_members,
                 source_path=pack.source_path,
                 legacy_aliases=pack.legacy_aliases,
+                public_skills=pack.public_skills,
             )
         )
     return tuple(extensions)
@@ -488,7 +574,10 @@ def iter_system_skill_callback_insertion_points(
         catalog.pack_for_extension(extension_id)
     canonical_skill = skill
     if skill is not None:
-        _kind, canonical_skill, _deprecated = catalog.normalize_identity(skill)
+        try:
+            canonical_skill = catalog.public_skill_by_name(skill).name
+        except SystemSkillAssetError:
+            _kind, canonical_skill, _deprecated = catalog.normalize_identity(skill)
     selected: list[CallbackInsertionPoint] = []
     for point in _all_system_skill_callback_insertion_points():
         include_point = point.group_kind == "core" and include_core
@@ -516,13 +605,22 @@ def _all_system_skill_callback_insertion_points() -> tuple[CallbackInsertionPoin
     points: list[CallbackInsertionPoint] = []
     seen_targets: set[tuple[str, str]] = set()
     for pack in catalog.packs:
-        targets: list[tuple[str, str, str | None, str, tuple[str, ...]]] = [
-            (pack.entry_skill, pack.source_path, None, pack.entry_skill, pack.callback_insertion_points)
+        targets: list[tuple[str, str, str, str | None, str, tuple[str, ...]]] = [
+            (
+                public_skill.name,
+                public_skill.source_path,
+                public_skill.role,
+                None,
+                public_skill.name,
+                public_skill.callback_insertion_points,
+            )
+            for public_skill in pack.public_skills
         ]
         targets.extend(
             (
                 capability.logical_id,
                 capability.source_path,
+                "protected",
                 capability.member_name,
                 capability.invocation_designator,
                 capability.callback_insertion_points,
@@ -530,7 +628,7 @@ def _all_system_skill_callback_insertion_points() -> tuple[CallbackInsertionPoin
             for capability in catalog.capabilities
             if capability.pack_id == pack.pack_id
         )
-        for target_skill, skill_path, member_name, invocation_designator, target_stages in targets:
+        for target_skill, skill_path, public_role, member_name, invocation_designator, target_stages in targets:
             for point_stage in target_stages:
                 key = (target_skill, point_stage)
                 if key in seen_targets:
@@ -549,6 +647,7 @@ def _all_system_skill_callback_insertion_points() -> tuple[CallbackInsertionPoin
                         description=stage_metadata.description,
                         pack_id=pack.pack_id,
                         public_skill=pack.entry_skill,
+                        public_role=public_role,
                         member_name=member_name,
                         invocation_designator=invocation_designator,
                     )
@@ -579,6 +678,7 @@ def _legacy_callback_insertion_points(
                         description=stage_metadata.description,
                         pack_id=group.name,
                         public_skill=group.entry_skill or target_skill,
+                        public_role="entrypoint",
                         member_name=None,
                         invocation_designator=target_skill,
                     )
@@ -599,7 +699,11 @@ def has_system_skill_callback_insertion_point(skill: str | None, stage: str | No
     if not skill or not stage:
         return False
     try:
-        _kind, canonical, _deprecated = system_skill_catalog().normalize_identity(skill)
+        catalog = system_skill_catalog()
+        try:
+            canonical = catalog.public_skill_by_name(skill).name
+        except SystemSkillAssetError:
+            _kind, canonical, _deprecated = catalog.normalize_identity(skill)
     except SystemSkillAssetError:
         return False
     return (canonical, stage) in _system_skill_callback_insertion_point_keys()
@@ -619,7 +723,7 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
         SystemSkillGroup(
             name=pack.pack_id,
             description=pack.description,
-            skills=(pack.source_path,),
+            skills=tuple(skill.source_path for skill in pack.public_skills),
             kind=pack.kind,
             always_available=pack.always_available,
             minimum_compatible_skill_version=pack.minimum_compatible_skill_version,
@@ -633,7 +737,7 @@ def _parse_system_skill_groups(manifest: dict[str, Any]) -> tuple[SystemSkillGro
     )
 
 
-def _parse_system_skill_packs(
+def _parse_system_skill_packs_v3(
     manifest: dict[str, Any], callback_stages: set[str]
 ) -> tuple[SystemSkillPack, ...]:
     raw_packs = manifest.get("packs")
@@ -685,18 +789,154 @@ def _parse_system_skill_packs(
                 pack_id=pack_id,
                 description=description,
                 kind=str(kind),
-                source_path=source_path,
                 entry_skill=entry_skill,
                 always_available=always_available,
                 minimum_compatible_skill_version=_required_pep440_version(
                     value.get("minimum_compatible_skill_version"),
                     f"Pack {pack_id!r} minimum_compatible_skill_version",
                 ),
+                public_skills=(
+                    SystemSkillPublicSkill(
+                        name=entry_skill,
+                        pack_id=pack_id,
+                        role="entrypoint",
+                        source_path=source_path,
+                        public_commands=public_commands,
+                        legacy_aliases=legacy_aliases,
+                        callback_insertion_points=points,
+                        minimum_compatible_version=_required_pep440_version(
+                            value.get("minimum_compatible_skill_version"),
+                            f"Pack {pack_id!r} minimum_compatible_skill_version",
+                        ),
+                    ),
+                ),
                 extension_id=str(extension_id) if isinstance(extension_id, str) else None,
-                public_commands=public_commands,
                 protected_members=protected_members,
-                legacy_aliases=legacy_aliases,
+            )
+        )
+    return tuple(packs)
+
+
+def _parse_system_skill_packs_v4(
+    manifest: dict[str, Any], callback_stages: set[str]
+) -> tuple[SystemSkillPack, ...]:
+    raw_packs = manifest.get("packs")
+    raw_public_skills = manifest.get("public_skills")
+    if not isinstance(raw_packs, list) or not raw_packs:
+        raise SystemSkillAssetError("Packaged system-skill manifest v4 must define a non-empty [[packs]] list.")
+    if not isinstance(raw_public_skills, list) or not raw_public_skills:
+        raise SystemSkillAssetError("Packaged system-skill manifest v4 must define a non-empty [[public_skills]] list.")
+
+    raw_pack_map: dict[str, dict[str, Any]] = {}
+    for index, value in enumerate(raw_packs):
+        if not isinstance(value, dict):
+            raise SystemSkillAssetError(f"System-skill pack at index {index} must be a table.")
+        pack_id = _required_identifier(value.get("pack_id"), f"System-skill pack at index {index} pack_id", SYSTEM_SKILL_MEMBER_RE)
+        if pack_id in raw_pack_map:
+            raise SystemSkillAssetError(f"Duplicate pack ids: {pack_id}")
+        raw_pack_map[pack_id] = value
+
+    public_by_pack: dict[str, list[SystemSkillPublicSkill]] = {pack_id: [] for pack_id in raw_pack_map}
+    for index, value in enumerate(raw_public_skills):
+        if not isinstance(value, dict):
+            raise SystemSkillAssetError(f"Public skill at index {index} must be a table.")
+        field = f"Public skill at index {index}"
+        name = _required_string(value.get("name"), f"{field} name")
+        pack_id = _required_identifier(value.get("pack_id"), f"Public skill {name!r} pack_id", SYSTEM_SKILL_MEMBER_RE)
+        if pack_id not in raw_pack_map:
+            raise SystemSkillAssetError(f"Public skill {name!r} references unknown pack {pack_id!r}.")
+        role = value.get("role")
+        if role not in SYSTEM_SKILL_PUBLIC_ROLES:
+            raise SystemSkillAssetError(f"Public skill {name!r} role must be welcome or entrypoint.")
+        source_path = _normalize_relative_path(_required_string(value.get("source_path"), f"Public skill {name!r} source_path"))
+        if PurePosixPath(source_path).name != name:
+            raise SystemSkillAssetError(f"Public skill {name!r} source_path must end with its canonical name.")
+        commands = _string_list(value.get("public_commands", ()), f"Public skill {name!r} public_commands")
+        if any(SYSTEM_EXTENSION_COMMAND_RE.fullmatch(command) is None for command in commands):
+            raise SystemSkillAssetError(f"Public skill {name!r} contains an invalid command id.")
+        if len(commands) != len(set(commands)):
+            raise SystemSkillAssetError(f"Public skill {name!r} must not define duplicate public commands.")
+        aliases = _string_list(value.get("legacy_aliases", ()), f"Public skill {name!r} legacy_aliases")
+        points = _string_list(value.get("callback_insertion_points", ()), f"Public skill {name!r} callback insertion points")
+        _validate_callback_stages(points, callback_stages, f"public skill {name!r}")
+        if role == "welcome" and points:
+            raise SystemSkillAssetError(f"Public welcome skill {name!r} must not declare callback insertion points.")
+        minimum_value = value.get("minimum_compatible_version")
+        pack_floor = raw_pack_map[pack_id].get("minimum_compatible_skill_version")
+        minimum = _required_pep440_version(
+            pack_floor if minimum_value is None else minimum_value,
+            f"Public skill {name!r} minimum_compatible_version",
+        )
+        public_by_pack[pack_id].append(
+            SystemSkillPublicSkill(
+                name=name,
+                pack_id=pack_id,
+                role=str(role),
+                source_path=source_path,
+                public_commands=commands,
+                legacy_aliases=aliases,
                 callback_insertion_points=points,
+                minimum_compatible_version=minimum,
+            )
+        )
+
+    packs: list[SystemSkillPack] = []
+    for index, value in enumerate(raw_packs):
+        assert isinstance(value, dict)
+        field = f"System-skill pack at index {index}"
+        pack_id = _required_identifier(value.get("pack_id"), f"{field} pack_id", SYSTEM_SKILL_MEMBER_RE)
+        description = _required_string(value.get("description"), f"{field} description")
+        kind = value.get("kind")
+        if kind not in SYSTEM_SKILL_GROUP_KINDS:
+            raise SystemSkillAssetError(f"{field} must define kind as core or extension.")
+        entry_skill = _required_string(value.get("entry_skill"), f"{field} entry_skill")
+        always_available = value.get("always_available")
+        if not isinstance(always_available, bool):
+            raise SystemSkillAssetError(f"Pack {pack_id!r} must define boolean always_available.")
+        extension_id = value.get("extension_id")
+        if kind == "core":
+            if extension_id is not None or not always_available:
+                raise SystemSkillAssetError(f"Core system-skill pack {pack_id!r} must be always available and omit extension_id.")
+        else:
+            extension_id = _required_identifier(extension_id, f"Pack {pack_id!r} extension_id", SYSTEM_EXTENSION_ID_RE)
+            if always_available:
+                raise SystemSkillAssetError(f"Extension system-skill pack {pack_id!r} must not be always_available.")
+        public_skills = tuple(public_by_pack[pack_id])
+        roles = tuple(skill.role for skill in public_skills)
+        if roles.count("welcome") != 1 or roles.count("entrypoint") != 1 or len(public_skills) != 2:
+            raise SystemSkillAssetError(f"Pack {pack_id!r} must declare exactly one welcome and one entrypoint public skill.")
+        entrypoint = next(skill for skill in public_skills if skill.role == "entrypoint")
+        welcome = next(skill for skill in public_skills if skill.role == "welcome")
+        if entry_skill != entrypoint.name:
+            raise SystemSkillAssetError(f"Pack {pack_id!r} entry_skill must resolve to its entrypoint-role record.")
+        if kind == "core":
+            if entrypoint.name != "isomer-op-entrypoint" or welcome.name != "isomer-op-welcome":
+                raise SystemSkillAssetError("Core pack public roles must be isomer-op-welcome and isomer-op-entrypoint.")
+        else:
+            entry_match = SYSTEM_EXTENSION_ENTRYPOINT_RE.fullmatch(entrypoint.name)
+            welcome_match = SYSTEM_EXTENSION_WELCOME_RE.fullmatch(welcome.name)
+            if entry_match is None or entry_match.group(1) != extension_id:
+                raise SystemSkillAssetError(f"Extension pack {pack_id!r} entry_skill must be isomer-ext-{extension_id}-entrypoint.")
+            if welcome_match is None or welcome_match.group(1) != extension_id:
+                raise SystemSkillAssetError(f"Extension pack {pack_id!r} welcome skill must be isomer-ext-{extension_id}-welcome.")
+        declared_public = _string_list(value.get("public_skills"), f"Pack {pack_id!r} public_skills")
+        if declared_public != tuple(skill.name for skill in public_skills):
+            raise SystemSkillAssetError(
+                f"Pack {pack_id!r} public skill order does not match declared public records: expected {declared_public!r}."
+            )
+        packs.append(
+            SystemSkillPack(
+                pack_id=pack_id,
+                description=description,
+                kind=str(kind),
+                entry_skill=entry_skill,
+                always_available=always_available,
+                minimum_compatible_skill_version=_required_pep440_version(
+                    value.get("minimum_compatible_skill_version"), f"Pack {pack_id!r} minimum_compatible_skill_version"
+                ),
+                public_skills=public_skills,
+                extension_id=str(extension_id) if isinstance(extension_id, str) else None,
+                protected_members=_string_list(value.get("protected_members", ()), f"Pack {pack_id!r} protected_members"),
             )
         )
     return tuple(packs)
@@ -795,8 +1035,8 @@ def _validate_catalog_identities(
     packs: tuple[SystemSkillPack, ...], capabilities: tuple[SystemSkillCapability, ...]
 ) -> None:
     _require_unique((pack.pack_id for pack in packs), "pack ids")
-    _require_unique((pack.entry_skill for pack in packs), "public entry-skill names")
-    _require_unique((pack.source_path for pack in packs), "public pack source paths")
+    _require_unique((skill.name for pack in packs for skill in pack.public_skills), "public skill names")
+    _require_unique((skill.source_path for pack in packs for skill in pack.public_skills), "public skill source paths")
     _require_unique((pack.extension_id for pack in packs if pack.extension_id is not None), "extension ids")
     _require_unique((capability.source_path for capability in capabilities), "protected source paths")
     _require_unique((capability.invocation_designator for capability in capabilities), "protected invocation designators")
@@ -818,10 +1058,11 @@ def _validate_catalog_identities(
 
     for pack in packs:
         register(pack.pack_id, "pack", pack.entry_skill)
-        register(pack.entry_skill, "pack", pack.entry_skill)
         register(pack.extension_id, "pack", pack.entry_skill)
-        for alias in pack.legacy_aliases:
-            register(alias, "pack", pack.entry_skill)
+        for public_skill in pack.public_skills:
+            register(public_skill.name, "pack", pack.entry_skill)
+            for alias in public_skill.legacy_aliases:
+                register(alias, "pack", pack.entry_skill)
     for capability in capabilities:
         register(capability.logical_id, "capability", capability.logical_id)
         register(capability.invocation_designator, "capability", capability.logical_id)
@@ -985,10 +1226,11 @@ def system_skill_catalog_metadata() -> dict[str, SystemSkillCatalogMetadata]:
         return _parse_legacy_skill_metadata(manifest, catalog.legacy_groups)
     metadata: dict[str, SystemSkillCatalogMetadata] = {}
     for pack in catalog.packs:
-        metadata[pack.source_path] = SystemSkillCatalogMetadata(
-            callback_insertion_points=pack.callback_insertion_points,
-            minimum_compatible_version=pack.minimum_compatible_skill_version,
-        )
+        for public_skill in pack.public_skills:
+            metadata[public_skill.source_path] = SystemSkillCatalogMetadata(
+                callback_insertion_points=public_skill.callback_insertion_points,
+                minimum_compatible_version=public_skill.minimum_compatible_version,
+            )
     for capability in catalog.capabilities:
         metadata[capability.source_path] = SystemSkillCatalogMetadata(
             callback_insertion_points=capability.callback_insertion_points,
@@ -1002,8 +1244,11 @@ def minimum_compatible_system_skill_version(identifier: str) -> str:
 
     catalog = system_skill_catalog()
     for pack in catalog.packs:
-        if identifier in {pack.pack_id, pack.entry_skill, pack.source_path, pack.extension_id, *pack.legacy_aliases}:
+        if identifier in {pack.pack_id, pack.extension_id}:
             return pack.minimum_compatible_skill_version
+        for public_skill in pack.public_skills:
+            if identifier in {public_skill.name, public_skill.source_path, *public_skill.legacy_aliases}:
+                return public_skill.minimum_compatible_version
     for capability in catalog.capabilities:
         if identifier in {
             capability.logical_id,
@@ -1026,7 +1271,7 @@ def _required_pep440_version(value: object, field: str) -> str:
 
 
 def iter_system_skill_paths(groups: Sequence[str] | None = None) -> tuple[str, ...]:
-    """Return public pack paths for v3 or flat skill paths for legacy manifests."""
+    """Return ordered public-skill paths or flat legacy skill paths."""
 
     selected = _selected_groups(groups)
     seen: set[str] = set()
@@ -1075,14 +1320,15 @@ def materialize_system_skills(
     copied_paths: list[Path] = []
     copied_paths.append(_copy_resource_file(root.joinpath("manifest.toml"), target / "manifest.toml"))
     for group in selected_groups:
-        if group.entry_skill is None or len(group.skills) != 1:
+        if group.entry_skill is None:
             for skill_path in group.skills:
                 destination = target / Path(skill_path)
                 _copy_resource_tree(resolve_system_skill(skill_path), destination, copied_paths)
             continue
-        skill_path = group.skills[0]
-        destination = target / group.entry_skill
-        _copy_resource_tree(resolve_system_skill(skill_path), destination, copied_paths)
+        for skill_path in group.skills:
+            public_name = PurePosixPath(skill_path).name
+            destination = target / public_name
+            _copy_resource_tree(resolve_system_skill(skill_path), destination, copied_paths)
     return SystemSkillMaterializationResult(
         target=target,
         groups=selected_names,

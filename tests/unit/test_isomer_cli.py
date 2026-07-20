@@ -710,6 +710,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(any(skill["name"] == "isomer-op-entrypoint" for skill in listed["skills"]))
         self.assertEqual(3, len(listed["skills"]))
         core_pack = next(skill for skill in listed["skills"] if skill["name"] == "isomer-op-entrypoint")
+        self.assertEqual(
+            [("isomer-op-welcome", "welcome"), ("isomer-op-entrypoint", "entrypoint")],
+            [(public["name"], public["role"]) for public in core_pack["public_skills"]],
+        )
         self.assertIn("isomer-op-gui-mgr", {member["logical_id"] for member in core_pack["protected_members"]})
         self.assertFalse(any(skill["name"] == "isomer-op-gui-mgr" for skill in listed["skills"]))
 
@@ -738,9 +742,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual("project", installed["scope"])
         self.assertEqual([{"target": "generic", "scope": "project"}], installed["bindings"])
         self.assertIsNotNone(installed["manifest"])
-        self.assertEqual("isomer-labs-skill-manifest.v4", installed["manifest"]["schema_version"])
+        self.assertEqual("isomer-labs-skill-manifest.v5", installed["manifest"]["schema_version"])
         self.assertEqual(["isomer-op-entrypoint"], installed["manifest"]["skill_names"])
         self.assertTrue((skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertTrue((skill_root / "isomer-op-welcome" / "SKILL.md").is_file())
         self.assertTrue(
             (skill_root / "isomer-op-entrypoint" / "subskills" / "isomer-op-gui-mgr" / "SKILL.md").is_file()
         )
@@ -765,7 +770,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         preserved = json.loads(output)
         self.assertEqual([], preserved["installed_skills"])
-        self.assertEqual(["isomer-op-entrypoint"], [item["name"] for item in preserved["preserved_existing"]])
+        self.assertEqual(
+            ["isomer-op-welcome", "isomer-op-entrypoint"],
+            [item["name"] for item in preserved["preserved_existing"]],
+        )
 
         status, output = self.run_cli(
             [
@@ -806,6 +814,7 @@ class IsomerCliTests(unittest.TestCase):
         removed = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], removed["removed_skills"])
         self.assertFalse((skill_root / "isomer-op-entrypoint").exists())
+        self.assertFalse((skill_root / "isomer-op-welcome").exists())
 
     def test_system_skills_install_defaults_to_exact_project_scope(self) -> None:
         project_root = self.make_root()
@@ -844,6 +853,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual([{"target": "generic", "scope": "project"}], installed["bindings"])
         self.assertEqual(["isomer-op-entrypoint"], installed["manifest"]["skill_names"])
         self.assertTrue((expected_skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
+        self.assertTrue((expected_skill_root / "isomer-op-welcome" / "SKILL.md").is_file())
         self.assertFalse((project_root / ".agents").exists())
         self.assertFalse((user_home / ".agents").exists())
 
@@ -883,6 +893,7 @@ class IsomerCliTests(unittest.TestCase):
         kaoju = listed["extensions"][1]
         self.assertEqual("isomer-ext-kaoju-entrypoint", kaoju["entry_skill"])
         self.assertEqual("$isomer-ext-kaoju-entrypoint", kaoju["invocation"])
+        self.assertEqual("$isomer-ext-kaoju-welcome", kaoju["welcome_invocation"])
         self.assertIn("landscape-pass", kaoju["commands"])
         self.assertIn("manage-dataset", kaoju["commands"])
 
@@ -900,7 +911,11 @@ class IsomerCliTests(unittest.TestCase):
         self.assertIn("--extension kaoju", extension["status_command"])
         self.assertNotIn("--scope", extension["install_command"])
         self.assertIn("--scope <scope>", extension["status_command"])
-        self.assertEqual(["isomer-ext-kaoju-entrypoint"], extension["skills"])
+        self.assertEqual(["isomer-ext-kaoju-welcome", "isomer-ext-kaoju-entrypoint"], extension["skills"])
+        self.assertEqual(
+            ["welcome", "entrypoint"],
+            [public["role"] for public in extension["public_skills"]],
+        )
         self.assertIn(
             "isomer-kaoju-synthesize",
             {member["logical_id"] for member in extension["protected_members"]},
@@ -990,9 +1005,13 @@ class IsomerCliTests(unittest.TestCase):
         self.assertEqual(0, status, output)
         upgraded = json.loads(output)
         self.assertEqual(["isomer-op-entrypoint"], upgraded["refreshed_skills"])
-        self.assertEqual(["isomer-ext-kaoju-entrypoint"], upgraded["stale_removed_skills"])
+        self.assertEqual(
+            ["isomer-ext-kaoju-entrypoint", "isomer-ext-kaoju-welcome"],
+            upgraded["stale_removed_skills"],
+        )
         self.assertTrue((skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
         self.assertFalse((skill_root / "isomer-ext-kaoju-entrypoint").exists())
+        self.assertFalse((skill_root / "isomer-ext-kaoju-welcome").exists())
         self.assertTrue((skill_root / "untracked-skill").exists())
         self.assertEqual(["isomer-op-entrypoint"], upgraded["manifest"]["skill_names"])
 
@@ -1014,7 +1033,7 @@ class IsomerCliTests(unittest.TestCase):
         )
         self.assertEqual(0, status, output)
         forced = json.loads(output)
-        self.assertEqual(["isomer-op-entrypoint"], forced["replaced_skills"])
+        self.assertEqual(["isomer-op-welcome", "isomer-op-entrypoint"], forced["replaced_skills"])
         self.assertNotEqual("local edit\n", (skill_root / "isomer-op-entrypoint" / "SKILL.md").read_text(encoding="utf-8"))
 
     def test_system_skills_cli_deduplicates_all_target_and_rejects_home(self) -> None:
@@ -3273,6 +3292,10 @@ class IsomerCliTests(unittest.TestCase):
         self.assertFalse(data["extensions"][1]["declared_installed"])
         self.assertEqual("isomer-ext-deepsci-entrypoint", data["extensions"][0]["entry_skill"])
         self.assertEqual("isomer-ext-kaoju-entrypoint", data["extensions"][1]["entry_skill"])
+        self.assertEqual(
+            [("isomer-ext-deepsci-welcome", "welcome"), ("isomer-ext-deepsci-entrypoint", "entrypoint")],
+            [(public["name"], public["role"]) for public in data["extensions"][0]["public_skills"]],
+        )
         kaoju_members = {item["logical_id"]: item for item in data["extensions"][1]["protected_members"]}
         self.assertEqual(13, len(kaoju_members))
         self.assertEqual("trial", kaoju_members["isomer-kaoju-trial"]["member_name"])
@@ -3466,6 +3489,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertFalse(point["installation_verified"])
         self.assertEqual("deepsci", point["pack_id"])
         self.assertEqual("isomer-ext-deepsci-entrypoint", point["public_skill"])
+        self.assertEqual("protected", point["public_role"])
         self.assertEqual("scout", point["member_name"])
         self.assertEqual("isomer-ext-deepsci-entrypoint->scout", point["invocation_designator"])
         self.assertTrue(point["nested_path"].endswith("/subskills/isomer-deepsci-scout"))

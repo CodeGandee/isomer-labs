@@ -25,6 +25,7 @@ from isomer_labs.skills.system_assets import (
     callback_insertion_point_stage_names,
     has_system_skill_callback_insertion_point,
     normalize_system_skill_identity,
+    system_skill_catalog,
 )
 
 
@@ -53,6 +54,10 @@ SECRET_VALUE_RE = re.compile(
 def canonical_callback_target(skill: str) -> str:
     """Normalize current and legacy callback targets without rewriting stored provenance."""
 
+    try:
+        return system_skill_catalog().public_skill_by_name(skill).name
+    except SystemSkillAssetError:
+        pass
     try:
         _kind, canonical, _deprecated = normalize_system_skill_identity(skill)
     except SystemSkillAssetError:

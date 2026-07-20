@@ -19,6 +19,7 @@ import yaml
 import validate_research_paradigm_skillset as research_validator
 from isomer_labs.skills.system_assets import (
     SYSTEM_SKILL_MANIFEST_V3,
+    SYSTEM_SKILL_MANIFEST_V4,
     SystemSkillAssetError,
     SystemSkillCatalog,
     parse_system_skill_manifest,
@@ -1068,7 +1069,7 @@ SYSTEM_SKILL_MANAGER_REQUIRED_TERMS = (
     "upgrade",
     "repair",
     "Project declaration",
-    "Current v4 receipt",
+    "Current v5 receipt",
     "Explicit-root verification",
     "Limited live inventory",
     "isomer-cli internals inspect-system-skill-root",
@@ -1123,7 +1124,7 @@ SYSTEM_SKILL_MANAGER_REFERENCE_REQUIRED_TERMS = {
     "upgrade.md": (
         "supported legacy receipt",
         "stages and validates",
-        "current v4 receipt",
+        "current v5 receipt",
         "stale_retained",
         "old receipt and projections remain intact",
         "host refresh or new session",
@@ -2002,6 +2003,7 @@ class PackagedSkillRecord:
     public_skill: str
     kind: str
     pack_id: str
+    public_role: str | None = None
 
 
 def find_repo_root(start: Path) -> Path:
@@ -2328,11 +2330,14 @@ def _read_packaged_manifest(repo_root: Path, diagnostics: list[Diagnostic]) -> d
 def packaged_system_skill_catalog(
     repo_root: Path, diagnostics: list[Diagnostic] | None = None
 ) -> SystemSkillCatalog | None:
-    """Parse the repository's current manifest v3 catalog when present."""
+    """Parse the repository's current or migration-compatible system-skill catalog."""
 
     local_diagnostics = diagnostics if diagnostics is not None else []
     manifest = _read_packaged_manifest(repo_root, local_diagnostics)
-    if manifest is None or manifest.get("schema_version") != SYSTEM_SKILL_MANIFEST_V3:
+    if manifest is None or manifest.get("schema_version") not in {
+        SYSTEM_SKILL_MANIFEST_V3,
+        SYSTEM_SKILL_MANIFEST_V4,
+    }:
         return None
     try:
         return parse_system_skill_manifest(manifest)
@@ -2343,13 +2348,13 @@ def packaged_system_skill_catalog(
             repo_root / "skillset" / "manifest.toml",
             1,
             SYSTEM_SKILL_TEMPLATE_CODE,
-            f"packaged system-skill manifest v3 is invalid: {exc}",
+            f"packaged system-skill manifest is invalid: {exc}",
         )
         return None
 
 
 def packaged_capability_dir(repo_root: Path, logical_id: str, legacy_area: str) -> Path:
-    """Resolve a protected capability in v3 while retaining flat-fixture support."""
+    """Resolve a protected capability while retaining flat-fixture support."""
 
     catalog = packaged_system_skill_catalog(repo_root)
     if catalog is not None:
@@ -2372,8 +2377,8 @@ def packaged_skill_records(
     if manifest is None:
         return ()
 
-    raw_records: list[tuple[str, str, str, str, str]] = []
-    if manifest.get("schema_version") == SYSTEM_SKILL_MANIFEST_V3:
+    raw_records: list[tuple[str, str, str, str, str, str | None]] = []
+    if manifest.get("schema_version") in {SYSTEM_SKILL_MANIFEST_V3, SYSTEM_SKILL_MANIFEST_V4}:
         try:
             catalog = parse_system_skill_manifest(manifest)
         except SystemSkillAssetError as exc:
@@ -2383,11 +2388,20 @@ def packaged_skill_records(
                 repo_root / "skillset" / "manifest.toml",
                 1,
                 SYSTEM_SKILL_TEMPLATE_CODE,
-                f"packaged system-skill manifest v3 is invalid: {exc}",
+                f"packaged system-skill manifest is invalid: {exc}",
             )
             return ()
         raw_records.extend(
-            (pack.source_path, pack.entry_skill, pack.entry_skill, "public", pack.pack_id) for pack in catalog.packs
+            (
+                public.source_path,
+                public.name,
+                pack.entry_skill,
+                "public",
+                pack.pack_id,
+                public.role,
+            )
+            for pack in catalog.packs
+            for public in pack.public_skills
         )
         raw_records.extend(
             (
@@ -2396,6 +2410,7 @@ def packaged_skill_records(
                 catalog.pack_by_id(capability.pack_id).entry_skill,
                 "protected",
                 capability.pack_id,
+                None,
             )
             for capability in catalog.capabilities
         )
@@ -2434,14 +2449,14 @@ def packaged_skill_records(
                 )
                 continue
             raw_records.extend(
-                (raw_skill, Path(raw_skill).name, Path(raw_skill).name, "legacy", str(group_name))
+                (raw_skill, Path(raw_skill).name, Path(raw_skill).name, "legacy", str(group_name), None)
                 for raw_skill in raw_skills
             )
 
     repository_root = repo_root.resolve()
     records: list[PackagedSkillRecord] = []
     seen: set[Path] = set()
-    for raw_skill, skill_name, public_skill, kind, pack_id in raw_records:
+    for raw_skill, skill_name, public_skill, kind, pack_id, public_role in raw_records:
         relative_skill = Path(raw_skill)
         if relative_skill.is_absolute() or ".." in relative_skill.parts:
             add(
@@ -2468,7 +2483,7 @@ def packaged_skill_records(
         if resolved in seen:
             continue
         seen.add(resolved)
-        records.append(PackagedSkillRecord(skill_dir, skill_name, public_skill, kind, pack_id))
+        records.append(PackagedSkillRecord(skill_dir, skill_name, public_skill, kind, pack_id, public_role))
     return tuple(records)
 
 
@@ -2952,7 +2967,7 @@ def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
                 diagnostics,
                 SYSTEM_SKILL_TEMPLATE_CODE,
                 manifest_required=True,
-                invocation_skill=record.public_skill,
+                invocation_skill=record.skill_name if record.kind == "public" else record.public_skill,
             )
         validate_active_skill_references(skill_dir, repo_root, diagnostics, SYSTEM_SKILL_TEMPLATE_CODE)
 
@@ -3444,7 +3459,7 @@ def validate_system_skill_invocations(repo_root: Path) -> list[Diagnostic]:
                     skill_page,
                     1,
                     SYSTEM_SKILL_INVOCATION_CODE,
-                    "nested SKILL.md is not declared as a protected capability in manifest v3",
+                    "nested SKILL.md is not declared as a protected capability in the system-skill manifest",
                 )
 
     for pack_id, shared_logical_id, shared_member in (
@@ -4155,7 +4170,7 @@ def validate_topic_manager_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
+def validate_legacy_welcome_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = repo_root / "skillset" / "operator" / WELCOME_SKILL
     skill_md = skill_dir / "SKILL.md"
@@ -4291,6 +4306,250 @@ def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+WELCOME_TABLE_HEADER = (
+    "Use Case",
+    "When to Use",
+    "Representative Routing Cues",
+    "Required Context",
+    "Canonical Route",
+    "Exact Invocation",
+    "Expected Action",
+    "Mutation Posture",
+    "Next Step",
+)
+
+WELCOME_PACK_CATEGORY_TERMS = {
+    "core": (
+        "Project initialization",
+        "Manual Research Topic",
+        "Formal Agent Team",
+        "Project Web GUI",
+        "Identity posture",
+        "System-skill extension",
+        "Project-local Toolbox",
+        "Environment or package",
+        "DeepSci production research",
+        "Kaoju evidence-led survey",
+    ),
+    "deepsci": (
+        "Hypothesis development",
+        "Broad empirical loop",
+        "Experiment and analysis",
+        "Evidence-backed decision",
+        "Paper development",
+        "Self-review and revision",
+        "Reviewer rebuttal",
+        "Polish and finalize",
+        "Submission or archive",
+        "Readiness recovery",
+    ),
+    "kaoju": (
+        "Direction framing",
+        "Landscape discovery",
+        "Reading-list construction",
+        "Reading-item intake",
+        "Curated evidence intake",
+        "Theory comparison",
+        "Comparative evidence",
+        "Source-code intake",
+        "Bounded code trial",
+        "Genuine reproduction",
+        "Survey audit and synthesis",
+        "Paper production",
+        "Wiki export",
+    ),
+}
+
+
+def _section_table_rows(lines: tuple[str, ...], heading: str) -> tuple[tuple[int, tuple[str, ...]], ...]:
+    heading_index = line_index_containing(lines, heading)
+    if heading_index is None:
+        return ()
+    rows: list[tuple[int, tuple[str, ...]]] = []
+    for index in range(heading_index + 1, len(lines)):
+        line = lines[index]
+        if line.startswith("## "):
+            break
+        cells = _markdown_table_cells(line)
+        if cells is None or all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            continue
+        rows.append((index + 1, cells))
+    return tuple(rows)
+
+
+def validate_public_welcome_skills(
+    repo_root: Path,
+    *,
+    pack_ids: tuple[str, ...] | None = None,
+) -> list[Diagnostic]:
+    """Validate independent public welcomes against their sibling entrypoints."""
+
+    diagnostics: list[Diagnostic] = []
+    catalog = packaged_system_skill_catalog(repo_root, diagnostics)
+    if catalog is None:
+        return diagnostics
+    selected_packs = tuple(
+        pack for pack in catalog.packs if pack_ids is None or pack.pack_id in pack_ids
+    )
+    for pack in selected_packs:
+        welcome = pack.welcome
+        if welcome is None:
+            add(
+                diagnostics,
+                repo_root,
+                repo_root / "skillset" / "manifest.toml",
+                1,
+                "OPS011",
+                f"pack {pack.pack_id!r} must declare one public welcome role",
+            )
+            continue
+        skill_dir = repo_root / "skillset" / welcome.source_path
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.is_file():
+            add(diagnostics, repo_root, skill_md, 1, "OPS011", f"{welcome.name} is required")
+            continue
+        entrypoint_md = repo_root / "skillset" / pack.entrypoint.source_path / "SKILL.md"
+        if entrypoint_md.is_file():
+            entrypoint_text = entrypoint_md.read_text(encoding="utf-8")
+            for required in (f"${welcome.name}", "Empty invocation", "`help`", "delegate"):
+                if required.lower() not in entrypoint_text.lower():
+                    add(diagnostics, repo_root, entrypoint_md, 1, "OPS011", f"entrypoint must delegate orientation to its public welcome and document {required!r}")
+        lines = read_lines(skill_md)
+        text = "\n".join(lines)
+        frontmatter = parse_frontmatter(lines)
+        if frontmatter.get("name") != welcome.name:
+            add(diagnostics, repo_root, skill_md, 2, "OPS011", "welcome frontmatter name must match its manifest identity")
+        description = frontmatter.get("description", "")
+        if not description.startswith("Use when"):
+            add(diagnostics, repo_root, skill_md, 3, "OPS011", "welcome description must start with 'Use when' and state its selection condition")
+        for section in (
+            "## Overview",
+            "## When to Use",
+            "## Workflow",
+            "## Subcommands",
+            "## Typical Use Cases",
+            "## Output Contract",
+            "## Guardrails",
+        ):
+            if section not in text:
+                add(diagnostics, repo_root, skill_md, 1, "OPS011", f"{welcome.name} must include {section}")
+        workflow_index = line_index_containing(lines, "## Workflow")
+        if workflow_index is not None:
+            if workflow_index > 24:
+                add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS011", "welcome must place ## Workflow near the top")
+            if not has_numbered_step_after(lines, workflow_index):
+                add(diagnostics, repo_root, skill_md, workflow_index + 1, "OPS011", "welcome workflow must use numbered steps")
+        if "does not map cleanly" not in text:
+            add(diagnostics, repo_root, skill_md, 1, "OPS011", "welcome must include a freeform planning fallback")
+        if "read-only" not in text.lower():
+            add(diagnostics, repo_root, skill_md, 1, "OPS011", "welcome must state its read-only posture")
+        if f"${pack.entry_skill}" not in text:
+            add(diagnostics, repo_root, skill_md, 1, "OPS011", f"welcome must hand concrete work to ${pack.entry_skill}")
+        if "not mandatory parser keywords" not in text.lower() and "not required parser keywords" not in text.lower():
+            add(diagnostics, repo_root, skill_md, 1, "OPS011", "welcome must label phrase examples as routing cues rather than mandatory parser keywords")
+        validate_manifest(skill_dir, repo_root, diagnostics, "OPS011", manifest_required=True)
+        validate_local_references(skill_dir, repo_root, diagnostics, "OPS011")
+        add_split_output_contract_diagnostics(diagnostics, repo_root, skill_md, lines, code="OPS011", require_contract=True)
+
+        metadata_path = skill_dir / "agents" / "openai.yaml"
+        metadata_text = metadata_path.read_text(encoding="utf-8") if metadata_path.is_file() else ""
+        if "allow_implicit_invocation: true" not in metadata_text:
+            add(diagnostics, repo_root, metadata_path, 1, "OPS011", "public welcome metadata must allow implicit orientation invocation")
+        if (skill_dir / "subskills").exists():
+            add(diagnostics, repo_root, skill_dir / "subskills", 1, "OPS011", "public welcome must not own protected subskills")
+
+        required_references = {"show-options.md", "show-command-map.md", "next-step.md", "help.md"}
+        existing_references = {
+            path.name for path in (skill_dir / "references").glob("*.md")
+        }
+        for reference_name in sorted(required_references - existing_references):
+            add(diagnostics, repo_root, skill_dir / "references" / reference_name, 1, "OPS011", f"welcome must include references/{reference_name}")
+
+        options_path = skill_dir / "references" / "show-options.md"
+        if options_path.is_file():
+            option_lines = read_lines(options_path)
+            rows = _section_table_rows(option_lines, "## Typical Use Cases")
+            if not rows or rows[0][1] != WELCOME_TABLE_HEADER:
+                add(diagnostics, repo_root, options_path, 1, "OPS011", "welcome typical-use-case table must use the standard nine-column header")
+            else:
+                for line_number, cells in rows[1:]:
+                    if len(cells) != len(WELCOME_TABLE_HEADER):
+                        add(diagnostics, repo_root, options_path, line_number, "OPS011", "typical-use-case row must populate all nine standard fields")
+                        continue
+                    for issue in _routing_sentence_diagnostics(cells[1]):
+                        add(diagnostics, repo_root, options_path, line_number, "OPS011", f"When to Use {issue}")
+                    for column, cell in zip(WELCOME_TABLE_HEADER, cells, strict=True):
+                        if not cell.strip():
+                            add(diagnostics, repo_root, options_path, line_number, "OPS011", f"typical-use-case row must populate {column}")
+                    if "$isomer-" not in cells[5]:
+                        add(diagnostics, repo_root, options_path, line_number, "OPS011", "Exact Invocation must contain a public $isomer- invocation")
+                    mutation_text = cells[7].lower()
+                    if not any(
+                        term in mutation_text
+                        for term in (
+                            "read-only",
+                            "mutat",
+                            "create",
+                            "change",
+                            "execute",
+                            "record",
+                            "write",
+                            "run",
+                            "package",
+                            "expose",
+                            "network",
+                            "store",
+                            "acqui",
+                            "require",
+                        )
+                    ):
+                        add(diagnostics, repo_root, options_path, line_number, "OPS011", "Mutation Posture must state whether the routed action reads, executes, or mutates")
+            options_text = "\n".join(option_lines)
+            for category_term in WELCOME_PACK_CATEGORY_TERMS.get(pack.pack_id, ()):
+                if category_term not in options_text:
+                    add(diagnostics, repo_root, options_path, 1, "OPS011", f"{pack.pack_id} welcome must include typical-use category {category_term!r}")
+
+        command_map_path = skill_dir / "references" / "show-command-map.md"
+        if command_map_path.is_file():
+            command_lines = read_lines(command_map_path)
+            rows = _section_table_rows(command_lines, "## Complete Command Map")
+            observed_commands = tuple(
+                _markdown_cell_scalar(cells[0])
+                for _line_number, cells in rows[1:]
+                if cells
+            ) if rows else ()
+            if observed_commands != pack.public_commands:
+                add(
+                    diagnostics,
+                    repo_root,
+                    command_map_path,
+                    1,
+                    "OPS011",
+                    f"command map must cover sibling entrypoint commands exactly once in manifest order; expected {list(pack.public_commands)!r}, observed {list(observed_commands)!r}",
+                )
+
+        active_pages = active_skill_markdown_pages(skill_dir)
+        active_text = "\n".join(path.read_text(encoding="utf-8") for path in active_pages)
+        for capability in catalog.capabilities:
+            if capability.logical_id in active_text or capability.invocation_designator in active_text:
+                add(diagnostics, repo_root, skill_md, 1, "OPS011", f"welcome must not expose protected route {capability.logical_id!r}")
+        for forbidden in (
+            "isomer-op-entrypoint->welcome",
+            "## Protected Subskills",
+            "Apply begin callbacks",
+            "Apply end callbacks",
+        ):
+            if forbidden in active_text:
+                add(diagnostics, repo_root, skill_md, 1, "OPS011", f"welcome must not contain retired or execution-only material {forbidden!r}")
+    return sorted(set(diagnostics))
+
+
+def validate_welcome_module(repo_root: Path) -> list[Diagnostic]:
+    if not (repo_root / "skillset" / "manifest.toml").is_file():
+        return validate_legacy_welcome_module(repo_root)
+    return validate_public_welcome_skills(repo_root, pack_ids=("core",))
+
+
 def _line_is_allowed_entrypoint_service_boundary(line: str) -> bool:
     lower_line = line.lower()
     return any(
@@ -4341,7 +4600,7 @@ def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
         if term not in text:
             add(diagnostics, repo_root, skill_md, first_line_containing(lines, "# Isomer"), "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} must document '{term}'")
     declaration_index = text.find("**Project declaration**")
-    receipt_index = text.find("**Current v4 receipt**")
+    receipt_index = text.find("**Current v5 receipt**")
     root_index = text.find("**Explicit-root verification**")
     inventory_index = text.find("**Limited live inventory**")
     if not 0 <= declaration_index < receipt_index < root_index < inventory_index:
@@ -4351,7 +4610,7 @@ def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
             skill_md,
             first_line_containing(lines, "## Evidence Order"),
             "OPS014",
-            f"{SYSTEM_SKILL_MANAGER_SKILL} must preserve declaration, current-v4 receipt, explicit-root, then live-inventory order",
+            f"{SYSTEM_SKILL_MANAGER_SKILL} must preserve declaration, current-v5 receipt, explicit-root, then live-inventory order",
         )
 
     references_dir = skill_dir / "references"
@@ -4989,12 +5248,13 @@ def validate_package_specifics_skill(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
-def validate_manifest_v3_skillset(repo_root: Path) -> list[Diagnostic]:
-    """Validate the manifest-v3 pack tree without applying retired flat-layout rules."""
+def validate_manifest_catalog_skillset(repo_root: Path) -> list[Diagnostic]:
+    """Validate the public-pack tree without applying retired flat-layout rules."""
 
     diagnostics: list[Diagnostic] = []
     diagnostics.extend(validate_packaged_skill_template(repo_root))
     diagnostics.extend(validate_system_skill_invocations(repo_root))
+    diagnostics.extend(validate_public_welcome_skills(repo_root))
     roots = packaged_skill_dirs(repo_root, diagnostics)
     diagnostics.extend(validate_split_output_contract_docs(repo_root, roots, code="SKL010"))
     diagnostics.extend(validate_chat_output_presentation(repo_root, roots, code="SKL006"))
@@ -5013,8 +5273,8 @@ def validate_all(repo_root: Path) -> list[Diagnostic]:
     manifest = _read_packaged_manifest(repo_root, diagnostics)
     if manifest is None:
         return sorted(set(diagnostics))
-    if manifest.get("schema_version") == SYSTEM_SKILL_MANIFEST_V3:
-        diagnostics.extend(validate_manifest_v3_skillset(repo_root))
+    if manifest.get("schema_version") in {SYSTEM_SKILL_MANIFEST_V3, SYSTEM_SKILL_MANIFEST_V4}:
+        diagnostics.extend(validate_manifest_catalog_skillset(repo_root))
         return sorted(set(diagnostics))
     diagnostics.extend(validate_packaged_skill_template(repo_root))
     diagnostics.extend(validate_system_skill_invocations(repo_root))
@@ -5066,7 +5326,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     repo_root = args.repo_root.resolve() if args.repo_root else find_repo_root(Path.cwd())
     if packaged_system_skill_catalog(repo_root) is not None:
-        diagnostics = validate_manifest_v3_skillset(repo_root)
+        diagnostics = validate_manifest_catalog_skillset(repo_root)
     elif args.scope == "research":
         diagnostics = [
             Diagnostic(item.path, item.line, item.code, item.message)

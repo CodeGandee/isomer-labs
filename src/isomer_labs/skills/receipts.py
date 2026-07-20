@@ -14,11 +14,12 @@ from isomer_labs.core.diagnostics import Diagnostic
 
 
 SKILL_MANIFEST_FILENAME = "isomer-labs-skill-manifest.json"
-SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v4"
+SKILL_MANIFEST_SCHEMA = "isomer-labs-skill-manifest.v5"
 LEGACY_SKILL_MANIFEST_SCHEMAS = (
     "isomer-labs-skill-manifest.v1",
     "isomer-labs-skill-manifest.v2",
     "isomer-labs-skill-manifest.v3",
+    "isomer-labs-skill-manifest.v4",
 )
 ProjectionMode = Literal["copy", "symlink"]
 SystemSkillScope = Literal["user", "project"]
@@ -54,15 +55,37 @@ class SystemSkillManifestMemberRecord:
 
 
 @dataclass(frozen=True)
+class SystemSkillManifestPublicRecord:
+    """One receipt-owned public welcome or entrypoint projection."""
+
+    name: str
+    role: str
+    source_path: str
+    projection_mode: ProjectionMode
+    skill_version: str
+
+    def to_json(self) -> dict[str, str]:
+        return {
+            "name": self.name,
+            "role": self.role,
+            "source_path": self.source_path,
+            "projection_mode": self.projection_mode,
+            "skill_version": self.skill_version,
+        }
+
+
+@dataclass(frozen=True)
 class SystemSkillManifestRecord:
-    """One public pack projection, or one read-only legacy flat record."""
+    """One complete pack receipt, or one read-only legacy flat record."""
 
     name: str
     source_path: str
     projection_mode: ProjectionMode
     skill_version: str | None = None
     pack_id: str | None = None
+    entry_skill: str | None = None
     package_version: str | None = None
+    public_skills: tuple[SystemSkillManifestPublicRecord, ...] = ()
     protected_members: tuple[SystemSkillManifestMemberRecord, ...] = ()
 
     def to_json(self) -> dict[str, object]:
@@ -76,7 +99,9 @@ class SystemSkillManifestRecord:
             data.update(
                 {
                     "pack_id": self.pack_id,
+                    "entry_skill": self.entry_skill or self.name,
                     "package_version": self.package_version,
+                    "public_skills": [skill.to_json() for skill in self.public_skills],
                     "protected_members": [member.to_json() for member in self.protected_members],
                 }
             )
@@ -134,6 +159,20 @@ class SystemSkillRootManifest:
 
     def record_map(self) -> dict[str, SystemSkillManifestRecord]:
         return {record.name: record for record in self.skills}
+
+    def pack_map(self) -> dict[str, SystemSkillManifestRecord]:
+        """Return current or legacy pack records keyed by stable pack id when available."""
+
+        return {record.pack_id or record.name: record for record in self.skills}
+
+    def public_ownership_map(self) -> dict[str, tuple[SystemSkillManifestRecord, SystemSkillManifestPublicRecord]]:
+        """Return v5 public projections keyed by canonical public name."""
+
+        return {
+            public.name: (record, public)
+            for record in self.skills
+            for public in record.public_skills
+        }
 
     def to_json(self) -> dict[str, object]:
         return {
@@ -210,14 +249,43 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
         if schema_version == "isomer-labs-skill-manifest.v1":
             skill_version = None
         pack_id: str | None = None
+        entry_skill: str | None = None
         record_package_version: str | None = None
+        public_skills: list[SystemSkillManifestPublicRecord] = []
         protected_members: list[SystemSkillManifestMemberRecord] = []
         if schema_version == SKILL_MANIFEST_SCHEMA:
             pack_id = item.get("pack_id") if isinstance(item.get("pack_id"), str) else None
+            entry_skill = item.get("entry_skill") if isinstance(item.get("entry_skill"), str) else None
             record_package_version = item.get("package_version") if isinstance(item.get("package_version"), str) else None
+            raw_public_skills = item.get("public_skills")
             raw_members = item.get("protected_members")
-            if pack_id is None or not pack_id or not isinstance(raw_members, list):
+            if (
+                pack_id is None
+                or not pack_id
+                or entry_skill is None
+                or not entry_skill
+                or not isinstance(raw_public_skills, list)
+                or not isinstance(raw_members, list)
+            ):
                 return _malformed(manifest_path, f"Isomer skill manifest pack record {index} is invalid.")
+            for public_index, raw_public in enumerate(raw_public_skills):
+                public = _parse_public_record(raw_public)
+                if public is None:
+                    return _malformed(
+                        manifest_path,
+                        f"Isomer skill manifest pack record {index} public skill {public_index} is invalid.",
+                    )
+                public_skills.append(public)
+            if len(public_skills) != 2 or {public.role for public in public_skills} != {"welcome", "entrypoint"}:
+                return _malformed(
+                    manifest_path,
+                    f"Isomer skill manifest pack record {index} must contain one welcome and one entrypoint.",
+                )
+            if len({public.name for public in public_skills}) != len(public_skills):
+                return _malformed(manifest_path, f"Isomer skill manifest pack record {index} has duplicate public names.")
+            entrypoints = [public for public in public_skills if public.role == "entrypoint"]
+            if entrypoints[0].name != entry_skill or name != entry_skill:
+                return _malformed(manifest_path, f"Isomer skill manifest pack record {index} entrypoint is inconsistent.")
             for member_index, raw_member in enumerate(raw_members):
                 member = _parse_member_record(raw_member)
                 if member is None:
@@ -237,7 +305,9 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
                 projection_mode=projection_mode,
                 skill_version=skill_version if isinstance(skill_version, str) else None,
                 pack_id=pack_id,
+                entry_skill=entry_skill,
                 package_version=record_package_version,
+                public_skills=tuple(public_skills),
                 protected_members=tuple(protected_members),
             )
         )
@@ -246,7 +316,11 @@ def inspect_system_skill_receipt(skill_root: Path, target_name: str) -> SystemSk
 
     bindings: list[SystemSkillManifestBinding] = []
     manifest_target = raw.get("target")
-    if schema_version in {SKILL_MANIFEST_SCHEMA, "isomer-labs-skill-manifest.v3"}:
+    if schema_version in {
+        SKILL_MANIFEST_SCHEMA,
+        "isomer-labs-skill-manifest.v3",
+        "isomer-labs-skill-manifest.v4",
+    }:
         raw_bindings = raw.get("bindings")
         if not isinstance(raw_bindings, list) or not raw_bindings:
             return _malformed(manifest_path, "Isomer skill manifest `bindings` field must be a non-empty list.")
@@ -320,6 +394,34 @@ def _parse_member_record(value: object) -> SystemSkillManifestMemberRecord | Non
     return SystemSkillManifestMemberRecord(logical_id, relative_path, invocation_designator, skill_version)
 
 
+def _parse_public_record(value: object) -> SystemSkillManifestPublicRecord | None:
+    if not isinstance(value, dict):
+        return None
+    name = value.get("name")
+    role = value.get("role")
+    source_path = value.get("source_path")
+    projection_mode = value.get("projection_mode")
+    skill_version = value.get("skill_version")
+    if (
+        not isinstance(name, str)
+        or not name
+        or role not in {"welcome", "entrypoint"}
+        or not isinstance(source_path, str)
+        or not _is_safe_relative_path(source_path)
+        or projection_mode not in {"copy", "symlink"}
+        or not isinstance(skill_version, str)
+        or not _is_pep440_version(skill_version)
+    ):
+        return None
+    return SystemSkillManifestPublicRecord(
+        name=name,
+        role=role,
+        source_path=source_path,
+        projection_mode=projection_mode,
+        skill_version=skill_version,
+    )
+
+
 def _parse_legacy_path_record(value: object) -> SystemSkillLegacyPathRecord | None:
     if not isinstance(value, dict):
         return None
@@ -379,6 +481,7 @@ __all__ = [
     "SystemSkillManifestInspection",
     "SystemSkillLegacyPathRecord",
     "SystemSkillManifestMemberRecord",
+    "SystemSkillManifestPublicRecord",
     "SystemSkillManifestRecord",
     "SystemSkillRootManifest",
     "inspect_system_skill_receipt",

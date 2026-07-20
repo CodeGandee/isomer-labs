@@ -15,7 +15,7 @@ When working from a source checkout, use the developer setup in [Testing](../dev
 
 ## Install System Skills
 
-Install the packaged core pack into the coding-agent surface you use. The host discovers one public core skill, `isomer-op-entrypoint`; its 20 protected capabilities remain nested below it. Pick one target, or use `all` when you intentionally want every supported target populated. This quickstart uses user scope so the pack remains available after you create and enter the Project directory; use project scope from an existing project directory when you want a local installation.
+Install the packaged core pack into the coding-agent surface you use. The host discovers two public siblings: `isomer-op-welcome` teaches typical workflows without mutating the Project, and `isomer-op-entrypoint` routes concrete work to its 19 protected capabilities. Pick one target, or use `all` when you intentionally want every supported target populated. This quickstart uses user scope so the pack remains available after you create and enter the Project directory; use project scope from an existing project directory when you want a local installation.
 
 List optional agent-skill extensions or inspect one extension before installation:
 
@@ -46,22 +46,26 @@ When `--scope` is omitted, `system-skills install` defaults to Project scope at 
 | `kimi-code` | `<cwd>/.kimi-code/skills` | `${KIMI_CODE_HOME:-~/.kimi-code}/skills` |
 | `generic` | `<cwd>/.agents/skills` | `~/.agents/skills` |
 
-Use `--extension deepsci` when the agent should run DeepSci. This installs core plus the complete `isomer-ext-deepsci-entrypoint` pack and its 21 protected members:
+Use `--extension deepsci` when the agent should run DeepSci. This installs core plus the complete DeepSci pack: the public `isomer-ext-deepsci-welcome` and `isomer-ext-deepsci-entrypoint` siblings and their 21 protected members.
 
 ```bash
 isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
-Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. This installs core plus the complete `isomer-ext-kaoju-entrypoint` pack and its 13 protected members.
+Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. This installs core plus the complete Kaoju pack: the public `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint` siblings and their 13 protected members.
 
 ```bash
 isomer-cli system-skills install --target codex --scope user --extension kaoju
 ```
 
-Refresh the coding-agent host or start a new session after installation. Then use only the public entrypoints:
+Refresh the coding-agent host or start a new session after installation. Start with the public welcome skill when you need orientation, then invoke the corresponding public entrypoint for concrete work:
 
 ```text
-$isomer-op-entrypoint use help to show the available workflows
+$isomer-op-welcome
+$isomer-op-welcome show-command-map
+$isomer-ext-deepsci-welcome show-options
+$isomer-ext-kaoju-welcome show-command-map
+$isomer-op-entrypoint use help to show the compatibility welcome handoff
 $isomer-ext-deepsci-entrypoint use empirical-pass to test a selected hypothesis
 $isomer-ext-kaoju-entrypoint use build-reading-list to collect survey evidence
 ```

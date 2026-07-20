@@ -24,7 +24,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 | Intent | Parent-Scoped Route | Public Invocation |
 | --- | --- | --- |
-| Read-only welcome, supported paths, first-run option menu, or route recommendations. | `isomer-op-entrypoint->welcome` | `$isomer-op-entrypoint use help to show available paths` or a visible welcome subcommand. |
+| Read-only welcome, supported paths, first-run option menu, or route recommendations. | `$isomer-op-welcome` | Invoke `$isomer-op-welcome` directly, or use retained entrypoint help and welcome-style commands for compatibility delegation. |
 | Project init, validation, doctor diagnostics, cleanup, content-root relocation, topic listing, context, runtime readiness, or Project-level routing. | `isomer-op-entrypoint->project` | `$isomer-op-entrypoint use project to <task>`. |
 | System-skill extension detection, reconciliation, installation, upgrade, status, registration, compatibility diagnosis, or repair. | `isomer-op-entrypoint->system-skills` | `$isomer-op-entrypoint use system-skills to <task>`. |
 | Project Web GUI lifecycle, GUI Backend launch or status, cache-mode debugging, GUI refresh, recent-errors inspection, backend API reference, or GUI troubleshooting. | `isomer-op-entrypoint->gui` | `$isomer-op-entrypoint use gui to <task>`. |
@@ -35,7 +35,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Explicit Topic Team Specialization, or adaptation, deployment, use, static validation, approval, materialization, repair, or launch of a formal Agent Team identified by the prompt or authoritative context. Generic topic preparation and launch-facing work are excluded. | `isomer-op-entrypoint->topic-team` | `$isomer-op-entrypoint use topic-team to <task>`, naming the formal-team evidence. |
 | Informed-user dispatch from a concrete task to a protected route, public extension, or CLI family. | `isomer-op-entrypoint` | `$isomer-op-entrypoint` with the concrete task. |
 
-The protected `welcome` member is read-only orientation. The public `isomer-op-entrypoint` skill is route-and-proceed dispatch.
+The public `$isomer-op-welcome` sibling owns read-only orientation. The public `isomer-op-entrypoint` skill owns route-and-proceed dispatch.
 
 ## Research Recording Routes
 

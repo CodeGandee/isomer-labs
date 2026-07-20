@@ -1,18 +1,21 @@
 # Packaged System Skills
 
-Isomer distributes three public system-skill packs. Each pack is one top-level host installation unit with protected capabilities nested below `subskills/`.
+Isomer distributes three atomic system-skill packs. Each pack projects a public welcome sibling and a public execution entrypoint sibling; protected capabilities remain below the entrypoint's `subskills/`.
 
-| Pack | Public Skill | Contents |
-| --- | --- | --- |
-| Core | `isomer-op-entrypoint` | 20 protected operator, service, shared-support, and research-recording capabilities |
-| DeepSci | `isomer-ext-deepsci-entrypoint` | 21 protected hypothesis-driven research capabilities |
-| Kaoju | `isomer-ext-kaoju-entrypoint` | 13 protected evidence-led survey capabilities |
+| Pack | Public Welcome | Execution Entrypoint | Contents |
+| --- | --- | --- | --- |
+| Core | `isomer-op-welcome` | `isomer-op-entrypoint` | 19 protected operator, service, shared-support, and research-recording capabilities |
+| DeepSci | `isomer-ext-deepsci-welcome` | `isomer-ext-deepsci-entrypoint` | 21 protected hypothesis-driven research capabilities |
+| Kaoju | `isomer-ext-kaoju-welcome` | `isomer-ext-kaoju-entrypoint` | 13 protected evidence-led survey capabilities |
 
-Ordinary users invoke only these public skills. The accepted prompt form is `$<entrypoint> use <subcommand> to <task>`. A concrete task-only invocation is also valid, and an empty invocation selects help.
+Newcomers invoke a welcome to learn typical usage patterns, routing cues, prerequisites, mutation posture, and exact public commands. Concrete work uses `$<entrypoint> use <subcommand> to <task>` or a task-only entrypoint request. Empty, help, and retained orientation requests at an entrypoint delegate read-only output to its welcome sibling.
 
 ```text
+$isomer-op-welcome
 $isomer-op-entrypoint use project to validate this Project
+$isomer-ext-deepsci-welcome use choose-path to select a production-research pattern
 $isomer-ext-deepsci-entrypoint use empirical-pass to test the selected hypothesis
+$isomer-ext-kaoju-welcome use show-options to compare evidence-led survey patterns
 $isomer-ext-kaoju-entrypoint use build-reading-list to assemble evidence for the survey
 ```
 
@@ -39,7 +42,7 @@ isomer-cli system-skills install --target codex --all-extensions
 isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
-Extension selection includes the core pack. Copy and symlink modes always project a selected public pack as one complete top-level directory. They never place a protected member beside its parent.
+Extension selection includes the core pack. Copy and symlink modes always project both public siblings for each selected pack. They never project only one public role or place a protected member beside its parent.
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`. When `--scope` is omitted, installation defaults to Project scope at the exact process working directory. `--scope user` is the only user-wide installation route. Status, upgrade, and uninstall require an explicit `--scope user|project`.
 
@@ -52,26 +55,26 @@ Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`.
 
 The `all` target expands to all concrete targets and deduplicates identical physical roots. The installer does not provide an arbitrary path override. Use a host-native mechanism for plugin, extra, or custom destinations.
 
-`--skill <public-entrypoint>` selects its complete pack. During the migration window, a protected logical id or old pipeline alias is accepted as a deprecated selector and resolves to its complete owning pack. It does not install the named protected capability alone. `uninstall` refuses protected-member removal because a managed public pack is the ownership unit.
+`--skill <public-welcome-or-entrypoint>` selects its complete pack. During the migration window, a protected logical id or old pipeline alias is accepted as a deprecated selector and resolves to its complete owning pack. It does not install the named protected capability alone. `uninstall` refuses protected-member removal because the complete pack is the ownership unit.
 
 ## Manifest and Identity Layers
 
-`src/isomer_labs/assets/system_skills/manifest.toml` uses `isomer-skillset-manifest.v3`. It separates four identity layers:
+`src/isomer_labs/assets/system_skills/manifest.toml` uses `isomer-skillset-manifest.v4`. It separates five identity layers:
 
-1. Public skill identity names the host-discoverable installation unit.
+1. Public skill identity and role distinguish the read-only welcome from the execution entrypoint.
 2. Pack id names the catalog and receipt unit: `core`, `deepsci`, or `kaoju`.
-3. Protected logical id remains stable for callbacks, Skill Binding Projection, provenance, compatibility selectors, and private projection.
-4. Scoped member name and invocation designator describe parent routing without replacing the logical id.
+3. Designated `entry_skill` names the entrypoint that owns protected routing and execution commands.
+4. Protected logical id remains stable for callbacks, Skill Binding Projection, provenance, compatibility selectors, and private projection.
+5. Scoped member name and invocation designator describe parent routing without replacing the logical id.
 
 The nested source path is package layout, not provider-neutral identity. Bindings and durable records store logical ids rather than pack filesystem paths.
 
 ## Protected Capability Map
 
-The manifest is authoritative. This table documents all 54 current mappings.
+The manifest is authoritative. This table documents all 53 current protected mappings. Public welcomes do not appear here because they are independent public roles.
 
 | Pack | Protected Logical ID | Member | Invocation Designator |
 | --- | --- | --- | --- |
-| `core` | `isomer-op-welcome` | `welcome` | `isomer-op-entrypoint->welcome` |
 | `core` | `isomer-op-project-mgr` | `project` | `isomer-op-entrypoint->project` |
 | `core` | `isomer-op-gui-mgr` | `gui` | `isomer-op-entrypoint->gui` |
 | `core` | `isomer-op-switch-identity` | `identity` | `isomer-op-entrypoint->identity` |
@@ -158,11 +161,11 @@ Old pipeline callback targets normalize to `isomer-ext-deepsci-entrypoint` or `i
 
 ## Receipts, Status, and Migration
 
-Managed roots use `isomer-labs-skill-manifest.v4`. Each receipt record represents one public pack and includes its public name, pack id, source path, projection mode, package and skill versions, extension id, and ordered protected inventory. Every protected inventory row records logical id, relative nested path, invocation designator, and version.
+Managed roots use `isomer-labs-skill-manifest.v5`. Each receipt pack record includes its pack id, designated entrypoint, ordered public welcome and entrypoint projections, package versions, and ordered protected inventory. Every public row records role, source path, projection mode, and version. Every protected row records logical id, relative nested path, invocation designator, and version.
 
-Status verifies the public entrypoint, projection mode, receipt identity, every protected member identity and version, missing members, extra protected paths, and compatibility. A top-level name alone cannot make a pack complete.
+Status verifies both public identities, per-role projection modes and versions, receipt ownership, every protected member identity and version, missing members, extra protected paths, and compatibility. A welcome-only or entrypoint-only observation cannot make a pack complete.
 
-Readers retain v1 through v3 support as legacy flat evidence. They report tracked paths and candidate owner packs without inventing nested integrity. Use managed upgrade to migrate:
+Readers retain v1 through v4 support as legacy evidence. They report tracked paths and candidate owner packs without inventing public-pair integrity. Use managed upgrade to migrate:
 
 ```bash
 isomer-cli system-skills upgrade --target codex --scope project
@@ -170,7 +173,7 @@ isomer-cli system-skills upgrade --target codex --scope project --extension deep
 isomer-cli system-skills upgrade --target codex --scope project --extension kaoju
 ```
 
-Upgrade validates destination conflicts, stages complete new packs, validates their material, and writes receipt v4 before removing old paths. If staging or validation fails, the old receipt and projections remain intact. Cleanup removes only exact obsolete top-level paths tracked by the old receipt. Untracked lookalike directories are preserved. A cleanup failure returns exact `stale_retained` paths, `migration_status=partial_cleanup`, and repair guidance while retaining bounded legacy evidence in receipt v4.
+Upgrade validates destination conflicts, stages both public siblings and protected material, validates the complete pack, and writes receipt v5 before removing old paths. A v4 upgrade adds the public welcome while refreshing the compacted entrypoint. If staging or validation fails, the old receipt and projections remain intact. Cleanup removes only exact obsolete top-level paths tracked by the old receipt. Untracked lookalike directories are preserved. A cleanup failure returns exact `stale_retained` paths, `migration_status=partial_cleanup`, and repair guidance while retaining bounded legacy evidence in receipt v5.
 
 After install or upgrade, refresh the agent host or start a new session. A running host may cache old skill discovery, so file and receipt success do not prove current-session activation.
 
@@ -186,16 +189,16 @@ isomer-cli --print-json internals inspect-system-skill-root --skill-root /explic
 isomer-cli --print-json internals classify-system-skill-inventory --skill-name isomer-ext-kaoju-entrypoint
 ```
 
-These read-only commands return `mutated: false` and use `isomer-internal-system-skill-inspection.v2`. Explicit-root inspection can verify v4 receipt and nested pack integrity, report legacy flat receipt rows, and leave ambient top-level siblings unclassified. Live inventory is deliberately limited: a public name yields `entrypoint_seen`, and old protected names yield legacy observations. Neither proves complete protected coverage.
+These read-only commands return `mutated: false` and use `isomer-internal-system-skill-inspection.v3`. Explicit-root inspection can verify v5 receipt, public-pair, and nested pack integrity, report v1-v4 legacy receipt rows, and leave ambient top-level siblings unclassified. Live inventory is deliberately limited: public names yield independent `welcome_seen` and `entrypoint_seen` observations, while old protected names yield legacy observations. None proves receipt ownership or complete protected coverage.
 
-Project declarations are authoritative routing intent, not current-host integrity evidence. The protected system-skill manager evaluates Project declaration, current v4 receipt, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v4 complete packs.
+Project declarations are authoritative routing intent, not current-host integrity evidence. The protected system-skill manager evaluates Project declaration, current v5 receipt, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v5 complete packs.
 
 ## Namespace Rules
 
 Reserve these public forms:
 
-- `isomer-op-entrypoint` is the sole public core pack.
-- `isomer-ext-<extension-id>-entrypoint` is the public form for an optional extension pack.
+- `isomer-op-welcome` and `isomer-op-entrypoint` are the public core roles.
+- `isomer-ext-<extension-id>-welcome` and `isomer-ext-<extension-id>-entrypoint` are the public forms for an optional extension pack.
 
 Protected logical ids retain responsibility-oriented forms such as `isomer-op-*`, `isomer-srv-*`, `isomer-misc-*`, `isomer-research-*`, `isomer-deepsci-*`, and `isomer-kaoju-*`. Do not use `isomer-ext-*` for protected helpers or arbitrary capability buckets. Do not add top-level compatibility shim folders for protected ids or the old pipeline aliases.
 
@@ -203,7 +206,7 @@ Protected logical ids retain responsibility-oriented forms such as `isomer-op-*`
 
 Every public pack and protected member remains a complete skill bundle and must resolve its local resources without parent or sibling access. Shared family procedures route through the family's protected `shared` member rather than duplicated prose or sibling paths.
 
-All 57 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
+All 59 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
 
 Run these checks before release:
 

@@ -34,7 +34,7 @@ When this skill is invoked, execute the following steps in order.
    - Include any local support reference it names.
    - Execute that workflow for one bounded manual operation.
 5. **Report the Project lifecycle output** using **Essential Output** by default and **Complete Output** when requested, and preserve the **Guardrails**.
-6. **Reconcile operator extensions after initialization**. When `init-project` succeeds, delegate additive extension reconciliation through `isomer-op-entrypoint->system-skills` unless the user opted out. Register only verified current-v4 packs and report initialization and reconciliation as separate outcomes.
+6. **Reconcile operator extensions after initialization**. When `init-project` succeeds, delegate additive extension reconciliation through `isomer-op-entrypoint->system-skills` unless the user opted out. Register only verified current-v5 public-pair packs and report initialization and reconciliation as separate outcomes.
 7. **Hand off topic-oriented work** to the narrow owner:
    - Use `isomer-op-topic-creator` for blank-state topic creation, topic initialization, Topic Actor-ready setup, and human-orchestrated Topic Actor research preparation.
    - Use `isomer-op-topic-mgr` for initialized-topic storage inspection, Topic Actor CRUD, Topic Actor Workspace materialization, actor-scoped path diagnostics, branch helpers, package mutation, environment verification routing, and topology repair.

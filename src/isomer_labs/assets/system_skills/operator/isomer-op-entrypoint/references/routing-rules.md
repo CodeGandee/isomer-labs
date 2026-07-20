@@ -17,7 +17,7 @@ skill_invocation_notation: >
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
 4. Before selecting Topic Team Specialization, require an explicit specialization invocation or prompt or authoritative context that establishes a formal Agent Team target. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces are insufficient.
 5. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
-6. Before optional-extension routing, treat a Project declaration as authoritative routing intent. Delegate current v4 receipt, explicit-root, and limited live-inventory resolution plus any authorized additive registration to `isomer-op-entrypoint->system-skills`. Register only a verified current-v4 complete pack.
+6. Before optional-extension routing, treat a Project declaration as authoritative routing intent. Delegate current v5 receipt, explicit-root, and limited live-inventory resolution plus any authorized additive registration to `isomer-op-entrypoint->system-skills`. Register only a verified current-v5 complete public-pair pack.
 7. Select one route as the initial owner route and let its owner preflight target prerequisites before mutation.
 8. If the target is ready, proceed through the selected route; if a known producer can satisfy a missing input, return paused prerequisite recovery rather than a terminal blocker.
 9. Present the recovery choices in `prerequisite-recovery.md` unless the user already gave explicit target-scoped run-to authorization.
@@ -29,7 +29,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 | Signal | Preferred Route |
 | --- | --- |
-| User asks what Isomer can do, asks for supported paths, or wants a safe menu. | `isomer-op-entrypoint->welcome`, read-only. |
+| User asks what Isomer can do, asks for supported paths, or wants a safe menu. | Delegate to `$isomer-op-welcome`, read-only. |
 | User gives a concrete task and asks the agent to handle it. | `isomer-op-entrypoint`, then route and proceed. |
 | User names a valid skill directly. | Load that skill unless readiness or ownership makes it unsafe. |
 | User names a valid `isomer-cli` command family. | Inspect CLI help and run the smallest safe command. |
@@ -69,7 +69,7 @@ If the request says only to prepare, create, initialize, start, or repair a Rese
 | Explicitly invoke the public `topic-team` route or a named specialization subcommand | `isomer-op-entrypoint->topic-team` |
 | Deploy, specialize, instantiate, materialize, validate, repair, launch, or use a named or contextually selected formal Agent Team | `isomer-op-entrypoint->topic-team`, carrying the formal-team evidence |
 
-A direct public extension invocation preserves explicit user intent. A Project declaration is authoritative routing state; later load failure receives stale-state repair guidance. Current-host readiness routes through `isomer-op-entrypoint->system-skills`, which may reconcile a verified current-v4 complete pack when the concrete request authorizes Project bookkeeping or return migration, installation, compatibility, or refresh advice.
+A direct public extension invocation preserves explicit user intent. A Project declaration is authoritative routing state; later load failure receives stale-state repair guidance. Current-host readiness routes through `isomer-op-entrypoint->system-skills`, which may reconcile a verified current-v5 complete public-pair pack when the concrete request authorizes Project bookkeeping or return migration, installation, compatibility, or refresh advice.
 
 ## Boundary Rules
 

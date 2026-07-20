@@ -27,7 +27,7 @@ from isomer_labs.skills.system_assets import (
 )
 
 
-INTERNAL_INSPECTION_SCHEMA = "isomer-internal-system-skill-inspection.v2"
+INTERNAL_INSPECTION_SCHEMA = "isomer-internal-system-skill-inspection.v3"
 INVENTORY_INPUT_SCHEMA = "isomer-system-skill-inventory.v1"
 
 
@@ -111,18 +111,24 @@ def inspect_explicit_system_skill_root(
 
     for record in selection.skills:
         installed_item = installed.get(record.name)
-        invalid_item = invalid.get(record.name)
         receipt_record = manifest_records.get(record.name)
         row, row_diagnostics = _root_pack_row(
             record,
             installed_item=installed_item,
-            invalid_item=invalid_item,
+            invalid_items={
+                public.name: invalid[public.name]
+                for public in record.public_skills
+                if public.name in invalid
+            },
             receipt_record=receipt_record,
             receipt_status=receipt.status,
         )
         diagnostics.extend(row_diagnostics)
         pack_rows.append(row)
-        if row["entrypoint_status"] != "missing":
+        public_skill_status = row["public_skill_status"]
+        if not isinstance(public_skill_status, list):
+            raise AssertionError("Root pack rows must expose a public_skill_status list.")
+        if any(isinstance(public, dict) and public.get("status") != "missing" for public in public_skill_status):
             observed_names.add(record.name)
         if row["managed"] is True:
             managed_names.add(record.name)
@@ -138,6 +144,7 @@ def inspect_explicit_system_skill_root(
     legacy_rows = _legacy_receipt_rows(receipt.manifest, receipt.status)
     tracked_names = set(manifest_records)
     if receipt.manifest is not None:
+        tracked_names.update(receipt.manifest.public_ownership_map())
         tracked_names.update(record.name for record in receipt.manifest.legacy_paths)
     ambient_paths = _ambient_root_paths(root, tracked_names)
     evidence_basis = "none"
@@ -218,11 +225,28 @@ def classify_system_skill_inventory(
 
     catalog = system_skill_catalog()
     pack_records = {record.name: record for record in list_packaged_system_skills()}
-    entrypoints: dict[str, dict[str, object]] = {}
+    public_skills: dict[str, dict[str, object]] = {}
     legacy_members: dict[str, dict[str, object]] = {}
     legacy_aliases: dict[str, dict[str, object]] = {}
     unmatched: dict[str, InventorySkillEntry] = {}
     for name, entry in unique_entries.items():
+        try:
+            public = catalog.public_skill_by_name(name)
+        except SystemSkillAssetError:
+            public = None
+        if public is not None:
+            pack = catalog.pack_for_public_skill(public.name)
+            public_skills[name] = {
+                "name": name,
+                "canonical_public_skill": public.name,
+                "public_role": public.role,
+                "pack_id": pack.pack_id,
+                "extension_id": pack.extension_id,
+                "inventory_path": entry.path,
+                "observation_kind": f"public_{public.role}",
+                "protected_integrity_status": "unverified",
+            }
+            continue
         try:
             kind, canonical_id, deprecated = catalog.normalize_identity(name)
         except SystemSkillAssetError:
@@ -233,16 +257,14 @@ def classify_system_skill_inventory(
             row: dict[str, object] = {
                 "name": name,
                 "canonical_public_skill": pack.entry_skill,
+                "public_role": "entrypoint",
                 "pack_id": pack.pack_id,
                 "extension_id": pack.extension_id,
                 "inventory_path": entry.path,
-                "observation_kind": "legacy_public_alias" if deprecated or name != pack.entry_skill else "entrypoint",
+                "observation_kind": "legacy_public_alias",
                 "protected_integrity_status": "unverified",
             }
-            if deprecated or name != pack.entry_skill:
-                legacy_aliases[name] = row
-            else:
-                entrypoints[name] = row
+            legacy_aliases[name] = row
             continue
         capability = catalog.capability_by_logical_id(canonical_id)
         pack = catalog.pack_by_id(capability.pack_id)
@@ -260,7 +282,7 @@ def classify_system_skill_inventory(
     group_rows = [
         _inventory_pack_row(
             pack,
-            entrypoint_names=set(entrypoints),
+            public_skill_names=set(public_skills),
             legacy_members=legacy_members,
             legacy_aliases=legacy_aliases,
         )
@@ -275,9 +297,10 @@ def classify_system_skill_inventory(
     )
     matched_rows = [
         *(
-            entrypoints[pack.entry_skill]
+            public_skills[public.name]
             for pack in catalog.packs
-            if pack.entry_skill in entrypoints
+            for public in pack.public_skills
+            if public.name in public_skills
         ),
         *ordered_legacy_members,
         *(legacy_aliases[name] for name in sorted(legacy_aliases)),
@@ -290,7 +313,17 @@ def classify_system_skill_inventory(
             "input_schema_version": INVENTORY_INPUT_SCHEMA,
             "inventory": [unique_entries[name].to_json() for name in sorted(unique_entries)],
             "matched_skills": matched_rows,
-            "entrypoint_observations": [entrypoints[name] for name in sorted(entrypoints)],
+            "public_skill_observations": [public_skills[name] for name in sorted(public_skills)],
+            "welcome_observations": [
+                public_skills[name]
+                for name in sorted(public_skills)
+                if public_skills[name]["public_role"] == "welcome"
+            ],
+            "entrypoint_observations": [
+                public_skills[name]
+                for name in sorted(public_skills)
+                if public_skills[name]["public_role"] == "entrypoint"
+            ],
             "legacy_member_observations": [
                 legacy_members[name] for name in sorted(legacy_members)
             ],
@@ -358,7 +391,7 @@ def _root_pack_row(
     record: SystemSkillRecord,
     *,
     installed_item: InstalledSystemSkill | None,
-    invalid_item: InvalidSystemSkillProjection | None,
+    invalid_items: Mapping[str, InvalidSystemSkillProjection],
     receipt_record: Any,
     receipt_status: str,
 ) -> tuple[dict[str, object], tuple[Diagnostic, ...]]:
@@ -370,10 +403,7 @@ def _root_pack_row(
     path: str | None = None
     compatibility_status: str | None = None
 
-    if invalid_item is not None:
-        projection_status = invalid_item.path_kind
-        path = str(invalid_item.path)
-    elif installed_item is not None:
+    if installed_item is not None:
         projection_mode = installed_item.projection_mode
         path = str(installed_item.path)
         compatibility_status = installed_item.compatibility_status
@@ -424,7 +454,54 @@ def _root_pack_row(
         else:
             projection_status = "unmanaged_incomplete"
 
-    managed = tracked and projection_status == "valid"
+    public_rows: list[dict[str, object]] = []
+    installed_public = {
+        public.name: public for public in (installed_item.public_skills if installed_item is not None else ())
+    }
+    for public in record.public_skills:
+        observation = installed_public.get(public.name)
+        invalid = invalid_items.get(public.name)
+        if invalid is not None:
+            public_rows.append(
+                {
+                    **public.to_json(),
+                    "path": str(invalid.path),
+                    "status": invalid.path_kind,
+                    "identity_status": invalid.path_kind,
+                    "projection_mode": None,
+                    "skill_version": None,
+                    "receipt_skill_version": None,
+                    "compatibility_status": "invalid",
+                    "receipt_owned": False,
+                    "installation_verified": False,
+                }
+            )
+        elif observation is not None:
+            public_rows.append({**public.to_json(), **observation.to_json(), "status": observation.identity_status})
+        else:
+            public_rows.append(
+                {
+                    **public.to_json(),
+                    "path": None,
+                    "status": "missing",
+                    "identity_status": "missing",
+                    "projection_mode": None,
+                    "skill_version": None,
+                    "receipt_skill_version": None,
+                    "compatibility_status": "missing",
+                    "receipt_owned": False,
+                    "installation_verified": False,
+                }
+            )
+    role_status = {str(public["role"]): str(public["status"]) for public in public_rows}
+    entrypoint_invalid = next(
+        (invalid for public_name, invalid in invalid_items.items() if public_name == record.name),
+        None,
+    )
+    if entrypoint_invalid is not None:
+        projection_status = entrypoint_invalid.path_kind
+        path = str(entrypoint_invalid.path)
+    managed = tracked and installed_item is not None and installed_item.installation_verified
     evidence_basis = "none"
     if managed:
         evidence_basis = "managed_receipt"
@@ -443,7 +520,9 @@ def _root_pack_row(
             "path": path,
             "projection_mode": projection_mode,
             "projection_status": projection_status,
-            "entrypoint_status": "missing" if installed_item is None and invalid_item is None else projection_status,
+            "public_skill_status": public_rows,
+            "welcome_status": role_status.get("welcome", "missing"),
+            "entrypoint_status": role_status.get("entrypoint", "missing"),
             "compatibility_status": compatibility_status,
             "evidence_basis": evidence_basis,
             "pack_status": installed_item.pack_status if installed_item is not None else "missing",
@@ -467,6 +546,10 @@ def _root_pack_row(
 def _explicit_pack_material_complete(installed: InstalledSystemSkill) -> bool:
     return (
         installed.pack_status in {"unmanaged", "receipt_mismatch"}
+        and all(
+            public.identity_status == "valid" and public.skill_version is not None
+            for public in installed.public_skills
+        )
         and not installed.missing_protected_members
         and not installed.extra_protected_paths
         and all(
@@ -492,11 +575,20 @@ def _root_pack_coverage_row(
     ) if isinstance(member_rows, list) else ()
     missing = tuple(member for member in members if member not in valid_members)
     projection_status = row.get("projection_status")
-    if projection_status == "valid" and not missing:
+    public_rows = row.get("public_skill_status")
+    public_complete = isinstance(public_rows, list) and len(public_rows) == len(pack.public_skills) and all(
+        isinstance(public, dict) and public.get("identity_status") == "valid"
+        for public in public_rows
+    )
+    if projection_status == "valid" and public_complete and not missing:
         coverage_status = "complete"
-    elif projection_status == "unmanaged_valid" and not missing:
+    elif projection_status == "unmanaged_valid" and public_complete and not missing:
         coverage_status = "unmanaged_complete"
-    elif row.get("entrypoint_status") != "missing" or valid_members:
+    elif (
+        row.get("entrypoint_status") != "missing"
+        or row.get("welcome_status") != "missing"
+        or valid_members
+    ):
         coverage_status = "partial"
     else:
         coverage_status = "missing"
@@ -506,12 +598,14 @@ def _root_pack_coverage_row(
         "kind": pack.kind,
         "extension_id": pack.extension_id,
         "entry_skill": pack.entry_skill,
+        "public_skills": [public.to_json() for public in pack.public_skills],
         "members": list(members),
         "installed_members": list(valid_members),
         "observed_members": list(valid_members),
         "missing_members": list(missing),
         "coverage_status": coverage_status,
         "entrypoint_status": row.get("entrypoint_status"),
+        "welcome_status": row.get("welcome_status"),
         "protected_integrity_status": "verified" if coverage_status in {"complete", "unmanaged_complete"} else "incomplete",
         "evidence_basis": row.get("evidence_basis"),
         "receipt_status": receipt_status,
@@ -526,7 +620,7 @@ def _root_pack_coverage_row(
 def _inventory_pack_row(
     pack: SystemSkillPack,
     *,
-    entrypoint_names: set[str],
+    public_skill_names: set[str],
     legacy_members: Mapping[str, Mapping[str, object]],
     legacy_aliases: Mapping[str, Mapping[str, object]],
 ) -> dict[str, object]:
@@ -546,10 +640,17 @@ def _inventory_pack_row(
     aliases = tuple(
         sorted(name for name, row in legacy_aliases.items() if row.get("pack_id") == pack.pack_id)
     )
-    entrypoint_seen = pack.entry_skill in entrypoint_names
-    if entrypoint_seen:
+    welcome_seen = pack.welcome is not None and pack.welcome.name in public_skill_names
+    entrypoint_seen = pack.entry_skill in public_skill_names
+    if welcome_seen and entrypoint_seen:
+        coverage_status = "public_pair_seen"
+        evidence_basis = "public_pair_seen"
+    elif entrypoint_seen:
         coverage_status = "entrypoint_seen"
         evidence_basis = "entrypoint_seen"
+    elif welcome_seen:
+        coverage_status = "welcome_seen"
+        evidence_basis = "welcome_seen"
     elif observed_members or aliases:
         coverage_status = "legacy_observed"
         evidence_basis = "legacy_member_observation"
@@ -562,9 +663,12 @@ def _inventory_pack_row(
         "kind": pack.kind,
         "extension_id": pack.extension_id,
         "entry_skill": pack.entry_skill,
+        "public_skills": [public.to_json() for public in pack.public_skills],
         "members": list(members),
         "entrypoint_status": "seen" if entrypoint_seen else "not_seen",
         "entrypoint_seen": entrypoint_seen,
+        "welcome_status": "seen" if welcome_seen else "not_seen",
+        "welcome_seen": welcome_seen,
         "installed_members": list(observed_members),
         "observed_members": list(observed_members),
         "legacy_aliases_seen": list(aliases),
@@ -575,10 +679,7 @@ def _inventory_pack_row(
     }
 
 
-def _legacy_receipt_rows(
-    manifest: object,
-    receipt_status: str,
-) -> list[dict[str, object]]:
+def _legacy_receipt_rows(manifest: object, receipt_status: str) -> list[dict[str, object]]:
     if manifest is None:
         return []
     raw_records: list[SystemSkillManifestRecord | object] = []

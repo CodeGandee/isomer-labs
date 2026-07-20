@@ -1,6 +1,6 @@
 # System Skill Migration
 
-Isomer 0.4 groups the former flat system-skill installation into three public packs: `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint`. Former top-level operator, service, misc, research-recording, DeepSci stage, and Kaoju stage skills are now protected members below an owning pack. The old `isomer-deepsci-pipeline` and `isomer-kaoju-pipeline` names remain aliases for selection and callback normalization, not installed compatibility folders.
+Isomer 0.4 groups the former flat system-skill installation into three atomic packs. Each pack now has a read-only public welcome sibling and a public execution entrypoint sibling: core, DeepSci, and Kaoju. Former top-level operator, service, misc, research-recording, DeepSci stage, and Kaoju stage skills are protected members below the owning entrypoint. The old `isomer-deepsci-pipeline` and `isomer-kaoju-pipeline` names remain aliases for selection and callback normalization, not installed compatibility folders.
 
 ## Managed Upgrade
 
@@ -27,11 +27,11 @@ Upgrade follows a bounded order:
 2. Resolve selected complete public packs.
 3. Reject destination conflicts before mutation.
 4. Stage and validate every new pack and protected member.
-5. Commit the new projections and receipt v4.
+5. Commit both public projections for each selected pack and receipt v5.
 6. Remove only exact obsolete top-level paths tracked by the old receipt.
 7. Report removed and retained stale paths.
 
-If staging or validation fails, upgrade preserves the old receipt and projections. It does not start stale cleanup. If cleanup later fails, the new packs and v4 receipt remain valid while output reports `migration_status=partial_cleanup`, exact `stale_retained` paths, and repair guidance. Receipt v4 keeps bounded legacy path evidence until cleanup completes.
+If staging or validation fails, upgrade preserves the old receipt and projections. It does not start stale cleanup. If cleanup later fails, the new packs and v5 receipt remain valid while output reports `migration_status=partial_cleanup`, exact `stale_retained` paths, and repair guidance. Receipt v5 keeps bounded legacy path evidence until cleanup completes.
 
 Untracked directories are never deleted because their names resemble old protected skills. Inspect and resolve such conflicts explicitly.
 
@@ -49,7 +49,7 @@ Use `$isomer-op-entrypoint use system-skills to repair the installation` for a p
 
 ## Refresh the Agent Host
 
-After a successful install or upgrade, refresh the coding-agent host or start a new session. The current process may cache old top-level skills and may not discover the new public entrypoint until reload. A live inventory that shows only `isomer-ext-deepsci-entrypoint` or `isomer-ext-kaoju-entrypoint` reports `entrypoint_seen`; name-only inventory cannot verify the nested protected members.
+After a successful install or upgrade, refresh the coding-agent host or start a new session. The current process may cache old top-level skills and may not discover the public welcome and entrypoint pair until reload. A live inventory may report `welcome_seen`, `entrypoint_seen`, or `public_pair_seen`; name-only inventory cannot verify receipt ownership or nested protected members.
 
 Use the public entrypoints after refresh:
 

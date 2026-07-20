@@ -56,6 +56,8 @@ class SystemSkillInspectionTests(unittest.TestCase):
         self.assertEqual("current", payload["receipt"]["status"])
         self.assertEqual("complete", payload["extensions"][0]["coverage_status"])
         self.assertEqual("managed_receipt", payload["extensions"][0]["evidence_basis"])
+        self.assertEqual("valid", payload["extensions"][0]["welcome_status"])
+        self.assertEqual("valid", payload["extensions"][0]["entrypoint_status"])
 
     def test_absent_root_is_not_created_or_replaced_by_implicit_search(self) -> None:
         parent = self.make_root()
@@ -171,6 +173,18 @@ class SystemSkillInspectionTests(unittest.TestCase):
         self.assertIn("isomer-kaoju-audit", kaoju["missing_members"])
         self.assertNotEqual("managed_receipt", kaoju["evidence_basis"])
 
+    def test_current_receipt_with_missing_welcome_is_partial(self) -> None:
+        root = self.make_root() / "skills"
+        self.install_extension(root)
+        (root / "isomer-ext-kaoju-welcome").rename(root.parent / "removed-kaoju-welcome")
+
+        payload = inspect_explicit_system_skill_root(root, extension_id="kaoju").to_json()
+        kaoju = payload["extensions"][0]
+
+        self.assertEqual("partial", kaoju["coverage_status"])
+        self.assertEqual("missing", kaoju["welcome_status"])
+        self.assertEqual("valid", kaoju["entrypoint_status"])
+
     def test_filters_and_payload_order_are_deterministic(self) -> None:
         root = self.make_root() / "skills"
         first = inspect_explicit_system_skill_root(root, category="extensions", group_name="kaoju").to_json()
@@ -218,6 +232,25 @@ class SystemSkillInspectionTests(unittest.TestCase):
             {row["protected_integrity_status"] for row in payload["groups"]},
         )
 
+    def test_live_inventory_distinguishes_public_welcome_and_entrypoint_roles(self) -> None:
+        payload = classify_system_skill_inventory(
+            [
+                InventorySkillEntry(name="isomer-ext-kaoju-welcome"),
+                InventorySkillEntry(name="isomer-ext-kaoju-entrypoint"),
+                InventorySkillEntry(name="isomer-ext-deepsci-welcome"),
+            ]
+        ).to_json()
+
+        kaoju = next(row for row in payload["extensions"] if row["extension_id"] == "kaoju")
+        deepsci = next(row for row in payload["extensions"] if row["extension_id"] == "deepsci")
+        self.assertEqual("public_pair_seen", kaoju["coverage_status"])
+        self.assertTrue(kaoju["welcome_seen"])
+        self.assertTrue(kaoju["entrypoint_seen"])
+        self.assertEqual("welcome_seen", deepsci["coverage_status"])
+        self.assertTrue(deepsci["welcome_seen"])
+        self.assertFalse(deepsci["entrypoint_seen"])
+        self.assertEqual(["isomer-ext-deepsci-welcome", "isomer-ext-kaoju-welcome"], [row["name"] for row in payload["welcome_observations"]])
+
     def test_structured_inventory_schema_and_cli_contract(self) -> None:
         document = json.dumps(
             {
@@ -245,7 +278,7 @@ class SystemSkillInspectionTests(unittest.TestCase):
         payload = json.loads(result.output)
         self.assertEqual(0, int(result.return_value or 0))
         self.assertFalse(payload["mutated"])
-        self.assertEqual("isomer-internal-system-skill-inspection.v2", payload["internal_schema_version"])
+        self.assertEqual("isomer-internal-system-skill-inspection.v3", payload["internal_schema_version"])
         self.assertEqual("live_inventory", payload["inspection_kind"])
 
     def test_operator_workflows_preserve_trust_order_opt_out_and_additive_reconciliation(self) -> None:
@@ -255,26 +288,26 @@ class SystemSkillInspectionTests(unittest.TestCase):
             operator_root / "subskills" / "isomer-op-project-mgr" / "references" / "init-project.md"
         ).read_text(encoding="utf-8")
         entrypoint = (operator_root / "SKILL.md").read_text(encoding="utf-8")
-        welcome_root = operator_root / "subskills" / "isomer-op-welcome"
+        welcome_root = REPO_ROOT / "skillset" / "operator" / "isomer-op-welcome"
         welcome = "\n".join(
             path.read_text(encoding="utf-8")
             for path in sorted((welcome_root / "references").glob("*.md"))
         )
 
-        self.assertLess(manager.index("Project declaration"), manager.index("Current v4 receipt"))
-        self.assertLess(manager.index("Current v4 receipt"), manager.index("Explicit-root verification"))
+        self.assertLess(manager.index("Project declaration"), manager.index("Current v5 receipt"))
+        self.assertLess(manager.index("Current v5 receipt"), manager.index("Explicit-root verification"))
         self.assertLess(manager.index("Explicit-root verification"), manager.index("Limited live inventory"))
         self.assertIn("Registration is additive and idempotent", manager)
         self.assertIn("Never call `forget`", manager)
         self.assertIn("host refresh or new session", manager)
-        self.assertIn("Neither observation proves complete coverage", manager)
+        self.assertIn("None of these observations proves complete coverage", manager)
         self.assertIn("references/upgrade.md", manager)
         self.assertIn("unless the user explicitly opts out", project_init.lower())
         self.assertIn("distinct partial outcome", project_init)
         self.assertIn("isomer-op-entrypoint->system-skills", entrypoint)
         self.assertNotIn("system-extensions detect --target", entrypoint)
-        self.assertIn("$isomer-ext-deepsci-entrypoint use <subcommand> to <task>", welcome)
-        self.assertIn("$isomer-ext-kaoju-entrypoint use <subcommand> to <task>", welcome)
+        self.assertIn("$isomer-ext-deepsci-entrypoint use <command> to <task>", welcome)
+        self.assertIn("$isomer-ext-kaoju-entrypoint use <command> to <task>", welcome)
         self.assertNotIn("$isomer-op-system-skill-mgr", welcome)
         self.assertNotIn("$isomer-kaoju-workspace-mgr", welcome)
 

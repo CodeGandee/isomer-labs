@@ -30,6 +30,7 @@ class CallbackInsertionPointRecord:
             "pack_id": self.point.pack_id,
             "group_kind": self.point.group_kind,
             "public_skill": self.point.public_skill,
+            "public_role": self.point.public_role,
             "invocation_designator": self.point.invocation_designator,
             "stage": self.point.stage,
             "stage_label": self.point.stage_label,

@@ -131,7 +131,7 @@ isomer-cli --print-json project system-extensions detect --skill-root /explicit/
 isomer-cli project system-extensions remember kaoju
 ```
 
-For normal agent-driven operation, use `$isomer-op-entrypoint use system-skills to <task>`. The protected manager reads Project declarations, current v4 receipts, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v4 complete packs and never removes a declaration because another agent lacks the same installation. Refresh the host or start a new session after installation or upgrade.
+For newcomer orientation, invoke `$isomer-op-welcome`; for normal agent-driven operation, use `$isomer-op-entrypoint use system-skills to <task>`. The protected manager reads Project declarations, current v5 receipts, explicit-root integrity, and limited live inventory in that order. It registers only verified current-v5 complete packs and never removes a declaration because another agent lacks the same installation. Refresh the host or start a new session after installation or upgrade.
 
 ## Getting Started With CLI Agent
 

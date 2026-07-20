@@ -109,6 +109,17 @@ class UserSkillCallbackTests(unittest.TestCase):
         self.assertIn("ISO103", codes(result.diagnostics))
         self.assertIn("ISO104", codes(result.diagnostics))
 
+    def test_public_welcome_has_no_callback_insertion_points(self) -> None:
+        self.assertEqual("isomer-ext-kaoju-welcome", skill_callbacks.canonical_callback_target("isomer-ext-kaoju-welcome"))
+        diagnostics = skill_callbacks._callback_identity_diagnostics(
+            skill="isomer-ext-kaoju-welcome",
+            stage="begin",
+            scope="project",
+            callback_id="welcome-callback",
+        )
+        self.assertIn("ISO103", codes(diagnostics))
+        self.assertTrue(any("not declared" in diagnostic.message for diagnostic in diagnostics))
+
     def test_project_validation_loads_each_registry_once_and_keeps_cross_registry_duplicates(self) -> None:
         project = self.make_project()
         first = self.registry_ref(project)

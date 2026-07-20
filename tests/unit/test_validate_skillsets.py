@@ -84,6 +84,62 @@ class SkillsetValidatorTests(unittest.TestCase):
         write(root / "skillset" / "service" / "README.md", "# Service Skills\n")
         return root
 
+    def make_v4_welcome_fixture(self) -> Path:
+        root = self.make_root()
+        shutil.copytree(
+            REPO_ROOT / "src" / "isomer_labs" / "assets" / "system_skills",
+            root / "skillset",
+            dirs_exist_ok=True,
+        )
+        return root
+
+    def test_public_welcome_validator_accepts_all_current_pack_pairs(self) -> None:
+        diagnostics = validator.validate_public_welcome_skills(REPO_ROOT)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_public_welcome_validator_rejects_command_drift_and_protected_route_leak(self) -> None:
+        root = self.make_v4_welcome_fixture()
+        welcome = root / "skillset" / "research-paradigm" / "kaoju" / "isomer-ext-kaoju-welcome"
+        command_map = welcome / "references" / "show-command-map.md"
+        command_map.write_text(
+            command_map.read_text(encoding="utf-8").replace(
+                "| `help` | Use to explain the execution entrypoint and list its public survey commands. | `$isomer-ext-kaoju-entrypoint use help to explain the public Kaoju command surface` |\n",
+                "",
+            ),
+            encoding="utf-8",
+        )
+        show_options = welcome / "references" / "show-options.md"
+        show_options.write_text(
+            show_options.read_text(encoding="utf-8")
+            + "\nInvoke `$isomer-kaoju-trial` directly.\n",
+            encoding="utf-8",
+        )
+
+        rendered = messages(validator.validate_public_welcome_skills(root))
+
+        self.assertTrue(any("command map must cover" in message for message in rendered), rendered)
+        self.assertTrue(any("must not expose protected route" in message for message in rendered), rendered)
+
+    def test_public_welcome_validator_rejects_incomplete_use_case_and_missing_resource(self) -> None:
+        root = self.make_v4_welcome_fixture()
+        welcome = root / "skillset" / "research-paradigm" / "deepsci" / "isomer-ext-deepsci-welcome"
+        show_options = welcome / "references" / "show-options.md"
+        show_options.write_text(
+            show_options.read_text(encoding="utf-8").replace(
+                "| Hypothesis development and test | Use when a framed research question should become or evaluate one falsifiable hypothesis through bounded evidence. |",
+                "| Hypothesis development and test | |",
+                1,
+            ),
+            encoding="utf-8",
+        )
+        (welcome / "references" / "help.md").unlink()
+
+        rendered = messages(validator.validate_public_welcome_skills(root))
+
+        self.assertTrue(any("must populate When to Use" in message for message in rendered), rendered)
+        self.assertTrue(any("must include references/help.md" in message for message in rendered), rendered)
+
     def write_v3_invocation_fixture(self, root: Path) -> None:
         write(
             root / "skillset" / "manifest.toml",
@@ -406,7 +462,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
         expected_packs = {
-            "operator/isomer-op-entrypoint/SKILL.md": (20, ("project", "topic-create", "topic-manage")),
+            "operator/isomer-op-entrypoint/SKILL.md": (19, ("project", "topic-create", "topic-manage")),
             "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md": (21, ("scout", "baseline", "idea", "paper-plot", "figure-polish")),
             "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (13, ("trial", "reproduce", "audit", "synthesize")),
         }
@@ -2436,7 +2492,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS014", codes(diagnostics))
         self.assertTrue(
             any(
-                "declaration, current-v4 receipt, explicit-root, then live-inventory order" in message
+                "declaration, current-v5 receipt, explicit-root, then live-inventory order" in message
                 for message in messages(diagnostics)
             ),
             messages(diagnostics),

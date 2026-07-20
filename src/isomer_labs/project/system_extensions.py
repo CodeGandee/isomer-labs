@@ -22,6 +22,7 @@ class ProjectSystemExtension:
     entry_skill: str
     description: str
     public_commands: tuple[str, ...]
+    public_skills: tuple[dict[str, object], ...]
     protected_members: tuple[dict[str, object], ...]
     declared_installed: bool
     installation_verified: bool = False
@@ -34,6 +35,7 @@ class ProjectSystemExtension:
             "entry_skill": self.entry_skill,
             "description": self.description,
             "public_commands": list(self.public_commands),
+            "public_skills": [dict(skill) for skill in self.public_skills],
             "protected_members": [dict(member) for member in self.protected_members],
             "declared_installed": self.declared_installed,
             "installation_verified": self.installation_verified,
@@ -189,6 +191,7 @@ def _extension_rows(declared: list[str]) -> tuple[ProjectSystemExtension, ...]:
             entry_skill=pack.entry_skill,
             description=extension.description,
             public_commands=pack.public_commands,
+            public_skills=tuple(public.to_json() for public in pack.public_skills),
             protected_members=tuple(
                 {
                     "logical_id": capability.logical_id,

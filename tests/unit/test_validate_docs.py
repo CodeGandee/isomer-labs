@@ -17,6 +17,7 @@ from scripts.validate_docs import (
     check_required_pages,
     check_semantic_path_documentation,
     check_stale_isomer_cli_json_examples,
+    check_system_skill_manifest_documentation,
     check_system_skill_scope_documentation,
     get_public_commands,
 )
@@ -191,6 +192,43 @@ isomer-cli system-skills install --target codex --scope user
             issues = check_system_skill_scope_documentation(root)
 
             self.assertTrue(any("stale universal system-skill scope guidance" in issue for issue in issues), issues)
+
+    def test_system_skill_manifest_documentation_matches_current_public_pairs(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        self.assertEqual([], check_system_skill_manifest_documentation(repo_root))
+
+    def test_system_skill_manifest_documentation_rejects_drift_and_protected_invocation(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        source = (repo_root / "docs" / "developer" / "packaged-system-skills.md").read_text(encoding="utf-8")
+        source = source.replace("use empirical-pass", "use imaginary-pass", 1)
+        source += "\n$isomer-kaoju-trial\n`isomer-op-entrypoint->welcome`\n"
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "docs" / "developer" / "packaged-system-skills.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(source, encoding="utf-8")
+
+            issues = check_system_skill_manifest_documentation(root)
+
+        self.assertTrue(any("imaginary-pass" in issue for issue in issues), issues)
+        self.assertTrue(any("protected skill isomer-kaoju-trial" in issue for issue in issues), issues)
+        self.assertTrue(any("retired protected welcome designator" in issue for issue in issues), issues)
+
+    def test_system_skill_manifest_documentation_requires_role_pair_table(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        source = (repo_root / "docs" / "developer" / "packaged-system-skills.md").read_text(encoding="utf-8")
+        source = source.replace("Public Welcome", "Public Guide")
+        source = source.replace("`isomer-ext-kaoju-welcome` | `isomer-ext-kaoju-entrypoint`", "`isomer-ext-kaoju-welcome` | omitted")
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "docs" / "developer" / "packaged-system-skills.md"
+            path.parent.mkdir(parents=True)
+            path.write_text(source, encoding="utf-8")
+
+            issues = check_system_skill_manifest_documentation(root)
+
+        self.assertTrue(any("missing public role heading: Public Welcome" in issue for issue in issues), issues)
+        self.assertTrue(any("must document isomer-ext-kaoju-welcome" in issue for issue in issues), issues)
 
     def test_cli_error_example_registry_requires_documented_examples(self) -> None:
         with TemporaryDirectory() as tmp:

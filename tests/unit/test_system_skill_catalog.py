@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-import json
 from pathlib import Path
 import re
 import shutil
@@ -31,23 +30,17 @@ FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures" / "system_skills
 
 
 class SystemSkillCatalogTests(unittest.TestCase):
-    def test_v3_catalog_matches_exact_public_and_protected_fixture(self) -> None:
-        expected = json.loads((FIXTURE_ROOT / "catalog.v3.json").read_text(encoding="utf-8"))
+    def test_v4_catalog_declares_public_pairs_and_protected_members(self) -> None:
         catalog = system_skill_catalog()
 
-        self.assertEqual(expected["schema_version"], catalog.schema_version)
-        self.assertEqual((20, 21, 13), tuple(len(pack.protected_members) for pack in catalog.packs))
-        self.assertEqual(54, len(catalog.capabilities))
+        self.assertEqual("isomer-skillset-manifest.v4", catalog.schema_version)
+        self.assertEqual((19, 21, 13), tuple(len(pack.protected_members) for pack in catalog.packs))
+        self.assertEqual(53, len(catalog.capabilities))
         for pack in catalog.packs:
-            expected_pack = expected["packs"][pack.pack_id]
-            self.assertEqual(expected_pack["entry_skill"], pack.entry_skill)
-            actual_members = {
-                capability.member_name: capability.logical_id
-                for capability in catalog.capabilities
-                if capability.pack_id == pack.pack_id
-            }
-            self.assertEqual(expected_pack["protected_members"], actual_members)
-            self.assertEqual(tuple(expected_pack.get("legacy_aliases", ())), pack.legacy_aliases)
+            self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in pack.public_skills))
+            self.assertEqual(pack.entry_skill, pack.entrypoint.name)
+            self.assertTrue(pack.welcome.name.endswith("-welcome"))  # type: ignore[union-attr]
+            self.assertEqual((), pack.welcome.callback_insertion_points)  # type: ignore[union-attr]
             for capability in catalog.capabilities:
                 if capability.pack_id != pack.pack_id:
                     continue
@@ -154,18 +147,56 @@ class SystemSkillCatalogTests(unittest.TestCase):
         self.assertEqual((), catalog.packs)
         self.assertEqual((), catalog.capabilities)
 
+    def test_v3_manifest_remains_read_only_parseable(self) -> None:
+        manifest = deepcopy(load_system_skill_manifest())
+        manifest["schema_version"] = "isomer-skillset-manifest.v3"
+        public_records = {
+            record["name"]: record
+            for record in manifest.pop("public_skills")
+            if record["role"] == "entrypoint"
+        }
+        for pack in manifest["packs"]:
+            entrypoint = public_records[pack["entry_skill"]]
+            pack["source_path"] = entrypoint["source_path"]
+            pack["public_commands"] = entrypoint["public_commands"]
+            pack["legacy_aliases"] = entrypoint["legacy_aliases"]
+            pack["callback_insertion_points"] = entrypoint["callback_insertion_points"]
+            pack.pop("public_skills")
+        catalog = parse_system_skill_manifest(manifest)
+        self.assertEqual("isomer-skillset-manifest.v3", catalog.schema_version)
+        self.assertEqual(("entrypoint",), tuple(public.role for public in catalog.packs[0].public_skills))
+
     def test_v3_allows_same_name_command_and_protected_member(self) -> None:
         catalog = parse_system_skill_manifest(load_system_skill_manifest())
         core = catalog.pack_by_id("core")
         self.assertIn("gui", core.public_commands)
         self.assertEqual("isomer-op-gui-mgr", catalog.capability_for_member("core", "gui").logical_id)
 
-    def test_v3_rejects_invalid_identity_path_alias_and_dependency_graph(self) -> None:
+    def test_v4_rejects_invalid_public_roles_identity_path_alias_and_dependency_graph(self) -> None:
         def pack(manifest: dict[str, object], pack_id: str) -> dict[str, object]:
             return next(item for item in manifest["packs"] if item["pack_id"] == pack_id)  # type: ignore[index, union-attr]
 
+        def public(manifest: dict[str, object], name: str) -> dict[str, object]:
+            return next(item for item in manifest["public_skills"] if item["name"] == name)  # type: ignore[index, union-attr]
+
         def capability(manifest: dict[str, object], logical_id: str) -> dict[str, object]:
             return next(item for item in manifest["capabilities"] if item["logical_id"] == logical_id)  # type: ignore[index, union-attr]
+
+        def remove_kaoju_welcome(manifest: dict[str, object]) -> None:
+            manifest["public_skills"] = [  # type: ignore[index]
+                item
+                for item in manifest["public_skills"]  # type: ignore[index, union-attr]
+                if item["name"] != "isomer-ext-kaoju-welcome"
+            ]
+
+        def rename_kaoju_welcome(manifest: dict[str, object]) -> None:
+            record = public(manifest, "isomer-ext-kaoju-welcome")
+            record["name"] = "isomer-ext-survey-welcome"
+            record["source_path"] = "research-paradigm/kaoju/isomer-ext-survey-welcome"
+            pack(manifest, "kaoju")["public_skills"] = [
+                "isomer-ext-survey-welcome",
+                "isomer-ext-kaoju-entrypoint",
+            ]
 
         mutations = (
             (
@@ -175,13 +206,30 @@ class SystemSkillCatalogTests(unittest.TestCase):
             ),
             (
                 "invalid extension entrypoint",
-                lambda manifest: (
-                    pack(manifest, "kaoju").__setitem__("entry_skill", "isomer-kaoju-entrypoint"),
-                    pack(manifest, "kaoju").__setitem__(
-                        "source_path", "research-paradigm/kaoju/isomer-kaoju-entrypoint"
-                    ),
+                lambda manifest: pack(manifest, "kaoju").__setitem__("entry_skill", "isomer-kaoju-entrypoint"),
+                "entry_skill must resolve to its entrypoint-role record",
+            ),
+            (
+                "missing welcome role",
+                remove_kaoju_welcome,
+                "exactly one welcome and one entrypoint",
+            ),
+            (
+                "duplicate entrypoint role",
+                lambda manifest: public(manifest, "isomer-ext-kaoju-welcome").__setitem__("role", "entrypoint"),
+                "exactly one welcome and one entrypoint",
+            ),
+            (
+                "invalid extension welcome name",
+                rename_kaoju_welcome,
+                "welcome skill must be isomer-ext-kaoju-welcome",
+            ),
+            (
+                "public identity collision",
+                lambda manifest: public(manifest, "isomer-ext-kaoju-welcome").__setitem__(
+                    "legacy_aliases", ["isomer-op-welcome"]
                 ),
-                "entry_skill must be isomer-ext-kaoju-entrypoint",
+                "identity or alias conflict",
             ),
             (
                 "escaped path",
@@ -199,7 +247,9 @@ class SystemSkillCatalogTests(unittest.TestCase):
             ),
             (
                 "alias conflict",
-                lambda manifest: pack(manifest, "kaoju").__setitem__("legacy_aliases", ["isomer-kaoju-trial"]),
+                lambda manifest: public(manifest, "isomer-ext-kaoju-entrypoint").__setitem__(
+                    "legacy_aliases", ["isomer-kaoju-trial"]
+                ),
                 "identity or alias conflict",
             ),
             (

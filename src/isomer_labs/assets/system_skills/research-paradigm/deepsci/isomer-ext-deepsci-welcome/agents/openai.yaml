@@ -1,0 +1,10 @@
+metadata:
+  version: "0.4.0"
+  thanks_to: "https://github.com/ResearAI/DeepScientist"
+
+interface:
+  display_name: "isomer-ext-deepsci-welcome"
+  short_description: "Introduces DeepSci production-research patterns and public pass commands."
+  default_prompt: "Use $isomer-ext-deepsci-welcome to learn DeepSci use cases and choose a public pass or task route."
+policy:
+  allow_implicit_invocation: true

@@ -78,6 +78,7 @@ def register_system_skill_commands(app: click.Group) -> None:
         options = _root_options(ctx)
         groups = list(iter_system_skill_groups())
         skills = list_packaged_system_skills()
+        catalog = system_skill_catalog()
         payload = {
             "ok": True,
             "mutated": False,
@@ -89,6 +90,10 @@ def register_system_skill_commands(app: click.Group) -> None:
                     "always_available": group.always_available,
                     "extension_id": group.extension_id,
                     "entry_skill": group.entry_skill,
+                    "public_skills": [
+                        public.to_json()
+                        for public in catalog.pack_by_id(group.name).public_skills
+                    ],
                     "commands": list(group.commands),
                     "skills": [Path(skill_path).name for skill_path in group.skills],
                     "source_paths": list(group.skills),
@@ -380,8 +385,11 @@ def _render_list(payload: dict[str, object]) -> list[str]:
         extension = pack.get("extension_id")
         suffix = f", extension={extension}" if extension else ""
         lines.append(f"- {pack.get('name')} (pack={pack.get('pack_id')}, {pack.get('group_kind')}{suffix})")
-        commands = _string_list(pack.get("public_commands"))
-        lines.append(f"  public commands: {', '.join(commands) or '(none)'}")
+        lines.append("  public skills (installed as one pack):")
+        for public in _mapping_list(pack.get("public_skills")):
+            lines.append(f"    - {public.get('role')}: ${public.get('name')}")
+            commands = _string_list(public.get("public_commands"))
+            lines.append(f"      commands: {', '.join(commands) or '(none)'}")
         lines.append("  protected members:")
         for member in _mapping_list(pack.get("protected_members")):
             lines.append(
@@ -409,12 +417,16 @@ def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
         for capability in catalog.capabilities
         if capability.pack_id == pack.pack_id
     ]
+    public_skills = [public.to_json() for public in pack.public_skills]
+    welcome = next(public for public in pack.public_skills if public.role == "welcome")
     return {
         "extension_id": extension_id,
         "group": extension.group,
         "pack_id": pack.pack_id,
         "description": extension.description,
         "entry_skill": entry_skill,
+        "welcome_skill": welcome.name,
+        "public_skills": public_skills,
         "commands": list(extension.commands),
         "skills": [Path(skill_path).name for skill_path in extension.skills],
         "protected_members": protected_members,
@@ -425,6 +437,7 @@ def _extension_payload(extension: SystemSkillExtension) -> dict[str, object]:
             f"isomer-cli system-skills status --target <target> --scope <scope> --extension {extension_id}"
         ),
         "invocation": f"${entry_skill}",
+        "welcome_invocation": f"${welcome.name}",
     }
 
 
@@ -432,7 +445,8 @@ def _render_extension_list(extensions: list[dict[str, object]]) -> list[str]:
     lines = ["Packaged Isomer agent-skill extensions:"]
     for extension in extensions:
         lines.append(f"- {extension.get('extension_id')}: {extension.get('description')}")
-        lines.append(f"  entry skill: {extension.get('invocation')}")
+        lines.append(f"  welcome: {extension.get('welcome_invocation')}")
+        lines.append(f"  entrypoint: {extension.get('invocation')}")
         lines.append(f"  inspect: isomer-cli system-skills extensions show {extension.get('extension_id')}")
     lines.append("Runtime and compatibility CLI commands are listed under: isomer-cli ext --help")
     return lines
@@ -442,7 +456,8 @@ def _render_extension_show(extension: dict[str, object]) -> list[str]:
     lines = [
         f"Packaged Isomer agent-skill extension: {extension.get('extension_id')}",
         f"Description: {extension.get('description')}",
-        f"Entry skill: {extension.get('invocation')}",
+        f"Welcome skill: {extension.get('welcome_invocation')}",
+        f"Execution entrypoint: {extension.get('invocation')}",
         "Commands:",
     ]
     invocation = extension.get("invocation")
@@ -450,8 +465,11 @@ def _render_extension_show(extension: dict[str, object]) -> list[str]:
         lines.append(f"- {invocation} use {command} to <task>")
     lines.extend(
         (
-            "Public packs:",
-            *[f"- {skill}" for skill in _string_list(extension.get("skills"))],
+            "Public skills (installed as one pack):",
+            *[
+                f"- {public.get('role')}: ${public.get('name')}"
+                for public in _mapping_list(extension.get("public_skills"))
+            ],
             "Protected members:",
             *[
                 f"- {member.get('logical_id')}: {member.get('invocation_designator')}"
@@ -481,6 +499,12 @@ def _render_statuses(statuses: list[dict[str, object]]) -> list[str]:
                 f"  pack {pack.get('name')}: {pack.get('pack_status')} "
                 f"({len(_mapping_list(pack.get('protected_members')))} protected members)"
             )
+            for public in _mapping_list(pack.get("public_skills")):
+                lines.append(
+                    f"    {public.get('role')} {public.get('name')}: "
+                    f"{public.get('identity_status')} ({public.get('compatibility_status')}, "
+                    f"mode={public.get('projection_mode') or 'absent'}, receipt_owned={public.get('receipt_owned')})"
+                )
             missing_members = _string_list(pack.get("missing_protected_members"))
             if missing_members:
                 lines.append(f"    missing protected members: {', '.join(missing_members)}")
@@ -497,6 +521,7 @@ def _render_installs(results: list[dict[str, object]]) -> list[str]:
         lines.append(_render_destination_heading(result))
         installed = _string_list(result.get("installed_skills"))
         lines.append(f"  installed: {', '.join(installed) or '(none)'}")
+        _render_public_projections(lines, result.get("installed"), "installed public projections")
         replaced = _string_list(result.get("replaced_skills"))
         if replaced:
             lines.append(f"  replaced: {', '.join(replaced)}")
@@ -516,6 +541,7 @@ def _render_upgrades(results: list[dict[str, object]]) -> list[str]:
     for result in results:
         lines.append(_render_destination_heading(result))
         lines.append(f"  refreshed: {', '.join(_string_list(result.get('refreshed_skills'))) or '(none)'}")
+        _render_public_projections(lines, result.get("refreshed"), "refreshed public projections")
         lines.append(f"  stale removed: {', '.join(_string_list(result.get('stale_removed_skills'))) or '(none)'}")
         stale_absent = _string_list(result.get("stale_absent_skills"))
         if stale_absent:
@@ -536,6 +562,7 @@ def _render_uninstalls(results: list[dict[str, object]]) -> list[str]:
     for result in results:
         lines.append(_render_destination_heading(result))
         lines.append(f"  removed: {', '.join(_string_list(result.get('removed_skills'))) or '(none)'}")
+        _render_public_projections(lines, result.get("removed"), "removed public projections")
         lines.append(f"  absent: {', '.join(_string_list(result.get('absent_skills'))) or '(none)'}")
         manifest = result.get("manifest")
         if isinstance(manifest, dict):
@@ -547,6 +574,19 @@ def _mapping_list(value: object) -> list[dict[str, object]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def _render_public_projections(lines: list[str], packs: object, label: str) -> None:
+    public_rows = [
+        public
+        for pack in _mapping_list(packs)
+        for public in _mapping_list(pack.get("public_skills"))
+    ]
+    if not public_rows:
+        return
+    lines.append(f"  {label}:")
+    for public in public_rows:
+        lines.append(f"    - {public.get('role')}: {public.get('name')} at {public.get('path')}")
 
 
 def _render_destination_heading(payload: dict[str, object]) -> str:

@@ -1,0 +1,9 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-op-welcome"
+  short_description: "Introduces Isomer workflows and maps newcomer goals to public commands."
+  default_prompt: "Use $isomer-op-welcome to learn typical Isomer workflows and choose a public next command."
+policy:
+  allow_implicit_invocation: true

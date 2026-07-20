@@ -8,12 +8,16 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ### Added
 
+- Added independent public newcomer welcomes for the core, DeepSci, and Kaoju packs. Each welcome teaches typical use cases, routing cues, prerequisites, mutation posture, and exact public commands before handing concrete work to its sibling entrypoint.
+- Added the `isomer-skillset-manifest.v4` public-role catalog and `isomer-labs-skill-manifest.v5` receipts with ordered welcome and entrypoint projections per atomic pack.
 - Added the `isomer-skillset-manifest.v3` public-pack and protected-capability catalog with stable logical ids, scoped invocation designators, dependency closure, callback stages, aliases, and compatibility floors.
 - Added `isomer-labs-skill-manifest.v4` installation receipts with nested protected-member inventory, pack-integrity verification, staged legacy migration, safe stale cleanup, and rollback-preserving failure behavior.
 
 ### Changed
 
-- Compacted packaged system skills into three user-facing packs: `$isomer-op-entrypoint`, `$isomer-ext-deepsci-entrypoint`, and `$isomer-ext-kaoju-entrypoint`. The 20 core, 21 DeepSci, and 13 Kaoju internal capabilities now remain self-contained protected subskills beneath their owning pack.
+- Changed system-skill installation, status, upgrade, uninstall, discovery, and inspection to treat each welcome and entrypoint pair as one mutation unit, while reporting per-public-role evidence and migrating managed v4 installations to v5.
+- Kept empty, help, and retained orientation commands compatible at each execution entrypoint by delegating read-only guidance to its public welcome sibling; refreshed agent hosts or new sessions are required to discover newly projected welcomes.
+- Compacted packaged system skills into three user-facing packs. The 19 core, 21 DeepSci, and 13 Kaoju internal capabilities remain self-contained protected subskills beneath their execution entrypoint, while each pack exposes a public welcome and entrypoint pair.
 - Standardized object-style invocation so skills and subskills use bare components, commands use `()`, and nested parent commands act as object generators for chains such as `manage-paper-template()->file()->put()`.
 - Updated callback discovery, Skill Binding Projection, extension-query contracts, installer selection, inspection, operator recovery, and Isomer-Houmao private projection to resolve protected members by stable logical identity instead of flat package paths.
 - Converted grouped Kaoju survey, dataset, and paper-template managers to explicit nested command routes while preserving role-specific content-template and LaTeX-template behavior.

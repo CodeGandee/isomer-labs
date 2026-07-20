@@ -92,14 +92,19 @@ def _callback_explained_json(callback: UserSkillCallback, project_root: Path) ->
         kind, canonical_id, deprecated = catalog.normalize_identity(callback.skill)
         if kind == "pack":
             pack = catalog.pack_for_public_skill(canonical_id)
+            try:
+                public = catalog.public_skill_by_name(callback.skill)
+            except SystemSkillAssetError:
+                public = pack.entrypoint
             data.update(
                 {
-                    "target_skill": canonical_id,
+                    "target_skill": public.name,
                     "pack_id": pack.pack_id,
                     "public_skill": pack.entry_skill,
-                    "nested_path": pack.source_path,
+                    "public_role": public.role,
+                    "nested_path": public.source_path,
                     "member_name": None,
-                    "invocation_designator": pack.entry_skill,
+                    "invocation_designator": public.name,
                     "deprecated_target_alias": deprecated,
                 }
             )
@@ -111,6 +116,7 @@ def _callback_explained_json(callback: UserSkillCallback, project_root: Path) ->
                     "target_skill": capability.logical_id,
                     "pack_id": pack.pack_id,
                     "public_skill": pack.entry_skill,
+                    "public_role": "protected",
                     "nested_path": capability.source_path,
                     "member_name": capability.member_name,
                     "invocation_designator": capability.invocation_designator,

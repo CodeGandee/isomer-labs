@@ -18,7 +18,7 @@ Pipeline execution is a complex process. Before executing any pipeline task, use
 
 ## Overview
 
-Use this public pack as the route-and-proceed dispatcher for one accepted survey intent or task-only request. It selects a bounded parent command or protected Kaoju member, preserves Gates and durable checkpoints, and stops at the selected terminal boundary. Empty invocation executes `help`.
+Use this public execution entrypoint as the route-and-proceed dispatcher for one accepted survey intent or task-only request. It selects a bounded parent command or protected Kaoju member, preserves Gates and durable checkpoints, and stops at the selected terminal boundary. Empty invocation, `help`, and orientation-only requests delegate read-only output to the independent `$isomer-ext-kaoju-welcome` sibling.
 
 When a procedure creates or changes durable research concepts, invoke `isomer-op-entrypoint->research-ideas` and apply the Kaoju mapping reference exposed by `isomer-ext-kaoju-entrypoint->shared`. A pipeline checkpoint or terminal report cannot substitute for missing canonical idea effects.
 
@@ -28,7 +28,7 @@ Use as the single public router for the ten current survey intents, retained com
 
 ## Workflow
 
-1. **Resolve the public request and context**. Accept `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`, a task-only request, or empty invocation. Empty invocation selects `help`; otherwise identify the Research Topic, Topic Workspace, survey intent or protected stage, clarification posture, accepted refs, and requested resume stage.
+1. **Resolve the public request and context**. Accept `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`, a task-only request, or empty invocation. Empty invocation, `help`, and orientation-only requests delegate to `$isomer-ext-kaoju-welcome` with supplied context intact; otherwise identify the Research Topic, Topic Workspace, survey intent or protected stage, clarification posture, accepted refs, and requested resume stage.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-ext-kaoju-entrypoint --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Load the checked contract**. Run `isomer-cli --print-json ext kaoju process show` and treat its versioned process data as the exact skill, intent, compatibility, and manager inventory. Do not invent a public command or read a package path directly.
 4. **Route one intent**. Select the exact command page below. This skill coordinates stages but does not search, interpret evidence, mutate environments, execute trials, author canonical paper content, or write wiki files itself.

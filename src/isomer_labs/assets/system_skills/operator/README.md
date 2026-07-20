@@ -1,6 +1,6 @@
 # Operator Public Pack
 
-This subtree contains the sole public core pack, `isomer-op-entrypoint`. Installers project the entire directory as one top-level host skill. The 20 operator, service, shared-support, and research-recording capabilities below `isomer-op-entrypoint/subskills/` are protected members, not independent install units.
+This subtree contains the two public core siblings, `isomer-op-welcome` and `isomer-op-entrypoint`. Installers project both top-level host skills as one atomic pack. The 19 operator, service, shared-support, and research-recording capabilities below `isomer-op-entrypoint/subskills/` are protected members, not independent install units.
 
 Ordinary users invoke the public parent:
 
@@ -17,7 +17,7 @@ The parent route table maps scoped names such as `project`, `gui`, `identity`, `
 
 Operator members own user-facing Project, Topic, identity, GUI, Toolbox, extension-management, and formal-team workflows. Protected service members provide bounded support only after an owner delegates them. Protected shared members provide reusable guidance or recording workflows without becoming first-click public skills.
 
-The `welcome` member remains read-only. The public parent exposes its visible orientation commands and handles concrete route-and-proceed requests. Project declarations remain authoritative routing intent; the `system-skills` member separately evaluates receipt v4, explicit-root integrity, limited live inventory, and refresh state when host usability matters.
+The public `isomer-op-welcome` sibling remains read-only and teaches typical use cases and commands. The entrypoint handles concrete route-and-proceed requests and delegates empty, help, and retained orientation commands to welcome. Project declarations remain authoritative routing intent; the `system-skills` member separately evaluates receipt v5 public-pair integrity, explicit-root integrity, limited live inventory, and refresh state when host usability matters.
 
 Houmao remains an implementation and adapter layer. Isomer owner routes resolve Isomer context and authority before delegating bounded work through the protected `houmao` member.
 

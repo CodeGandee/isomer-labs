@@ -1,4 +1,4 @@
-schema_version = "isomer-skillset-manifest.v3"
+schema_version = "isomer-skillset-manifest.v4"
 
 [callback_insertion_point_stages.begin]
 label = "Begin"
@@ -12,52 +12,93 @@ description = "After tentative outputs exist and before final response, handoff,
 pack_id = "core"
 description = "Core Isomer operator, service, and shared support pack."
 kind = "core"
-source_path = "operator/isomer-op-entrypoint"
 entry_skill = "isomer-op-entrypoint"
 always_available = true
 minimum_compatible_skill_version = "0.3.0"
-public_commands = ["help", "show-options", "show-extensions", "choose-path", "show-skill-map", "next-step", "start-research-manually", "start-research-by-agent-team", "start-deepsci-research", "start-kaoju-survey", "project", "gui", "identity", "system-skills", "toolbox", "topic-create", "topic-manage", "topic-team", "package-specifics", "tool-packs"]
-protected_members = ["isomer-op-welcome", "isomer-op-project-mgr", "isomer-op-gui-mgr", "isomer-op-switch-identity", "isomer-op-system-skill-mgr", "isomer-op-toolbox-mgr", "isomer-op-topic-creator", "isomer-op-topic-mgr", "isomer-op-topic-team-specialize", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup", "isomer-srv-resolve-pkg-repo", "isomer-srv-houmao-interop", "isomer-srv-topic-service-agent-support", "isomer-misc-bounded-run-tips", "isomer-misc-nvidia-tools", "isomer-misc-pkg-specifics", "isomer-misc-tool-packs", "isomer-research-idea-recording", "isomer-research-operation-set-recording"]
-legacy_aliases = []
-callback_insertion_points = []
+public_skills = ["isomer-op-welcome", "isomer-op-entrypoint"]
+protected_members = ["isomer-op-project-mgr", "isomer-op-gui-mgr", "isomer-op-switch-identity", "isomer-op-system-skill-mgr", "isomer-op-toolbox-mgr", "isomer-op-topic-creator", "isomer-op-topic-mgr", "isomer-op-topic-team-specialize", "isomer-srv-topic-env-setup", "isomer-srv-agent-env-setup", "isomer-srv-resolve-pkg-repo", "isomer-srv-houmao-interop", "isomer-srv-topic-service-agent-support", "isomer-misc-bounded-run-tips", "isomer-misc-nvidia-tools", "isomer-misc-pkg-specifics", "isomer-misc-tool-packs", "isomer-research-idea-recording", "isomer-research-operation-set-recording"]
 
 [[packs]]
 pack_id = "deepsci"
 description = "Hypothesis-driven production research extension pack."
 kind = "extension"
 extension_id = "deepsci"
-source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint"
 entry_skill = "isomer-ext-deepsci-entrypoint"
 always_available = false
 minimum_compatible_skill_version = "0.3.0"
-public_commands = ["empirical-pass", "hypothesis-pass", "list-passes", "paper-pass", "polish-pass", "rebuttal-pass", "revision-pass", "submission-pass", "help"]
+public_skills = ["isomer-ext-deepsci-welcome", "isomer-ext-deepsci-entrypoint"]
 protected_members = ["isomer-deepsci-analysis", "isomer-deepsci-baseline", "isomer-deepsci-decision", "isomer-deepsci-experiment", "isomer-deepsci-figure-polish", "isomer-deepsci-finalize", "isomer-deepsci-idea", "isomer-deepsci-nature-data", "isomer-deepsci-nature-figure", "isomer-deepsci-nature-paper2ppt", "isomer-deepsci-nature-polishing", "isomer-deepsci-optimize", "isomer-deepsci-paper-outline", "isomer-deepsci-paper-plot", "isomer-deepsci-rebuttal", "isomer-deepsci-review", "isomer-deepsci-science", "isomer-deepsci-scout", "isomer-deepsci-shared", "isomer-deepsci-workspace-mgr", "isomer-deepsci-write"]
-legacy_aliases = ["isomer-deepsci-pipeline"]
-callback_insertion_points = ["begin", "end"]
+
 [[packs]]
 pack_id = "kaoju"
 description = "Evidence-led literature, codebase, dataset, model, and first-hand survey extension pack."
 kind = "extension"
 extension_id = "kaoju"
-source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint"
 entry_skill = "isomer-ext-kaoju-entrypoint"
 always_available = false
 minimum_compatible_skill_version = "0.3.0"
-public_commands = ["choose-directions", "build-reading-list", "ingest-reading-item", "draft-paper", "manage-paper-template", "build-paper-pdf", "export-survey-wiki", "ingest-source-code", "prepare-code-run", "run-code-trial", "landscape-pass", "curated-intake-pass", "direction-expansion-pass", "theory-comparison-pass", "method-trial-pass", "comparative-pass", "audit-survey-pass", "paper-pass", "create-paper-template", "manage-survey", "manage-dataset", "help"]
+public_skills = ["isomer-ext-kaoju-welcome", "isomer-ext-kaoju-entrypoint"]
 protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-frame", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-write"]
-legacy_aliases = ["isomer-kaoju-pipeline"]
-callback_insertion_points = ["begin", "end"]
 
-[[capabilities]]
-logical_id = "isomer-op-welcome"
+[[public_skills]]
+name = "isomer-op-welcome"
 pack_id = "core"
-area = "operator"
-member_name = "welcome"
-source_path = "operator/isomer-op-entrypoint/subskills/isomer-op-welcome"
-invocation_designator = "isomer-op-entrypoint->welcome"
-dependencies = []
+role = "welcome"
+source_path = "operator/isomer-op-welcome"
+public_commands = ["show-options", "show-extensions", "choose-path", "show-command-map", "next-step", "start-research-manually", "start-research-by-agent-team", "start-deepsci-research", "start-kaoju-survey", "help"]
 legacy_aliases = []
 callback_insertion_points = []
+minimum_compatible_version = "0.3.0"
+
+[[public_skills]]
+name = "isomer-op-entrypoint"
+pack_id = "core"
+role = "entrypoint"
+source_path = "operator/isomer-op-entrypoint"
+public_commands = ["help", "show-options", "show-extensions", "choose-path", "show-skill-map", "show-command-map", "next-step", "start-research-manually", "start-research-by-agent-team", "start-deepsci-research", "start-kaoju-survey", "project", "gui", "identity", "system-skills", "toolbox", "topic-create", "topic-manage", "topic-team", "package-specifics", "tool-packs"]
+legacy_aliases = []
+callback_insertion_points = []
+minimum_compatible_version = "0.3.0"
+
+[[public_skills]]
+name = "isomer-ext-deepsci-welcome"
+pack_id = "deepsci"
+role = "welcome"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-welcome"
+public_commands = ["show-options", "choose-path", "show-command-map", "next-step", "help"]
+legacy_aliases = []
+callback_insertion_points = []
+minimum_compatible_version = "0.3.0"
+
+[[public_skills]]
+name = "isomer-ext-deepsci-entrypoint"
+pack_id = "deepsci"
+role = "entrypoint"
+source_path = "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint"
+public_commands = ["empirical-pass", "hypothesis-pass", "list-passes", "paper-pass", "polish-pass", "rebuttal-pass", "revision-pass", "submission-pass", "help"]
+legacy_aliases = ["isomer-deepsci-pipeline"]
+callback_insertion_points = ["begin", "end"]
+minimum_compatible_version = "0.3.0"
+
+[[public_skills]]
+name = "isomer-ext-kaoju-welcome"
+pack_id = "kaoju"
+role = "welcome"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-welcome"
+public_commands = ["show-options", "choose-path", "show-command-map", "next-step", "help"]
+legacy_aliases = []
+callback_insertion_points = []
+minimum_compatible_version = "0.3.0"
+
+[[public_skills]]
+name = "isomer-ext-kaoju-entrypoint"
+pack_id = "kaoju"
+role = "entrypoint"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint"
+public_commands = ["choose-directions", "build-reading-list", "ingest-reading-item", "draft-paper", "manage-paper-template", "build-paper-pdf", "export-survey-wiki", "ingest-source-code", "prepare-code-run", "run-code-trial", "landscape-pass", "curated-intake-pass", "direction-expansion-pass", "theory-comparison-pass", "method-trial-pass", "comparative-pass", "audit-survey-pass", "paper-pass", "create-paper-template", "manage-survey", "manage-dataset", "help"]
+legacy_aliases = ["isomer-kaoju-pipeline"]
+callback_insertion_points = ["begin", "end"]
+minimum_compatible_version = "0.3.0"
 
 [[capabilities]]
 logical_id = "isomer-op-project-mgr"
