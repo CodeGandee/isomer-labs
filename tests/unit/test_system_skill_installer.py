@@ -213,7 +213,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         kaoju_status = next(record for record in status.installed if record.pack_id == "kaoju")
         self.assertEqual("verified", kaoju_status.pack_status)
         self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in kaoju_status.public_skills))
-        self.assertEqual(13, len(kaoju_status.protected_members))
+        self.assertEqual(14, len(kaoju_status.protected_members))
 
         upgraded = upgrade_system_skills(target, selection)
         self.assertEqual(2, len(upgraded.refreshed))

@@ -467,7 +467,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         expected_packs = {
             "operator/isomer-op-entrypoint/SKILL.md": (19, ("project", "topic-create", "topic-manage")),
             "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md": (21, ("scout", "baseline", "idea", "paper-plot", "figure-polish")),
-            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (13, ("trial", "reproduce", "audit", "synthesize")),
+            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (14, ("trial", "reproduce", "audit", "synthesize")),
         }
         routing_by_pack: dict[str, dict[str, str]] = {}
         for relative_path, (expected_count, representative_members) in expected_packs.items():

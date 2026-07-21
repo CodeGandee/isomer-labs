@@ -39,6 +39,7 @@ class KaojuContract:
     protected_members: tuple["KaojuProtectedMember", ...]
     survey_intents: tuple[str, ...]
     compatibility_procedures: tuple[str, ...]
+    exploration_procedures: tuple[str, ...]
     manager_actions: dict[str, tuple[str, ...]]
     binding_queries: dict[str, str]
     raw: dict[str, Any]
@@ -108,6 +109,7 @@ def load_contract() -> KaojuContract:
         "skills",
         "survey_intents",
         "compatibility_procedures",
+        "exploration_procedures",
         "manager_actions",
         "binding_queries",
     )
@@ -133,8 +135,8 @@ def load_contract() -> KaojuContract:
         if invocation_designator != f"{entry_skill}->{member_name}":
             raise ValueError(f"Kaoju protected member {logical_id!r} has a noncanonical invocation designator.")
         protected_members.append(KaojuProtectedMember(logical_id, member_name, invocation_designator))
-    if len(protected_members) != 13:
-        raise ValueError(f"Kaoju contract must declare thirteen protected members, found {len(protected_members)}.")
+    if len(protected_members) != 14:
+        raise ValueError(f"Kaoju contract must declare fourteen protected members, found {len(protected_members)}.")
     if len({item.logical_id for item in protected_members}) != len(protected_members):
         raise ValueError("Kaoju protected member logical ids must be unique.")
     if len({item.member_name for item in protected_members}) != len(protected_members):
@@ -143,8 +145,9 @@ def load_contract() -> KaojuContract:
         raise ValueError("Kaoju protected member mapping must match the ordered protected skill inventory.")
     intents = _unique_strings(raw["survey_intents"], "survey_intents")
     compatibility = _unique_strings(raw["compatibility_procedures"], "compatibility_procedures")
-    if len(skills) != 14:
-        raise ValueError(f"Kaoju contract must declare fourteen skills, found {len(skills)}.")
+    exploration = _unique_strings(raw["exploration_procedures"], "exploration_procedures")
+    if len(skills) != 15:
+        raise ValueError(f"Kaoju contract must declare fifteen skills, found {len(skills)}.")
     if len(intents) != 10:
         raise ValueError(f"Kaoju contract must declare ten survey intents, found {len(intents)}.")
     raw_managers = raw["manager_actions"]
@@ -173,6 +176,7 @@ def load_contract() -> KaojuContract:
         protected_members=tuple(protected_members),
         survey_intents=intents,
         compatibility_procedures=compatibility,
+        exploration_procedures=exploration,
         manager_actions=managers,
         binding_queries=queries,
         raw=raw,

@@ -38,7 +38,7 @@ entry_skill = "isomer-ext-kaoju-entrypoint"
 always_available = false
 minimum_compatible_skill_version = "0.3.0"
 public_skills = ["isomer-ext-kaoju-welcome", "isomer-ext-kaoju-entrypoint"]
-protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-frame", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-write"]
+protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-explore", "isomer-kaoju-frame", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-write"]
 
 [[public_skills]]
 name = "isomer-op-welcome"
@@ -95,7 +95,7 @@ name = "isomer-ext-kaoju-entrypoint"
 pack_id = "kaoju"
 role = "entrypoint"
 source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint"
-public_commands = ["choose-directions", "build-reading-list", "ingest-reading-item", "draft-paper", "manage-paper-template", "build-paper-pdf", "export-survey-wiki", "ingest-source-code", "prepare-code-run", "run-code-trial", "landscape-pass", "curated-intake-pass", "direction-expansion-pass", "theory-comparison-pass", "method-trial-pass", "comparative-pass", "audit-survey-pass", "paper-pass", "create-paper-template", "manage-survey", "manage-dataset", "help"]
+public_commands = ["choose-directions", "build-reading-list", "ingest-reading-item", "draft-paper", "manage-paper-template", "build-paper-pdf", "export-survey-wiki", "ingest-source-code", "prepare-code-run", "run-code-trial", "landscape-pass", "curated-intake-pass", "direction-expansion-pass", "theory-comparison-pass", "method-trial-pass", "comparative-pass", "audit-survey-pass", "paper-pass", "create-paper-template", "explore", "manage-survey", "manage-dataset", "help"]
 legacy_aliases = ["isomer-kaoju-pipeline"]
 callback_insertion_points = ["begin", "end"]
 minimum_compatible_version = "0.3.0"
@@ -605,6 +605,17 @@ invocation_designator = "isomer-ext-kaoju-entrypoint->export"
 dependencies = ["isomer-kaoju-shared"]
 legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
+
+[[capabilities]]
+logical_id = "isomer-kaoju-explore"
+pack_id = "kaoju"
+area = "research"
+member_name = "explore"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-explore"
+invocation_designator = "isomer-ext-kaoju-entrypoint->explore"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
+callback_insertion_points = []
 
 [[capabilities]]
 logical_id = "isomer-kaoju-frame"

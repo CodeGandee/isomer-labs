@@ -174,6 +174,7 @@ EXPECTED_KAOJU_SKILLS = frozenset(
         "isomer-kaoju-compare",
         "isomer-kaoju-discover",
         "isomer-kaoju-examine",
+        "isomer-kaoju-explore",
         "isomer-kaoju-frame",
         "isomer-kaoju-reproduce",
         "isomer-kaoju-shared",
@@ -249,6 +250,7 @@ EXPECTED_KAOJU_COMMANDS = frozenset(
         "curated-intake-pass",
         "direction-expansion-pass",
         "draft-paper",
+        "explore",
         "export-survey-wiki",
         "ingest-reading-item",
         "ingest-source-code",
@@ -2526,7 +2528,7 @@ def load_kaoju_process_contract(
 
 def _contract_commands(contract: dict[str, object]) -> tuple[str, ...]:
     commands: list[str] = []
-    for field in ("survey_intents", "compatibility_procedures"):
+    for field in ("survey_intents", "compatibility_procedures", "exploration_procedures"):
         values = contract.get(field, [])
         if isinstance(values, list):
             commands.extend(str(value) for value in values)
@@ -2545,8 +2547,8 @@ def validate_kaoju_package_contract(
     contract_path = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
     intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
-    if len(skills) != 14:
-        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare fourteen skills, found {len(skills)}")
+    if len(skills) != 15:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare fifteen skills, found {len(skills)}")
     if len(intents) != 10:
         add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare ten survey intents, found {len(intents)}")
 

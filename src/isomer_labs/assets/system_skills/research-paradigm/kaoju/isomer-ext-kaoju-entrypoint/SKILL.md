@@ -58,6 +58,7 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | `compare` | `isomer-kaoju-compare` | Named works need theory comparison, an empirical comparison contract, or a controlled actual-run comparison with fairness and uncertainty limits. | `isomer-ext-kaoju-entrypoint->compare` |
 | `discover` | `isomer-kaoju-discover` | The survey needs broad field discovery, curated-reference resolution, seed expansion, version-family mapping, query provenance, or bounded source selection before acquisition. | `isomer-ext-kaoju-entrypoint->discover` |
 | `examine` | `isomer-kaoju-examine` | Acquired papers or code need full-text or source inspection, exact locators, paper-code mapping, Source Digests, contradiction tracking, or ledger updates. | `isomer-ext-kaoju-entrypoint->examine` |
+| `explore` | `isomer-kaoju-explore` | The user has a concrete survey task but needs an interactive, read-only planning discussion to agree on intent, scope, evidence strategy, and the right command before any durable work. | `isomer-ext-kaoju-entrypoint->explore` |
 | `export` | `isomer-kaoju-export` | Accepted survey records must become a self-contained LLM Wiki, a packaged local viewer, or a governed viewer launch after synthesis or writing. | `isomer-ext-kaoju-entrypoint->export` |
 | `frame` | `isomer-kaoju-frame` | The request needs a bounded Survey Contract covering clarification choices, intent, scope, evidence depth, resources, Gates, or stop conditions before evidence work. | `isomer-ext-kaoju-entrypoint->frame` |
 | `reproduce` | `isomer-kaoju-reproduce` | The user is making a genuine paper-reproduction claim that requires a source-grounded fidelity contract rather than an ordinary method trial or generated-data probe. | `isomer-ext-kaoju-entrypoint->reproduce` |
@@ -95,6 +96,12 @@ If the task does not map cleanly to these steps, refine the existing plan into a
 | `audit-survey-pass` | Audit, then synthesize if accepted | `commands/audit-survey-pass.md` |
 | `paper-pass` | `draft-paper`, then optional `build-paper-pdf` | `commands/paper-pass.md` |
 | `create-paper-template` | Construct a mutable named content-template tree, then optionally export | `commands/create-paper-template.md` |
+
+## Exploration Procedures
+
+| Procedure | Owner | Detail |
+| --- | --- | --- |
+| `explore` | `isomer-kaoju-explore` | `commands/explore.md` |
 
 ## Grouped Managers
 

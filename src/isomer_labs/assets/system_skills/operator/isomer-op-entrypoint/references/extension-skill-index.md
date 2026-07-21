@@ -43,6 +43,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Write accepted survey conclusions from an accepted Audit Report. | `isomer-ext-kaoju-entrypoint->synthesize` |
 | Turn accepted audit and synthesis records into a publication-ready manuscript and bundle. | `isomer-ext-kaoju-entrypoint->write` |
 | Export accepted state-DB records to a self-contained LLM wiki and operate the package-owned viewer. | `isomer-ext-kaoju-entrypoint->export` |
+| Discuss how to perform a Kaoju task and agree on the right command before durable work. | `isomer-ext-kaoju-entrypoint->explore` |
 
 ## DeepSci Bootstrap and Pipeline
 

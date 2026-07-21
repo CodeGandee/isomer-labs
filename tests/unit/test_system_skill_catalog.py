@@ -32,8 +32,8 @@ class SystemSkillCatalogTests(unittest.TestCase):
         catalog = system_skill_catalog()
 
         self.assertEqual("isomer-skillset-manifest.v4", catalog.schema_version)
-        self.assertEqual((19, 21, 13), tuple(len(pack.protected_members) for pack in catalog.packs))
-        self.assertEqual(53, len(catalog.capabilities))
+        self.assertEqual((19, 21, 14), tuple(len(pack.protected_members) for pack in catalog.packs))
+        self.assertEqual(54, len(catalog.capabilities))
         for pack in catalog.packs:
             self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in pack.public_skills))
             self.assertEqual(pack.entry_skill, pack.entrypoint.name)

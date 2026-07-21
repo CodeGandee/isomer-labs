@@ -15,7 +15,12 @@ SUBSKILLS = ENTRYPOINT / "subskills"
 
 CONTRACT = load_contract()
 EXPECTED_SKILLS = set(CONTRACT.skills)
-COMMANDS = set(CONTRACT.survey_intents) | set(CONTRACT.compatibility_procedures) | set(CONTRACT.manager_actions)
+COMMANDS = (
+    set(CONTRACT.survey_intents)
+    | set(CONTRACT.compatibility_procedures)
+    | set(CONTRACT.exploration_procedures)
+    | set(CONTRACT.manager_actions)
+)
 
 
 def skill_entrypoint(skill: Path) -> Path:
@@ -43,6 +48,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         text = (pipeline / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("## Survey Intents", text)
         self.assertIn("## Compatibility Procedures", text)
+        self.assertIn("## Exploration Procedures", text)
         self.assertIn("## Grouped Managers", text)
         command_names = {path.stem for path in (pipeline / "commands").glob("*.md")}
         self.assertEqual(COMMANDS, command_names)

@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-explore"
+  short_description: "Explore how to perform a Kaoju task before doing any durable work."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint->explore to discuss how to perform this Kaoju task."

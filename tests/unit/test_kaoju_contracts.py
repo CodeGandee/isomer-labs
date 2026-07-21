@@ -29,11 +29,12 @@ class KaojuContractTests(unittest.TestCase):
 
     def test_checked_process_semantics_and_bindings_are_complete(self) -> None:
         contract = load_contract()
-        self.assertEqual(14, len(contract.skills))
+        self.assertEqual(15, len(contract.skills))
         self.assertEqual(10, len(contract.survey_intents))
+        self.assertEqual(("explore",), contract.exploration_procedures)
         self.assertEqual("isomer-ext-kaoju-entrypoint", contract.entry_skill)
         self.assertEqual("isomer-ext-kaoju-entrypoint", contract.skills[0])
-        self.assertEqual(13, len(contract.protected_members))
+        self.assertEqual(14, len(contract.protected_members))
         self.assertEqual(tuple(contract.skills[1:]), tuple(item.logical_id for item in contract.protected_members))
         self.assertEqual(
             "isomer-ext-kaoju-entrypoint->trial",

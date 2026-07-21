@@ -208,6 +208,15 @@ For concrete prompt and response patterns, start with [Research Workflow Tutoria
 - [Concepts](docs/manual/concepts.md)
 - [Developer Guide](docs/developer/index.md)
 
+## Related Projects
+
+- [academic-research-skills](https://github.com/imbad0202/academic-research-skills) — a collection of prompts and skills for academic research workflows.
+- [paper-qa](https://github.com/Future-House/paper-qa) — a framework for scientific literature question answering and review synthesis.
+- [deer-flow](https://github.com/bytedance/deer-flow/tree/main) — a deep research flow framework for autonomous scientific discovery.
+- [agent-paper-grounded-reading](https://github.com/c-narcissus/agent-paper-grounded-reading) — an agentic paper reading workflow grounded in source evidence.
+- [adhd-paper-reader](https://github.com/iagomsouza/adhd-paper-reader) — a focused, distraction-free paper reader and summarizer.
+- [paper-with-code-skills](https://github.com/Gojay001/paper-with-code-skills) — skills and workflows for reading and reproducing papers with code.
+
 ## Acknowledgments
 
 The DeepSci skill family originated from the [DeepScientist project](https://github.com/ResearAI/DeepScientist). Isomer Labs completely refactored those skills to fit its system-skill architecture, Project and Topic Workspace model, artifact contracts, and operating workflows. We thank the DeepScientist authors for their work and inspiration.

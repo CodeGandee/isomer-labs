@@ -3297,7 +3297,7 @@ class IsomerCliTests(unittest.TestCase):
             [(public["name"], public["role"]) for public in data["extensions"][0]["public_skills"]],
         )
         kaoju_members = {item["logical_id"]: item for item in data["extensions"][1]["protected_members"]}
-        self.assertEqual(13, len(kaoju_members))
+        self.assertEqual(14, len(kaoju_members))
         self.assertEqual("trial", kaoju_members["isomer-kaoju-trial"]["member_name"])
         self.assertEqual(
             "isomer-ext-kaoju-entrypoint->trial",

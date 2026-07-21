@@ -66,6 +66,11 @@
       "logical_id": "isomer-kaoju-export",
       "member_name": "export",
       "invocation_designator": "isomer-ext-kaoju-entrypoint->export"
+    },
+    {
+      "logical_id": "isomer-kaoju-explore",
+      "member_name": "explore",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->explore"
     }
   ],
   "skills": [
@@ -82,7 +87,8 @@
     "isomer-kaoju-audit",
     "isomer-kaoju-synthesize",
     "isomer-kaoju-write",
-    "isomer-kaoju-export"
+    "isomer-kaoju-export",
+    "isomer-kaoju-explore"
   ],
   "survey_intents": [
     "choose-directions",
@@ -106,6 +112,9 @@
     "audit-survey-pass",
     "paper-pass",
     "create-paper-template"
+  ],
+  "exploration_procedures": [
+    "explore"
   ],
   "manager_actions": {
     "manage-survey": [

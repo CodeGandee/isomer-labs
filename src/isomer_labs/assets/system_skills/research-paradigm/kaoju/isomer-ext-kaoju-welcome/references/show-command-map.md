@@ -32,6 +32,7 @@ If the goal does not map cleanly to one command, use the native planning tool to
 | `audit-survey-pass` | Use to audit evidence and synthesize only after acceptance. | `$isomer-ext-kaoju-entrypoint use audit-survey-pass to <task>` |
 | `paper-pass` | Use to draft a survey paper and optionally build its PDF. | `$isomer-ext-kaoju-entrypoint use paper-pass to <task>` |
 | `create-paper-template` | Use to create a mutable named content-template tree and optionally export it. | `$isomer-ext-kaoju-entrypoint use create-paper-template to <task>` |
+| `explore` | Use to discuss how to perform a Kaoju task and agree on the right command before durable work. | `$isomer-ext-kaoju-entrypoint use explore to <task>` |
 | `manage-survey` | Use to list, show, inspect status, or export managed survey state. | `$isomer-ext-kaoju-entrypoint use manage-survey to <task>` |
 | `manage-dataset` | Use to register, list, show, refresh, or remove managed dataset state. | `$isomer-ext-kaoju-entrypoint use manage-dataset to <task>` |
 | `help` | Use to explain the execution entrypoint and list its public survey commands. | `$isomer-ext-kaoju-entrypoint use help to explain the public Kaoju command surface` |
