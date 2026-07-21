@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `write` source and the analy
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/experiments_analysis_patterns.md`
 - `src/references/oral_package_patterns.md`
 - `src/references/oral_writing_principles.md`

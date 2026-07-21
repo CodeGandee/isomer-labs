@@ -56,6 +56,9 @@ OUTPUT_CONTRACT_FIXTURE = """
 
 INVOCATION_NOTATION_FRONTMATTER = """
             skill_invocation_notation: >
+              Top-level skill entrypoints use SKILL.md. Parent-scoped subskill entrypoints use
+              SKILL-MAIN.md and are loaded explicitly through their parent; nested SKILL.md is
+              accepted only as legacy input when SKILL-MAIN.md is absent.
               Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
               `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
               `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
@@ -225,7 +228,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         capability = pack / "subskills" / "isomer-op-project-mgr"
         write(
-            capability / "SKILL.md",
+            capability / "SKILL-MAIN.md",
             f"""
             ---
             name: isomer-op-project-mgr
@@ -287,7 +290,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         capability = pack / "subskills" / "isomer-op-project-mgr"
         write(
-            capability / "SKILL.md",
+            capability / "SKILL-MAIN.md",
             """
             ---
             name: isomer-op-project-mgr
@@ -352,7 +355,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertTrue(any("must not return to a bare component" in message for message in rendered), rendered)
         self.assertTrue(any("does not declare child route" in message for message in rendered), rendered)
         self.assertTrue(any("role parameters" in message for message in rendered), rendered)
-        self.assertTrue(any("not declared as a protected capability" in message for message in rendered), rendered)
+        self.assertTrue(any("nested SKILL.md is forbidden" in message for message in rendered), rendered)
 
     def test_v3_invocation_validator_requires_notation_and_public_protected_prompts(self) -> None:
         root = self.make_root()
@@ -615,7 +618,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 """,
             )
             write(
-                root / "skillset" / relative_skill / "org" / "src" / "SKILL.md",
+                root / "skillset" / relative_skill / "org" / "src" / "SKILL-SOURCE.md",
                 """
                 # Historical Source
 
@@ -642,7 +645,7 @@ class SkillsetValidatorTests(unittest.TestCase):
             path.relative_to(skill_dirs[0]).as_posix()
             for path in validator.active_skill_markdown_pages(skill_dirs[0])
         }
-        self.assertNotIn("org/src/SKILL.md", active_paths)
+        self.assertNotIn("org/src/SKILL-SOURCE.md", active_paths)
         self.assertNotIn("migrate/notes.md", active_paths)
         self.assertNotIn("templates/output.md", active_paths)
 
@@ -2501,7 +2504,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
-        skill_md = target / "SKILL.md"
+        skill_md = target / "SKILL-MAIN.md"
         skill_md.write_text(
             skill_md.read_text(encoding="utf-8") + "\nAlways discover project extensions from `.claude/skills`.\n",
             encoding="utf-8",
@@ -2517,7 +2520,7 @@ class SkillsetValidatorTests(unittest.TestCase):
         source = SYSTEM_SKILL_MANAGER_SOURCE
         target = root / "skillset" / "operator" / "isomer-op-system-skill-mgr"
         shutil.copytree(source, target)
-        skill_md = target / "SKILL.md"
+        skill_md = target / "SKILL-MAIN.md"
         text = skill_md.read_text(encoding="utf-8")
         skill_md.write_text(
             text.replace("# Isomer Operator", "**Limited live inventory** first.\n\n# Isomer Operator", 1),

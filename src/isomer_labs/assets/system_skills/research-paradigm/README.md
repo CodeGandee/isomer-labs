@@ -20,9 +20,9 @@ Task-only invocation may route to a protected member without exposing that membe
 
 ## Protected Bundle Ownership
 
-Each protected member remains a self-contained skill bundle with its stable logical id. Resources used by one capability belong inside that bundle. Shared family procedures route through the protected `shared` member. Data or machine services shared across several bundles remain package-owned and are queried through `isomer-cli ext <extension-id>`.
+Each protected member remains a self-contained skill bundle with its stable logical id and a `SKILL-MAIN.md` entrypoint. The public execution entrypoint resolves and loads only the selected member and its directly required local resources. Resources used by one capability belong inside that bundle. Shared family procedures route through the protected `shared` member. Data or machine services shared across several bundles remain package-owned and are queried through `isomer-cli ext <extension-id>`.
 
-DeepSci traceability material may remain below a protected bundle in `migrate/`, `org/`, passive templates, provenance files, and license notices. Active runtime resources must remain directly linked and bundle-local.
+DeepSci traceability material may remain below a protected bundle in `migrate/`, `org/`, passive templates, provenance files, and license notices. Preserved source entrypoints use `SKILL-SOURCE.md`; nested traceability material must not introduce another discovery-named `SKILL.md`. Active runtime resources must remain directly linked and bundle-local.
 
 Kaoju process, semantic, binding, schema, named-template, composition, migration, validation, build, and wiki resources remain under `isomer_labs.kaoju`. The public pack and protected `write` member query those services rather than copying their data.
 

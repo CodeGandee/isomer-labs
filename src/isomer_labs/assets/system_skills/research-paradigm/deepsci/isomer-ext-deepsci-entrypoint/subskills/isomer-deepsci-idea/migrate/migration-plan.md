@@ -6,8 +6,8 @@
 - Target skill: `skillset/research-paradigm/deepsci/isomer-rsch-idea`.
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
-- Runtime support copy: every source reference page is copied and refactored under `references/` with the source-relative path preserved. The source entrypoint is not copied over target `SKILL.md`, and target `agents/openai.yaml` is preserved.
-- Source files covered: `SKILL.md`, `references/controlled-brainstorming-playbook.md`, `references/current-board-packet-template.md`, `references/high-value-idea-sourcing.md`, `references/idea-generation-playbook.md`, `references/idea-thinking-flow.md`, `references/literature-survey-template.md`, `references/objective-contract-template.md`, `references/outline-seeding-example.md`, `references/pre-idea-draft-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md`, `references/research-outline-template.md`, and `references/selection-gate.md`.
+- Runtime support copy: every source reference page is copied and refactored under `references/` with the source-relative path preserved. The source entrypoint is not copied over target `SKILL-MAIN.md`, and target `agents/openai.yaml` is preserved.
+- Source files covered: `SKILL-SOURCE.md`, `references/controlled-brainstorming-playbook.md`, `references/current-board-packet-template.md`, `references/high-value-idea-sourcing.md`, `references/idea-generation-playbook.md`, `references/idea-thinking-flow.md`, `references/literature-survey-template.md`, `references/objective-contract-template.md`, `references/outline-seeding-example.md`, `references/pre-idea-draft-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md`, `references/research-outline-template.md`, and `references/selection-gate.md`.
 - Source analysis: `org/analysis/analysis-of-idea.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -72,7 +72,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface.
+- `SKILL-MAIN.md`: native production DeepSci control surface.
 - `references/objective-contract-template.md`: Objective Contract Template.
 - `references/current-board-packet-template.md`: Current Board Packet Template.
 - `references/high-value-idea-sourcing.md`: High-Value Idea Sourcing.
@@ -93,14 +93,14 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Check readiness and recover context | `SKILL.md` Match signals, Use when, Do not use when, Preconditions and gate, Failure and blocked handling, Exit criteria; `references/selection-gate.md` promotion gate. | `references/objective-contract-template.md`, `references/current-board-packet-template.md`, `references/selection-gate.md` |
-| Lock the objective and board | `SKILL.md` Control workflow steps 1-2, Constraints, Validation, Three-layer todo contract, Current-node plan and checklist; `references/objective-contract-template.md`; `references/current-board-packet-template.md`. | `references/objective-contract-template.md`, `references/current-board-packet-template.md` |
-| Plan and refresh evidence | `SKILL.md` Control workflow step 4, Truth sources, Related-work and novelty mandate, Memory rules; `references/literature-survey-template.md`; `references/related-work-playbook.md`; `references/research-history-playbook.md`. | `references/literature-survey-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md` |
-| Extract the limitation and mechanism frame | `SKILL.md` Control workflow steps 3 and 5, Direction-shaping protocol, Thinking protocol, Stage purpose; `references/high-value-idea-sourcing.md`; `references/idea-thinking-flow.md`; `references/research-outline-template.md`. | `references/high-value-idea-sourcing.md`, `references/idea-thinking-flow.md`, `references/research-outline-template.md` |
-| Generate a bounded frontier | `SKILL.md` Control workflow steps 6-7, Creative-divergence protocol, Integrated ideation workflow, Common ideation failure modes; `references/controlled-brainstorming-playbook.md`; `references/idea-generation-playbook.md`. | `references/controlled-brainstorming-playbook.md`, `references/idea-generation-playbook.md` |
-| Challenge serious candidates | `SKILL.md` Control workflow step 8, Draft-before-submit SOP, Non-negotiable rules; `references/pre-idea-draft-template.md`. | `references/pre-idea-draft-template.md` |
-| Select, branch, reject, or block | `SKILL.md` Control workflow steps 9-10, Idea output contract, Idea quality rules, Novelty and research-value rules, Artifact rules, Failure and blocked handling; `references/selection-gate.md`. | `references/selection-gate.md`, `references/selected-hypothesis-template.md` |
-| Record durable outcomes and route next | `SKILL.md` Required durable outputs, Memory rules, Artifact rules, Research-map role, Exit criteria; `references/literature-survey-template.md`; `references/outline-seeding-example.md`; `references/research-outline-template.md`. | `references/literature-survey-template.md`, `references/outline-seeding-example.md`, `references/research-outline-template.md` |
+| Check readiness and recover context | `SKILL-SOURCE.md` Match signals, Use when, Do not use when, Preconditions and gate, Failure and blocked handling, Exit criteria; `references/selection-gate.md` promotion gate. | `references/objective-contract-template.md`, `references/current-board-packet-template.md`, `references/selection-gate.md` |
+| Lock the objective and board | `SKILL-SOURCE.md` Control workflow steps 1-2, Constraints, Validation, Three-layer todo contract, Current-node plan and checklist; `references/objective-contract-template.md`; `references/current-board-packet-template.md`. | `references/objective-contract-template.md`, `references/current-board-packet-template.md` |
+| Plan and refresh evidence | `SKILL-SOURCE.md` Control workflow step 4, Truth sources, Related-work and novelty mandate, Memory rules; `references/literature-survey-template.md`; `references/related-work-playbook.md`; `references/research-history-playbook.md`. | `references/literature-survey-template.md`, `references/related-work-playbook.md`, `references/research-history-playbook.md` |
+| Extract the limitation and mechanism frame | `SKILL-SOURCE.md` Control workflow steps 3 and 5, Direction-shaping protocol, Thinking protocol, Stage purpose; `references/high-value-idea-sourcing.md`; `references/idea-thinking-flow.md`; `references/research-outline-template.md`. | `references/high-value-idea-sourcing.md`, `references/idea-thinking-flow.md`, `references/research-outline-template.md` |
+| Generate a bounded frontier | `SKILL-SOURCE.md` Control workflow steps 6-7, Creative-divergence protocol, Integrated ideation workflow, Common ideation failure modes; `references/controlled-brainstorming-playbook.md`; `references/idea-generation-playbook.md`. | `references/controlled-brainstorming-playbook.md`, `references/idea-generation-playbook.md` |
+| Challenge serious candidates | `SKILL-SOURCE.md` Control workflow step 8, Draft-before-submit SOP, Non-negotiable rules; `references/pre-idea-draft-template.md`. | `references/pre-idea-draft-template.md` |
+| Select, branch, reject, or block | `SKILL-SOURCE.md` Control workflow steps 9-10, Idea output contract, Idea quality rules, Novelty and research-value rules, Artifact rules, Failure and blocked handling; `references/selection-gate.md`. | `references/selection-gate.md`, `references/selected-hypothesis-template.md` |
+| Record durable outcomes and route next | `SKILL-SOURCE.md` Required durable outputs, Memory rules, Artifact rules, Research-map role, Exit criteria; `references/literature-survey-template.md`; `references/outline-seeding-example.md`; `references/research-outline-template.md`. | `references/literature-survey-template.md`, `references/outline-seeding-example.md`, `references/research-outline-template.md` |
 
 ## Semantic Match Checks
 

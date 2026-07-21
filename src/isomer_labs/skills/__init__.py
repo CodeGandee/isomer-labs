@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from isomer_labs.skills.system_assets import (
+    SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    SYSTEM_SKILL_PROVENANCE_ENTRYPOINT_FILENAME,
+    SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
     SystemSkillCapability,
     SystemSkillCatalog,
     SystemSkillAssetError,
@@ -25,10 +28,13 @@ from isomer_labs.skills.system_assets import (
     parse_system_skill_manifest,
     resolve_system_skill,
     resolve_system_skill_capability,
+    resolve_system_skill_capability_entrypoint,
+    resolve_system_skill_entrypoint,
     resolve_system_skill_binding_projection,
     resolve_system_skill_dependency_closure,
     resolve_system_skill_private_projection,
     system_skill_catalog,
+    system_skill_entrypoint_filename,
     system_skills_root,
 )
 from isomer_labs.skills.installer import (
@@ -59,6 +65,9 @@ from isomer_labs.skills.versioning import SkillVersionObservation, inspect_skill
 __all__ = [
     "CONCRETE_TARGETS",
     "SKILL_MANIFEST_FILENAME",
+    "SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME",
+    "SYSTEM_SKILL_PROVENANCE_ENTRYPOINT_FILENAME",
+    "SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME",
     "SUPPORTED_TARGETS",
     "SystemSkillAssetError",
     "SystemSkillCapability",
@@ -97,12 +106,15 @@ __all__ = [
     "resolve_system_skill_selection",
     "resolve_system_skill",
     "resolve_system_skill_capability",
+    "resolve_system_skill_capability_entrypoint",
+    "resolve_system_skill_entrypoint",
     "resolve_system_skill_binding_projection",
     "resolve_system_skill_dependency_closure",
     "resolve_system_skill_private_projection",
     "resolve_targets",
     "require_skill_version",
     "system_skill_catalog",
+    "system_skill_entrypoint_filename",
     "system_skills_root",
     "uninstall_system_skills",
     "upgrade_system_skills",

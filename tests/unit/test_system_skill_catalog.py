@@ -3,7 +3,6 @@ from __future__ import annotations
 from copy import deepcopy
 from pathlib import Path
 import re
-import shutil
 import tempfile
 import unittest
 
@@ -21,7 +20,6 @@ from isomer_labs.skills.system_assets import (
     resolve_system_skill_binding_projection,
     resolve_system_skill_dependency_closure,
     resolve_system_skill_private_projection,
-    system_skills_root,
     system_skill_catalog,
 )
 
@@ -87,19 +85,20 @@ class SystemSkillCatalogTests(unittest.TestCase):
     def test_private_projection_is_flat_self_contained_and_dependency_closed(self) -> None:
         projections = resolve_system_skill_private_projection(("isomer-kaoju-trial",))
         projected_ids = {projection.logical_id for projection in projections}
-        packaged_root = Path(str(system_skills_root()))
         link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
         root_relative_prefixes = ("assets/", "commands/", "references/", "scripts/", "templates/")
 
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp)
-            for projection in projections:
-                shutil.copytree(packaged_root / projection.source_path, target / projection.projected_path)
+            result = materialize_system_skill_private_projection(target, ("isomer-kaoju-trial",))
+            self.assertEqual(projections, result.projections)
 
             self.assertEqual(projected_ids, {path.name for path in target.iterdir()})
             for projection in projections:
                 bundle = target / projection.projected_path
                 self.assertTrue((bundle / "SKILL.md").is_file())
+                self.assertFalse((bundle / "SKILL-MAIN.md").exists())
+                self.assertFalse(any(path.name == "SKILL.md" for path in bundle.rglob("SKILL.md") if path.parent != bundle))
                 self.assertTrue((bundle / "agents" / "openai.yaml").is_file())
                 self.assertTrue(set(projection.dependencies).issubset(projected_ids))
                 self.assertFalse(any(path.is_symlink() for path in bundle.rglob("*")))

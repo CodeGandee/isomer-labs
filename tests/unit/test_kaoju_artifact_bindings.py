@@ -9,7 +9,11 @@ import re
 import unittest
 
 from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, validate_binding_registry_document
-from isomer_labs.skills.system_assets import resolve_system_skill, resolve_system_skill_capability
+from isomer_labs.skills.system_assets import (
+    resolve_system_skill,
+    resolve_system_skill_capability,
+    resolve_system_skill_capability_entrypoint,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -85,9 +89,9 @@ class KaojuArtifactBindingTests(unittest.TestCase):
                 self.assertTrue(validate_binding_registry_document(fixture, schema=schema))
 
     def test_workspace_and_shared_contract_cover_scoped_db_only_artifacts(self) -> None:
-        workspace = resolve_system_skill_capability("isomer-kaoju-workspace-mgr").joinpath("SKILL.md").read_text(encoding="utf-8")
+        workspace = resolve_system_skill_capability_entrypoint("isomer-kaoju-workspace-mgr").read_text(encoding="utf-8")
         shared_root = resolve_system_skill_capability("isomer-kaoju-shared")
-        shared = shared_root.joinpath("SKILL.md").read_text(encoding="utf-8")
+        shared = resolve_system_skill_capability_entrypoint("isomer-kaoju-shared").read_text(encoding="utf-8")
         recording = shared_root.joinpath("references", "artifact-recording.md").read_text(encoding="utf-8")
         for term in ("Workspace Runtime", "state DB", "scope", "directory", "Run", "Gate"):
             self.assertIn(term.casefold(), (workspace + shared + recording).casefold(), term)

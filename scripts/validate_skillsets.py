@@ -18,6 +18,8 @@ import yaml
 
 import validate_research_paradigm_skillset as research_validator
 from isomer_labs.skills.system_assets import (
+    SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
     SYSTEM_SKILL_MANIFEST_V3,
     SYSTEM_SKILL_MANIFEST_V4,
     SystemSkillAssetError,
@@ -47,6 +49,9 @@ SYSTEM_SKILL_INVOCATION_CODE = "SKL009"
 SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS = frozenset({"org", "migrate", "templates"})
 SYSTEM_SKILL_PRIVATE_RESOURCE_DIRS = frozenset({"assets", "references", "scripts", "templates"})
 SKILL_INVOCATION_NOTATION = (
+    "Top-level skill entrypoints use SKILL.md. Parent-scoped subskill entrypoints use "
+    "SKILL-MAIN.md and are loaded explicitly through their parent; nested SKILL.md is "
+    "accepted only as legacy input when SKILL-MAIN.md is absent. "
     "Skill and subskill entrypoints use bare object paths: `X` invokes skill X and "
     "`X->Y->Z` invokes subskill Z. Subcommands use parenthesized components: "
     "`X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of "
@@ -2066,6 +2071,26 @@ class PackagedSkillRecord:
     public_role: str | None = None
 
 
+def packaged_skill_entrypoint(record: PackagedSkillRecord) -> Path:
+    """Return the required entrypoint for one manifest-declared bundle role."""
+
+    filename = (
+        SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+        if record.kind == "protected"
+        else SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+    )
+    return record.path / filename
+
+
+def skill_entrypoint_path(skill_dir: Path) -> Path:
+    """Resolve an entrypoint for validators that also support legacy flat fixtures."""
+
+    protected = skill_dir / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    if protected.is_file():
+        return protected
+    return skill_dir / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+
+
 def find_repo_root(start: Path) -> Path:
     current = start.resolve()
     if current.is_file():
@@ -2269,7 +2294,9 @@ def validate_chat_output_presentation(repo_root: Path, roots: tuple[Path, ...], 
     for root in roots:
         if not root.exists():
             continue
-        for skill_path in sorted(root.rglob("SKILL.md")):
+        skill_paths = set(root.rglob(SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME))
+        skill_paths.update(root.rglob(SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME))
+        for skill_path in sorted(skill_paths):
             if "org" in skill_path.parts:
                 continue
             skill_lines = read_lines(skill_path)
@@ -2955,7 +2982,7 @@ def validate_protected_subskill_routing_guidance(repo_root: Path) -> list[Diagno
 
             normalized_guidance = _normalize_routing_source(guidance)
             capability_dir = repo_root / "skillset" / capability.source_path
-            skill_path = capability_dir / "SKILL.md"
+            skill_path = capability_dir / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
             source_values: list[tuple[str, str]] = []
             if skill_path.exists():
                 description = parse_frontmatter(read_lines(skill_path)).get("description", "")
@@ -2984,10 +3011,32 @@ def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     for record in packaged_skill_records(repo_root, diagnostics):
         skill_dir = record.path
-        skill_md = skill_dir / "SKILL.md"
+        skill_md = packaged_skill_entrypoint(record)
+        conflicting_filename = (
+            SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+            if record.kind == "protected"
+            else SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+        )
+        conflicting_entrypoint = skill_dir / conflicting_filename
         if not skill_md.exists():
-            add(diagnostics, repo_root, skill_md, 1, SYSTEM_SKILL_TEMPLATE_CODE, "manifest-declared skill must contain SKILL.md")
+            add(
+                diagnostics,
+                repo_root,
+                skill_md,
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"manifest-declared {record.kind} skill must contain {skill_md.name}",
+            )
             continue
+        if conflicting_entrypoint.exists():
+            add(
+                diagnostics,
+                repo_root,
+                conflicting_entrypoint,
+                1,
+                SYSTEM_SKILL_TEMPLATE_CODE,
+                f"manifest-declared {record.kind} skill must not also contain {conflicting_filename}",
+            )
         skill_lines = read_lines(skill_md)
         frontmatter = parse_frontmatter(skill_lines)
         if frontmatter.get("name") != record.skill_name:
@@ -3017,7 +3066,7 @@ def validate_packaged_skill_template(repo_root: Path) -> list[Diagnostic]:
                     skill_md,
                     1,
                     SYSTEM_SKILL_TEMPLATE_CODE,
-                    f"SKILL.md must contain exactly one ## {heading} section",
+                    f"{skill_md.name} must contain exactly one ## {heading} section",
                 )
         _validate_current_workflow(skill_md, skill_lines, repo_root, diagnostics, require_near_top=True)
         if record.kind != "legacy":
@@ -3143,9 +3192,9 @@ def validate_simple_skill_layout(
         add(diagnostics, repo_root, target, 1, code, f"no {prefix}* skill folders were found")
     for skill_dir in skill_dirs:
         skill_name = skill_dir.name
-        skill_md = skill_dir / "SKILL.md"
+        skill_md = skill_entrypoint_path(skill_dir)
         if not skill_md.exists():
-            add(diagnostics, repo_root, skill_dir, 1, code, "skill folder is missing SKILL.md")
+            add(diagnostics, repo_root, skill_dir, 1, code, f"skill folder is missing {skill_md.name}")
             continue
         frontmatter = parse_frontmatter(read_lines(skill_md))
         if frontmatter.get("name") != skill_name:
@@ -3238,7 +3287,7 @@ def validate_release_version_metadata(
 
 
 def validate_local_references(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic], code: str) -> None:
-    skill_md = skill_dir / "SKILL.md"
+    skill_md = skill_entrypoint_path(skill_dir)
     if not skill_md.exists():
         return
     skill_root = skill_dir.resolve()
@@ -3331,7 +3380,7 @@ def _route_command_page(
 
 def _detail_page(owner_root: Path, command_names: tuple[str, ...]) -> Path:
     if not command_names:
-        return owner_root / "SKILL.md"
+        return skill_entrypoint_path(owner_root)
     return owner_root / "commands" / Path(*command_names[:-1]) / f"{command_names[-1]}.md"
 
 
@@ -3500,26 +3549,19 @@ def validate_system_skill_invocations(repo_root: Path) -> list[Diagnostic]:
                         "active user guidance must invoke the owning public entrypoint instead of a protected logical id",
                     )
 
-    for pack in catalog.packs:
-        pack_root = repo_root / "skillset" / pack.source_path
-        expected_skill_pages = {pack_root.resolve() / "SKILL.md"}
-        expected_skill_pages.update(
-            (repo_root / "skillset" / capability.source_path).resolve() / "SKILL.md"
-            for capability in catalog.capabilities
-            if capability.pack_id == pack.pack_id
-        )
-        for skill_page in sorted(pack_root.rglob("SKILL.md")):
-            relative = skill_page.relative_to(pack_root)
-            if any(part in SYSTEM_SKILL_TEMPLATE_EXCLUDED_DIRS for part in relative.parts):
-                continue
-            if skill_page.resolve() not in expected_skill_pages:
+    for record in packaged_skill_records(repo_root, diagnostics):
+        if record.kind != "public":
+            continue
+        expected_skill_page = record.path.resolve() / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+        for skill_page in sorted(record.path.rglob(SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME)):
+            if skill_page.resolve() != expected_skill_page:
                 add(
                     diagnostics,
                     repo_root,
                     skill_page,
                     1,
                     SYSTEM_SKILL_INVOCATION_CODE,
-                    "nested SKILL.md is not declared as a protected capability in the system-skill manifest",
+                    f"nested SKILL.md is forbidden below public skill {record.skill_name!r} in pack {record.pack_id!r}; protected entrypoints use SKILL-MAIN.md and provenance snapshots use SKILL-SOURCE.md",
                 )
 
     for pack_id, shared_logical_id, shared_member in (
@@ -3534,7 +3576,7 @@ def validate_system_skill_invocations(repo_root: Path) -> list[Diagnostic]:
         for capability in catalog.capabilities:
             if capability.pack_id != pack_id or capability.logical_id == shared_logical_id:
                 continue
-            skill_md = repo_root / "skillset" / capability.source_path / "SKILL.md"
+            skill_md = repo_root / "skillset" / capability.source_path / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
             if skill_md.is_file() and shared_designator not in skill_md.read_text(encoding="utf-8"):
                 add(
                     diagnostics,
@@ -4631,7 +4673,7 @@ def _line_is_allowed_entrypoint_service_boundary(line: str) -> bool:
 def validate_system_skill_manager_module(repo_root: Path) -> list[Diagnostic]:
     diagnostics: list[Diagnostic] = []
     skill_dir = packaged_capability_dir(repo_root, SYSTEM_SKILL_MANAGER_SKILL, "operator")
-    skill_md = skill_dir / "SKILL.md"
+    skill_md = skill_entrypoint_path(skill_dir)
     if not skill_md.exists():
         add(diagnostics, repo_root, skill_md, 1, "OPS014", f"{SYSTEM_SKILL_MANAGER_SKILL} is required")
         return diagnostics

@@ -6,7 +6,7 @@
 - Target skill: `skillset/research-paradigm/deepsci/isomer-rsch-decision`.
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
-- Source files covered: `SKILL.md`, `references/checkpoint-memory-template.md`, `references/operational-guidance.md`, `references/research-route-criteria.md`, `references/strategic-decision-template.md`.
+- Source files covered: `SKILL-SOURCE.md`, `references/checkpoint-memory-template.md`, `references/operational-guidance.md`, `references/research-route-criteria.md`, `references/strategic-decision-template.md`.
 - Source analysis: `org/analysis/analysis-of-decision.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -60,7 +60,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface.
+- `SKILL-MAIN.md`: native production DeepSci control surface.
 - `references/operational-guidance.md`: source-preserved tactical decision guidance.
 - `references/research-route-criteria.md`: source-preserved route-selection criteria.
 - `references/strategic-decision-template.md`: source-preserved decision record template.
@@ -73,11 +73,11 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Check decision readiness | `SKILL.md` Match signals, Do not use when, Control workflow step 1, Preconditions implied by truth sources, Operational guidance. | `references/operational-guidance.md` |
-| State the route question | `SKILL.md` Control workflow step 2, Truth sources, Required decision record; `references/research-route-criteria.md`. | `references/research-route-criteria.md` |
-| Choose the smallest canonical action | `SKILL.md` Control workflow step 3, Canonical actions, Constraints, AVOID/pitfalls; `references/research-route-criteria.md`; `references/operational-guidance.md`. | `references/canonical-actions.md`, `references/research-route-criteria.md`, `references/operational-guidance.md` |
-| Record the verdict | `SKILL.md` Control workflow step 4, Required decision record, Decision-quality rules; `references/strategic-decision-template.md`. | `references/strategic-decision-template.md` |
-| Preserve the resume point | `SKILL.md` Control workflow step 5, Interaction discipline, Memory note, Exit criteria; `references/checkpoint-memory-template.md`; `references/operational-guidance.md`. | `references/checkpoint-memory-template.md`, `references/operational-guidance.md` |
+| Check decision readiness | `SKILL-SOURCE.md` Match signals, Do not use when, Control workflow step 1, Preconditions implied by truth sources, Operational guidance. | `references/operational-guidance.md` |
+| State the route question | `SKILL-SOURCE.md` Control workflow step 2, Truth sources, Required decision record; `references/research-route-criteria.md`. | `references/research-route-criteria.md` |
+| Choose the smallest canonical action | `SKILL-SOURCE.md` Control workflow step 3, Canonical actions, Constraints, AVOID/pitfalls; `references/research-route-criteria.md`; `references/operational-guidance.md`. | `references/canonical-actions.md`, `references/research-route-criteria.md`, `references/operational-guidance.md` |
+| Record the verdict | `SKILL-SOURCE.md` Control workflow step 4, Required decision record, Decision-quality rules; `references/strategic-decision-template.md`. | `references/strategic-decision-template.md` |
+| Preserve the resume point | `SKILL-SOURCE.md` Control workflow step 5, Interaction discipline, Memory note, Exit criteria; `references/checkpoint-memory-template.md`; `references/operational-guidance.md`. | `references/checkpoint-memory-template.md`, `references/operational-guidance.md` |
 
 ## Semantic Match Checks
 

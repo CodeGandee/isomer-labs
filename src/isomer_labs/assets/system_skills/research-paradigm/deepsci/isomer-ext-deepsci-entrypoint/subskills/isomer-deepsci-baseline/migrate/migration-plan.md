@@ -7,7 +7,7 @@
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
 - Runtime support copy: every source file is copied and refactored under the target runtime tree with source-relative paths preserved, except the source entrypoint and `agents/openai.yaml`.
-- Source files covered: `SKILL.md`, `references/artifact-flow-examples.md`, `references/artifact-payload-examples.md`, `references/baseline-checklist-template.md`, `references/baseline-plan-template.md`, `references/boundary-cases.md`, `references/codebase-audit-checklist.md`, `references/comparability-contract.md`, `references/operational-guidance.md`, `references/route-selection.md`.
+- Source files covered: `SKILL-SOURCE.md`, `references/artifact-flow-examples.md`, `references/artifact-payload-examples.md`, `references/baseline-checklist-template.md`, `references/baseline-plan-template.md`, `references/boundary-cases.md`, `references/codebase-audit-checklist.md`, `references/comparability-contract.md`, `references/operational-guidance.md`, `references/route-selection.md`.
 - Source analysis: `org/analysis/analysis-of-baseline.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -69,7 +69,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
+- `SKILL-MAIN.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
 - `references/route-selection.md`: source-preserved route selection page refactored into trust-per-cost route guidance, preferences, constraints, and quality gates.
 - `references/comparability-contract.md`: source-preserved comparability contract page refactored into comparator identity, data, metric, deviation, verdict, and handoff support.
 - `references/verification-record-template.md`: production DeepSci support page distilled from source verification, objective evidence, and acceptance-gate rules.
@@ -85,13 +85,13 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Support Material | Target Runtime Support |
 | --- | --- | --- |
-| Choose the acceptance target | `SKILL.md` Match signals, Control workflow step 1, Acceptance targets, Comparator-first rule, Boundary cases, Exit criteria. | `references/route-selection.md`, `references/boundary-cases.md` |
-| Select the lightest trustworthy route | `SKILL.md` Control workflow step 1, Comparator-first rule, Route success criteria, Authority and freedom; `references/route-selection.md`; `references/artifact-flow-examples.md`; `references/baseline-plan-template.md`; `references/baseline-checklist-template.md`. | `references/route-selection.md`, `references/artifact-flow-examples.md`, `references/baseline-plan-template.md`, `references/baseline-checklist-template.md` |
-| Make comparability explicit | `SKILL.md` Control workflow step 2, Hard acceptance gates, Objective evidence requirements, Core metric contract, Baseline id and variant rules; `references/comparability-contract.md`; `references/artifact-payload-examples.md`. | `references/comparability-contract.md`, `references/artifact-payload-examples.md` |
-| Audit only what the route needs | `SKILL.md` Comparator-first rule, Authority and freedom, Operational guidance; `references/codebase-audit-checklist.md`; `references/operational-guidance.md`. | `references/codebase-audit-checklist.md`, `references/operational-guidance.md` |
-| Collect and verify necessary evidence | `SKILL.md` Control workflow steps 3-4, AVOID, Constraints, Validation, Verification, Objective evidence requirements, Negative cases; `references/comparability-contract.md`; `references/operational-guidance.md`. | `references/verification-record-template.md`, `references/comparability-contract.md`, `references/operational-guidance.md` |
-| Close the baseline gate | `SKILL.md` Control workflow step 5, Hard acceptance gates, Core metric contract, Route success criteria, Negative cases; `references/artifact-flow-examples.md`; `references/artifact-payload-examples.md`; `references/baseline-checklist-template.md`. | `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, `references/baseline-checklist-template.md` |
-| Route and stop | `SKILL.md` Acceptance targets, Hard acceptance gates, Negative cases and stop rules, Exit criteria; `references/boundary-cases.md`; `references/route-selection.md`. | `references/boundary-cases.md`, `references/route-selection.md` |
+| Choose the acceptance target | `SKILL-SOURCE.md` Match signals, Control workflow step 1, Acceptance targets, Comparator-first rule, Boundary cases, Exit criteria. | `references/route-selection.md`, `references/boundary-cases.md` |
+| Select the lightest trustworthy route | `SKILL-SOURCE.md` Control workflow step 1, Comparator-first rule, Route success criteria, Authority and freedom; `references/route-selection.md`; `references/artifact-flow-examples.md`; `references/baseline-plan-template.md`; `references/baseline-checklist-template.md`. | `references/route-selection.md`, `references/artifact-flow-examples.md`, `references/baseline-plan-template.md`, `references/baseline-checklist-template.md` |
+| Make comparability explicit | `SKILL-SOURCE.md` Control workflow step 2, Hard acceptance gates, Objective evidence requirements, Core metric contract, Baseline id and variant rules; `references/comparability-contract.md`; `references/artifact-payload-examples.md`. | `references/comparability-contract.md`, `references/artifact-payload-examples.md` |
+| Audit only what the route needs | `SKILL-SOURCE.md` Comparator-first rule, Authority and freedom, Operational guidance; `references/codebase-audit-checklist.md`; `references/operational-guidance.md`. | `references/codebase-audit-checklist.md`, `references/operational-guidance.md` |
+| Collect and verify necessary evidence | `SKILL-SOURCE.md` Control workflow steps 3-4, AVOID, Constraints, Validation, Verification, Objective evidence requirements, Negative cases; `references/comparability-contract.md`; `references/operational-guidance.md`. | `references/verification-record-template.md`, `references/comparability-contract.md`, `references/operational-guidance.md` |
+| Close the baseline gate | `SKILL-SOURCE.md` Control workflow step 5, Hard acceptance gates, Core metric contract, Route success criteria, Negative cases; `references/artifact-flow-examples.md`; `references/artifact-payload-examples.md`; `references/baseline-checklist-template.md`. | `references/artifact-payload-examples.md`, `references/artifact-flow-examples.md`, `references/baseline-checklist-template.md` |
+| Route and stop | `SKILL-SOURCE.md` Acceptance targets, Hard acceptance gates, Negative cases and stop rules, Exit criteria; `references/boundary-cases.md`; `references/route-selection.md`. | `references/boundary-cases.md`, `references/route-selection.md` |
 
 ## Semantic Match Checks
 

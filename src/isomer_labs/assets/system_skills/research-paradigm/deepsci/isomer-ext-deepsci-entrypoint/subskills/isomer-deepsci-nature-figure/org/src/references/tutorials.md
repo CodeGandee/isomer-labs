@@ -243,7 +243,7 @@ plt.close(fig)
 
 ## Related files
 
-- [SKILL.md](../SKILL.md) — When to use this skill
+- [SKILL-SOURCE.md](../SKILL-SOURCE.md) — When to use this skill
 - [api.md](api.md) — Reusable helper implementations
 - [common-patterns.md](common-patterns.md) — Layout and encoding patterns used above
 - [design-theory.md](design-theory.md) — Why these choices exist

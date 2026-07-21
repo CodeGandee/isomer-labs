@@ -38,10 +38,13 @@ from isomer_labs.skills.receipts import (
     inspect_system_skill_receipt,
 )
 from isomer_labs.skills.system_assets import (
+    SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
     SystemSkillAssetError,
     iter_system_skill_packs,
     normalize_system_skill_identity,
     resolve_system_skill,
+    resolve_system_skill_entrypoint,
     system_skill_catalog,
 )
 from isomer_labs.skills.versioning import inspect_skill_version, require_skill_version
@@ -1059,7 +1062,7 @@ def _pack_projection_errors(record: SystemSkillRecord, path: Path) -> tuple[str,
     expected_paths = {member.relative_path for member in record.protected_members}
     for member in record.protected_members:
         member_path = path / member.relative_path
-        if _skill_identity(member_path) != member.logical_id:
+        if _skill_identity(member_path, SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME) != member.logical_id:
             errors.append(f"protected member identity is invalid: {member.logical_id}")
             continue
         observation = inspect_skill_version(member_path)
@@ -1313,7 +1316,7 @@ def _installed_record(
     for member in record.protected_members:
         member_path = destination / member.relative_path
         member_observation = inspect_skill_version(member_path)
-        identity = _skill_identity(member_path)
+        identity = _skill_identity(member_path, SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME)
         if not member_path.is_dir():
             identity_status = "missing"
             missing_members.append(member.logical_id)
@@ -1450,8 +1453,18 @@ def _member_compatibility_status(
     return "newer_than_cli"
 
 
-def _skill_identity(skill_path: Path) -> str | None:
-    skill_md = skill_path / "SKILL.md"
+def _skill_identity(
+    skill_path: Path,
+    entrypoint_filename: str = SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
+) -> str | None:
+    conflicting_filename = (
+        SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+        if entrypoint_filename == SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+        else SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    )
+    if (skill_path / conflicting_filename).is_file():
+        return None
+    skill_md = skill_path / entrypoint_filename
     try:
         text = skill_md.read_text(encoding="utf-8")
     except OSError:
@@ -1524,7 +1537,7 @@ def _projection_diagnostic(issue: InvalidSystemSkillProjection) -> Diagnostic:
 
 def _read_skill_description(source_path: str) -> str | None:
     try:
-        skill_md = resolve_system_skill(source_path).joinpath("SKILL.md").read_text(encoding="utf-8")
+        skill_md = resolve_system_skill_entrypoint(source_path).read_text(encoding="utf-8")
     except (OSError, SystemSkillAssetError):
         return None
     if not skill_md.startswith("---"):

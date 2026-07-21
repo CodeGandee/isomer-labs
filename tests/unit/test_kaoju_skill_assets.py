@@ -18,13 +18,17 @@ EXPECTED_SKILLS = set(CONTRACT.skills)
 COMMANDS = set(CONTRACT.survey_intents) | set(CONTRACT.compatibility_procedures) | set(CONTRACT.manager_actions)
 
 
+def skill_entrypoint(skill: Path) -> Path:
+    return skill / ("SKILL.md" if skill == ENTRYPOINT else "SKILL-MAIN.md")
+
+
 class KaojuSkillAssetTests(unittest.TestCase):
     def test_exact_skill_inventory_and_identity_contract(self) -> None:
         actual = {ENTRYPOINT.name, *(path.name for path in SUBSKILLS.glob("isomer-kaoju-*") if path.is_dir())}
         self.assertEqual(EXPECTED_SKILLS, actual)
         for name in sorted(actual):
             skill = ENTRYPOINT if name == ENTRYPOINT.name else SUBSKILLS / name
-            skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
+            skill_text = skill_entrypoint(skill).read_text(encoding="utf-8")
             agent_text = (skill / "agents" / "openai.yaml").read_text(encoding="utf-8")
             self.assertRegex(skill_text, rf"(?m)^name: {re.escape(name)}$")
             self.assertRegex(skill_text, r"(?m)^description: Use when")
@@ -87,7 +91,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("even when the database has no selected-role `main`", manager)
         self.assertIn("other role's database records", manager)
 
-        writer = (SUBSKILLS / "isomer-kaoju-write" / "SKILL.md").read_text(encoding="utf-8")
+        writer = skill_entrypoint(SUBSKILLS / "isomer-kaoju-write").read_text(encoding="utf-8")
         self.assertIn("Resolve role before using", writer)
         self.assertIn("use exactly one eligible edited export of that role", writer)
         self.assertIn("<topic.paper.template_exchange_root>/<kind>/main/", writer)
@@ -111,7 +115,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
         }
         actual = {path.name for path in (shared / "references").glob("*.md")}
         self.assertEqual(expected, actual)
-        skill_text = (shared / "SKILL.md").read_text(encoding="utf-8")
+        skill_text = skill_entrypoint(shared).read_text(encoding="utf-8")
         for name in sorted(expected):
             self.assertIn(f"references/{name}", skill_text)
 

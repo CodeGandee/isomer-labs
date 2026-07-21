@@ -57,25 +57,25 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `references/outline-patterns.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 
 ## Main Workflow Support Mapping
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Read paper state | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Name the one-sentence idea | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Separate facts from interpretation | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Build the paper view | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Build the evidence view | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Validate the outline | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Repair until mature or blocked | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
-| Compile writing plan | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Read paper state | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Name the one-sentence idea | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Separate facts from interpretation | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Build the paper view | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Build the evidence view | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Validate the outline | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Repair until mature or blocked | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
+| Compile writing plan | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/outline-patterns.md` |
 
 ## Semantic Match Checks
 

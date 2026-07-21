@@ -55,11 +55,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `references/bar_grouped_hatch.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/bar_paired_delta.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/line_confidence_band.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -81,13 +81,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Confirm the chart question | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Choose the bundled style | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Read the style reference | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Copy the template script | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Replace data and labels only | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Run and inspect the copied script | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
-| Route durable figures | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Confirm the chart question | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Choose the bundled style | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Read the style reference | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Copy the template script | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Replace data and labels only | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Run and inspect the copied script | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
+| Route durable figures | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/bar_paired_delta.md`, `references/bar_grouped_hatch.md` |
 
 ## Semantic Match Checks
 

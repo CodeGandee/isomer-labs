@@ -14,9 +14,11 @@ All six welcome and entrypoint siblings are public host-discoverable skills. Use
 
 Protected is a visibility and routing classification, not a security boundary. A complete installed pack contains readable nested bundles. Role-level minimization uses selective private projection of a protected logical-id dependency closure.
 
+Public skill roots use `SKILL.md`. Manifest-declared protected members use `SKILL-MAIN.md`, and preserved upstream entrypoints use `SKILL-SOURCE.md`, so recursive host scans do not register nested material as independent skills. A public execution entrypoint explicitly loads only the selected member's `SKILL-MAIN.md` and directly required local resources. A deliberately flattened private projection promotes the selected source entrypoint to destination `SKILL.md` because that projection is intended to be host-discoverable.
+
 ## Authoring Boundary
 
-Keep a routable unit as a protected subskill when it owns private resources such as its own `SKILL.md`, `agents/`, scripts, references, templates, or assets. Keep a procedure as a command when it uses only resources owned by its containing bundle. A parent command may expose child commands without becoming a subskill.
+Keep a routable unit as a protected subskill when it owns private resources such as its own `SKILL-MAIN.md`, `agents/`, scripts, references, templates, or assets. Keep a procedure as a command when it uses only resources owned by its containing bundle. A parent command may expose child commands without becoming a subskill.
 
 Object notation follows these rules:
 

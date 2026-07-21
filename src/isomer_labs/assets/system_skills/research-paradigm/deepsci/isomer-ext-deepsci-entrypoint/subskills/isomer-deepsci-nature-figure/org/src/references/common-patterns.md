@@ -341,7 +341,7 @@ Rules:
 
 ## Related files
 
-- [SKILL.md](../SKILL.md) — When to use this skill
+- [SKILL-SOURCE.md](../SKILL-SOURCE.md) — When to use this skill
 - [api.md](api.md) — Helper function signatures and PALETTE
 - [design-theory.md](design-theory.md) — Rationale behind every pattern above
 - [nature-2026-observations.md](nature-2026-observations.md) — Real Nature page archetypes behind these patterns

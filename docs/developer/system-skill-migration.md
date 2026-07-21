@@ -2,6 +2,8 @@
 
 Isomer 0.4 groups the former flat system-skill installation into three atomic packs. Each pack now has a read-only public welcome sibling and a public execution entrypoint sibling: core, DeepSci, and Kaoju. Former top-level operator, service, misc, research-recording, DeepSci stage, and Kaoju stage skills are protected members below the owning entrypoint. The old `isomer-deepsci-pipeline` and `isomer-kaoju-pipeline` names remain aliases for selection and callback normalization, not installed compatibility folders.
 
+Current public roots use `SKILL.md`, while protected members use `SKILL-MAIN.md` so recursive host discovery does not register them independently. Preserved source entrypoints use `SKILL-SOURCE.md`. A complete pack keeps those protected filenames nested below its public execution entrypoint; only a deliberately flattened Agent Role private projection promotes a selected `SKILL-MAIN.md` to its destination `SKILL.md`.
+
 ## Managed Upgrade
 
 Upgrade a supported receipt v1, v2, or v3 root with the same target and scope that own the existing installation:

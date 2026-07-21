@@ -23,7 +23,7 @@ Houmao remains an implementation and adapter layer. Isomer owner routes resolve 
 
 ## Authoring Rules
 
-Keep a member self-contained. Its `SKILL.md`, `agents/`, scripts, references, templates, and assets must resolve without reading siblings. Declare logical-id dependencies in `manifest.toml` rather than using relative sibling paths.
+Keep a member self-contained. Its `SKILL-MAIN.md`, `agents/`, scripts, references, templates, and assets must resolve without reading siblings. The public entrypoint resolves a selected manifest logical id to that file and does not scan sibling members. Declare logical-id dependencies in `manifest.toml` rather than using relative sibling paths.
 
 Use a protected subskill when a capability owns private resources. Use a command when a procedure uses its containing bundle's resources. Parent commands may expose child commands as object generators.
 

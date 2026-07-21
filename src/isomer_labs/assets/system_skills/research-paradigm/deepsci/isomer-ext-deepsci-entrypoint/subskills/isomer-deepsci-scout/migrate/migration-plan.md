@@ -75,7 +75,7 @@ These placeholders cover source mentions of `brief.md`, `plan.md`, `status.md`, 
 
 ## Rewrite Targets
 
-- `SKILL.md`: refactor the source control surface into native Isomer research language.
+- `SKILL-MAIN.md`: refactor the source control surface into native Isomer research language.
 - `references/operational-guidance.md`: rewrite the tactical scout workflow using Research Topic, Topic Workspace, Workspace Runtime, Artifact, Evidence Item, Gate, Decision Record, and provider-bound discovery language.
 - `references/paper-triage-playbook.md`: rewrite bounded paper, repository, and benchmark triage guidance.
 - `references/literature-scout-template.md`: rewrite the durable literature report template with placeholders and Isomer provenance language.
@@ -87,14 +87,14 @@ These placeholders cover source mentions of `brief.md`, `plan.md`, `status.md`, 
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Check entry fit | `SKILL.md` Match signals, Do not use when, Preconditions and gate, Exit criteria; `references/operational-guidance.md` planning and stop notes. | `references/operational-guidance.md` |
-| Reconstruct the current frame | `SKILL.md` Control workflow step 1, Truth sources, Preconditions and gate; `references/operational-guidance.md` detailed workflow step 1. | `references/operational-guidance.md` |
-| Reuse prior knowledge first | `SKILL.md` Constraints, Tool discipline, Truth sources; `references/operational-guidance.md` memory note; `references/paper-triage-playbook.md` search order and reuse discipline. | `references/operational-guidance.md`, `references/paper-triage-playbook.md` |
-| Name the minimum unknowns | `SKILL.md` Control workflow step 2, One-sentence summary, AVOID/pitfalls; `references/operational-guidance.md` minimum unknowns and unknown classification. | `references/operational-guidance.md` |
-| Search the unresolved neighborhood | `SKILL.md` Control workflow step 3, Constraints, Tool discipline, Non-negotiable rules; `references/paper-triage-playbook.md`; `references/literature-scout-template.md`. | `references/paper-triage-playbook.md`, `references/literature-scout-template.md` |
-| Clarify route-facing outputs | `SKILL.md` Control workflow step 4, Validation; `references/eval-contract-template.md`; `references/baseline-shortlist-template.md`; `references/literature-scout-template.md`. | `references/eval-contract-template.md`, `references/baseline-shortlist-template.md`, `references/literature-scout-template.md` |
-| Record the next route or blocker | `SKILL.md` Control workflow step 5, Blocked-state handling, Exit criteria; `references/operational-guidance.md`. | `references/operational-guidance.md` |
-| Preserve continuity | `SKILL.md` Interaction discipline, Operational guidance, Exit criteria; `references/operational-guidance.md`; `references/literature-scout-template.md`. | `references/operational-guidance.md`, `references/literature-scout-template.md` |
+| Check entry fit | `SKILL-SOURCE.md` Match signals, Do not use when, Preconditions and gate, Exit criteria; `references/operational-guidance.md` planning and stop notes. | `references/operational-guidance.md` |
+| Reconstruct the current frame | `SKILL-SOURCE.md` Control workflow step 1, Truth sources, Preconditions and gate; `references/operational-guidance.md` detailed workflow step 1. | `references/operational-guidance.md` |
+| Reuse prior knowledge first | `SKILL-SOURCE.md` Constraints, Tool discipline, Truth sources; `references/operational-guidance.md` memory note; `references/paper-triage-playbook.md` search order and reuse discipline. | `references/operational-guidance.md`, `references/paper-triage-playbook.md` |
+| Name the minimum unknowns | `SKILL-SOURCE.md` Control workflow step 2, One-sentence summary, AVOID/pitfalls; `references/operational-guidance.md` minimum unknowns and unknown classification. | `references/operational-guidance.md` |
+| Search the unresolved neighborhood | `SKILL-SOURCE.md` Control workflow step 3, Constraints, Tool discipline, Non-negotiable rules; `references/paper-triage-playbook.md`; `references/literature-scout-template.md`. | `references/paper-triage-playbook.md`, `references/literature-scout-template.md` |
+| Clarify route-facing outputs | `SKILL-SOURCE.md` Control workflow step 4, Validation; `references/eval-contract-template.md`; `references/baseline-shortlist-template.md`; `references/literature-scout-template.md`. | `references/eval-contract-template.md`, `references/baseline-shortlist-template.md`, `references/literature-scout-template.md` |
+| Record the next route or blocker | `SKILL-SOURCE.md` Control workflow step 5, Blocked-state handling, Exit criteria; `references/operational-guidance.md`. | `references/operational-guidance.md` |
+| Preserve continuity | `SKILL-SOURCE.md` Interaction discipline, Operational guidance, Exit criteria; `references/operational-guidance.md`; `references/literature-scout-template.md`. | `references/operational-guidance.md`, `references/literature-scout-template.md` |
 
 The existing `agents/openai.yaml` already uses the correct production DeepSci skill name and remains unchanged.
 

@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `nature-paper2ppt` source an
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 
 Copied but not treated as workflow-bearing instructions:
 

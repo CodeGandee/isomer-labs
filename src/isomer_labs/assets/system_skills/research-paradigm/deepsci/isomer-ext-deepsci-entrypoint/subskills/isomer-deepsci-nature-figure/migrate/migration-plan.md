@@ -58,11 +58,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `UPSTREAM_LICENSE.txt`: upstream license notice retained.
 - `evals/evals.json`: passive eval fixture copied for provenance.
 - `references/api.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -81,14 +81,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Check backend selection | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md` |
-| Define the figure contract | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/figure-contract.md` |
-| Check selected runtime | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
-| Map the evidence chain | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
-| Choose archetype and design system | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/common-patterns.md`, `references/chart-types.md`, `references/design-theory.md`, `references/nature-2026-observations.md` |
-| Set journal export contract | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
-| Generate with selected backend | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/api.md`, `references/tutorials.md`, `references/r-workflow.md`, `references/r-template-index.md` |
-| Preview and QA | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/qa-contract.md` |
+| Check backend selection | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md` |
+| Define the figure contract | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/figure-contract.md` |
+| Check selected runtime | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
+| Map the evidence chain | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
+| Choose archetype and design system | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/common-patterns.md`, `references/chart-types.md`, `references/design-theory.md`, `references/nature-2026-observations.md` |
+| Set journal export contract | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/backend-selection.md`, `references/figure-contract.md` |
+| Generate with selected backend | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/api.md`, `references/tutorials.md`, `references/r-workflow.md`, `references/r-template-index.md` |
+| Preview and QA | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/qa-contract.md` |
 
 ## Semantic Match Checks
 

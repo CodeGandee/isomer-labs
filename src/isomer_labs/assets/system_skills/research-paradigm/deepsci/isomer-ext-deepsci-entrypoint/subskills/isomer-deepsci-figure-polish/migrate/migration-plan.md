@@ -54,25 +54,25 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `assets/deepscientist-academic.mplstyle`: passive style or image asset copied for compatibility.
 
 ## Main Workflow Support Mapping
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Classify the figure surface | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Define the figure message | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Choose the chart form | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Apply the style contract | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Render the first draft | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Inspect and revise the render | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Export final formats | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
-| Record durable provenance | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL.md` |
+| Classify the figure surface | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Define the figure message | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Choose the chart form | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Apply the style contract | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Render the first draft | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Inspect and revise the render | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Export final formats | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
+| Record durable provenance | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `assets/deepscientist-academic.mplstyle`, `org/src/SKILL-SOURCE.md` |
 
 ## Semantic Match Checks
 

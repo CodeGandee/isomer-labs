@@ -7,13 +7,18 @@ from pathlib import Path
 
 import yaml
 
-from isomer_labs.skills.system_assets import materialize_system_skills, resolve_system_skill, resolve_system_skill_capability
+from isomer_labs.skills.system_assets import (
+    materialize_system_skills,
+    resolve_system_skill,
+    resolve_system_skill_capability,
+    resolve_system_skill_capability_entrypoint,
+)
 
 
 class OperationSetRecordingSkillTests(unittest.TestCase):
     def test_core_skill_has_bounded_workflow_and_required_references(self) -> None:
         skill = resolve_system_skill_capability("isomer-research-operation-set-recording")
-        text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        text = resolve_system_skill_capability_entrypoint("isomer-research-operation-set-recording").read_text(encoding="utf-8")
         for reference_name in (
             "manifest-contract.md",
             "command-reference.md",
@@ -81,7 +86,8 @@ class OperationSetRecordingSkillTests(unittest.TestCase):
             target = Path(temporary)
             materialize_system_skills(target, groups=("core",))
             skill = target / "isomer-op-entrypoint" / "subskills" / "isomer-research-operation-set-recording"
-            self.assertTrue(skill.joinpath("SKILL.md").is_file())
+            self.assertTrue(skill.joinpath("SKILL-MAIN.md").is_file())
+            self.assertFalse(skill.joinpath("SKILL.md").exists())
             self.assertTrue(skill.joinpath("agents", "openai.yaml").is_file())
             self.assertTrue(skill.joinpath("references", "manifest-contract.md").is_file())
             self.assertTrue(skill.joinpath("references", "recovery.md").is_file())

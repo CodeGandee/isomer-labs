@@ -59,11 +59,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `references/action-plan-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/evidence-update-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/response-letter-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -73,13 +73,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Normalize the review package | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md` |
-| Decide required changes | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/action-plan-template.md` |
-| Route evidence work only when needed | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
-| Route manuscript changes explicitly | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
-| Update the rebuttal matrix | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/evidence-update-template.md` |
-| Assemble the response letter | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/response-letter-template.md` |
-| Prepare final revision handoff | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
+| Normalize the review package | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md` |
+| Decide required changes | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/action-plan-template.md` |
+| Route evidence work only when needed | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
+| Route manuscript changes explicitly | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
+| Update the rebuttal matrix | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/evidence-update-template.md` |
+| Assemble the response letter | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/response-letter-template.md` |
+| Prepare final revision handoff | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-matrix-template.md`, `references/action-plan-template.md` |
 
 ## Semantic Match Checks
 

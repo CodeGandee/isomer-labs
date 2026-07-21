@@ -283,7 +283,7 @@ class SystemSkillInspectionTests(unittest.TestCase):
 
     def test_operator_workflows_preserve_trust_order_opt_out_and_additive_reconciliation(self) -> None:
         operator_root = REPO_ROOT / "skillset" / "operator" / "isomer-op-entrypoint"
-        manager = (operator_root / "subskills" / "isomer-op-system-skill-mgr" / "SKILL.md").read_text(encoding="utf-8")
+        manager = (operator_root / "subskills" / "isomer-op-system-skill-mgr" / "SKILL-MAIN.md").read_text(encoding="utf-8")
         project_init = (
             operator_root / "subskills" / "isomer-op-project-mgr" / "references" / "init-project.md"
         ).read_text(encoding="utf-8")

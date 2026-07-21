@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `nature-polishing` source an
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/phrasebank-playbook.md`
 - `src/references/section-moves.md`
 - `src/references/style-guardrails.md`

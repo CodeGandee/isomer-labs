@@ -4,14 +4,14 @@ This directory preserves the upstream DeepScientist `scout` source and the analy
 
 ## Inventory
 
-- `src/`: untouched copy of `extern/orphan/DeepScientist/src/skills/scout/`, including `SKILL.md` and all source reference pages.
+- `src/`: untouched copy of `extern/orphan/DeepScientist/src/skills/scout/`, including `SKILL-SOURCE.md` and all source reference pages.
 - `analysis/analysis-of-scout.md`: self-contained deep inspection of the source skill process, generated through the `$imsight-agent-skill-handling deep-inspect` procedure.
 
 ## Analysis Coverage
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/operational-guidance.md`
 - `src/references/literature-scout-template.md`
 - `src/references/paper-triage-playbook.md`

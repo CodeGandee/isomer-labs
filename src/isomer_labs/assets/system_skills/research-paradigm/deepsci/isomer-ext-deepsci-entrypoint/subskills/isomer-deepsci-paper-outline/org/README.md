@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `paper-outline` source and t
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/outline-patterns.md`
 
 No source files were excluded from workflow-bearing analysis.

@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `idea` source and the analys
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/controlled-brainstorming-playbook.md`
 - `src/references/current-board-packet-template.md`
 - `src/references/high-value-idea-sourcing.md`

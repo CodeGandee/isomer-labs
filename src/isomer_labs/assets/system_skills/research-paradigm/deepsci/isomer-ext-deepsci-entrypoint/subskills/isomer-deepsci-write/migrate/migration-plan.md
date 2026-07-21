@@ -64,11 +64,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `references/experiments_analysis_patterns.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/oral_package_patterns.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/oral_writing_principles.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -131,16 +131,16 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Refresh control state | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/experiments_analysis_patterns.md` |
-| Lock the paper contract | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md` |
-| Validate the outline before drafting | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
-| Compile the writing plan | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_writing_principles.md` |
-| Sort source material | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
-| Refresh citations and references | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
-| Plan displays before prose | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
-| Draft or revise sections | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/section_rewrite_checklist.md` |
-| Validate the manuscript state | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
-| Checkpoint or route next | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Refresh control state | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/experiments_analysis_patterns.md` |
+| Lock the paper contract | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md` |
+| Validate the outline before drafting | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Compile the writing plan | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_writing_principles.md` |
+| Sort source material | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Refresh citations and references | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Plan displays before prose | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Draft or revise sections | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/section_rewrite_checklist.md` |
+| Validate the manuscript state | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
+| Checkpoint or route next | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/oral_package_patterns.md`, `references/oral_writing_principles.md` |
 
 ## Semantic Match Checks
 

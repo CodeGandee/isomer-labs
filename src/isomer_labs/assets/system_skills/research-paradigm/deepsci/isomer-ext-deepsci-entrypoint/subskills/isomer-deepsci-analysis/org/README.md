@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `analysis-campaign` source a
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/artifact-flow-examples.md`
 - `src/references/boundary-cases.md`
 - `src/references/campaign-checklist-template.md`

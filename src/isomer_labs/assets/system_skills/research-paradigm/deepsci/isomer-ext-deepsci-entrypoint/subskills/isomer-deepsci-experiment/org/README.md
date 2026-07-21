@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `experiment` source and the 
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/evidence-ladder.md`
 - `src/references/execution-playbook.md`
 - `src/references/main-experiment-checklist-template.md`

@@ -274,7 +274,7 @@ ax.spines['left'].set_bounds(0, y_max)
 
 ## Related files
 
-- [SKILL.md](../SKILL.md) — When to use this skill
+- [SKILL-SOURCE.md](../SKILL-SOURCE.md) — When to use this skill
 - [api.md](api.md) — PALETTE and core helper signatures
 - [common-patterns.md](common-patterns.md) — Bar, trend, and layout patterns
 - [design-theory.md](design-theory.md) — Rationale and color theory

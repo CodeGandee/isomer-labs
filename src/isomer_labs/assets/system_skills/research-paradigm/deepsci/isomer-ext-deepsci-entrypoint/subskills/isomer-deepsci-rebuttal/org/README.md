@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `rebuttal` source and the an
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/action-plan-template.md`
 - `src/references/evidence-update-template.md`
 - `src/references/response-letter-template.md`

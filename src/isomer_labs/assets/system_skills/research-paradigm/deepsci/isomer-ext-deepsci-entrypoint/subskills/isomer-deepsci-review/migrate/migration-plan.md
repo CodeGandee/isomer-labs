@@ -59,11 +59,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `references/experiment-todo-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/review-report-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/revision-log-template.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -72,13 +72,13 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Plan the audit | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
-| Run literature and benchmark checks | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
-| Write the review report | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md` |
-| Produce the revision log | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/revision-log-template.md` |
-| Create evidence TODOs only when needed | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/experiment-todo-template.md` |
-| Update paper experiment planning | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
-| Route the next step | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
+| Plan the audit | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
+| Run literature and benchmark checks | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
+| Write the review report | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md` |
+| Produce the revision log | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/revision-log-template.md` |
+| Create evidence TODOs only when needed | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/experiment-todo-template.md` |
+| Update paper experiment planning | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
+| Route the next step | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/review-report-template.md`, `references/revision-log-template.md` |
 
 ## Semantic Match Checks
 

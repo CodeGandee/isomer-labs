@@ -56,11 +56,11 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 ## Placeholder Registry
 
-`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
+`migrate/placeholders.md` defines every placeholder used by the migrated `SKILL-MAIN.md`. Runtime pages that use these placeholders should reference that registry near the first placeholder use.
 
 ## Rewrite Targets
 
-- `SKILL.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
+- `SKILL-MAIN.md`: rewritten into native Isomer production DeepSci research language while preserving the source workflow states, constraints, outputs, and route decisions.
 - `UPSTREAM_LICENSE.txt`: upstream license notice retained.
 - `references/chinese-author-alignment.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
 - `references/fair-metadata-checklist.md`: runtime support page retained with source-derived guidance and consumed through the native entrypoint.
@@ -73,14 +73,14 @@ The migrated runtime entrypoint does not bind source artifacts to concrete paths
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Identify journal and article type | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
-| Inventory datasets | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
-| Classify access routes | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
-| Choose repository strategy | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/repository-and-identifiers.md` |
-| Draft data availability text | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/statement-patterns.md` |
-| Add dataset citation actions | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
-| Run FAIR metadata audit | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/fair-metadata-checklist.md` |
-| Return ready text or blocker | Source `SKILL.md`, source analysis, and copied source support pages relevant to this step. | `references/chinese-author-alignment.md` |
+| Identify journal and article type | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
+| Inventory datasets | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
+| Classify access routes | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
+| Choose repository strategy | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/repository-and-identifiers.md` |
+| Draft data availability text | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/statement-patterns.md` |
+| Add dataset citation actions | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/policy-principles.md`, `references/source-basis.md` |
+| Run FAIR metadata audit | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/fair-metadata-checklist.md` |
+| Return ready text or blocker | Source `SKILL-SOURCE.md`, source analysis, and copied source support pages relevant to this step. | `references/chinese-author-alignment.md` |
 
 ## Semantic Match Checks
 

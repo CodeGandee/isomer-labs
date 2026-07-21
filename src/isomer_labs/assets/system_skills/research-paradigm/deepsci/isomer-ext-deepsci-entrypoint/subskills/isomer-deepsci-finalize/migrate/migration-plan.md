@@ -6,7 +6,7 @@
 - Target skill: `skillset/research-paradigm/deepsci/isomer-rsch-finalize`.
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
-- Source files covered: `SKILL.md`, `references/checkpoint-memory-template.md`, `references/finalization-checklist.md`, `references/resume-packet-template.md`.
+- Source files covered: `SKILL-SOURCE.md`, `references/checkpoint-memory-template.md`, `references/finalization-checklist.md`, `references/resume-packet-template.md`.
 - Source analysis: `org/analysis/analysis-of-finalize.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -61,7 +61,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface.
+- `SKILL-MAIN.md`: native production DeepSci control surface.
 - `references/closure-gate.md`: Closure Gate.
 - `references/claim-ledger-template.md`: Claim Ledger Template.
 - `references/final-summary-template.md`: Final Summary Template.
@@ -73,12 +73,12 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Sections and References | Runtime Support Pages |
 | --- | --- | --- |
-| Gather closure context | `SKILL.md` Preconditions and gate, Truth sources, Required durable outputs, Workflow step 1; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
-| Check closure legitimacy | `SKILL.md` Preconditions and gate, Do not use when, Failure and blocked handling; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
-| Build the claim ledger | `SKILL.md` Workflow step 2, Finalization-quality rules, Required durable outputs; `references/finalization-checklist.md` claim-ledger minimum. | `references/claim-ledger-template.md`, `references/finalization-checklist.md` |
-| State limitations and failures | `SKILL.md` Workflow step 3, Stage purpose, Finalization-quality rules; `references/finalization-checklist.md`. | `references/final-summary-template.md`, `references/finalization-checklist.md` |
-| Write final state | `SKILL.md` Workflow steps 4-6, Required durable outputs, Memory rules, Artifact rules; `references/resume-packet-template.md`. | `references/final-summary-template.md`, `references/resume-packet-template.md` |
-| Choose closure route | `SKILL.md` Research-map role, Workflow step 7, Exit criteria, Interaction discipline; `references/checkpoint-memory-template.md`; `references/resume-packet-template.md`. | `references/resume-packet-template.md`, `references/checkpoint-memory-template.md` |
+| Gather closure context | `SKILL-SOURCE.md` Preconditions and gate, Truth sources, Required durable outputs, Workflow step 1; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
+| Check closure legitimacy | `SKILL-SOURCE.md` Preconditions and gate, Do not use when, Failure and blocked handling; `references/finalization-checklist.md`. | `references/closure-gate.md`, `references/finalization-checklist.md` |
+| Build the claim ledger | `SKILL-SOURCE.md` Workflow step 2, Finalization-quality rules, Required durable outputs; `references/finalization-checklist.md` claim-ledger minimum. | `references/claim-ledger-template.md`, `references/finalization-checklist.md` |
+| State limitations and failures | `SKILL-SOURCE.md` Workflow step 3, Stage purpose, Finalization-quality rules; `references/finalization-checklist.md`. | `references/final-summary-template.md`, `references/finalization-checklist.md` |
+| Write final state | `SKILL-SOURCE.md` Workflow steps 4-6, Required durable outputs, Memory rules, Artifact rules; `references/resume-packet-template.md`. | `references/final-summary-template.md`, `references/resume-packet-template.md` |
+| Choose closure route | `SKILL-SOURCE.md` Research-map role, Workflow step 7, Exit criteria, Interaction discipline; `references/checkpoint-memory-template.md`; `references/resume-packet-template.md`. | `references/resume-packet-template.md`, `references/checkpoint-memory-template.md` |
 
 ## Semantic Match Checks
 

@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `baseline` source and the an
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/artifact-flow-examples.md`
 - `src/references/artifact-payload-examples.md`
 - `src/references/baseline-checklist-template.md`

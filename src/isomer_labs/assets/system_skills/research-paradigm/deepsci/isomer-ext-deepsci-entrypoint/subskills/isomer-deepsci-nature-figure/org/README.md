@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `nature-figure` source and t
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/api.md`
 - `src/references/backend-selection.md`
 - `src/references/chart-types.md`

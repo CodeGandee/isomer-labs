@@ -21,6 +21,12 @@ $isomer-ext-kaoju-entrypoint use build-reading-list to assemble evidence for the
 
 Protected means parent-routed and omitted from ordinary top-level host discovery. It does not mean encrypted, unreadable, or authorization-protected. Any agent that receives a complete public pack can read its nested files. Use selective private projection when an Agent Role should receive fewer capabilities.
 
+## Entrypoint Filenames
+
+Every public welcome or execution-entrypoint root owns `SKILL.md`. Every manifest-declared protected member owns `SKILL-MAIN.md` and must not contain a discovery-named `SKILL.md`. A preserved upstream entrypoint below `org/src/` uses `SKILL-SOURCE.md`. These filenames prevent coding-agent hosts that recursively scan for `SKILL.md` from registering protected members or provenance snapshots as independent top-level skills.
+
+The public execution entrypoint remains the routing authority. After it selects a manifest-declared protected logical id, it loads that member's `SKILL-MAIN.md` and only the directly required local resources. It does not scan or preload sibling protected members.
+
 ## Installation
 
 Discover the package catalog before installation:
@@ -143,13 +149,13 @@ isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()
 
 Parent commands act as object generators. In `skill->cmd_parent()->cmd_child()`, the child is the invoked subcommand declared by `cmd_parent()`; the chain does not execute the parent's standalone terminal workflow first. Once a command component appears, a later bare component is invalid. A command and subskill may share a name because `X->Y()` names the command and `X->Y` names the subskill.
 
-Use private resource ownership to decide how to author a capability. A unit that owns its own `SKILL.md` metadata, `agents/`, scripts, references, templates, assets, or another private resource root is a protected subskill. A procedure that uses only resources owned by its containing bundle is a command, including a parent command with child commands. Triggers or workflow importance do not override this resource-boundary test.
+Use private resource ownership to decide how to author a capability. A unit that owns its own `SKILL-MAIN.md` metadata, `agents/`, scripts, references, templates, assets, or another private resource root is a protected subskill. A procedure that uses only resources owned by its containing bundle is a command, including a parent command with child commands. Triggers or workflow importance do not override this resource-boundary test.
 
 ## Dependency Closure and Private Projection
 
 Each protected capability declares logical-id dependencies. Catalog resolution returns the selected capabilities and their transitive closure in deterministic order, including cross-pack dependencies. It also returns each member's owning pack, nested source path, scoped member, and invocation designator.
 
-Ordinary installation ignores that selective surface and installs complete public packs. Internal Agent Role, Agent Profile, Topic Actor, and Service Agent adapters may instead project only a requested protected capability closure. The Isomer-Houmao adapter materializes each selected nested bundle as a flat logical-id directory in the role-private skill root, without granting parent or sibling filesystem access, and writes projection metadata that records the pack, nested source, invocation designator, dependencies, and binding reference.
+Ordinary installation ignores that selective surface and installs complete public packs. Internal Agent Role, Agent Profile, Topic Actor, and Service Agent adapters may instead project only a requested protected capability closure. The Isomer-Houmao adapter materializes each selected nested bundle as a flat logical-id directory in the role-private skill root, without granting parent or sibling filesystem access, and writes projection metadata that records the pack, nested source, invocation designator, dependencies, and binding reference. Because that flat directory is an intentionally discoverable Agent Role skill root, materialization promotes its source `SKILL-MAIN.md` to destination `SKILL.md`; the private projection must not retain both filenames.
 
 Provider-neutral Skill Binding Projection continues to store logical ids. It does not store the nested package layout.
 
@@ -204,7 +210,7 @@ Protected logical ids retain responsibility-oriented forms such as `isomer-op-*`
 
 ## Authoring and Release Checks
 
-Every public pack and protected member remains a complete skill bundle and must resolve its local resources without parent or sibling access. Shared family procedures route through the family's protected `shared` member rather than duplicated prose or sibling paths.
+Every public pack and protected member remains a complete skill bundle and must resolve its local resources without parent or sibling access. Public roots use `SKILL.md`, protected members use `SKILL-MAIN.md`, and preserved source entrypoints use `SKILL-SOURCE.md`. Shared family procedures route through the family's protected `shared` member rather than duplicated prose or sibling paths.
 
 All 59 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
 

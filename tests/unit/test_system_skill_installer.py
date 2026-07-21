@@ -476,7 +476,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertTrue(skill_link.is_symlink())
         self.assertIn(
             "Direct low-level install defaults to project scope when `--scope` is omitted.",
-            (skill_link / "subskills" / "isomer-op-system-skill-mgr" / "SKILL.md").read_text(encoding="utf-8"),
+                (skill_link / "subskills" / "isomer-op-system-skill-mgr" / "SKILL-MAIN.md").read_text(encoding="utf-8"),
         )
         self.assertIn("ISOSKILL013", {diagnostic.code for diagnostic in result.diagnostics})
 

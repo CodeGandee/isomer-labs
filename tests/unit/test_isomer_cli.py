@@ -747,7 +747,7 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue((skill_root / "isomer-op-entrypoint" / "SKILL.md").is_file())
         self.assertTrue((skill_root / "isomer-op-welcome" / "SKILL.md").is_file())
         self.assertTrue(
-            (skill_root / "isomer-op-entrypoint" / "subskills" / "isomer-op-gui-mgr" / "SKILL.md").is_file()
+            (skill_root / "isomer-op-entrypoint" / "subskills" / "isomer-op-gui-mgr" / "SKILL-MAIN.md").is_file()
         )
         self.assertFalse((skill_root / "isomer-op-gui-mgr").exists())
         self.assertFalse((skill_root / "isomer-op-entrypoint" / ".isomer-system-skill.json").exists())

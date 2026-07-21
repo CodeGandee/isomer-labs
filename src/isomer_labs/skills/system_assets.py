@@ -16,6 +16,9 @@ import tomlkit
 
 
 SYSTEM_SKILLS_RESOURCE = "assets/system_skills"
+SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME = "SKILL.md"
+SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME = "SKILL-MAIN.md"
+SYSTEM_SKILL_PROVENANCE_ENTRYPOINT_FILENAME = "SKILL-SOURCE.md"
 SYSTEM_SKILL_MANIFEST_V2 = "isomer-skillset-manifest.v2"
 SYSTEM_SKILL_MANIFEST_V3 = "isomer-skillset-manifest.v3"
 SYSTEM_SKILL_MANIFEST_V4 = "isomer-skillset-manifest.v4"
@@ -1292,10 +1295,43 @@ def resolve_system_skill(skill_path: str) -> Traversable:
     target = _join_resource(system_skills_root(), normalized)
     if not target.is_dir():
         raise SystemSkillAssetError(f"Packaged system skill is missing: {normalized}")
-    skill_md = target.joinpath("SKILL.md")
-    if not skill_md.is_file():
-        raise SystemSkillAssetError(f"Packaged system skill is missing SKILL.md: {normalized}")
+    entrypoint_filename = system_skill_entrypoint_filename(normalized)
+    entrypoint = target.joinpath(entrypoint_filename)
+    if not entrypoint.is_file():
+        raise SystemSkillAssetError(f"Packaged system skill is missing {entrypoint_filename}: {normalized}")
+    conflicting_filename = (
+        SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+        if entrypoint_filename == SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+        else SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    )
+    if target.joinpath(conflicting_filename).is_file():
+        raise SystemSkillAssetError(
+            f"Packaged system skill has conflicting entrypoint {conflicting_filename}: {normalized}"
+        )
     return target
+
+
+def system_skill_entrypoint_filename(skill_path: str) -> str:
+    """Return the canonical entrypoint filename for one manifest-relative path."""
+
+    normalized = _normalize_relative_path(skill_path)
+    catalog = system_skill_catalog()
+    if any(
+        public_skill.source_path == normalized
+        for pack in catalog.packs
+        for public_skill in pack.public_skills
+    ):
+        return SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+    if any(capability.source_path == normalized for capability in catalog.capabilities):
+        return SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    raise SystemSkillAssetError(f"Packaged system-skill path is not declared in the manifest: {normalized}")
+
+
+def resolve_system_skill_entrypoint(skill_path: str) -> Traversable:
+    """Resolve one public ``SKILL.md`` or protected ``SKILL-MAIN.md`` resource."""
+
+    normalized = _normalize_relative_path(skill_path)
+    return resolve_system_skill(normalized).joinpath(system_skill_entrypoint_filename(normalized))
 
 
 def resolve_system_skill_capability(logical_id: str) -> Traversable:
@@ -1303,6 +1339,13 @@ def resolve_system_skill_capability(logical_id: str) -> Traversable:
 
     capability = system_skill_catalog().capability_by_logical_id(logical_id)
     return resolve_system_skill(capability.source_path)
+
+
+def resolve_system_skill_capability_entrypoint(logical_id: str) -> Traversable:
+    """Resolve one protected logical capability's ``SKILL-MAIN.md`` resource."""
+
+    capability = system_skill_catalog().capability_by_logical_id(logical_id)
+    return resolve_system_skill_entrypoint(capability.source_path)
 
 
 def materialize_system_skills(
@@ -1349,6 +1392,7 @@ def materialize_system_skill_private_projection(
     for projection in projections:
         destination = target / projection.projected_path
         _copy_resource_tree(resolve_system_skill(projection.source_path), destination, copied_paths)
+        _promote_private_projection_entrypoint(destination, copied_paths)
     return SystemSkillPrivateProjectionMaterializationResult(
         target=target,
         projections=projections,
@@ -1454,3 +1498,20 @@ def _copy_resource_file(source: Traversable, destination: Path) -> Path:
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_bytes(source.read_bytes())
     return destination
+
+
+def _promote_private_projection_entrypoint(destination: Path, copied_paths: list[Path]) -> None:
+    """Promote a flattened protected entrypoint to a host-discoverable filename."""
+
+    protected_entrypoint = destination / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    public_entrypoint = destination / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+    if not protected_entrypoint.is_file():
+        raise SystemSkillAssetError(f"Protected projection is missing {SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME}: {destination}")
+    if public_entrypoint.exists():
+        raise SystemSkillAssetError(f"Protected projection already contains {SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME}: {destination}")
+    protected_entrypoint.rename(public_entrypoint)
+    try:
+        copied_index = copied_paths.index(protected_entrypoint)
+    except ValueError as exc:
+        raise SystemSkillAssetError(f"Protected projection entrypoint was not tracked: {protected_entrypoint}") from exc
+    copied_paths[copied_index] = public_entrypoint

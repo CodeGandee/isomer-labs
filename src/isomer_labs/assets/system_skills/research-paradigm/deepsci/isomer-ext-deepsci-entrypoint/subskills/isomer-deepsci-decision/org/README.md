@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `decision` source and the an
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/checkpoint-memory-template.md`
 - `src/references/operational-guidance.md`
 - `src/references/research-route-criteria.md`

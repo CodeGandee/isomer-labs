@@ -7,7 +7,7 @@
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
 - Runtime support copy: every source file is copied and refactored under the target runtime tree with source-relative paths preserved, except the source entrypoint and `agents/openai.yaml`.
-- Source files covered: `PROVENANCE.md`, `SKILL.md`, `references/artifact-science-tool.md`, `references/claim-type-discipline.md`, `references/domain-index.md`, `references/hpc-via-bash-exec.md`, `references/package-check-playbook.md`, `references/package-index.min.json`, `references/science-task-brief-template.md`, and all package cards under `references/packages/`.
+- Source files covered: `PROVENANCE.md`, `SKILL-SOURCE.md`, `references/artifact-science-tool.md`, `references/claim-type-discipline.md`, `references/domain-index.md`, `references/hpc-via-bash-exec.md`, `references/package-check-playbook.md`, `references/package-index.min.json`, `references/science-task-brief-template.md`, and all package cards under `references/packages/`.
 - Source analysis: `org/analysis/analysis-of-science.md`.
 - Exclusions from deep inspection: generated package cards, package index JSON, and provenance are passive catalog/provenance material. They are copied into the runtime tree and mechanically adapted for Isomer wording, while operative behavior is refactored in top-level pages.
 
@@ -63,7 +63,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
+- `SKILL-MAIN.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
 - `PROVENANCE.md`: copied provenance page with Isomer runtime wording.
 - `references/artifact-science-tool.md`: source-preserved evidence graph page refactored into native recording support.
 - `references/claim-type-discipline.md`: source-preserved claim discipline page refactored into computed, parsed, digitized, and hypothesis support.
@@ -79,12 +79,12 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Support Material | Target Runtime Support |
 | --- | --- | --- |
-| Frame the science task | `SKILL.md` Match Signals, Workflow step 1, SetupAgent Usage, Validation; `references/science-task-brief-template.md`. | `references/science-task-brief-template.md` |
-| Route through package or domain context | `SKILL.md` Progressive Disclosure, Package Catalog Provenance, AVOID, Validation; `references/domain-index.md`; `references/package-index.min.json`; `references/packages/*.md`; `references/package-check-playbook.md`. | `references/package-index.min.json`, `references/domain-index.md`, `references/packages/<package_id>.md`, `references/package-check-playbook.md` |
-| Execute through Isomer command surfaces | `SKILL.md` Control Surface, Workflow steps 4 and 6, AVOID; `references/hpc-via-bash-exec.md`; `references/package-check-playbook.md`. | `references/hpc-via-bash-exec.md`, `references/package-check-playbook.md` |
-| Record scientific evidence | `SKILL.md` Workflow steps 5, 7, 8, Science Node Types, Validation; `references/artifact-science-tool.md`; package cards expected science nodes. | `references/artifact-science-tool.md`, relevant package card |
-| Classify claims conservatively | `SKILL.md` Claim Discipline, Science Node Types, AVOID; `references/claim-type-discipline.md`. | `references/claim-type-discipline.md` |
-| Update the evidence graph or route | `SKILL.md` Workflow step 10, Science node id/update rules, Validation; `references/artifact-science-tool.md`; `references/hpc-via-bash-exec.md`. | `references/artifact-science-tool.md`, `references/hpc-via-bash-exec.md` |
+| Frame the science task | `SKILL-SOURCE.md` Match Signals, Workflow step 1, SetupAgent Usage, Validation; `references/science-task-brief-template.md`. | `references/science-task-brief-template.md` |
+| Route through package or domain context | `SKILL-SOURCE.md` Progressive Disclosure, Package Catalog Provenance, AVOID, Validation; `references/domain-index.md`; `references/package-index.min.json`; `references/packages/*.md`; `references/package-check-playbook.md`. | `references/package-index.min.json`, `references/domain-index.md`, `references/packages/<package_id>.md`, `references/package-check-playbook.md` |
+| Execute through Isomer command surfaces | `SKILL-SOURCE.md` Control Surface, Workflow steps 4 and 6, AVOID; `references/hpc-via-bash-exec.md`; `references/package-check-playbook.md`. | `references/hpc-via-bash-exec.md`, `references/package-check-playbook.md` |
+| Record scientific evidence | `SKILL-SOURCE.md` Workflow steps 5, 7, 8, Science Node Types, Validation; `references/artifact-science-tool.md`; package cards expected science nodes. | `references/artifact-science-tool.md`, relevant package card |
+| Classify claims conservatively | `SKILL-SOURCE.md` Claim Discipline, Science Node Types, AVOID; `references/claim-type-discipline.md`. | `references/claim-type-discipline.md` |
+| Update the evidence graph or route | `SKILL-SOURCE.md` Workflow step 10, Science node id/update rules, Validation; `references/artifact-science-tool.md`; `references/hpc-via-bash-exec.md`. | `references/artifact-science-tool.md`, `references/hpc-via-bash-exec.md` |
 
 ## Semantic Match Checks
 

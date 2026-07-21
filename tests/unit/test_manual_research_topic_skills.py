@@ -3,7 +3,11 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from isomer_labs.skills.system_assets import SystemSkillAssetError, resolve_system_skill_capability
+from isomer_labs.skills.system_assets import (
+    SystemSkillAssetError,
+    resolve_system_skill_capability,
+    resolve_system_skill_capability_entrypoint,
+)
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +25,8 @@ def read_repo_file(relative_path: str) -> str:
             skill = resolve_system_skill_capability(part)
         except SystemSkillAssetError:
             continue
+        if tuple(parts[index + 1 :]) == ("SKILL.md",):
+            return resolve_system_skill_capability_entrypoint(part).read_text(encoding="utf-8")
         return skill.joinpath(*parts[index + 1 :]).read_text(encoding="utf-8")
     raise FileNotFoundError(path)
 

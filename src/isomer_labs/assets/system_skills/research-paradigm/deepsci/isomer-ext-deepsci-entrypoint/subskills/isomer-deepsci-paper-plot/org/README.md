@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `paper-plot` source and the 
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/bar_grouped_hatch.md`
 - `src/references/bar_paired_delta.md`
 - `src/references/line_confidence_band.md`

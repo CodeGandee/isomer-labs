@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `review` source and the anal
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/experiment-todo-template.md`
 - `src/references/review-report-template.md`
 - `src/references/revision-log-template.md`

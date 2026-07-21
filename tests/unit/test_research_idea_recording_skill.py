@@ -2,13 +2,17 @@ from __future__ import annotations
 
 import unittest
 
-from isomer_labs.skills.system_assets import resolve_system_skill, resolve_system_skill_capability
+from isomer_labs.skills.system_assets import (
+    resolve_system_skill,
+    resolve_system_skill_capability,
+    resolve_system_skill_capability_entrypoint,
+)
 
 
 class ResearchIdeaRecordingSkillTests(unittest.TestCase):
     def test_neutral_contract_is_facet_first_atomic_and_verifiable(self) -> None:
         skill = resolve_system_skill_capability("isomer-research-idea-recording")
-        text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+        text = resolve_system_skill_capability_entrypoint("isomer-research-idea-recording").read_text(encoding="utf-8")
         contract = skill.joinpath("references", "recording-contract.md").read_text(encoding="utf-8")
         for token in (
             "exploration_state",
@@ -42,7 +46,11 @@ class ResearchIdeaRecordingSkillTests(unittest.TestCase):
                     if name == "isomer-ext-deepsci-entrypoint"
                     else resolve_system_skill_capability(name)
                 )
-                text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+                text = (
+                    skill.joinpath("SKILL.md")
+                    if name == "isomer-ext-deepsci-entrypoint"
+                    else resolve_system_skill_capability_entrypoint(name)
+                ).read_text(encoding="utf-8")
                 self.assertIn("isomer-op-entrypoint->research-ideas", text)
                 self.assertNotIn("idea status changes require", text.lower())
                 self.assertNotIn("update selected, rejected, or deferred Research Idea status", text)
@@ -76,7 +84,11 @@ class ResearchIdeaRecordingSkillTests(unittest.TestCase):
                     if name == "isomer-ext-kaoju-entrypoint"
                     else resolve_system_skill_capability(name)
                 )
-                text = skill.joinpath("SKILL.md").read_text(encoding="utf-8")
+                text = (
+                    skill.joinpath("SKILL.md")
+                    if name == "isomer-ext-kaoju-entrypoint"
+                    else resolve_system_skill_capability_entrypoint(name)
+                ).read_text(encoding="utf-8")
                 self.assertIn("isomer-op-entrypoint->research-ideas", text)
                 self.assertNotIn("isomer-deepsci", text)
 

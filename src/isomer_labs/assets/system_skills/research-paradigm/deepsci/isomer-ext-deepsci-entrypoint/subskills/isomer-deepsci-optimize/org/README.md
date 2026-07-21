@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `optimize` source and the an
 
 Analyzed files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/brief-shaping-playbook.md`
 - `src/references/candidate-board-template.md`
 - `src/references/candidate-ranking-template.md`

@@ -451,7 +451,10 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             / "deepsci"
         )
         pack_root = deepsci_root / "isomer-ext-deepsci-entrypoint"
-        active_skills = [pack_root, *sorted(path for path in (pack_root / "subskills").iterdir() if (path / "SKILL.md").is_file())]
+        active_skills = [
+            pack_root,
+            *sorted(path for path in (pack_root / "subskills").iterdir() if (path / "SKILL-MAIN.md").is_file()),
+        ]
         self.assertEqual(22, len(active_skills))
         for skill_dir in active_skills:
             with self.subTest(skill=skill_dir.name):
@@ -578,7 +581,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
                 "RPS024",
             ),
             "shared-procedure-bypass": (
-                "isomer-kaoju-audit/SKILL.md",
+                "isomer-kaoju-audit/SKILL-MAIN.md",
                 lambda path: path.write_text(
                     path.read_text(encoding="utf-8").replace("isomer-ext-kaoju-entrypoint->shared", "local-contract"),
                     encoding="utf-8",
@@ -597,9 +600,9 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_kaoju_architecture_guidance_drift_is_rejected(self) -> None:
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)
-        shared = kaoju / "isomer-kaoju-shared" / "SKILL.md"
+        shared = kaoju / "isomer-kaoju-shared" / "SKILL-MAIN.md"
         shared.write_text(shared.read_text(encoding="utf-8").replace("state DB", "filesystem catalog"), encoding="utf-8")
-        export = kaoju / "isomer-kaoju-export" / "SKILL.md"
+        export = kaoju / "isomer-kaoju-export" / "SKILL-MAIN.md"
         export.write_text(export.read_text(encoding="utf-8") + "\nInvoke imsight-llm-wiki for viewer export.\n", encoding="utf-8")
 
         diagnostics = validator.validate_skillset(target, root)
@@ -655,7 +658,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_kaoju_stale_domain_term_is_rejected(self) -> None:
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)
-        skill = kaoju / "isomer-kaoju-frame" / "SKILL.md"
+        skill = kaoju / "isomer-kaoju-frame" / "SKILL-MAIN.md"
         skill.write_text(skill.read_text(encoding="utf-8") + "\nUse the Research Goal as context.\n", encoding="utf-8")
 
         diagnostics = validator.validate_skillset(target, root)
@@ -665,7 +668,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_kaoju_hard_coded_provider_and_local_path_are_rejected(self) -> None:
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)
-        skill = kaoju / "isomer-kaoju-discover" / "SKILL.md"
+        skill = kaoju / "isomer-kaoju-discover" / "SKILL-MAIN.md"
         skill.write_text(
             skill.read_text(encoding="utf-8") + "\nAlways use GitHub and store results under /data/kaoju/results.\n",
             encoding="utf-8",
@@ -887,7 +890,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
     def test_kaoju_context_preflight_guidance_requires_named_stock_export_route(self) -> None:
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)
-        path = kaoju / "isomer-kaoju-write" / "SKILL.md"
+        path = kaoju / "isomer-kaoju-write" / "SKILL-MAIN.md"
         path.write_text(path.read_text(encoding="utf-8").replace("manage-paper-template()->export()", "paper TeX export", 1), encoding="utf-8")
         diagnostics: list[object] = []
 
@@ -1066,7 +1069,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("--parents-json", shared_text)
         self.assertIn("generation group", shared_text)
         for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-finalize"):
-            skill_text = (subskills_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            skill_text = (subskills_root / skill_name / "SKILL-MAIN.md").read_text(encoding="utf-8")
             self.assertIn("Lineage reminder", skill_text)
             self.assertTrue("--parents-json" in skill_text or "artifact-lineage-recording.md" in skill_text)
             binding_text = (subskills_root / skill_name / "placeholder-bindings.md").read_text(encoding="utf-8")
@@ -1086,7 +1089,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         self.assertIn("$.sections.raw_ideas[<index>]", shared_text)
         self.assertIn("$.sections.filter_notes", shared_text)
         for skill_name in ("isomer-deepsci-idea", "isomer-deepsci-optimize", "isomer-deepsci-experiment", "isomer-deepsci-analysis", "isomer-deepsci-decision", "isomer-deepsci-write", "isomer-deepsci-review", "isomer-deepsci-rebuttal", "isomer-deepsci-finalize"):
-            skill_text = (subskills_root / skill_name / "SKILL.md").read_text(encoding="utf-8")
+            skill_text = (subskills_root / skill_name / "SKILL-MAIN.md").read_text(encoding="utf-8")
             self.assertIn("Idea-recording reminder", skill_text)
             self.assertIn("source", skill_text.lower())
             self.assertIn("rendered Markdown", skill_text)
@@ -1126,7 +1129,7 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         write(target / "ds-analysis" / "write.md", non_active_text)
         write(target / "deepsci" / "isomer-deepsci-valid" / "migrate" / "migration-plan.md", non_active_text)
         write(target / "deepsci" / "isomer-deepsci-valid" / "org" / "analysis" / "analysis-of-valid.md", non_active_text)
-        write(target / "deepsci" / "isomer-deepsci-valid" / "org" / "src" / "SKILL.md", non_active_text)
+        write(target / "deepsci" / "isomer-deepsci-valid" / "org" / "src" / "SKILL-SOURCE.md", non_active_text)
         write(target / "deepsci" / "isomer-deepsci-valid" / "templates" / "README.md", non_active_text)
 
         diagnostics = validator.validate_skillset(target, root)

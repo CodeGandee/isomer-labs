@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `nature-data` source and the
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 - `src/references/chinese-author-alignment.md`
 - `src/references/fair-metadata-checklist.md`
 - `src/references/policy-principles.md`

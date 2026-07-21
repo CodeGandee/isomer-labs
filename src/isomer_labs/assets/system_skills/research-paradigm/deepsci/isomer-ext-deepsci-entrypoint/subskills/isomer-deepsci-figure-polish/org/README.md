@@ -11,7 +11,7 @@ This directory preserves the upstream DeepScientist `figure-polish` source and t
 
 Analyzed workflow-bearing files:
 
-- `src/SKILL.md`
+- `src/SKILL-SOURCE.md`
 
 Copied but not treated as workflow-bearing instructions:
 

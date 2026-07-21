@@ -7,7 +7,7 @@
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
 - Runtime support copy: every source file is copied and refactored under the target runtime tree with source-relative paths preserved, except the source entrypoint and `agents/openai.yaml`.
-- Source files covered: `SKILL.md`, `references/evidence-ladder.md`, `references/execution-playbook.md`, `references/main-experiment-checklist-template.md`, `references/main-experiment-plan-template.md`, `references/operational-guidance.md`.
+- Source files covered: `SKILL-SOURCE.md`, `references/evidence-ladder.md`, `references/execution-playbook.md`, `references/main-experiment-checklist-template.md`, `references/main-experiment-plan-template.md`, `references/operational-guidance.md`.
 - Source analysis: `org/analysis/analysis-of-experiment.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -67,7 +67,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
+- `SKILL-MAIN.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
 - `references/evidence-ladder.md`: source-preserved evidence target support page refactored into guidance, preferences, constraints, and quality gates.
 - `references/execution-playbook.md`: source-preserved execution support page refactored into preflight, workspace, implementation, smoke, long-run monitoring, diagnosis, validation, and routing support.
 - `references/main-experiment-plan-template.md`: source-preserved plan template refactored into native plan guidance and template fields.
@@ -80,13 +80,13 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Support Material | Target Runtime Support |
 | --- | --- | --- |
-| Lock the run contract | `SKILL.md` Quick workflow, Required plan and checklist, Control workflow step 1, Truth sources, Evidence ladder note, Planning note; `references/evidence-ladder.md`; `references/main-experiment-plan-template.md`; `references/execution-playbook.md` section 1. | `references/experiment-contract.md`, `references/main-experiment-plan-template.md`, `references/evidence-ladder.md` |
-| Prepare the control surface | `SKILL.md` Required plan and checklist, Planning note, Operational guidance; `references/main-experiment-plan-template.md`; `references/main-experiment-checklist-template.md`; `references/operational-guidance.md`. | `references/main-experiment-plan-template.md`, `references/main-experiment-checklist-template.md`, `references/operational-guidance.md` |
-| Map and implement the minimum change | `SKILL.md` Quick workflow, Control workflow step 2, AVOID, Constraints, Non-negotiable rules, Truth sources; `references/execution-playbook.md` sections 2-4; `references/main-experiment-plan-template.md` code translation section. | `references/execution-playbook.md`, `references/main-experiment-plan-template.md` |
-| Run only useful smoke checks | `SKILL.md` Control workflow step 3, Run-quality rules, Acceptance gate; `references/execution-playbook.md` sections 2, 5, and 5.1; `references/main-experiment-checklist-template.md` smoke section. | `references/execution-playbook.md`, `references/main-experiment-checklist-template.md` |
-| Execute and monitor honestly | `SKILL.md` Control workflow step 4, Interaction discipline, Tool discipline, Operational guidance, Required durable outputs; `references/execution-playbook.md` sections 5, 5.1, 5.2; `references/operational-guidance.md`. | `references/execution-playbook.md`, `references/operational-guidance.md` |
-| Validate and record the result | `SKILL.md` Validation, Required durable outputs, Run-quality rules, Acceptance gate, Failure and blocked handling; `references/execution-playbook.md` sections 6-7; `references/operational-guidance.md`; `references/evidence-ladder.md`. | `references/run-record-template.md`, `references/evidence-ladder.md`, `references/operational-guidance.md` |
-| Route from evidence | `SKILL.md` Control workflow step 5, Acceptance gate, Failure and blocked handling, Exit criteria; `references/execution-playbook.md` section 8. | `references/run-record-template.md`, `references/execution-playbook.md` |
+| Lock the run contract | `SKILL-SOURCE.md` Quick workflow, Required plan and checklist, Control workflow step 1, Truth sources, Evidence ladder note, Planning note; `references/evidence-ladder.md`; `references/main-experiment-plan-template.md`; `references/execution-playbook.md` section 1. | `references/experiment-contract.md`, `references/main-experiment-plan-template.md`, `references/evidence-ladder.md` |
+| Prepare the control surface | `SKILL-SOURCE.md` Required plan and checklist, Planning note, Operational guidance; `references/main-experiment-plan-template.md`; `references/main-experiment-checklist-template.md`; `references/operational-guidance.md`. | `references/main-experiment-plan-template.md`, `references/main-experiment-checklist-template.md`, `references/operational-guidance.md` |
+| Map and implement the minimum change | `SKILL-SOURCE.md` Quick workflow, Control workflow step 2, AVOID, Constraints, Non-negotiable rules, Truth sources; `references/execution-playbook.md` sections 2-4; `references/main-experiment-plan-template.md` code translation section. | `references/execution-playbook.md`, `references/main-experiment-plan-template.md` |
+| Run only useful smoke checks | `SKILL-SOURCE.md` Control workflow step 3, Run-quality rules, Acceptance gate; `references/execution-playbook.md` sections 2, 5, and 5.1; `references/main-experiment-checklist-template.md` smoke section. | `references/execution-playbook.md`, `references/main-experiment-checklist-template.md` |
+| Execute and monitor honestly | `SKILL-SOURCE.md` Control workflow step 4, Interaction discipline, Tool discipline, Operational guidance, Required durable outputs; `references/execution-playbook.md` sections 5, 5.1, 5.2; `references/operational-guidance.md`. | `references/execution-playbook.md`, `references/operational-guidance.md` |
+| Validate and record the result | `SKILL-SOURCE.md` Validation, Required durable outputs, Run-quality rules, Acceptance gate, Failure and blocked handling; `references/execution-playbook.md` sections 6-7; `references/operational-guidance.md`; `references/evidence-ladder.md`. | `references/run-record-template.md`, `references/evidence-ladder.md`, `references/operational-guidance.md` |
+| Route from evidence | `SKILL-SOURCE.md` Control workflow step 5, Acceptance gate, Failure and blocked handling, Exit criteria; `references/execution-playbook.md` section 8. | `references/run-record-template.md`, `references/execution-playbook.md` |
 
 ## Semantic Match Checks
 

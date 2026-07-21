@@ -7,7 +7,7 @@
 - Migration mode: `refactor-migrate`.
 - Source copy: every source file is copied unchanged into `org/src/`.
 - Runtime support copy: every source file is copied and refactored under the target runtime tree with source-relative paths preserved, except the source entrypoint and `agents/openai.yaml`.
-- Source files covered: `SKILL.md`, `references/artifact-flow-examples.md`, `references/boundary-cases.md`, `references/campaign-checklist-template.md`, `references/campaign-design.md`, `references/campaign-plan-template.md`, `references/operational-guidance.md`, `references/writing-facing-slice-examples.md`.
+- Source files covered: `SKILL-SOURCE.md`, `references/artifact-flow-examples.md`, `references/boundary-cases.md`, `references/campaign-checklist-template.md`, `references/campaign-design.md`, `references/campaign-plan-template.md`, `references/operational-guidance.md`, `references/writing-facing-slice-examples.md`.
 - Source analysis: `org/analysis/analysis-of-analysis-campaign.md`.
 - Exclusions from deep inspection: package-card and static catalog files are treated as progressive-disclosure reference material when present; runtime behavior is summarized in the source analysis and native production DeepSci pages.
 
@@ -66,7 +66,7 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 ## Rewrite Targets
 
-- `SKILL.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
+- `SKILL-MAIN.md`: native production DeepSci control surface with workflow steps that reference the required support pages.
 - `references/campaign-design.md`: source-preserved campaign design page refactored into route shape, priority, slice class, and resource-aware support.
 - `references/campaign-plan-template.md`: source-preserved campaign plan template refactored into native route-record support and template fields.
 - `references/campaign-checklist-template.md`: source-preserved campaign checklist template refactored into acceptance-boundary support and template fields.
@@ -81,13 +81,13 @@ Where a source route names a DeepScientist skill that has no production DeepSci 
 
 | Target Workflow Step | Source Support Material | Target Runtime Support |
 | --- | --- | --- |
-| Lock the parent boundary | `SKILL.md` Match signals, Control workflow step 1, Hard success gates, Analysis routes, Durable route records, Negative cases; `references/campaign-design.md`; `references/boundary-cases.md`; `references/campaign-plan-template.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/campaign-plan-template.md` |
-| Audit the execution envelope | `SKILL.md` Control workflow step 2, Paper-facing quantity reminder, Authority and freedom, Hard success gates; `references/campaign-design.md` resource gate; `references/operational-guidance.md`; `references/campaign-checklist-template.md`. | `references/operational-guidance.md`, `references/campaign-design.md`, `references/campaign-checklist-template.md` |
-| Choose the smallest useful slice set | `SKILL.md` Control workflow step 3, Analysis routes, Slice evidence contract, Writing-facing boundary; `references/campaign-design.md`; `references/writing-facing-slice-examples.md`; `references/boundary-cases.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
-| Gate resources and comparability | `SKILL.md` Constraints, Validation, Hard success gates, Comparability contract, Negative cases; `references/campaign-checklist-template.md`; `references/boundary-cases.md`. | `references/evidence-gate.md`, `references/campaign-checklist-template.md`, `references/boundary-cases.md` |
-| Run and record slices | `SKILL.md` Control workflow steps 4-5, Slice evidence contract, Durable route records, Operational guidance; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/slice-record-template.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
-| Interpret the campaign boundary | `SKILL.md` Control workflow step 6, Aggregation and reporting, Writing-facing boundary, Negative cases; `references/boundary-cases.md`; `references/writing-facing-slice-examples.md`; `references/campaign-checklist-template.md`. | `references/evidence-gate.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
-| Route from evidence | `SKILL.md` Hard success gates, Durable route records, Negative cases and stop rules, Exit criteria; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/evidence-gate.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
+| Lock the parent boundary | `SKILL-SOURCE.md` Match signals, Control workflow step 1, Hard success gates, Analysis routes, Durable route records, Negative cases; `references/campaign-design.md`; `references/boundary-cases.md`; `references/campaign-plan-template.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/campaign-plan-template.md` |
+| Audit the execution envelope | `SKILL-SOURCE.md` Control workflow step 2, Paper-facing quantity reminder, Authority and freedom, Hard success gates; `references/campaign-design.md` resource gate; `references/operational-guidance.md`; `references/campaign-checklist-template.md`. | `references/operational-guidance.md`, `references/campaign-design.md`, `references/campaign-checklist-template.md` |
+| Choose the smallest useful slice set | `SKILL-SOURCE.md` Control workflow step 3, Analysis routes, Slice evidence contract, Writing-facing boundary; `references/campaign-design.md`; `references/writing-facing-slice-examples.md`; `references/boundary-cases.md`. | `references/campaign-design.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
+| Gate resources and comparability | `SKILL-SOURCE.md` Constraints, Validation, Hard success gates, Comparability contract, Negative cases; `references/campaign-checklist-template.md`; `references/boundary-cases.md`. | `references/evidence-gate.md`, `references/campaign-checklist-template.md`, `references/boundary-cases.md` |
+| Run and record slices | `SKILL-SOURCE.md` Control workflow steps 4-5, Slice evidence contract, Durable route records, Operational guidance; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/slice-record-template.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
+| Interpret the campaign boundary | `SKILL-SOURCE.md` Control workflow step 6, Aggregation and reporting, Writing-facing boundary, Negative cases; `references/boundary-cases.md`; `references/writing-facing-slice-examples.md`; `references/campaign-checklist-template.md`. | `references/evidence-gate.md`, `references/boundary-cases.md`, `references/writing-facing-slice-examples.md` |
+| Route from evidence | `SKILL-SOURCE.md` Hard success gates, Durable route records, Negative cases and stop rules, Exit criteria; `references/artifact-flow-examples.md`; `references/operational-guidance.md`. | `references/evidence-gate.md`, `references/artifact-flow-examples.md`, `references/operational-guidance.md` |
 
 ## Semantic Match Checks
 

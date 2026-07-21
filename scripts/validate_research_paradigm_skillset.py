@@ -27,6 +27,10 @@ from isomer_labs.kaoju.contracts import (
     load_semantic_registry,
     resource_coverage_diagnostics,
 )
+from isomer_labs.skills.system_assets import (
+    SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
+)
 
 
 @dataclass(frozen=True)
@@ -66,8 +70,74 @@ LEGACY_ANGLE_ARTIFACT_RE = re.compile(r"<([A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+)>")
 DOUBLE_BRACKET_ARTIFACT_RE = re.compile(r"\[\[(?:rsch-object|artifact|placeholder):[^\]]+\]\]", re.I)
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
-MAX_DEEPSCI_WORKFLOW_LINE = 45
+MAX_DEEPSCI_WORKFLOW_LINE = 60
 DEEPSCI_THANKS_TO = "https://github.com/ResearAI/DeepScientist"
+
+
+def research_skill_entrypoint(skill_dir: Path) -> Path:
+    """Resolve a public, protected, or legacy-flat research skill entrypoint."""
+
+    if skill_dir.name.startswith("isomer-ext-") and skill_dir.name.endswith("-entrypoint"):
+        return skill_dir / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+    if "subskills" in skill_dir.parts:
+        return skill_dir / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    protected = skill_dir / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    if protected.is_file():
+        return protected
+    return skill_dir / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+
+
+def is_research_skill_entrypoint(path: Path) -> bool:
+    return path.name in {
+        SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
+        SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    }
+
+
+def research_family_skill_dir(family_root: Path, skill_name: str) -> Path:
+    """Resolve a skill from the canonical nested pack or a legacy flat fixture."""
+
+    direct = family_root / skill_name
+    if direct.is_dir():
+        return direct
+    entrypoint = family_root / f"isomer-ext-{family_root.name}-entrypoint"
+    nested = entrypoint / "subskills" / skill_name
+    if nested.is_dir():
+        return nested
+    return direct
+
+
+def research_family_skill_dirs(family_root: Path, pattern: re.Pattern[str]) -> tuple[Path, ...]:
+    """Enumerate canonical nested or legacy-flat skill directories once."""
+
+    direct = tuple(path for path in family_root.iterdir() if path.is_dir()) if family_root.is_dir() else ()
+    nested = tuple(
+        child
+        for parent in direct
+        if parent.name.startswith("isomer-ext-")
+        and parent.name.endswith("-entrypoint")
+        and (parent / "subskills").is_dir()
+        for child in (parent / "subskills").iterdir()
+        if child.is_dir()
+    )
+    return tuple(sorted(path for path in (*direct, *nested) if pattern.match(path.name)))
+
+
+def resolve_research_relative_path(target: Path, relative: str | Path) -> Path:
+    """Resolve a family-relative document across nested and legacy-flat layouts."""
+
+    relative_path = Path(relative)
+    if len(relative_path.parts) < 2:
+        return target / relative_path
+    family_name, skill_name, *resource_parts = relative_path.parts
+    family_root = target / family_name
+    skill_dir = research_family_skill_dir(family_root, skill_name)
+    if resource_parts and resource_parts[-1] in {
+        SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME,
+        SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME,
+    }:
+        return research_skill_entrypoint(skill_dir)
+    return skill_dir.joinpath(*resource_parts)
 
 EXPECTED_DEEPSCI_SKILLS = frozenset(
     {
@@ -131,7 +201,7 @@ FAMILY_CONFIGS = (
         name_pattern=KAOJU_SKILL_NAME_RE,
         name_shape="isomer-kaoju-* or isomer-ext-kaoju-entrypoint",
         expected_skills=EXPECTED_KAOJU_SKILLS,
-        max_workflow_line=40,
+        max_workflow_line=55,
         required=False,
         semantic_registry="isomer-kaoju-shared/references/artifact-semantics.md",
         semantic_id_pattern=re.compile(r"^KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*$"),
@@ -607,6 +677,7 @@ NON_ACTIVE_ROLES = frozenset(
         "deferred-resource",
         "license",
         "migration",
+        "orientation",
         "passive-template",
         "provenance",
         "semantic-placeholder-registry",
@@ -944,6 +1015,8 @@ def classify_document(
         roles.add("deepsci")
     if rel_target.startswith("kaoju/"):
         roles.add("kaoju")
+    if any(part.startswith("isomer-ext-") and part.endswith("-welcome") for part in Path(rel_target).parts):
+        roles.add("orientation")
     for role_key, role_name in (
         ("migration_file_globs", "migration"),
         ("source_analysis_file_globs", "source-analysis"),
@@ -964,7 +1037,7 @@ def classify_document(
         roles.add("deferred-resource")
     if rel_target.endswith("references/source-term-mapping.md"):
         roles.add("source-term-mapping")
-    if rel_target == "deepsci/isomer-deepsci-shared/references/semantic-placeholders.md":
+    if rel_target.endswith("/isomer-deepsci-shared/references/semantic-placeholders.md"):
         roles.add("semantic-placeholder-registry")
     if rel_target.endswith("/placeholder-bindings.md"):
         roles.add("placeholder-binding")
@@ -1190,7 +1263,7 @@ def validate_deepsci_operation_set_closeout_references(
     diagnostics: list[Diagnostic],
 ) -> None:
     for relative, required_terms in DEEPSCI_CLOSEOUT_REFERENCE_TERMS.items():
-        path = target / relative
+        path = resolve_research_relative_path(target, relative)
         if not path.exists():
             add(diagnostics, repo_root, path, 1, "RPS032", f"required Operation Set Closeout guidance '{relative.as_posix()}' is missing")
             continue
@@ -1217,10 +1290,35 @@ def validate_skill_layout(
     skill_name = skill_dir.name
     if not family.name_pattern.match(skill_name):
         add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder '{skill_name}' must match {family.name_shape}")
-    skill_md = skill_dir / "SKILL.md"
+    skill_md = research_skill_entrypoint(skill_dir)
     if not skill_md.exists():
-        add(diagnostics, repo_root, skill_dir, 1, "RPS007", "skill folder is missing SKILL.md")
+        add(diagnostics, repo_root, skill_dir, 1, "RPS007", f"skill folder is missing {skill_md.name}")
         return
+    conflicting_filename = (
+        SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+        if skill_md.name == SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+        else SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME
+    )
+    conflicting_entrypoint = skill_dir / conflicting_filename
+    if conflicting_entrypoint.exists():
+        add(
+            diagnostics,
+            repo_root,
+            conflicting_entrypoint,
+            1,
+            "RPS007",
+            f"skill folder must not contain both {skill_md.name} and {conflicting_filename}",
+        )
+    for nested_discovery_entrypoint in sorted(skill_dir.rglob(SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME)):
+        if nested_discovery_entrypoint != skill_md:
+            add(
+                diagnostics,
+                repo_root,
+                nested_discovery_entrypoint,
+                1,
+                "RPS007",
+                "nested SKILL.md is forbidden; use SKILL-MAIN.md for protected entrypoints or SKILL-SOURCE.md for provenance snapshots",
+            )
 
     lines = read_lines(skill_md)
     frontmatter = parse_frontmatter(lines)
@@ -1244,7 +1342,7 @@ def validate_skill_layout(
     workflow_line = find_h2(lines, "Workflow")
     workflow_steps: list[tuple[int, int, str]] = []
     if workflow_line is None:
-        add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Workflow")
+        add(diagnostics, repo_root, skill_md, 1, "RPS007", f"{skill_md.name} must contain ## Workflow")
     else:
         if workflow_line > family.max_workflow_line:
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must appear near the top")
@@ -1254,15 +1352,15 @@ def validate_skill_layout(
             add(diagnostics, repo_root, skill_md, workflow_line, "RPS007", "## Workflow must contain numbered steps")
 
     if find_h2(lines, "Reference Routing") is None:
-        add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must contain ## Reference Routing")
+        add(diagnostics, repo_root, skill_md, 1, "RPS007", f"{skill_md.name} must contain ## Reference Routing")
 
     if not any("does not map cleanly" in line for line in lines):
-        add(diagnostics, repo_root, skill_md, 1, "RPS007", "SKILL.md must include fallback guidance")
+        add(diagnostics, repo_root, skill_md, 1, "RPS007", f"{skill_md.name} must include fallback guidance")
 
     if family.key == "kaoju":
         for heading in ("Overview", "When to Use", "Guardrails"):
             if find_h2(lines, heading) is None:
-                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju SKILL.md must contain ## {heading}")
+                add(diagnostics, repo_root, skill_md, 1, "RPS018", f"Kaoju {skill_md.name} must contain ## {heading}")
 
     if family.key in {"deepsci", "kaoju"}:
         reminder_line = next(
@@ -1311,7 +1409,7 @@ def validate_skill_layout(
                 skill_md,
                 reminder_line or workflow_line or 1,
                 "RPS017",
-                f"production {family.key} SKILL.md must express ordered compact User Skill Callback locator consumption without management-only fields in ordinary begin/end workflow steps",
+                f"production {family.key} {skill_md.name} must express ordered compact User Skill Callback locator consumption without management-only fields in ordinary begin/end workflow steps",
             )
     if family.key == "deepsci":
         validate_deepsci_operation_set_closeout_step(skill_md, lines, workflow_steps, repo_root, diagnostics)
@@ -1457,7 +1555,7 @@ def local_references_from_line(line: str) -> Iterable[str]:
 
 
 def validate_local_references(skill_dir: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
-    skill_md = skill_dir / "SKILL.md"
+    skill_md = research_skill_entrypoint(skill_dir)
     if not skill_md.exists():
         return
     skill_root = skill_dir.resolve()
@@ -2079,7 +2177,7 @@ def validate_deepsci_display_contract_guidance(document: Document, repo_root: Pa
                 "RPS014",
                 "active DeepSci guidance must not use structured-record v1 profile refs for new writes; use v2",
             )
-    if document.rel_target.endswith("/SKILL.md") and not any(
+    if is_research_skill_entrypoint(document.path) and not any(
         "supported deepsci v2 display contract" in line.casefold()
         and "`title`" in line
         and "`summary`" in line
@@ -2132,11 +2230,11 @@ def validate_deepsci_storage_binding(
 def validate_deepsci_worker_output_policy(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
     if "deepsci" not in document.roles or not is_active_guidance(document):
         return
-    if not document.rel_target.endswith("/SKILL.md"):
+    if not is_research_skill_entrypoint(document.path):
         return
     text = "\n".join(document.lines)
     lowered = text.casefold()
-    if document.rel_target == "deepsci/isomer-deepsci-shared/SKILL.md":
+    if document.path.parent.name == "isomer-deepsci-shared":
         for term in DEEPSCI_SHARED_WORKER_OUTPUT_REQUIRED_TERMS:
             if term.casefold() not in lowered:
                 add(
@@ -2165,9 +2263,9 @@ def validate_deepsci_worker_output_policy(document: Document, repo_root: Path, d
 def validate_deepsci_latest_context_preflight(document: Document, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
     if "deepsci" not in document.roles or not is_active_guidance(document):
         return
-    if not document.rel_target.endswith("/SKILL.md"):
+    if not is_research_skill_entrypoint(document.path):
         return
-    if document.rel_target == "deepsci/isomer-deepsci-shared/SKILL.md":
+    if document.path.parent.name == "isomer-deepsci-shared":
         return
     if not (document.path.parent / "placeholder-bindings.md").exists():
         return
@@ -2192,7 +2290,7 @@ def validate_context_preflight_guidance(target: Path, repo_root: Path, diagnosti
     for relative_path, required_terms in CONTEXT_PREFLIGHT_GUIDANCE_REQUIRED_TERMS.items():
         if relative_path.startswith("kaoju/") and not has_kaoju:
             continue
-        path = target / relative_path
+        path = resolve_research_relative_path(target, relative_path)
         if not path.exists():
             add(diagnostics, repo_root, path, 1, "RPS033", f"required context-preflight guidance '{relative_path}' is missing")
             continue
@@ -2368,6 +2466,11 @@ def validate_kaoju_direct_references(
         if path.is_file()
         and path.suffix in {".md", ".yaml", ".yml"}
         and not any(part in {"assets", "scripts"} for part in path.relative_to(skill_dir).parts[:-1])
+        and not (
+            skill_dir.name.startswith("isomer-ext-")
+            and skill_dir.name.endswith("-entrypoint")
+            and "subskills" in path.relative_to(skill_dir).parts
+        )
     )
     for path in active_files:
         for line_number, line in enumerate(read_lines(path), start=1):
@@ -2447,7 +2550,7 @@ def validate_kaoju_package_contract(
     if len(intents) != 10:
         add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare ten survey intents, found {len(intents)}")
 
-    actual_skills = tuple(path.name for path in kaoju_root.iterdir() if path.is_dir() and KAOJU_SKILL_NAME_RE.match(path.name))
+    actual_skills = tuple(path.name for path in research_family_skill_dirs(kaoju_root, KAOJU_SKILL_NAME_RE))
     if set(actual_skills) != set(skills):
         add(diagnostics, repo_root, contract_path, 1, "RPS026", "Kaoju contract skill inventory differs from packaged skill directories")
 
@@ -2456,8 +2559,42 @@ def validate_kaoju_package_contract(
         return
     try:
         manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
-        group = manifest["groups"]["kaoju"]
     except (OSError, tomllib.TOMLDecodeError, KeyError, TypeError) as exc:
+        add(diagnostics, repo_root, manifest_path, 1, "RPS026", f"packaged Kaoju manifest cannot be checked: {exc}")
+        return
+    if manifest.get("schema_version") == "isomer-skillset-manifest.v4":
+        pack = next(
+            (item for item in manifest.get("packs", []) if isinstance(item, dict) and item.get("pack_id") == "kaoju"),
+            None,
+        )
+        entrypoint = next(
+            (
+                item
+                for item in manifest.get("public_skills", [])
+                if isinstance(item, dict) and item.get("name") == contract.get("entry_skill")
+            ),
+            None,
+        )
+        capabilities = tuple(
+            item.get("logical_id")
+            for item in manifest.get("capabilities", [])
+            if isinstance(item, dict) and item.get("pack_id") == "kaoju"
+        )
+        if pack is None or pack.get("entry_skill") != contract.get("entry_skill"):
+            add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest entry skill differs from the checked contract")
+        current_commands = (
+            tuple(command for command in entrypoint.get("public_commands", []) if command != "help")
+            if entrypoint is not None
+            else ()
+        )
+        if entrypoint is None or current_commands != _contract_commands(contract):
+            add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest command order differs from the checked contract")
+        if set(capabilities) != set(skills) - {str(contract.get("entry_skill"))}:
+            add(diagnostics, repo_root, manifest_path, 1, "RPS026", "Kaoju manifest protected inventory differs from the checked contract")
+        return
+    try:
+        group = manifest["groups"]["kaoju"]
+    except (KeyError, TypeError) as exc:
         add(diagnostics, repo_root, manifest_path, 1, "RPS026", f"packaged Kaoju manifest cannot be checked: {exc}")
         return
     expected_skill_paths = [f"research-paradigm/kaoju/{name}" for name in skills]
@@ -2525,7 +2662,7 @@ def validate_kaoju_shared_references(
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
-    references = kaoju_root / "isomer-kaoju-shared" / "references"
+    references = research_family_skill_dir(kaoju_root, "isomer-kaoju-shared") / "references"
     actual = {path.name for path in references.glob("*.md") if path.is_file()} if references.exists() else set()
     for missing in sorted(EXPECTED_KAOJU_SHARED_REFERENCES - actual):
         add(diagnostics, repo_root, references / missing, 1, "RPS019", f"required Kaoju shared reference '{missing}' is missing")
@@ -2606,13 +2743,15 @@ def validate_kaoju_resource_and_shared_routing(
         if "## Plan First" not in text or "internal todo list or planning tool" not in text:
             add(diagnostics, repo_root, pipeline, 1, "RPS029", "Kaoju pipeline must preserve its upfront internal planning requirement")
 
-    shared = kaoju_root / "isomer-kaoju-shared"
-    for path in (shared / "SKILL.md", shared / "references" / "artifact-semantics.md"):
+    shared = research_family_skill_dir(kaoju_root, "isomer-kaoju-shared")
+    for path in (research_skill_entrypoint(shared), shared / "references" / "artifact-semantics.md"):
         if path.exists() and "ext kaoju bindings describe KAOJU:WHAT" not in path.read_text(encoding="utf-8"):
             add(diagnostics, repo_root, path, 1, "RPS029", "shared Kaoju artifact guidance must route through ext kaoju bindings describe KAOJU:WHAT")
 
-    for skill_dir in sorted(path for path in kaoju_root.glob("isomer-kaoju-*") if path.is_dir()):
-        skill_md = skill_dir / "SKILL.md"
+    for skill_dir in research_family_skill_dirs(kaoju_root, KAOJU_SKILL_NAME_RE):
+        if skill_dir.name == "isomer-ext-kaoju-entrypoint":
+            continue
+        skill_md = research_skill_entrypoint(skill_dir)
         if skill_dir.name != "isomer-kaoju-shared" and skill_md.exists():
             if "isomer-ext-kaoju-entrypoint->shared" not in skill_md.read_text(encoding="utf-8"):
                 add(
@@ -2675,7 +2814,7 @@ def validate_prerequisite_recovery_guidance(
     for relative, workflow_terms, document_terms in PREREQUISITE_RECOVERY_CONTRACTS:
         if relative.parts[0] not in active_families:
             continue
-        path = target / relative
+        path = resolve_research_relative_path(target, relative)
         checked_paths.add(path)
         if not path.exists():
             add(diagnostics, repo_root, path, 1, "RPS031", f"required prerequisite-recovery guidance '{relative.as_posix()}' is missing")
@@ -2696,7 +2835,7 @@ def validate_prerequisite_recovery_guidance(
     for relative, required_terms in PREREQUISITE_RECOVERY_REFERENCE_TERMS.items():
         if relative.parts[0] not in active_families:
             continue
-        path = target / relative
+        path = resolve_research_relative_path(target, relative)
         checked_paths.add(path)
         if not path.exists():
             add(diagnostics, repo_root, path, 1, "RPS031", f"required prerequisite-recovery reference '{relative.as_posix()}' is missing")
@@ -2771,7 +2910,8 @@ def validate_kaoju_artifact_bindings(
 ) -> None:
     if config.semantic_id_pattern is None or config.binding_filename is None:
         return
-    summary_path = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-semantics.md"
+    shared_dir = research_family_skill_dir(kaoju_root, "isomer-kaoju-shared")
+    summary_path = shared_dir / "references" / "artifact-semantics.md"
     registry_path = summary_path
     try:
         coverage = resource_coverage_diagnostics()
@@ -2837,7 +2977,7 @@ def validate_kaoju_artifact_bindings(
     for owner, expected_ids in sorted(produced.items()):
         if not expected_ids:
             continue
-        binding_path = kaoju_root / owner / config.binding_filename
+        binding_path = research_family_skill_dir(kaoju_root, owner) / config.binding_filename
         if not binding_path.exists():
             add(diagnostics, repo_root, binding_path, 1, "RPS022", f"Kaoju producer '{owner}' is missing its binding summary")
             continue
@@ -2861,7 +3001,7 @@ def validate_kaoju_artifact_bindings(
         for line_number, line in enumerate(read_lines(path), start=1):
             for semantic_id in re.findall(r"KAOJU:[A-Z0-9]+(?:-[A-Z0-9]+)*", line):
                 active_refs.setdefault(semantic_id, (path, line_number))
-            if path.name == "SKILL.md" and (
+            if is_research_skill_entrypoint(path) and (
                 (config.profile_namespace and config.profile_namespace in line)
                 or "--record-kind" in line
                 or "--semantic-label" in line
@@ -2871,7 +3011,7 @@ def validate_kaoju_artifact_bindings(
         if semantic_id not in bindings and semantic_id != "KAOJU:WHAT":
             add(diagnostics, repo_root, path, line_number, "RPS021", f"active Kaoju guidance references unregistered semantic id '{semantic_id}'")
 
-    shared_recording = kaoju_root / "isomer-kaoju-shared" / "references" / "artifact-recording.md"
+    shared_recording = shared_dir / "references" / "artifact-recording.md"
     if shared_recording.exists():
         shared_text = shared_recording.read_text(encoding="utf-8")
         for term in ("title", "summary", "artifact_family", "semantic_id", "artifact_type", "sections", "worker output policy", "latest", "revision", "lineage", "Markdown", "large-material"):
@@ -2891,7 +3031,8 @@ def validate_kaoju_architecture_guidance(kaoju_root: Path, repo_root: Path, diag
         "isomer-kaoju-export/SKILL.md": ("state DB", "isomer-cli ext kaoju wiki", "package-owned viewer", "Do not invoke", "typed Artifact service"),
     }
     for relative, terms in requirements.items():
-        path = kaoju_root / relative
+        relative_path = Path(relative)
+        path = research_family_skill_dir(kaoju_root, relative_path.parts[0]).joinpath(*relative_path.parts[1:])
         if not path.is_file():
             continue
         text = path.read_text(encoding="utf-8")
@@ -2924,12 +3065,9 @@ def validate_workspace_manager_team_specialization_gate(
     repo_root: Path,
     diagnostics: list[Diagnostic],
 ) -> None:
-    reference_path = (
-        target
-        / "deepsci"
-        / "isomer-deepsci-workspace-mgr"
-        / "references"
-        / "validation-and-blockers.md"
+    reference_path = resolve_research_relative_path(
+        target,
+        "deepsci/isomer-deepsci-workspace-mgr/references/validation-and-blockers.md",
     )
     if not reference_path.exists():
         return
@@ -2990,9 +3128,27 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
             if family.required:
                 add(diagnostics, repo_root, family_root, 1, "RPS007", f"{family.root_name}/ production skill directory is missing")
             continue
-        all_dirs = sorted(path for path in family_root.iterdir() if path.is_dir())
+        direct_dirs = sorted(path for path in family_root.iterdir() if path.is_dir())
+        nested_dirs = sorted(
+            child
+            for parent in direct_dirs
+            if parent.name.startswith("isomer-ext-")
+            and parent.name.endswith("-entrypoint")
+            and (parent / "subskills").is_dir()
+            for child in (parent / "subskills").iterdir()
+            if child.is_dir()
+        )
+        all_dirs = sorted((*direct_dirs, *nested_dirs))
         valid_skill_dirs = sorted(path for path in all_dirs if family.name_pattern.match(path.name))
-        candidate_dirs = sorted(path for path in all_dirs if (path / "SKILL.md").exists())
+        candidate_dirs = sorted(
+            path
+            for path in all_dirs
+            if not path.name.endswith("-welcome")
+            and (
+                (path / SYSTEM_SKILL_PUBLIC_ENTRYPOINT_FILENAME).exists()
+                or (path / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME).exists()
+            )
+        )
         for skill_dir in candidate_dirs:
             if skill_dir not in valid_skill_dirs:
                 if family.key == "deepsci" and skill_dir.name.startswith("isomer-rsch-"):
@@ -3027,14 +3183,20 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
 
     documents = collect_documents(target, repo_root, file_roles)
     deepsci_identity_ids = validate_deepsci_identity_inventory(skill_dirs, repo_root, diagnostics)
-    registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "tbd-surface-registry.md"
+    registry_path = resolve_research_relative_path(
+        target,
+        "deepsci/isomer-deepsci-shared/references/tbd-surface-registry.md",
+    )
     if registry_path.exists():
         canonical_rows = parse_registry_rows(read_lines(registry_path))
     else:
         canonical_rows = {}
     registered_ids = set(canonical_rows)
 
-    semantic_registry_path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "semantic-placeholders.md"
+    semantic_registry_path = resolve_research_relative_path(
+        target,
+        "deepsci/isomer-deepsci-shared/references/semantic-placeholders.md",
+    )
     if semantic_registry_path.exists():
         semantic_placeholder_ids = set(parse_semantic_placeholder_ids(read_lines(semantic_registry_path)))
         deepsci_identity_ids.update(semantic_placeholder_ids)
