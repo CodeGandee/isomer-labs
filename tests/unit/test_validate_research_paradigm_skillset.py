@@ -233,6 +233,22 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
             Return closeout: complete with the receipt and durable refs, closeout: not_applicable only without an operation set, or closeout: paused with diagnostics and the exact resume command.
             """,
         )
+        shared_skill = deepsci_root / "isomer-deepsci-shared" / "SKILL.md"
+        shared_skill.write_text(
+            shared_skill.read_text(encoding="utf-8")
+            + "\nContext preflight: Pin the reconciled Research Topic and worker selectors. DO NOT drop the reconciled `--topic` on later commands. DO NOT recover from a context-bearing typed failure by changing topic or copying files.\n",
+            encoding="utf-8",
+        )
+        write(
+            deepsci_root / "isomer-deepsci-shared" / "references" / "latest-context-preflight.md",
+            """
+            # Latest Context Preflight
+
+            Run project self location, then project self check --scope topic --topic <prompt-topic>. When unnamed, pin the returned Research Topic and its fallback source. Stop before durable writes on conflict. Do not choose from chat memory, sibling Topic Workspaces, or another default.
+
+            Every applicable topic- or worker-scoped command retains its selectors. Compare selected-context metadata on typed failures. If scope changes, rerun the context alignment and create a new verdict.
+            """,
+        )
         write(
             deepsci_root / "isomer-ext-deepsci-entrypoint" / "references" / "transition-rules.md",
             """
@@ -824,6 +840,73 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
         diagnostics = validator.validate_skillset(target, root)
 
         self.assertNotIn("RPS016", codes(diagnostics), messages(diagnostics))
+
+    def test_context_preflight_guidance_requires_selector_retention(self) -> None:
+        root, target = self.make_valid_skillset()
+        path = target / "deepsci" / "isomer-deepsci-shared" / "references" / "latest-context-preflight.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("Every applicable topic- or worker-scoped command", "Later commands"), encoding="utf-8")
+
+        diagnostics: list[object] = []
+        validator.validate_context_preflight_guidance(target, root, diagnostics)
+
+        self.assertIn("RPS033", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("Every applicable topic- or worker-scoped command" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_kaoju_context_preflight_guidance_accepts_intent_split(self) -> None:
+        root, target = self.make_valid_skillset()
+        self.add_valid_kaoju(target)
+        diagnostics: list[object] = []
+
+        validator.validate_context_preflight_guidance(target, root, diagnostics)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_packaged_context_preflight_guidance_contract(self) -> None:
+        root = self.make_root()
+        target = root / "skillset" / "research-paradigm"
+        shared_source = (
+            REPO_ROOT
+            / "src"
+            / "isomer_labs"
+            / "assets"
+            / "system_skills"
+            / "research-paradigm"
+            / "deepsci"
+            / "isomer-ext-deepsci-entrypoint"
+            / "subskills"
+            / "isomer-deepsci-shared"
+        )
+        shutil.copytree(shared_source, target / "deepsci" / "isomer-deepsci-shared")
+        self.add_valid_kaoju(target)
+        diagnostics: list[object] = []
+
+        validator.validate_context_preflight_guidance(target, root, diagnostics)
+
+        self.assertEqual([], messages(diagnostics))
+
+    def test_kaoju_context_preflight_guidance_requires_named_stock_export_route(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        path = kaoju / "isomer-kaoju-write" / "SKILL.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("manage-paper-template()->export()", "paper TeX export", 1), encoding="utf-8")
+        diagnostics: list[object] = []
+
+        validator.validate_context_preflight_guidance(target, root, diagnostics)
+
+        self.assertIn("RPS033", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("manage-paper-template()->export()" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_kaoju_context_preflight_guidance_rejects_missing_no_copy_rule(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        path = kaoju / "isomer-ext-kaoju-entrypoint" / "commands" / "manage-paper-template" / "export.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("Do not use a raw copy", "Do not improvise"), encoding="utf-8")
+        diagnostics: list[object] = []
+
+        validator.validate_context_preflight_guidance(target, root, diagnostics)
+
+        self.assertIn("RPS033", codes(diagnostics), messages(diagnostics))
+        self.assertTrue(any("Do not use a raw copy" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_worker_output_guidance_does_not_satisfy_latest_context_preflight(self) -> None:
         root, target = self.make_valid_skillset()

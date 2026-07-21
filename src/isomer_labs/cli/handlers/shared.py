@@ -109,13 +109,20 @@ from isomer_labs.runtime.store import (
 from isomer_labs.runtime.records import AdapterManifestRefRecord, AdapterReconciliationRecord, utc_timestamp
 from isomer_labs.runtime.validation import inspect_workspace_runtime, validate_workspace_runtime
 from isomer_labs.workspace.self_query import (
+    build_self_check_payload,
     build_self_env_payload,
     build_self_identity_payload,
+    build_self_location_payload,
     build_self_paths_payload,
     build_self_pixi_payload,
     build_self_queries_payload,
     build_self_show_payload,
     resolve_self_identity_contexts,
+)
+from isomer_labs.workspace.context_preflight import (
+    OperationScope,
+    resolve_ambient_workspace_location,
+    resolve_task_context_alignment,
 )
 from isomer_labs.teams.profiles import (
     parse_topic_agent_team_profile,

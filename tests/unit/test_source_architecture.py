@@ -121,6 +121,7 @@ CANONICAL_DOMAIN_PACKAGE_FILES = {
     "workspace": {
         "__init__.py",
         "actors.py",
+        "context_preflight.py",
         "guidance.py",
         "manifest.py",
         "path_resolution.py",

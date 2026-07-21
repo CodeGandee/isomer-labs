@@ -5466,6 +5466,11 @@ class IsomerCliTests(unittest.TestCase):
             rendered.index("isomer-cli --print-json project context show"),
         )
         self.assertIn("isomer-cli --print-json project self pixi", rendered)
+        self.assertIn("isomer-cli --print-json project self location", rendered)
+        self.assertIn(
+            "isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>",
+            rendered,
+        )
         self.assertIn("isomer-cli --print-json project self env", rendered)
         self.assertIn("isomer-cli --print-json project self paths <semantic-label>", rendered)
         self.assertIn("isomer-cli --print-json project paths get <semantic-label>", rendered)
@@ -5624,6 +5629,262 @@ class IsomerCliTests(unittest.TestCase):
             any("another Research Topic" in diagnostic["message"] for diagnostic in data["diagnostics"]),
             data["diagnostics"],
         )
+
+    def test_self_location_classifies_ambient_workspace_without_defaults(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        topic_nested = topic_workspace / "notes" / "nested"
+        topic_main_nested = topic_workspace / "repos" / "topic-main" / "src"
+        actor_nested = topic_workspace / "actors" / "operator" / "task"
+        agent_nested = topic_workspace / "agents" / "alice" / "task"
+        project_nested = root / "docs" / "nested"
+        for path in (project_nested, topic_nested, topic_main_nested, actor_nested, agent_nested):
+            path.mkdir(parents=True, exist_ok=True)
+        write(
+            topic_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            runtime_kind = "codex"
+            """,
+        )
+
+        cases = (
+            (root, "project_root", None, None),
+            (project_nested, "project_subpath", None, None),
+            (topic_nested, "topic_workspace", "default", None),
+            (topic_main_nested, "topic_main", "default", None),
+            (actor_nested, "topic_actor_workspace", "default", "operator"),
+            (agent_nested, "agent_workspace", "default", "alice"),
+        )
+        before = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        for cwd, workspace_kind, topic_id, worker_name in cases:
+            with self.subTest(workspace_kind=workspace_kind):
+                status, output = self.run_cli(["project", "self", "location", "--json"], cwd=cwd)
+                data = json.loads(output)
+                self.assertEqual(0, status, output)
+                self.assertFalse(data["mutated"])
+                self.assertEqual(workspace_kind, data["location"]["workspace_kind"])
+                self.assertEqual(str(cwd.resolve()), data["location"]["cwd"])
+                if topic_id is None:
+                    self.assertNotIn("research_topic_id", data["location"])
+                else:
+                    self.assertEqual(topic_id, data["location"]["research_topic_id"])
+                if worker_name is None:
+                    self.assertNotIn("worker_name", data["location"])
+                else:
+                    self.assertEqual(worker_name, data["location"]["worker_name"])
+        after = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        self.assertEqual(before, after)
+
+        outside = self.make_root()
+        status, output = self.run_cli(
+            ["project", "self", "location", "--project", str(root), "--json"],
+            cwd=outside,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("outside_project", data["location"]["workspace_kind"])
+        self.assertEqual(str(outside.resolve()), data["location"]["cwd"])
+
+    def test_self_location_canonicalizes_symlink_and_rejects_equal_specificity_owners(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        topic_workspace = self.default_topic_workspace(root)
+        agent_workspace = topic_workspace / "agents" / "alice"
+        nested = agent_workspace / "nested"
+        nested.mkdir(parents=True)
+        symlink = root / "alice-link"
+        symlink.symlink_to(agent_workspace, target_is_directory=True)
+
+        status, output = self.run_cli(["project", "self", "location", "--json"], cwd=symlink / "nested")
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("agent_workspace", data["location"]["workspace_kind"])
+        self.assertEqual(str(nested.resolve()), data["location"]["cwd"])
+        self.assertEqual(str(agent_workspace.resolve()), data["location"]["workspace_root"])
+
+        write(
+            topic_workspace / "topic-workspace.toml",
+            f"""
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            runtime_kind = "codex"
+            workspace_path = "{agent_workspace.relative_to(root).as_posix()}"
+            """,
+        )
+        status, output = self.run_cli(["project", "self", "location", "--json"], cwd=agent_workspace)
+        data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("ambiguous", data["location"]["workspace_kind"])
+        self.assertEqual(
+            {"agent_workspace", "topic_actor_workspace"},
+            {candidate["workspace_kind"] for candidate in data["location"]["candidates"]},
+        )
+        self.assertIn("ISO088", {diagnostic["code"] for diagnostic in data["diagnostics"]})
+
+    def test_self_check_separates_defaults_overrides_and_worker_posture(self) -> None:
+        root = self.make_root()
+        self.make_two_topic_project(root)
+
+        status, output = self.run_cli(["project", "self", "check", "--scope", "project", "--json"], cwd=root)
+        project_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("aligned", project_data["alignment"]["verdict"])
+        self.assertNotIn("research_topic_id", project_data["alignment"]["selected_target"])
+        self.assertEqual([], project_data["alignment"]["defaults_considered"])
+
+        status, output = self.run_cli(["project", "self", "check", "--scope", "topic", "--json"], cwd=root)
+        default_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("aligned", default_data["alignment"]["verdict"])
+        self.assertEqual("alpha", default_data["alignment"]["selected_target"]["research_topic_id"])
+        self.assertIn(
+            {
+                "kind": "research_topic",
+                "value": "alpha",
+                "source": "Project Manifest default",
+            },
+            default_data["alignment"]["defaults_considered"],
+        )
+        self.assertEqual("project_root", default_data["alignment"]["ambient_location"]["workspace_kind"])
+        self.assertFalse(default_data["alignment"]["acting_posture"]["established"])
+
+        status, output = self.run_cli(
+            ["project", "self", "check", "--scope", "topic", "--topic", "beta", "--json"],
+            cwd=root,
+        )
+        override_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("explicit_override", override_data["alignment"]["verdict"])
+        self.assertEqual("beta", override_data["alignment"]["selected_target"]["research_topic_id"])
+        self.assertEqual(
+            "explicit selector",
+            override_data["alignment"]["selected_target"]["sources"]["research_topic_id"],
+        )
+
+        beta_cwd = root / "topic-workspaces" / "beta" / "notes"
+        beta_cwd.mkdir(parents=True)
+        status, output = self.run_cli(
+            ["project", "self", "check", "--scope", "topic", "--topic", "alpha", "--json"],
+            cwd=beta_cwd,
+        )
+        cross_topic_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("explicit_override", cross_topic_data["alignment"]["verdict"])
+        self.assertEqual("beta", cross_topic_data["alignment"]["ambient_location"]["research_topic_id"])
+        self.assertEqual("alpha", cross_topic_data["alignment"]["selected_target"]["research_topic_id"])
+
+        alpha_workspace = root / "topic-workspaces" / "alpha"
+        write(
+            alpha_workspace / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "alpha"
+            topic_workspace_id = "alpha"
+
+            [[topic_actors]]
+            topic_actor_name = "operator"
+            runtime_kind = "codex"
+            """,
+        )
+        actor_workspace = alpha_workspace / "actors" / "operator"
+        actor_workspace.mkdir(parents=True)
+
+        status, output = self.run_cli(
+            ["project", "self", "check", "--scope", "topic-actor", "--topic", "alpha", "--json"],
+            cwd=root,
+        )
+        fallback_actor_data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("unresolved", fallback_actor_data["alignment"]["verdict"])
+        self.assertEqual("manifest default", fallback_actor_data["alignment"]["selected_target"]["sources"]["topic_actor_name"])
+        self.assertFalse(fallback_actor_data["alignment"]["acting_posture"]["established"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "self",
+                "check",
+                "--scope",
+                "topic-actor",
+                "--topic",
+                "alpha",
+                "--topic-actor",
+                "operator",
+                "--json",
+            ],
+            cwd=root,
+        )
+        mismatch_data = json.loads(output)
+        self.assertEqual(1, status)
+        self.assertEqual("conflict", mismatch_data["alignment"]["verdict"])
+        self.assertEqual(str(actor_workspace.resolve()), mismatch_data["alignment"]["expected_cwd"])
+        self.assertFalse(mismatch_data["alignment"]["ambient_cwd_matches_expected"])
+
+        status, output = self.run_cli(
+            [
+                "project",
+                "self",
+                "check",
+                "--scope",
+                "topic-actor",
+                "--topic",
+                "alpha",
+                "--topic-actor",
+                "operator",
+                "--json",
+            ],
+            cwd=actor_workspace,
+        )
+        aligned_actor_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertEqual("aligned", aligned_actor_data["alignment"]["verdict"])
+        self.assertTrue(aligned_actor_data["alignment"]["ambient_cwd_matches_expected"])
+
+    def test_self_check_agent_text_help_and_no_mutation(self) -> None:
+        root = self.make_root()
+        self.init_project(root)
+        agent_workspace = self.default_topic_workspace(root) / "agents" / "alice"
+        agent_workspace.mkdir(parents=True)
+        before = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+
+        status, output = self.run_cli(
+            ["project", "self", "check", "--scope", "agent", "--topic", "default", "--agent", "alice"],
+            cwd=agent_workspace,
+        )
+        self.assertEqual(0, status, output)
+        self.assertIn("Self Context Check", output)
+        self.assertIn("Target: default/alice", output)
+        self.assertIn("Ambient: agent_workspace", output)
+        self.assertIn("Verdict: aligned", output)
+
+        status, stdout, stderr = self.run_main(["project", "self", "--help"], cwd=root)
+        self.assertEqual(0, status, stdout)
+        self.assertEqual("", stderr)
+        self.assertIn("location", stdout)
+        self.assertIn("check", stdout)
+
+        status, output = self.run_cli(["project", "self", "queries", "--json"], cwd=root)
+        query_data = json.loads(output)
+        self.assertEqual(0, status, output)
+        commands = {query["command"] for query in query_data["queries"]}
+        self.assertIn("isomer-cli --print-json project self location", commands)
+        self.assertIn(
+            "isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>",
+            commands,
+        )
+        after = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+        self.assertEqual(before, after)
 
     def test_self_show_from_topic_main_cwd_is_small(self) -> None:
         root = self.make_root()

@@ -22,7 +22,7 @@ Shared defines the coordination contract for production DeepSci research skills.
 
 ### Latest Context Preflight
 
-Before a production DeepSci research skill writes or refreshes accepted durable research records, or makes durable route, claim, context, evidence, result, or publication-facing decisions, run `references/latest-context-preflight.md`. The preflight resolves current Effective Topic Context, Workspace Runtime state, relevant durable records, duplicate-record posture, prompt-versus-durable-context conflicts, and the storage-neutral `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` verdict before prompt memory, chat memory, prior prose, or remembered research state is trusted.
+Before a production DeepSci research skill writes or refreshes accepted durable research records, or makes durable route, claim, context, evidence, result, or publication-facing decisions, run `references/latest-context-preflight.md`. The preflight reconciles ambient location, prompt-selected task target, Effective Topic Context and manifest fallback, active acting posture, Workspace Runtime state, relevant durable records, duplicate-record posture, and prompt-versus-durable-context conflicts before producing the storage-neutral `DEEPSCI:LATEST-CONTEXT-SNAPSHOT` verdict. Pin the reconciled Research Topic and worker selectors on every applicable downstream CLI call before prompt memory, chat memory, prior prose, or remembered research state is trusted.
 
 Standalone source-only reading may skip the latest-context preflight until accepted Isomer records are written or refreshed. Worker Output Policy still governs plain generated files; the preflight applies before those files are promoted or recorded as accepted durable records.
 
@@ -80,6 +80,8 @@ After end callbacks, every production DeepSci workflow that opened an operation 
 - DO NOT treat shared as the owner of research work rather than the owner of vocabulary consistency.
 - DO NOT treat shared as the post-preparation bootstrap manager instead of routing to `isomer-deepsci-workspace-mgr`.
 - DO NOT let a durable record write, refresh, route decision, or claim decision proceed from prompt memory before `references/latest-context-preflight.md` checks current Isomer context.
+- DO NOT drop the reconciled `--topic` or applicable worker selector on later CLI calls, reuse a freshness verdict after a scope change, or treat a sole manifest actor as active posture.
+- DO NOT recover from a context-bearing typed failure by searching sibling Topic Workspaces, selecting another default, adding an alternate output path, or copying files into a worker workspace or Topic Main unless the user explicitly requests a separate unmanaged copy.
 - DO NOT bind placeholders to paths, database rows, or Artifact kinds before a storage-binding pass.
 - DO NOT invent a new semantic object when an existing registry entry already fits.
 - DO NOT let a route decision hide the evidence or blocker that made the route justified.

@@ -55,6 +55,20 @@ COMMAND_EXAMPLES: dict[str, tuple[str, ...]] = {
         "isomer-cli --print-json project validate",
         "isomer-cli --print-json project --root /path/to/project validate",
     ),
+    "project self": (
+        "isomer-cli --print-json project self location",
+        "isomer-cli --print-json project self check --scope topic --topic my-topic",
+        "isomer-cli --print-json project self queries",
+    ),
+    "project self location": (
+        "isomer-cli --print-json project self location",
+        "isomer-cli --print-json project --root /path/to/project self location",
+    ),
+    "project self check": (
+        "isomer-cli --print-json project self check --scope project",
+        "isomer-cli --print-json project self check --scope topic --topic my-topic",
+        "isomer-cli --print-json project self check --scope agent --topic my-topic --agent alice",
+    ),
     "schemas": (
         "isomer-cli --print-json schemas list",
     ),

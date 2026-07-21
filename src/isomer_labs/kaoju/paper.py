@@ -658,7 +658,12 @@ class KaojuPaperService:
         return {"ok": True, "mutated": True, "operation": "paper.build-pdf", "terminal_status": "complete", "entrypoint": entrypoint.as_posix(), "template_ref": selected_template_ref, "template_drift": drift, "pdf_inspection": "passed" if pdf_inspected else "required", "publication_gate": "approved" if publication_approved else "pending", "accepted": accepted, "build_run_ref": build_id, "compile_log_ref": _record_id(log_result), "pdf_ref": pdf_ref, "revision_log_ref": _record_id(revision_result), "validation_ref": _record_id(validation_result), "command_request": observation.get("request"), "fallback": fallback, "affected_refs": affected}
 
     def _record_file(self, record_id: str, *, expected: set[str], allow_directory: bool = False) -> tuple[Path, dict[str, object]]:
-        payload = self.artifacts.show(record_id, include_content=True)
+        try:
+            payload = self.artifacts.show(record_id, include_content=True)
+        except KaojuServiceError as exc:
+            if exc.code == "record_not_found":
+                raise KaojuServiceError("paper_input_missing", f"Paper input record not found: {record_id}") from exc
+            raise
         record = payload.get("record")
         if not isinstance(record, dict):
             raise KaojuServiceError("paper_input_missing", f"Paper input record not found: {record_id}")

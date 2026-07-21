@@ -236,6 +236,66 @@ EXPECTED_KAOJU_SHARED_REFERENCES = frozenset(
     }
 )
 
+CONTEXT_PREFLIGHT_GUIDANCE_REQUIRED_TERMS: dict[str, tuple[str, ...]] = {
+    "deepsci/isomer-deepsci-shared/references/latest-context-preflight.md": (
+        "project self location",
+        "project self check --scope topic",
+        "--topic <prompt-topic>",
+        "pin the returned Research Topic",
+        "Every applicable topic- or worker-scoped command",
+        "rerun the context alignment",
+        "Stop before durable writes",
+        "Do not choose from chat memory, sibling Topic Workspaces",
+        "selected-context metadata",
+    ),
+    "deepsci/isomer-deepsci-shared/SKILL.md": (
+        "Pin the reconciled Research Topic and worker selectors",
+        "DO NOT drop the reconciled `--topic`",
+        "DO NOT recover from a context-bearing typed failure",
+    ),
+    "kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (
+        "project self location",
+        "project self check --scope topic",
+        "pin the reconciled Research Topic",
+        "Compare returned selected-context metadata",
+        "DO NOT reuse a preflight",
+    ),
+    "kaoju/isomer-ext-kaoju-entrypoint/commands/manage-paper-template.md": (
+        "export the LaTeX template for me to edit",
+        "manage-paper-template()->export()",
+        "--topic TOPIC --kind latex --name main",
+        "without `--target`",
+        "KAOJU:PAPER-DRAFT-TEX",
+        "Do not search sibling topics",
+        "raw filesystem copy",
+    ),
+    "kaoju/isomer-ext-kaoju-entrypoint/commands/manage-paper-template/export.md": (
+        "--topic TOPIC --kind latex --name main",
+        "without `--target`",
+        "Compare returned selected-context metadata",
+        "Do not use a raw copy",
+        "separately requested unmanaged copy",
+    ),
+    "kaoju/isomer-ext-kaoju-entrypoint/commands/build-paper-pdf.md": (
+        "retain `--topic TOPIC`",
+        "init-tex --topic TOPIC",
+        "tex-status --topic TOPIC",
+        "build-pdf --topic TOPIC",
+        "without recomposition, named-template export, or stock mutation",
+        "Compare selected-context metadata",
+    ),
+    "kaoju/isomer-kaoju-write/SKILL.md": (
+        "Retain `--topic <topic>`",
+        "export the LaTeX template for me to edit",
+        "manage-paper-template()->export()",
+        "without `--target`",
+        "Do not invoke `init-tex`",
+        "KAOJU:PAPER-DRAFT-TEX",
+        "Compare returned selected-context metadata",
+        "Do not search sibling topics",
+    ),
+}
+
 PREREQUISITE_RECOVERY_CONTRACTS = (
     (
         Path("kaoju/isomer-ext-kaoju-entrypoint/SKILL.md"),
@@ -2126,6 +2186,22 @@ def validate_deepsci_latest_context_preflight(document: Document, repo_root: Pat
     add(diagnostics, repo_root, document.path, 1, "RPS016", message)
 
 
+def validate_context_preflight_guidance(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
+    """Require the shared target-pinning and Kaoju no-fallback contracts."""
+    has_kaoju = (target / "kaoju").exists()
+    for relative_path, required_terms in CONTEXT_PREFLIGHT_GUIDANCE_REQUIRED_TERMS.items():
+        if relative_path.startswith("kaoju/") and not has_kaoju:
+            continue
+        path = target / relative_path
+        if not path.exists():
+            add(diagnostics, repo_root, path, 1, "RPS033", f"required context-preflight guidance '{relative_path}' is missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in required_terms:
+            if term not in text:
+                add(diagnostics, repo_root, path, 1, "RPS033", f"context-preflight guidance must document '{term}'")
+
+
 def validate_deepsci_support_section_intros(
     document: Document,
     repo_root: Path,
@@ -3012,6 +3088,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
         validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
     validate_prerequisite_recovery_guidance(target, repo_root, diagnostics)
+    validate_context_preflight_guidance(target, repo_root, diagnostics)
     validate_deepsci_operation_set_closeout_references(target, repo_root, diagnostics)
     validate_global_isomer_cli_invocation(target, repo_root, diagnostics)
     validate_repository_command_boundary(target, repo_root, diagnostics)

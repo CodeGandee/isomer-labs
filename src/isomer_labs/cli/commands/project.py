@@ -61,8 +61,10 @@ from isomer_labs.cli.handlers.project import (
 )
 from isomer_labs.cli.handlers.schemas import _cmd_schemas_list
 from isomer_labs.cli.handlers.self import (
+    _cmd_self_check,
     _cmd_self_env,
     _cmd_self_identity,
+    _cmd_self_location,
     _cmd_self_paths,
     _cmd_self_pixi,
     _cmd_self_queries,
@@ -2124,6 +2126,77 @@ def register_project_commands(app: click.Group) -> None:
                 topic_actor_name=topic_actor_name,
                 topic_agent_team_profile_id=topic_agent_team_profile_id,
             )
+        )
+
+
+    @self_group.command(name="location", help="Classify cwd against registered workspace boundaries without using context defaults.")
+    @_common_options
+    @click.pass_context
+    def self_location_command(
+        ctx: click.Context,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+    ) -> int:
+        return _cmd_self_location(
+            _merge_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+            )
+        )
+
+
+    @self_group.command(name="check", help="Check an intended operation scope and selected target against ambient cwd.")
+    @_common_options
+    @_self_selection_options
+    @click.option(
+        "--scope",
+        type=click.Choice(["project", "topic", "topic-actor", "agent"]),
+        required=True,
+        help="Intended operation scope.",
+    )
+    @click.pass_context
+    def self_check_command(
+        ctx: click.Context,
+        scope: str,
+        project: str | None = None,
+        manifest: str | None = None,
+        output_format: str | None = None,
+        json_output: bool = False,
+        research_topic_id: str | None = None,
+        topic_workspace_id: str | None = None,
+        research_inquiry_id: str | None = None,
+        research_task_id: str | None = None,
+        run_id: str | None = None,
+        agent_team_instance_id: str | None = None,
+        agent_instance_id: str | None = None,
+        agent_name: str | None = None,
+        topic_actor_name: str | None = None,
+        topic_agent_team_profile_id: str | None = None,
+    ) -> int:
+        return _cmd_self_check(
+            _merge_self_options(
+                ctx,
+                project=project,
+                manifest=manifest,
+                output_format=output_format,
+                json_output=json_output,
+                research_topic_id=research_topic_id,
+                topic_workspace_id=topic_workspace_id,
+                research_inquiry_id=research_inquiry_id,
+                research_task_id=research_task_id,
+                run_id=run_id,
+                agent_team_instance_id=agent_team_instance_id,
+                agent_instance_id=agent_instance_id,
+                agent_name=agent_name,
+                topic_actor_name=topic_actor_name,
+                topic_agent_team_profile_id=topic_agent_team_profile_id,
+            ),
+            scope=scope,
         )
 
 

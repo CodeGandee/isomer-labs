@@ -19,6 +19,7 @@ from isomer_labs.workspace.path_resolution import (
 )
 from isomer_labs.workspace.pixi import resolve_topic_standalone_pixi_binding
 from isomer_labs.workspace.manifest import EffectiveAgentContext, EffectiveTopicActorContext
+from isomer_labs.workspace.context_preflight import AmbientWorkspaceLocation, ContextAlignmentResult
 
 
 SELF_QUERY_COMMANDS = (
@@ -31,6 +32,16 @@ SELF_QUERY_COMMANDS = (
         "name": "identity",
         "command": "isomer-cli --print-json project self identity",
         "purpose": "Resolved topic, Topic Actor, Agent, and source metadata.",
+    },
+    {
+        "name": "location",
+        "command": "isomer-cli --print-json project self location",
+        "purpose": "Canonical cwd and matched registered workspace boundary.",
+    },
+    {
+        "name": "check",
+        "command": "isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>",
+        "purpose": "Compare an intended operation scope and target with ambient location.",
     },
     {
         "name": "pixi",
@@ -113,6 +124,34 @@ def build_self_identity_payload(
         "ok": not has_errors(diagnostics),
         "mutated": False,
         "identity": identity,
+    }
+
+
+def build_self_location_payload(
+    location: AmbientWorkspaceLocation | None,
+    *,
+    diagnostics: list[Diagnostic],
+) -> dict[str, object]:
+    """Build an ambient-location-only self payload."""
+
+    return {
+        "ok": location is not None and not has_errors(diagnostics),
+        "mutated": False,
+        "location": location.to_json() if location is not None else None,
+    }
+
+
+def build_self_check_payload(
+    alignment: ContextAlignmentResult | None,
+    *,
+    diagnostics: list[Diagnostic],
+) -> dict[str, object]:
+    """Build a task-context alignment payload."""
+
+    return {
+        "ok": alignment is not None and not alignment.blocking and not has_errors(diagnostics),
+        "mutated": False,
+        "alignment": alignment.to_json() if alignment is not None else None,
     }
 
 

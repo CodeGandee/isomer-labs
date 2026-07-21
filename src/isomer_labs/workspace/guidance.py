@@ -24,6 +24,8 @@ PIXI_PYTHON_COMMAND = "pixi run --manifest-path <manifest_path> --environment <p
 QUERY_COMMANDS = (
     "isomer-cli --print-json project self show",
     "isomer-cli --print-json project self identity",
+    "isomer-cli --print-json project self location",
+    "isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>",
     "isomer-cli --print-json project self pixi",
     "isomer-cli --print-json project self env",
     "isomer-cli --print-json project self paths <semantic-label>",

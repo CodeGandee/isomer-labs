@@ -22,6 +22,7 @@ from isomer_labs.kaoju.contracts import (
     load_contract,
     resource_versions,
 )
+from isomer_labs.kaoju.context import selected_context_payload
 from isomer_labs.kaoju.paper import KaojuPaperService, REQUIRED_PAPER_SECTIONS
 from isomer_labs.kaoju.templates import DEFAULT_TEMPLATE_NAME, KaojuTemplateService
 from isomer_labs.kaoju.wiki import KaojuWikiService
@@ -414,7 +415,12 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @click.option("--citation-ref", "citation_refs", multiple=True, help="Citation input Artifact ref.")
     @click.pass_context
     def paper_init_tex(ctx: click.Context, **values: Any) -> int:
-        return _with_kaoju_service(ctx, values, lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).init_tex(draft_ref=str(values["draft_ref"]), content_template_ref=values.get("content_template_ref"), template_myst_ref=values.get("template_myst_ref"), latex_template_name=values.get("latex_template_name"), latex_template_ref=values.get("latex_template_ref"), paper_line=str(values["paper_line"]), venue=str(values["venue"]), document_class=str(values["document_class"]), toolchain_policy=str(values["toolchain_policy"]), citation_refs=list(values["citation_refs"])))
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).init_tex(draft_ref=str(values["draft_ref"]), content_template_ref=values.get("content_template_ref"), template_myst_ref=values.get("template_myst_ref"), latex_template_name=values.get("latex_template_name"), latex_template_ref=values.get("latex_template_ref"), paper_line=str(values["paper_line"]), venue=str(values["venue"]), document_class=str(values["document_class"]), toolchain_policy=str(values["toolchain_policy"]), citation_refs=list(values["citation_refs"])),
+            report_selected_context=True,
+        )
 
     @paper_group.command(name="tex-status", help="Report stocked-LaTeX drift and paper-local TeX repair drift.")
     @common_options
@@ -422,7 +428,12 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @click.option("--draft-tex-ref", required=True)
     @click.pass_context
     def paper_tex_status(ctx: click.Context, **values: Any) -> int:
-        return _with_kaoju_service(ctx, values, lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).tex_status(draft_tex_ref=str(values["draft_tex_ref"])))
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).tex_status(draft_tex_ref=str(values["draft_tex_ref"])),
+            report_selected_context=True,
+        )
 
     @paper_group.command(name="build-pdf", help="Build an inspected TeX draft through the document_build extension point.")
     @common_options
@@ -438,7 +449,12 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @click.option("--timeout", "timeout_seconds", type=float, default=120.0, show_default=True)
     @click.pass_context
     def paper_build_pdf(ctx: click.Context, **values: Any) -> int:
-        return _with_kaoju_service(ctx, values, lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).build_pdf(draft_tex_ref=str(values["draft_tex_ref"]), template_tex_ref=values.get("template_tex_ref"), paper_line=str(values["paper_line"]), audit_ref=str(values["audit_ref"]), inspected=bool(values["inspected"]), pdf_inspected=bool(values["pdf_inspected"]), publication_approved=bool(values["publication_approved"]), timeout_seconds=float(values["timeout_seconds"]), toolchain=values.get("toolchain")))
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).build_pdf(draft_tex_ref=str(values["draft_tex_ref"]), template_tex_ref=values.get("template_tex_ref"), paper_line=str(values["paper_line"]), audit_ref=str(values["audit_ref"]), inspected=bool(values["inspected"]), pdf_inspected=bool(values["pdf_inspected"]), publication_approved=bool(values["publication_approved"]), timeout_seconds=float(values["timeout_seconds"]), toolchain=values.get("toolchain")),
+            report_selected_context=True,
+        )
 
     @kaoju_group.group(name="wiki", help="Export accepted survey records and manage the package-owned local viewer.")
     def wiki_group() -> None:
@@ -480,7 +496,13 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
         return _with_kaoju_service(ctx, values, lambda context: KaojuWikiService(context, env=os.environ, cwd=Path.cwd()).start(viewer_target=viewer_target, host=str(values["host"]), port=int(values["port"]), network_exposure_approved=bool(values["network_exposure_approved"]), timeout_seconds=float(values["timeout_seconds"]), dry_run=bool(values["dry_run"])))
 
 
-def _with_kaoju_service(ctx: click.Context, values: dict[str, Any], callback: ServiceCallback) -> int:
+def _with_kaoju_service(
+    ctx: click.Context,
+    values: dict[str, Any],
+    callback: ServiceCallback,
+    *,
+    report_selected_context: bool = False,
+) -> int:
     options = merge_options(ctx, project=values.get("project"), manifest=values.get("manifest"), research_topic_id=values.get("research_topic_id"), topic_workspace_id=values.get("topic_workspace_id"), research_inquiry_id=values.get("research_inquiry_id"), research_task_id=values.get("research_task_id"), run_id=values.get("run_id"), agent_team_instance_id=values.get("agent_team_instance_id"), agent_instance_id=values.get("agent_instance_id"), topic_agent_team_profile_id=values.get("topic_agent_team_profile_id"))
     context, diagnostics = _context_for_options(options)
     if context is None:
@@ -492,6 +514,9 @@ def _with_kaoju_service(ctx: click.Context, values: dict[str, Any], callback: Se
             payload = exc.payload()
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             payload = {"ok": False, "mutated": False, "error": {"code": "invalid_request", "message": str(exc)}, "recovery_actions": []}
+        if report_selected_context or "kind" in values:
+            payload["selected_context"] = selected_context_payload(context)
+            _add_explicit_topic_recovery(payload)
     if "kind" in values:
         selection_source = ctx.get_parameter_source("kind")
         payload["template_kind_selection"] = {
@@ -508,6 +533,18 @@ def _with_kaoju_service(ctx: click.Context, values: dict[str, Any], callback: Se
         suffix = f": {', '.join(str(value) for value in refs)}" if isinstance(refs, list) and refs else ""
         lines = [f"{operation} succeeded{suffix}"]
     return emit_output(f"ext.kaoju.{operation}", options, payload, diagnostics, lines)
+
+
+def _add_explicit_topic_recovery(payload: dict[str, object]) -> None:
+    error = payload.get("error")
+    if not isinstance(error, dict) or error.get("code") != "template_not_found":
+        return
+    action = "Rerun with --topic <research-topic-id> to select the intended Topic Workspace explicitly."
+    raw_actions = payload.get("recovery_actions")
+    actions = [str(value) for value in raw_actions] if isinstance(raw_actions, list) else []
+    if action not in actions:
+        actions.append(action)
+    payload["recovery_actions"] = actions
 
 
 def _template_service(context: EffectiveTopicContext, values: Mapping[str, Any]) -> KaojuTemplateService:

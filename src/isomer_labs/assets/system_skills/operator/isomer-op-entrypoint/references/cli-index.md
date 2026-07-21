@@ -3,10 +3,11 @@
 ## Workflow
 
 1. Decide whether the user asked for CLI execution, CLI discovery, or a task that should route to a skill before CLI use.
-2. Prefer safe read-only discovery commands before mutation when Project, Topic, identity, runtime, or path context is unclear.
-3. Select the smallest CLI command family that owns the operation and inspect its `--help` output when flags or exact command shape are needed.
-4. Preserve owner-skill boundaries: use CLI commands directly for CLI-owned operations, but route workflow-level setup, readiness, and research work through the owning skill.
-5. Report commands run, read-only or mutation posture, changed paths or records, blockers, and next action.
+2. Classify the operation scope, extract prompt targets, and use `project self location` plus `project self check --scope <scope>` before context-sensitive mutation.
+3. Pin every accepted Research Topic, Topic Actor, or Agent selector on applicable downstream commands; a later cwd change must not rediscover or replace the target.
+4. Select the smallest CLI command family that owns the operation and inspect its `--help` output when flags or exact command shape are needed.
+5. Preserve owner-skill boundaries: use CLI commands directly for CLI-owned operations, but route workflow-level setup, readiness, and research work through the owning skill.
+6. Report commands run, read-only or mutation posture, selected target and source, alignment verdict, changed paths or records, blockers, and next action.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step CLI routing plan from current context, available command families, owner boundaries, and required approvals, then execute the plan or report the blocker.
 
@@ -16,6 +17,8 @@ Use these before ambiguous mutation:
 
 - `isomer-cli project self queries`
 - `isomer-cli project self show`
+- `isomer-cli --print-json project self location`
+- `isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>`
 - `isomer-cli project self identity`
 - `isomer-cli project self paths`
 - `isomer-cli project validate`
@@ -38,7 +41,7 @@ Use these before ambiguous mutation:
 | Project initialization, validation, doctor, cleanup, or generated content root relocation. | `isomer-cli project init`, `validate`, `doctor`, `cleanup`, `content-root ...` |
 | Research Topic CRUD. | `isomer-cli project topics ...` |
 | Topic Workspace listing and inspection. | `isomer-cli project workspaces ...` |
-| Effective Topic Context and self context. | `isomer-cli project context ...`, `isomer-cli project self ...` |
+| Effective Topic Context, ambient workspace location, task-target alignment, and progressive self context. | `isomer-cli project context ...`, `isomer-cli project self location`, `isomer-cli project self check ...`, `isomer-cli project self ...` |
 | Workspace Path Resolution. | `isomer-cli project paths ...` |
 | Topic repositories and topic-main guidance. | `isomer-cli project repos ...`, `isomer-cli project topic-main-guidance ...` |
 | Topic Actors and Topic Actor Workspaces. | `isomer-cli project topic-actors ...` |

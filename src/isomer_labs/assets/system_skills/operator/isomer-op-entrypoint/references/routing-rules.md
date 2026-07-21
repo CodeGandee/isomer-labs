@@ -16,12 +16,14 @@ skill_invocation_notation: >
 2. If the user explicitly names a skill or CLI family, prefer that route unless it conflicts with owner boundaries or required readiness.
 3. If no route is explicit, classify the task as operator workflow, service support, misc helper, extension research work, or CLI command-family work.
 4. Before selecting Topic Team Specialization, require an explicit specialization invocation or prompt or authoritative context that establishes a formal Agent Team target. Generic topic preparation, launch-facing work, readiness gaps, missing summaries, and missing Agent Workspaces are insufficient.
-5. Run read-only discovery before ambiguous mutation, especially when Project, Topic, actor, agent, workspace, DeepSci readiness, or Kaoju survey context is unclear.
-6. Before optional-extension routing, treat a Project declaration as authoritative routing intent. Delegate current v5 receipt, explicit-root, and limited live-inventory resolution plus any authorized additive registration to `isomer-op-entrypoint->system-skills`. Register only a verified current-v5 complete public-pair pack.
-7. Select one route as the initial owner route and let its owner preflight target prerequisites before mutation.
-8. If the target is ready, proceed through the selected route; if a known producer can satisfy a missing input, return paused prerequisite recovery rather than a terminal blocker.
-9. Present the recovery choices in `prerequisite-recovery.md` unless the user already gave explicit target-scoped run-to authorization.
-10. During authorized run-to, coordinate the dependency closure across owners and stop after the original target or at a nondelegable boundary.
+5. Classify operation scope as `project`, `topic`, `topic-actor`, or `agent`; convert prompt targets to explicit selectors; and run `project self location` plus `project self check --scope <scope>` before context-sensitive mutation.
+6. Stop on unresolved or conflicting target evidence. An explicit cross-topic target may be an `explicit_override`, while a manifest default is a visible fallback only. Project scope never inherits topic scope merely because a default exists.
+7. Pin the accepted topic and worker selectors for every applicable downstream command. Rerun alignment after an intentional scope change, and require an explicit worker or active switch posture rather than a sole manifest actor for worker-scoped work.
+8. Before optional-extension routing, treat a Project declaration as authoritative routing intent. Delegate current v5 receipt, explicit-root, and limited live-inventory resolution plus any authorized additive registration to `isomer-op-entrypoint->system-skills`. Register only a verified current-v5 complete public-pair pack.
+9. Select one route as the initial owner route and let its owner preflight target prerequisites before mutation.
+10. If the target is ready, proceed through the selected route; if a known producer can satisfy a missing input, return paused prerequisite recovery rather than a terminal blocker.
+11. Present the recovery choices in `prerequisite-recovery.md` unless the user already gave explicit target-scoped run-to authorization.
+12. During authorized run-to, coordinate the dependency closure across owners and stop after the original target or at a nondelegable boundary.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build the smallest safe routing plan from candidate routes, owner boundaries, read-only context evidence, and missing inputs, then execute the plan or stop on a concrete blocker.
 
@@ -54,6 +56,8 @@ Proceed when the user supplied a concrete task, the selected route owns it, and 
 When an ordinary concrete task has missing or stale inputs with known in-scope producers, pause before invoking those producers and offer run-to-target, next-prerequisite-only, alternate-route, and stop choices. `Do <task>` alone does not authorize prerequisite mutation. Explicit `run to <task>`, `automate the prerequisites and then do <task>`, or an equivalent choice authorizes only the named target's transitive prerequisite closure and the target itself.
 
 During run-to, use the native planning tool, preserve each owner's authority and separate durable execution records, refresh state after bounded results, and stop after the target. Pause at human Gates, material ambiguity, destructive or irreversible action, credentials or restricted data, material license decisions, unexpected resource authorization, public exposure, publication or submission, and repeated recovery without new accepted state.
+
+When a typed command returns not-found, wrong-scope, or context-conflict diagnostics, compare its selected-context metadata with the pinned target. Correct selectors, rerun alignment, or route to the owning readiness workflow. Do not search sibling Topic Workspaces, select another manifest default, add an alternate target, or copy files into a Topic Actor Workspace, Agent Workspace, Topic Main, or arbitrary directory unless the user explicitly requests a separate unmanaged copy operation.
 
 Use `blocked` when required context cannot be resolved safely, the selected route would bypass owner workflow boundaries, mutation needs approval not present in the prompt, or no available authorized owner can perform the external state change needed by the target. Use `paused` rather than `blocked` when an available in-scope owner can produce or repair the missing state.
 

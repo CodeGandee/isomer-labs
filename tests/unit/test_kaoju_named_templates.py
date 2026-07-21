@@ -14,7 +14,7 @@ from unittest.mock import patch
 from isomer_labs import cli
 from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
-from isomer_labs.kaoju.paper import _compose_latex_tree
+from isomer_labs.kaoju.paper import KaojuPaperService, _compose_latex_tree
 from isomer_labs.kaoju.template_support import _replace_directory
 from isomer_labs.models import SelectionRequest
 from isomer_labs.project import discover_project
@@ -77,7 +77,10 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         return status, json.loads(stdout.getvalue())
 
     def template(self, *arguments: str) -> tuple[int, dict[str, object]]:
-        return self.run_cli(
+        return self.template_for_topic("alpha", *arguments)
+
+    def template_for_topic(self, topic: str | None, *arguments: str) -> tuple[int, dict[str, object]]:
+        command = [
             "ext",
             "kaoju",
             "paper",
@@ -85,9 +88,73 @@ class KaojuNamedTemplateTests(unittest.TestCase):
             *arguments,
             "--project",
             str(self.root),
-            "--topic",
-            "alpha",
+        ]
+        if topic is not None:
+            command.extend(("--topic", topic))
+        status, payload = self.run_cli(*command)
+        selected_context = payload.get("selected_context")
+        self.assertIsInstance(selected_context, dict, payload)
+        assert isinstance(selected_context, dict)
+        expected_topic = topic or "alpha"
+        self.assertEqual(expected_topic, selected_context["research_topic_id"])
+        self.assertEqual(expected_topic, selected_context["topic_workspace_id"])
+        self.assertEqual(
+            str(self.root / "topic-workspaces" / expected_topic),
+            selected_context["topic_workspace_path"],
         )
+        expected_source = "explicit selector" if topic is not None else "Project Manifest default"
+        self.assertEqual(expected_source, selected_context["sources"]["research_topic_id"])
+        return status, payload
+
+    def add_beta_topic(self) -> None:
+        _write(
+            self.root / ".isomer-labs/manifest.toml",
+            """
+            schema_version = "isomer-project-manifest.v1"
+            [defaults]
+            research_topic_id = "alpha"
+            topic_workspace_id = "alpha"
+            [[research_topics]]
+            id = "alpha"
+            config_path = ".isomer-labs/research-topics/alpha.toml"
+            topic_workspace_id = "alpha"
+            status = "active"
+            [[research_topics]]
+            id = "beta"
+            config_path = ".isomer-labs/research-topics/beta.toml"
+            topic_workspace_id = "beta"
+            status = "active"
+            [[topic_workspaces]]
+            id = "alpha"
+            research_topic_id = "alpha"
+            path = "topic-workspaces/alpha"
+            status = "active"
+            [[topic_workspaces]]
+            id = "beta"
+            research_topic_id = "beta"
+            path = "topic-workspaces/beta"
+            status = "active"
+            """,
+        )
+        _write(
+            self.root / ".isomer-labs/research-topics/beta.toml",
+            """
+            schema_version = "isomer-research-topic-config.v1"
+            research_topic_id = "beta"
+            topic_statement = "Beta survey"
+            """,
+        )
+        _write(self.root / "topic-workspaces/beta/isomer-topic-workspace-summary.md", "# Beta\n")
+        status, payload = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runtime",
+            "init",
+            "--topic",
+            "beta",
+        )
+        self.assertEqual(0, status, payload)
 
     def prepared_tree(self, name: str, body: str = "# Paper\n") -> Path:
         root = self.root / "prepared" / name
@@ -153,6 +220,167 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         status, payload = self.template("create", "--name", "main", "--from", str(tree), "--metadata-file", str(metadata), "--actor", "agent:test")
         self.assertEqual(0, status, payload)
         return payload
+
+    def test_selected_context_is_pinned_for_multi_topic_templates_and_tex_commands(self) -> None:
+        self.add_beta_topic()
+
+        status, default_list = self.template_for_topic(None, "list", "--kind", "latex")
+        self.assertEqual(0, status, default_list)
+        self.assertEqual("Project Manifest default", default_list["selected_context"]["sources"]["research_topic_id"])
+
+        latex_tree = self.root / "prepared/beta-latex-main"
+        _write(
+            latex_tree / "template.tex",
+            "\\documentclass{article}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n",
+        )
+        metadata = self.root / "prepared/beta-latex-metadata.json"
+        _write(
+            metadata,
+            json.dumps(
+                {
+                    "entrypoint": "template.tex",
+                    "extensions": {
+                        "latex": {
+                            "composition_mode": "marker",
+                            "marker": "% ISOMER_BODY",
+                            "build_profile": "pdflatex",
+                            "source_provenance": "fixture:beta-latex-main",
+                            "license_posture": "test-only",
+                        }
+                    },
+                }
+            )
+            + "\n",
+        )
+        status, created = self.template_for_topic(
+            "beta",
+            "create",
+            "--kind",
+            "latex",
+            "--from",
+            str(latex_tree),
+            "--metadata-file",
+            str(metadata),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, created)
+
+        status, missing_default = self.template_for_topic(None, "show", "--kind", "latex", "--name", "main")
+        self.assertEqual(1, status)
+        self.assertEqual("template_not_found", missing_default["error"]["code"])
+        self.assertTrue(any("--topic <research-topic-id>" in action for action in missing_default["recovery_actions"]))
+
+        status, selected = self.template_for_topic("beta", "show", "--kind", "latex", "--name", "main")
+        self.assertEqual(0, status, selected)
+        self.assertEqual(created["stable_ref"], selected["template"]["stable_ref"])
+
+        status, exported = self.template_for_topic("beta", "export", "--kind", "latex", "--actor", "agent:test")
+        self.assertEqual(0, status, exported)
+        expected_export = self.root / "topic-workspaces/beta/intent/derived/writing-template/latex/main"
+        self.assertEqual(str(expected_export), exported["target"])
+        self.assertTrue((expected_export / ".isomer-template-export.json").is_file())
+        self.assertNotIn("/actors/", str(exported["target"]))
+        self.assertNotIn("/agents/", str(exported["target"]))
+
+        success_cases = (
+            (
+                "init_tex",
+                (
+                    "init-tex",
+                    "--draft-ref",
+                    "artifact-draft",
+                    "--content-template-ref",
+                    "artifact-content-template",
+                    "--paper-line",
+                    "beta-paper",
+                ),
+                "paper.init-tex",
+            ),
+            (
+                "tex_status",
+                ("tex-status", "--draft-tex-ref", "artifact-draft-tex"),
+                "paper.tex-status",
+            ),
+            (
+                "build_pdf",
+                (
+                    "build-pdf",
+                    "--draft-tex-ref",
+                    "artifact-draft-tex",
+                    "--paper-line",
+                    "beta-paper",
+                    "--audit-ref",
+                    "artifact-audit",
+                ),
+                "paper.build-pdf",
+            ),
+        )
+        for method_name, arguments, operation in success_cases:
+            with self.subTest(method_name=method_name):
+                with patch.object(
+                    KaojuPaperService,
+                    method_name,
+                    return_value={"ok": True, "mutated": False, "operation": operation, "diagnostics": []},
+                ):
+                    status, payload = self.run_cli(
+                        "ext",
+                        "kaoju",
+                        "paper",
+                        *arguments,
+                        "--project",
+                        str(self.root),
+                        "--topic",
+                        "beta",
+                    )
+                self.assertEqual(0, status, payload)
+                self.assertEqual("beta", payload["selected_context"]["research_topic_id"])
+                self.assertEqual("explicit selector", payload["selected_context"]["sources"]["research_topic_id"])
+
+        failure_cases = (
+            (
+                "paper_input_missing",
+                (
+                    "init-tex",
+                    "--draft-ref",
+                    "missing-draft",
+                    "--content-template-ref",
+                    "missing-content-template",
+                    "--paper-line",
+                    "beta-paper",
+                ),
+            ),
+            ("paper_input_missing", ("tex-status", "--draft-tex-ref", "missing-draft-tex")),
+            (
+                "paper_tex_inspection_required",
+                (
+                    "build-pdf",
+                    "--draft-tex-ref",
+                    "missing-draft-tex",
+                    "--paper-line",
+                    "beta-paper",
+                    "--audit-ref",
+                    "missing-audit",
+                ),
+            ),
+        )
+        for error_code, arguments in failure_cases:
+            with self.subTest(error_code=error_code, command=arguments[0]):
+                status, payload = self.run_cli(
+                    "ext",
+                    "kaoju",
+                    "paper",
+                    *arguments,
+                    "--project",
+                    str(self.root),
+                    "--topic",
+                    "beta",
+                )
+                self.assertEqual(1, status)
+                self.assertIn("error", payload, payload)
+                self.assertEqual(error_code, payload["error"]["code"])
+                self.assertEqual("beta", payload["selected_context"]["research_topic_id"])
+                self.assertEqual(str(self.root / "topic-workspaces/beta"), payload["selected_context"]["topic_workspace_path"])
 
     def test_empty_content_migration_is_an_idempotent_noop(self) -> None:
         status, migrated = self.template("migrate", "--kind", "content", "--apply", "--actor", "agent:migration")

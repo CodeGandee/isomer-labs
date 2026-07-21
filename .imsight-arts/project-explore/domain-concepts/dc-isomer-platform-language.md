@@ -54,6 +54,22 @@ _Avoid_: Run, execution episode, quest state, hidden runtime, project config
 The resolved process-local context that `isomer-cli`, Workspace Path Resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations consume for a topic-scoped command. It includes validated Project, Research Topic, Research Topic Config, Topic Workspace, Project Manifest topic Pixi environment bindings and Topic Workspace Pixi workspace bindings when relevant, optional lifecycle refs, the Topic Agent Team Profile default, Execution Adapter refs, Capability Binding refs, Skill Binding projection refs, Research Operation Extension Point refs, Gate policy refs, scheduler policy refs, baseline-waiver policy refs, literature provider refs, Artifact Format Profile refs, Artifact Extension refs, and source metadata. It is not a lifecycle object, not Workspace Runtime state, and not stored wholesale on every Run.
 _Avoid_: Active workspace, runtime database, lifecycle state, durable context blob
 
+**Ambient Workspace Location**:
+The read-only process-local classification of canonical cwd against Project Manifest-registered and semantically resolved Project, Topic Workspace, Topic Main Development Repository, Topic Actor Workspace, and Agent Workspace boundaries. It reports the most-specific compatible containing root and its owning Research Topic or worker when the path proves that ownership. Project Manifest defaults and Effective Context candidates do not participate, so Project-root cwd remains Project location even when a default Research Topic exists. It is physical routing evidence, not an OS identity, permission grant, security principal, or access-control boundary.
+_Avoid_: Effective Topic Context, active identity, authorization context, inferred default workspace
+
+**Task Context Target**:
+The process-local Project, Research Topic, Topic Actor, or Agent target selected for one intended operation after prompt selectors, Effective Context sources, Ambient Workspace Location, defaults, and any Project Operator Acting Posture are reconciled. An accepted target is pinned as explicit downstream command selectors until the task changes scope or reruns alignment. It is invocation context, not durable Project state, Workspace Runtime state, or authorization.
+_Avoid_: current workspace, global active topic, access-control subject, durable task identity
+
+**Manifest Context Fallback**:
+A Project Manifest or Topic Workspace Manifest default that can supply a low-precedence Effective Context candidate when no stronger explicit, environment, cwd, lifecycle, or recorded source applies. A fallback must remain visible as source metadata. It does not prove Ambient Workspace Location, establish Project Operator Acting Posture, or override a prompt-selected Task Context Target.
+_Avoid_: ambient location, active switch, authoritative prompt target, implicit authorization
+
+**Project Operator Acting Posture**:
+Instruction-level current-session planning context created by an explicit switch to act as or on behalf of one Topic Actor or Agent. Its envelope contains target kind, Research Topic, worker name, resolved worker workspace cwd, persistence mode, and provenance wording. One-task and `act-as` posture expires after the bounded task; persistent posture lasts only in the current Project Operator Session until reset or replacement. It is not written to the Project Manifest, local active context, Topic Workspace Manifest, Workspace Runtime, or a cross-session current-identity file, and a Manifest Context Fallback never activates it.
+_Avoid_: Effective Agent Context, Effective Topic Actor Context, OS impersonation, security principal, shared current identity
+
 **Effective Agent Context**:
 The resolved process-local agent identity used by agent-scoped commands and semantic path queries. It includes Agent Name, optional Agent Instance id, Agent Workspace path, and source metadata from explicit selectors, supported environment context, cwd-derived Agent Workspace matching, or recorded runtime context. It is a convenience for path resolution and is not filesystem-grade identity or access control.
 _Avoid_: access token, OS user, security principal, durable Agent Instance record
@@ -606,6 +622,10 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - A **Workspace Runtime** stores, indexes, validates, and recovers **Run** records, but it is not itself a Run.
 - **Effective Topic Context** is resolved before topic-scoped CLI behavior and supplies selected refs to Workspace Path Resolution, Run initialization, **Execution Adapter Command Requests**, and provider-backed extension operations without becoming durable research state.
 - **Effective Topic Actor Context** is resolved before actor-scoped path behavior and supplies the selected **Topic Actor** to Workspace Path Resolution without becoming **Agent Instance** identity.
+- **Ambient Workspace Location** reports where canonical cwd falls among registered semantic boundaries without using manifest defaults.
+- A **Task Context Target** reconciles intended operation scope and source evidence, then remains pinned through applicable downstream commands until scope changes.
+- A **Manifest Context Fallback** can supply an Effective Context candidate but never proves location or activates **Project Operator Acting Posture**.
+- **Project Operator Acting Posture** remains current-session instruction state and is not durable identity, runtime identity, or access control.
 
 ### Team and Agent Execution
 
@@ -716,6 +736,7 @@ _Avoid_: CSS theme, generated frontend layout code, canonical research state
 - Do not call **Project** or **Project Config Directory** a workspace.
 - Use **Research Topic Config** for topic-specific defaults and refs. Do not use it for **Workspace Runtime** state, command logs, research records, rich Artifact contents, provider payloads, scheduler internals, command outputs, or secrets.
 - Use **Effective Topic Context** for resolved process input to topic-scoped command behavior, path resolution, Run initialization, Execution Adapter Command Requests, and provider-backed extension operations. Do not describe it as durable lifecycle state or a full snapshot stored on every Run.
+- Use **Ambient Workspace Location** for canonical cwd classification, **Task Context Target** for one operation's reconciled target, **Manifest Context Fallback** for a visible low-precedence default, and **Project Operator Acting Posture** for an explicit current-session act-as envelope. Do not collapse these into “current identity” or present any of them as access control.
 - Use **Topic Workspace** instead of "quest" or "quest workspace" for Isomer-managed research execution areas. "Quest" is DeepScientist reference language, not Isomer canonical language.
 - Use **Research Topic** for the root research problem or investigation intent that initiates the research and drives Topic Team Specialization. Do not use **Research Goal** as a separate level.
 - Use **Measurable Objective** only for optional metric-bearing content inside a **Research Topic**. Do not model measurable and exploratory as exclusive goal kinds.

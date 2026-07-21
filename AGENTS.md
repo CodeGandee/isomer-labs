@@ -56,6 +56,10 @@ Make scoped edits that preserve the existing Pixi and `src/` layout. Prefer repo
 
 When generating Markdown, do not hard-wrap prose lines; keep each paragraph or list item on one logical line unless Markdown syntax or readability requires a deliberate line break.
 
+## Diagrams
+
+When producing diagrams, use ASCII diagrams in chat output and Mermaid diagrams in `.md` files.
+
 <!-- BEGIN agent-style v0.3.5 -->
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- Adapter: AGENTS.md cross-agent standard -->

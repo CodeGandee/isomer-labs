@@ -435,10 +435,17 @@ Query small, read-only slices of the caller's process-local Isomer identity from
 
 **Side effects:** none. These commands do not create Topic Workspace directories, Workspace Runtime records, Path Plans, manifests, Pixi files, guidance files, launch material, adapter files, or live Houmao state.
 
-Start with `project self show` for a tiny index, then ask for only the needed slice. Use `identity` for resolved topic, Topic Actor, and Agent refs; `pixi` for the selected manifest, environment, and `pixi run --manifest-path ... --environment ... python ...` hint; `env` for recognized Isomer environment input names without values by default; `paths <label>...` for requested semantic labels only; and `queries` for follow-up command examples. `project self env --values` may print allowlisted non-secret identity/path/config values, but secret-like names remain omitted.
+Start with `project self show` for a tiny index, then ask for only the needed slice. Use `location` for canonical cwd and its most-specific registered workspace boundary without defaults; use `check --scope project|topic|topic-actor|agent` to reconcile an intended operation target with ambient location and Effective Context; use `identity` for resolved topic, Topic Actor, and Agent path-resolution candidates; use `pixi` for the selected manifest, environment, and `pixi run --manifest-path ... --environment ... python ...` hint; use `env` for recognized Isomer environment input names without values by default; use `paths <label>...` for requested semantic labels only; and use `queries` for follow-up command examples. `project self env --values` may print allowlisted non-secret identity/path/config values, but secret-like names remain omitted.
+
+Ambient Workspace Location, Effective Context, the Task Context Target, a Manifest Context Fallback, and Project Operator Acting Posture answer different questions. Location says where cwd physically falls among registered semantic roots. Effective Context selects inputs for path and command resolution. The task target says what this operation intends to affect. A manifest fallback supplies a visible low-precedence candidate when no stronger source exists. Acting posture is instruction-level current-session planning state created only by an explicit identity switch. None is an OS identity, security principal, permission grant, or access-control decision.
 
 ```bash
 isomer-cli --print-json project self show
+isomer-cli --print-json project self location
+isomer-cli --print-json project --root /path/to/project self location
+isomer-cli --print-json project self check --scope project
+isomer-cli --print-json project self check --scope topic --topic my-topic
+isomer-cli --print-json project self check --scope agent --topic my-topic --agent alice
 isomer-cli --print-json project self identity
 isomer-cli --print-json project self pixi
 isomer-cli --print-json project self env
@@ -918,11 +925,13 @@ isomer-cli --print-json project handoffs normalize <handoff-id> \
 
 `template export --kind content` defaults to `<exchange-root>/content/main/`; `--kind latex` defaults to `<exchange-root>/latex/main/`. Reserved `.isomer-template-export.json` records the kind, name, stable ref, token, digests, path, actor, and time. Clean recognized targets refresh in place; edited or unrecognized targets are preserved. `template exports --kind KIND` reports only that role's `unchanged`, `edited`, `missing`, `identity-invalid`, or `canonical-changed` working copies. `--observe --target PATH` records an assessed tree without promoting it.
 
+For the request “export the LaTeX template for me to edit,” use the selected Research Topic explicitly and run `template export --topic my-topic --kind latex --name main` without `--target`. The CLI resolves `<topic-workspace>/intent/derived/writing-template/latex/main/`; it does not use cwd, Topic Main, a Topic Actor Workspace, or an Agent Workspace. This named-stock exchange is separate from `init-tex`, which snapshots stock and creates paper-local `KAOJU:PAPER-DRAFT-TEX` for agent filling or repair. A typed failure reports compact `selected_context` metadata. Correct the selector or readiness problem without searching sibling topics or substituting an unmanaged filesystem copy.
+
 The Kaoju agent resolves content versus LaTeX role before discovery. With no source locator, it uses exactly one edited export of that role, asks when several role-local candidates qualify, otherwise checks `<exchange-root>/<kind>/main/`, then asks for a source. It never selects the other role's same-named record or export.
 
 `template migrate --kind content` previews existing records and legacy export paths; `--apply` annotates old named content records without changing stable refs, state tokens, or tree bytes. `template migrate --kind latex` reports historical TeX candidates. Adoption requires `--apply --record EXACT_REF --metadata-file FILE`, copies the selected tree into LaTeX stock, and leaves the source record unchanged. Replacing existing stock also requires `--expected-state`. The retired `paper export-template`, `paper apply-template`, and legacy `ext research templates` mutation surfaces remain non-mutating.
 
-`paper validate` checks canonical MyST. `derive-markdown` creates a non-canonical review view. `init-tex` takes an exact content-template ref and an explicit LaTeX selector or default LaTeX `main`, snapshots the complete presentation tree, and composes a self-contained TeX draft through preamble, marker, or include mode. `tex-status` reports stocked-template and paper-local repair drift. `build-pdf` verifies the pinned snapshot, uses the declared entrypoint and build profile, executes `document_build`, and records the Run, compile log, drift, PDF inspection, and publication Gate.
+`paper validate` checks canonical MyST. `derive-markdown` creates a non-canonical review view. `init-tex` takes an exact content-template ref and an explicit LaTeX selector or default LaTeX `main`, snapshots the complete presentation tree, and composes a self-contained TeX draft through preamble, marker, or include mode. `tex-status` reports stocked-template and paper-local repair drift. `build-pdf` verifies the pinned snapshot, uses the declared entrypoint and build profile, executes `document_build`, and records the Run, compile log, drift, PDF inspection, and publication Gate. Named-template commands plus `init-tex`, `tex-status`, and `build-pdf` include compact selected Research Topic and Topic Workspace metadata in JSON successes and structured failures; the metadata makes selection visible without changing lookup scope or build Gates.
 
 ```bash
 isomer-cli --print-json ext kaoju paper template list --topic my-topic --kind content
@@ -1226,7 +1235,7 @@ isomer-cli --print-json ext research ideas traverse --topic my-topic --root-idea
 | `project topics delete` | yes with `--yes`; `--dry-run` is read-only | no | no | no |
 | `project workspaces list` | no | no | no | no |
 | `project context show` | no | no | no | no |
-| `project self show/identity/pixi/env/paths/queries` | no | no | no | no |
+| `project self show/location/check/identity/pixi/env/paths/queries` | no | no | no | no |
 | `project outputs policy` | no | no | no | no |
 | `project paths preview` | no | no | no | no |
 | `project paths default` | no | no | no | no |

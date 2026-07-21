@@ -15,8 +15,10 @@ skill_invocation_notation: >
 1. Print the public commands `switch`, `act-as`, `status`, `reset`, and `help`.
 2. Explain that Topic Actor targets resolve to `topic.actors.workspace` and Agent targets resolve to `agent.workspace`.
 3. Explain persistence modes: one-task by default, one-prompt restore for `act-as`, persistent session switch only when explicit, and `reset` to clear persistence.
-4. Explain cwd discipline: run commands from the resolved target workspace cwd while switched, and state why before using any other semantic path.
-5. Explain provenance: the Project Operator acts as or on behalf of the selected identity and must not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution without verified runtime evidence.
+4. Explain the complete session-local posture envelope: target kind, Research Topic, worker name, resolved workspace cwd, persistence mode, target-resolution source, and provenance wording. Persistent means current operator session only and never writes Project, local-context, Topic Workspace, Workspace Runtime, or cross-session state.
+5. Explain cwd and selector discipline: run commands from the resolved target workspace cwd with explicit `--topic` plus `--topic-actor` or `--agent` selectors, and state why while retaining selectors before using any other semantic path.
+6. Explain that `project self location` plus the matching `project self check --scope topic-actor|agent` validates the selected worker before mutation, while a manifest default or sole manifest actor never activates a switch.
+7. Explain provenance: the Project Operator acts as or on behalf of the selected identity and must not claim OS-level impersonation, independent Topic Actor process execution, launched Agent Instance execution, Houmao launch, or Execution Adapter execution without verified runtime evidence.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to print the smallest useful command map and identify the missing target fields.
 

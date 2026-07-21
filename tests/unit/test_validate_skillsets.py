@@ -1544,7 +1544,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             ## Overview
 
-            This skill routes informed user tasks across system skills and Isomer CLI functionality.
+            This skill routes informed user tasks across system skills and Isomer CLI functionality as the independent `$isomer-op-welcome` sibling handles orientation.
 
             ## When to Use
 
@@ -1553,15 +1553,18 @@ class SkillsetValidatorTests(unittest.TestCase):
             ## Workflow
 
             1. Parse the task input.
-            2. Run safe read-only context discovery.
-            3. Classify exactly one route.
-            4. Establish formal Agent Team intent before specialization.
-            5. Check owner boundaries because service skills are only bounded support.
-            6. Preflight target prerequisites before target mutation.
-            7. Route prerequisite recovery with run-to-target, next-prerequisite-only, alternate-route, and stop choices. After explicit authorization, use the native planning tool.
-            8. Proceed with the selected route while preserving separate mutation, Run, checkpoint, Gate, and terminal-report boundaries across owners.
-            9. Stop at each nondelegable boundary.
-            10. Report the entrypoint result.
+            2. Classify operation scope and prompt targets as project, topic, topic-actor, or agent.
+            3. Run context-sensitive preflight with project self location and project self check --scope, converting every named target to an explicit selector.
+            4. Pin reconciled invocation context so every applicable downstream command carries the selected topic and worker selector; stop before mutation on conflict.
+            5. Run safe read-only context discovery.
+            6. Classify exactly one route.
+            7. Establish formal Agent Team intent before specialization.
+            8. Check owner boundaries because service skills are only bounded support.
+            9. Preflight target prerequisites before target mutation.
+            10. Route prerequisite recovery with run-to-target, next-prerequisite-only, alternate-route, and stop choices. After explicit authorization, use the native planning tool.
+            11. Proceed with the selected route while preserving separate mutation, Run, checkpoint, Gate, and terminal-report boundaries across owners. A typed failure never becomes an unmanaged filesystem copy.
+            12. Stop at each nondelegable boundary.
+            13. Report the entrypoint result.
 
             If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step routing plan, then execute the plan.
 
@@ -1610,6 +1613,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 ## Workflow
 
                 1. Resolve explicit skill name, CLI command, file path, Project root, Research Topic, Topic Actor, Agent, Domain Agent Team Template, and DeepSci stage.
+                2. Classify operation scope, run project self location and project self check --scope, convert prompt targets into an explicit selector, reject a sole manifest actor as posture, and retain its explicit selectors after alignment.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
             """,
@@ -1623,6 +1627,8 @@ class SkillsetValidatorTests(unittest.TestCase):
                 3. Select one route and preserve owner boundaries.
                 4. Remember Service skills are only bounded support.
                 5. Retired compatibility skills are not active routes.
+                6. Classify operation scope, run project self location and project self check --scope, and Pin the accepted topic and worker selectors.
+                7. When a typed command returns not-found, Do not search sibling Topic Workspaces.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -1687,6 +1693,7 @@ class SkillsetValidatorTests(unittest.TestCase):
                 3. Use Research Records and Artifact Formats.
                 4. Use Team and Handoff Command Families.
                 5. Do not hand-edit research record indexes.
+                6. Run project self location and project self check --scope, then Pin every accepted Research Topic selector.
 
                 If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -1736,8 +1743,10 @@ class SkillsetValidatorTests(unittest.TestCase):
             1. Select `switch`, `act-as`, `status`, `reset`, or `help`.
             2. Resolve target kind and name for a Topic Actor or Agent.
             3. Use semantic path resolution and do not infer a target by scanning workspace directories.
-            4. Use one-task mode by default, persistent mode only when explicit, and restore after one-prompt `act-as`.
-            5. Run from cwd and preserve provenance.
+            4. Run project self location and project self check --scope, then Stop before mutation on conflict with a sole manifest actor or selected cwd.
+            5. Create the complete session-local posture envelope and use one-task mode by default, persistent mode only when explicit, and restore after one-prompt `act-as`.
+            6. Every applicable topic- or worker-scoped command carries explicit `--topic` plus a worker selector from the current operator session.
+            7. Run from cwd and preserve provenance; never write another session-visible current-identity file.
 
             If the user's task does not map cleanly to these steps, use your native planning tool.
 
@@ -1749,6 +1758,10 @@ class SkillsetValidatorTests(unittest.TestCase):
 
             - DO NOT infer a target by scanning workspace directories.
             - DO NOT use the Project root, Topic Workspace root, or `topic.repos.main` as the default switched cwd.
+
+            ## Session-Local Posture Envelope
+
+            The complete session-local posture envelope records target, cwd, persistence, source, and provenance in current operator session memory. It is not a manifest default, and the selected worker must pass project self check --scope. Do not write another session-visible current-identity file.
 
             {OUTPUT_CONTRACT_FIXTURE}
             """
@@ -1765,11 +1778,8 @@ class SkillsetValidatorTests(unittest.TestCase):
             """,
         )
         command_terms = {
-            "switch.md": "target kind target name one-task persistent isomer-cli --print-json project paths get topic.actors.workspace isomer-cli --print-json project paths get agent.workspace resolved `topic.actors.workspace` or `agent.workspace`. DO NOT infer the target by scanning workspace directories.",
-            "act-as.md": "following prompt. Save the previous Project Operator identity posture. Restore the previous Project Operator identity posture. temporary one-time execution. DO NOT leave a switched posture active. resolved `topic.actors.workspace` or `agent.workspace`.",
-            "status.md": "persistent temporary unknown re-resolve before running commands target workspace cwd normal Project Operator cwd.",
-            "reset.md": "Clear the active switched posture. normal Project Operator identity. future commands no longer default. does not delete workspace files.",
-            "help.md": "| Command | Purpose | Produces |; | --- | --- | --- |; `switch` `act-as` `status` `reset` one-prompt restore cwd discipline.",
+            command_name: ". ".join(validator.SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS[command_name])
+            for command_name in validator.SWITCH_IDENTITY_COMMANDS
         }
         for command_name in validator.SWITCH_IDENTITY_COMMANDS:
             if command_name == omit_command:
@@ -2429,6 +2439,33 @@ class SkillsetValidatorTests(unittest.TestCase):
         self.assertIn("OPS013", codes(diagnostics))
         self.assertTrue(any("Preflight target prerequisites" in message for message in messages(diagnostics)), messages(diagnostics))
 
+    def test_operator_validator_requires_entrypoint_context_preflight(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_skill_term="Run context-sensitive preflight")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("Run context-sensitive preflight" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_selector_propagation(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_skill_term="every applicable downstream command carries")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("every applicable downstream command carries" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_entrypoint_no_unmanaged_recovery(self) -> None:
+        root = self.make_root()
+        self.write_entrypoint_skill(root, omit_skill_term="unmanaged filesystem copy")
+
+        diagnostics = validator.validate_entrypoint_module(root)
+
+        self.assertIn("OPS013", codes(diagnostics))
+        self.assertTrue(any("unmanaged filesystem copy" in message for message in messages(diagnostics)), messages(diagnostics))
+
     def test_operator_validator_requires_entrypoint_prerequisite_recovery_contract(self) -> None:
         root = self.make_root()
         self.write_entrypoint_skill(root, omit_reference_term="ordinary `do <task>`")
@@ -2654,6 +2691,42 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertIn("OPS012", codes(diagnostics))
         self.assertTrue(any("Project root" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_complete_envelope(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="complete session-local posture envelope")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("complete session-local posture envelope" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_worker_preflight(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="project self check --scope")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("project self check --scope" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_session_only_state(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="another session-visible current-identity file")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("another session-visible current-identity file" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_operator_validator_requires_switch_identity_manifest_fallback_boundary(self) -> None:
+        root = self.make_root()
+        self.write_switch_identity_skill(root, omit_skill_term="sole manifest actor")
+
+        diagnostics = validator.validate_switch_identity_module(root)
+
+        self.assertIn("OPS012", codes(diagnostics))
+        self.assertTrue(any("sole manifest actor" in message for message in messages(diagnostics)), messages(diagnostics))
 
     def test_operator_validator_rejects_switch_identity_directory_scanning_resolution(self) -> None:
         root = self.make_root()

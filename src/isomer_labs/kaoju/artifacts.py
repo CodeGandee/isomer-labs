@@ -222,7 +222,20 @@ class KaojuArtifactService:
         return payload
 
     def show(self, record_id: str, *, include_content: bool = False) -> dict[str, object]:
-        payload, _diagnostics = show_record(self.context, record_id, env=self.env, include_body=include_content, include_payload=include_content)
+        try:
+            payload, _diagnostics = show_record(
+                self.context,
+                record_id,
+                env=self.env,
+                include_body=include_content,
+                include_payload=include_content,
+            )
+        except ResearchRecordError as exc:
+            raise KaojuServiceError(
+                exc.code,
+                exc.message,
+                tuple(_string_values(exc.payload.get("recovery_actions"))),
+            ) from exc
         payload["content_diagnostics"] = self.content_diagnostics(payload)
         return payload
 

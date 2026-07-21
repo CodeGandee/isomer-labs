@@ -949,6 +949,15 @@ SWITCH_IDENTITY_REQUIRED_SKILL_TERMS = (
     "launched Agent Instance",
     "Houmao",
     "Execution Adapter",
+    "## Session-Local Posture Envelope",
+    "complete session-local posture envelope",
+    "project self location",
+    "project self check --scope",
+    "Every applicable topic- or worker-scoped command carries explicit `--topic`",
+    "current operator session",
+    "another session-visible current-identity file",
+    "sole manifest actor",
+    "Stop before mutation",
 )
 
 SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
@@ -961,6 +970,11 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "isomer-cli --print-json project paths get agent.workspace",
         "resolved `topic.actors.workspace` or `agent.workspace`",
         "DO NOT infer the target by scanning workspace directories",
+        "project self check --scope topic-actor|agent",
+        "complete posture envelope",
+        "explicit `--topic`",
+        "cross-session current-identity file",
+        "manifest default",
     ),
     "act-as.md": (
         "following prompt",
@@ -969,6 +983,10 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "temporary one-time execution",
         "DO NOT leave a switched posture active",
         "resolved `topic.actors.workspace` or `agent.workspace`",
+        "project self check --scope topic-actor|agent",
+        "complete envelope",
+        "explicit `--topic`",
+        "cross-session files",
     ),
     "status.md": (
         "persistent",
@@ -977,12 +995,18 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "re-resolve before running commands",
         "target workspace cwd",
         "normal Project Operator cwd",
+        "complete session-local posture envelope",
+        "manifest-default actor",
+        "shared current-identity state",
     ),
     "reset.md": (
         "Clear the active switched posture",
         "normal Project Operator identity",
         "future commands no longer default",
         "does not delete workspace files",
+        "session-local posture envelope",
+        "explicit `--topic`",
+        "cross-session posture file",
     ),
     "help.md": (
         "| Command | Purpose | Produces |",
@@ -992,6 +1016,10 @@ SWITCH_IDENTITY_REFERENCE_REQUIRED_TERMS = {
         "`reset`",
         "one-prompt restore",
         "cwd discipline",
+        "complete session-local posture envelope",
+        "project self check --scope topic-actor|agent",
+        "manifest default",
+        "cross-session state",
     ),
 }
 
@@ -1183,6 +1211,8 @@ ENTRYPOINT_DEEPSCI_SKILLS = (
 ENTRYPOINT_CLI_TERMS = (
     "isomer-cli project self queries",
     "isomer-cli project self show",
+    "isomer-cli --print-json project self location",
+    "isomer-cli --print-json project self check --scope <project|topic|topic-actor|agent>",
     "isomer-cli project validate",
     "isomer-cli doctor",
     "isomer-cli project topics list",
@@ -1229,6 +1259,14 @@ ENTRYPOINT_REQUIRED_SKILL_TERMS = (
     "run-to-target",
     "next-prerequisite-only",
     "nondelegable boundary",
+    "independent `$isomer-op-welcome` sibling",
+    "Classify operation scope and prompt targets",
+    "Run context-sensitive preflight",
+    "Pin reconciled invocation context",
+    "project self location",
+    "project self check --scope",
+    "every applicable downstream command carries",
+    "unmanaged filesystem copy",
 )
 
 ENTRYPOINT_WORKFLOW_REQUIRED_TERMS = (
@@ -1238,6 +1276,13 @@ ENTRYPOINT_WORKFLOW_REQUIRED_TERMS = (
     "native planning tool",
     "separate mutation, Run, checkpoint, Gate, and terminal-report boundaries",
     "nondelegable boundary",
+    "Classify operation scope and prompt targets",
+    "Run context-sensitive preflight",
+    "Pin reconciled invocation context",
+    "project self location",
+    "project self check --scope",
+    "every applicable downstream command carries",
+    "unmanaged filesystem copy",
 )
 
 ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
@@ -1251,6 +1296,12 @@ ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
         "Agent",
         "Domain Agent Team Template",
         "DeepSci stage",
+        "operation scope",
+        "project self location",
+        "project self check --scope",
+        "explicit selector",
+        "sole manifest actor",
+        "retain its explicit selectors",
     ),
     "routing-rules.md": (
         "Proceed",
@@ -1262,6 +1313,12 @@ ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
         "## Topic Team Specialization Examples",
         "`prepare the topic <topic-name>` with no formal Agent Team target",
         "contextually selected formal Agent Team",
+        "Classify operation scope",
+        "project self location",
+        "project self check --scope",
+        "Pin the accepted topic and worker selectors",
+        "typed command returns not-found",
+        "Do not search sibling Topic Workspaces",
     ),
     "prerequisite-recovery.md": (
         "Run to the target",
@@ -1297,6 +1354,9 @@ ENTRYPOINT_REFERENCE_REQUIRED_TERMS = {
         "Research Records and Artifact Formats",
         "Team and Handoff Command Families",
         "Do not hand-edit research record indexes",
+        "project self location",
+        "project self check --scope",
+        "Pin every accepted Research Topic",
     ),
 }
 
