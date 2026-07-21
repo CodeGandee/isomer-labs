@@ -4,22 +4,26 @@
 TBD - created by archiving change create-toolbox-creator-system-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: Toolbox Manager Skill Is Packaged Operator Guidance
-The system SHALL provide `isomer-op-toolbox-mgr` as a packaged operator skill for creating and managing project-local Toolboxes through existing Isomer Toolbox, callback, runtime-param, and path-safety surfaces.
+The core public pack SHALL preserve `isomer-op-toolbox-mgr` as protected member `toolbox` for creating and managing Project-local Toolboxes through existing Isomer surfaces.
 
-#### Scenario: Manager skill asset exists
-- **WHEN** packaged operator system skills are inspected
-- **THEN** `operator/isomer-op-toolbox-mgr/SKILL.md` exists
-- **AND** its frontmatter `name` is `isomer-op-toolbox-mgr`
+#### Scenario: Manager member exists
+- **WHEN** core pack assets are inspected
+- **THEN** `operator/isomer-op-entrypoint/subskills/isomer-op-toolbox-mgr/SKILL.md` exists
+- **AND** its folder and frontmatter retain logical id `isomer-op-toolbox-mgr`
 
-#### Scenario: Creator skill asset is not active
-- **WHEN** packaged operator system skills are inspected
-- **THEN** `operator/isomer-op-toolbox-creator` is not listed as an active packaged skill path
-- **AND** no packaged alias folder for `isomer-op-toolbox-creator` is required
+#### Scenario: Creator skill remains absent
+- **WHEN** core protected inventory is inspected
+- **THEN** `isomer-op-toolbox-creator` is not declared as a public or protected capability
+- **AND** no compatibility folder is required
 
-#### Scenario: Manager naming matches responsibility
-- **WHEN** the skill instructions and UI metadata are inspected
-- **THEN** the title, frontmatter, display name, default prompt, help output, and operator catalog identify the skill as `isomer-op-toolbox-mgr`
-- **AND** they describe creation as one part of broader Toolbox management
+#### Scenario: Naming matches responsibility
+- **WHEN** protected instructions and metadata are inspected
+- **THEN** they identify logical capability `isomer-op-toolbox-mgr` and describe creation as one part of Toolbox management
+- **AND** ordinary user prompts use `$isomer-op-entrypoint use toolbox to <task>`
+
+#### Scenario: Domain language is preserved
+- **WHEN** instructions are inspected
+- **THEN** they use canonical Toolbox, Toolbox ID, Callback Insertion Point, Toolbox-Local Key, Runtime Param, and Toolbox Scope terms
 
 #### Scenario: Skill uses Toolbox domain language
 - **WHEN** the skill instructions are inspected
@@ -30,6 +34,11 @@ The system SHALL provide `isomer-op-toolbox-mgr` as a packaged operator skill fo
 - **WHEN** the skill describes its authority
 - **THEN** it states that Toolbox schema, callback registry semantics, runtime-param resolution, and CLI command behavior are owned by the existing Isomer surfaces
 - **AND** it does not claim authority to bypass CLI validation or packaged system-skill ownership
+
+#### Scenario: Public parent routes Toolbox work
+- **WHEN** a concrete Toolbox request is received
+- **THEN** the public entrypoint invokes `isomer-op-entrypoint->toolbox`
+- **AND** the protected member does not bypass CLI validation or packaged ownership
 
 ### Requirement: Toolbox Manager Skill Selects Bounded Subcommands
 The skill SHALL route each invocation to one bounded subcommand and load only the selected reference page before executing subcommand-specific work.

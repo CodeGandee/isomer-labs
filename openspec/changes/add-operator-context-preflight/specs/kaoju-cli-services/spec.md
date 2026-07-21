@@ -1,12 +1,17 @@
 ## ADDED Requirements
 
-### Requirement: Kaoju Template Operations Report Selected Context
-Context-sensitive Kaoju template commands SHALL expose the compact selected Research Topic and Topic Workspace context used for each success or structured failure.
+### Requirement: Kaoju Paper Operations Report Selected Context
+Context-sensitive Kaoju named-template and TeX composition or build commands SHALL expose the compact selected Research Topic and Topic Workspace context used for each success or structured failure.
 
 #### Scenario: Template success reports selected context
 - **WHEN** a Kaoju template list, show, create, update, file, metadata, archive, delete, export-inspection, export, or validation operation succeeds
 - **THEN** its machine-readable result includes selected Research Topic id, Topic Workspace id, Topic Workspace path, and relevant context selection source metadata
 - **AND** it does not embed the full Effective Topic Context or unrelated Project configuration
+
+#### Scenario: TeX composition and build report selected context
+- **WHEN** `init-tex`, `tex-status`, or `build-pdf` returns a machine-readable success or structured failure
+- **THEN** the result includes selected Research Topic id, Topic Workspace id, Topic Workspace path, and relevant context selection source metadata
+- **AND** the metadata does not change the agent-fill obligations, paper-local repair boundary, or build Gate outcome
 
 #### Scenario: Template not found names lookup context
 - **WHEN** a Kaoju template operation returns `template_not_found` or an equivalent missing-template diagnostic

@@ -3,17 +3,27 @@
 ## Purpose
 TBD - created by archiving change add-user-skill-callbacks. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: User Skill Callback Contract
-The system SHALL define User Skill Callback as user-provided instruction material attached to a system skill name and a callback stage, separate from provider-backed Research Operation Extension Points and separate from packaged system skill ownership.
+The system SHALL attach User Skill Callbacks to stable packaged capability logical ids and supported stages independently of public pack layout.
 
 #### Scenario: Callback record has stable identity
-- **WHEN** a User Skill Callback is registered
-- **THEN** the stored record includes a stable callback id, target system skill name, callback stage, callback source, callback scope, status, priority, and source location metadata
+- **WHEN** a callback is registered
+- **THEN** the stored record includes stable callback id, target logical capability id, callback stage, source, scope, status, priority, and source metadata
+- **AND** it does not store a nested filesystem path as the target identity
+
+#### Scenario: Protected target is registered
+- **WHEN** a callback targets a protected logical id such as `isomer-deepsci-scout`
+- **THEN** catalog validation accepts it when that logical id and stage are declared
+- **AND** discovery or explained output can report its owning pack and invocation designator
+
+#### Scenario: Old pipeline target is registered
+- **WHEN** compatibility input uses `isomer-deepsci-pipeline` or `isomer-kaoju-pipeline`
+- **THEN** the system resolves the declared alias to the new public entrypoint id
+- **AND** new storage uses the canonical id with a deprecation diagnostic
 
 #### Scenario: Supported stages are bounded
-- **WHEN** a user registers or resolves a User Skill Callback
-- **THEN** validation accepts only the `begin` and `end` callback stages in the initial version
+- **WHEN** a callback is registered or resolved
+- **THEN** only manifest-declared stages are accepted
 
 #### Scenario: Unsupported stage is rejected
 - **WHEN** a user requests a callback stage other than `begin` or `end`
@@ -113,15 +123,20 @@ The system SHALL expose a generic `isomer-cli project skill-callbacks` command g
 - **THEN** the command validates reachable callback registries, source paths, target system skill names, stages, duplicate active ids, status values, priority values, and redaction-sensitive fields
 
 ### Requirement: Callback Resolution and Merge Order
-The system SHALL resolve User Skill Callbacks deterministically from the active Project and topic context before a participating skill applies them through explicit owning-skill workflow steps.
+The system SHALL resolve callbacks by canonical logical capability id and stage before the routed public entrypoint or protected member applies them.
 
-#### Scenario: Exact skill and stage match
-- **WHEN** callbacks are resolved for a participating system skill
-- **THEN** resolution includes only active callback records whose target system skill name and callback stage match the requested skill and stage
+#### Scenario: Exact logical id and stage match
+- **WHEN** callbacks are resolved for a protected member
+- **THEN** only active records whose normalized target logical id and stage match are included
 
-#### Scenario: Scope precedence is deterministic
-- **WHEN** both project-scoped and topic-scoped callbacks match the requested skill and stage
-- **THEN** resolution orders the more specific topic-scoped callbacks ahead of project-scoped callbacks unless an accepted registry priority rule orders callbacks within the same scope
+#### Scenario: Parent routes protected member
+- **WHEN** a public pack invokes a protected member
+- **THEN** the protected member applies its own begin callbacks before its first capability-specific action and its own end callbacks before completion
+- **AND** the parent does not retarget those callbacks to itself
+
+#### Scenario: Scope precedence remains deterministic
+- **WHEN** Project and topic callbacks match the same logical id and stage
+- **THEN** existing scope and priority ordering remains effective
 
 #### Scenario: Priority order is deterministic
 - **WHEN** multiple active callbacks match within the same scope
@@ -143,6 +158,10 @@ The system SHALL resolve User Skill Callbacks deterministically from the active 
 - **WHEN** a participating skill documents callback participation
 - **THEN** callback resolution is described as explicit workflow work owned by that skill
 - **AND** the system does not rely on ambient reminder prose or implicit hook injection to make agents run callbacks
+
+#### Scenario: Callback resolution is invalid
+- **WHEN** target alias normalization is ambiguous or the catalog mapping is invalid
+- **THEN** resolution fails with a deterministic diagnostic instead of guessing a nested route
 
 ### Requirement: Callback Authority and Safety
 The system SHALL preserve system, developer, owning-skill, current user request, and Isomer domain constraints when applying User Skill Callbacks.
@@ -223,21 +242,25 @@ The system SHALL honor effective Toolbox status when resolving callbacks install
 - **AND** ordinary compact resolution returns only admitted callbacks plus any resolution-blocking Toolbox diagnostic
 
 ### Requirement: Callback Target Validation Uses Insertion Point Catalog
-The system SHALL validate User Skill Callback target skill and stage pairs against manifest-declared callback insertion points.
+The system SHALL validate target logical-id and stage pairs against the manifest catalog and SHALL resolve their current pack routing separately.
 
 #### Scenario: Declared insertion point is accepted
 - **WHEN** a User Skill Callback targets a system skill and callback stage pair declared in the packaged callback insertion-point catalog
 - **THEN** validation accepts the target pair subject to the existing registry, source, scope, status, priority, and redaction rules
 
+#### Scenario: Declared protected insertion point is accepted
+- **WHEN** a callback targets a declared protected logical id and stage
+- **THEN** validation accepts the pair subject to existing source, registry, scope, status, priority, and redaction rules
+- **AND** it can report the owning public pack and invocation designator
+
 #### Scenario: Undeclared insertion point is rejected
-- **WHEN** a User Skill Callback targets a packaged system skill and stage pair that is not declared as a callback insertion point
-- **THEN** validation rejects the target pair with a deterministic diagnostic that names the missing insertion point
-- **AND** the diagnostic directs users toward callback insertion-point discovery
+- **WHEN** a target logical id or stage pair is absent from the catalog
+- **THEN** validation rejects it with a diagnostic that names the missing insertion point
 
 #### Scenario: Optional extension target remains catalog based
-- **WHEN** a User Skill Callback targets an insertion point belonging to a known optional system extension
-- **THEN** validation uses the packaged catalog declaration rather than attempting to inspect the Project operator filesystem
-- **AND** command output can report whether the extension is Project-declared or only catalog-known
+- **WHEN** a callback targets a protected DeepSci or Kaoju member
+- **THEN** validation uses package catalog metadata without inspecting a Project operator skill root
+- **AND** output may separately report Project declaration and host verification posture
 
 ### Requirement: Toolbox Skill Routing Does Not Imply Automatic Invocation
 User Skill Callback guidance SHALL keep Toolbox skill routing separate from automatic skill invocation.
@@ -309,3 +332,16 @@ The system SHALL keep ordinary and explained callback-resolution diagnostics lim
 #### Scenario: Compact payload growth is guarded
 - **WHEN** repository tests serialize empty and representative active compact resolutions
 - **THEN** they enforce an exact compact-field allowlist and stable response-size ceilings
+
+### Requirement: Callback Invocation Mapping Is Catalog-Owned
+Callback tooling SHALL expose current routing metadata without changing the compact instruction payload consumed during normal execution.
+
+#### Scenario: Insertion points are discovered
+- **WHEN** a user or agent lists callback insertion points
+- **THEN** each result includes target logical id, stage, public pack id, protected member name when applicable, and invocation designator
+
+#### Scenario: Ordinary resolution succeeds
+- **WHEN** a workflow resolves callbacks for one logical id and stage
+- **THEN** the compact callback entries retain only the existing actionable instruction fields
+- **AND** pack and invocation metadata remain in discovery or explained output rather than every compact entry
+

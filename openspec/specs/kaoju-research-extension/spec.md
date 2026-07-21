@@ -3,63 +3,112 @@
 ## Purpose
 TBD - created by archiving change implement-kaoju-research-extension. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Production Kaoju Skill Family
-The package SHALL provide a self-contained production Kaoju research-paradigm skill family under `src/isomer_labs/assets/system_skills/research-paradigm/kaoju/` using the `isomer-kaoju-<purpose>` namespace and the skill/shared-resource contract.
+The package SHALL provide a self-contained production Kaoju pack with independent public welcome and execution entrypoint bundles plus the existing protected `isomer-kaoju-<purpose>` capabilities.
+
+#### Scenario: Kaoju public pair exists
+- **WHEN** packaged Kaoju assets are inspected
+- **THEN** sibling bundles `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint` contain valid public skill metadata
+- **AND** the thirteen current Kaoju capabilities remain protected below the entrypoint
+
+#### Scenario: Kaoju welcome is self-contained
+- **WHEN** `isomer-ext-kaoju-welcome` is copied or linked as part of the pack
+- **THEN** it resolves its active typical-use-case and command-map resources without loading private files from the entrypoint or protected subskills
+- **AND** it may reference public entrypoint invocation names without becoming an execution owner
+
+#### Scenario: Shared machine contracts remain package-owned
+- **WHEN** welcome or entrypoint needs current Kaoju command or process metadata
+- **THEN** checked machine contracts remain owned by the installed Kaoju Python package and manifest
+- **AND** welcome does not introduce a second survey-process registry
 
 #### Scenario: Exact production inventory exists
 - **WHEN** the packaged Kaoju root is inspected
-- **THEN** it contains `isomer-kaoju-pipeline`, `isomer-kaoju-shared`, `isomer-kaoju-workspace-mgr`, `isomer-kaoju-frame`, `isomer-kaoju-discover`, `isomer-kaoju-acquire`, `isomer-kaoju-examine`, `isomer-kaoju-reproduce`, `isomer-kaoju-trial`, `isomer-kaoju-compare`, `isomer-kaoju-audit`, `isomer-kaoju-synthesize`, `isomer-kaoju-write`, and `isomer-kaoju-export`
-- **AND** no retired, version-suffixed, generic `isomer-ext-*`, or duplicate survey-facade Kaoju skill is active
+- **THEN** it contains public directory `isomer-ext-kaoju-entrypoint`
+- **AND** that pack contains protected bundles for `isomer-kaoju-shared`, `isomer-kaoju-workspace-mgr`, `isomer-kaoju-frame`, `isomer-kaoju-discover`, `isomer-kaoju-acquire`, `isomer-kaoju-examine`, `isomer-kaoju-reproduce`, `isomer-kaoju-trial`, `isomer-kaoju-compare`, `isomer-kaoju-audit`, `isomer-kaoju-synthesize`, `isomer-kaoju-write`, and `isomer-kaoju-export`
+- **AND** no `isomer-kaoju-pipeline` skill folder or duplicate facade is active
 
-#### Scenario: Skill identity is consistent
-- **WHEN** a production Kaoju skill is inspected
-- **THEN** its folder name, `SKILL.md` frontmatter name, `agents/openai.yaml` display name, and default-prompt invocation use the same `isomer-kaoju-*` name
-- **AND** its active instructions and directly linked resources are self-contained within the skill directory
+#### Scenario: Public identity is consistent
+- **WHEN** the Kaoju public pack is inspected
+- **THEN** its folder, frontmatter, metadata, and public default prompt use `isomer-ext-kaoju-entrypoint`
+
+#### Scenario: Protected identity is consistent
+- **WHEN** a protected Kaoju bundle is inspected
+- **THEN** its folder and frontmatter retain its `isomer-kaoju-*` logical id
+- **AND** its active resources remain self-contained
 
 #### Scenario: Trial and reproduction remain distinct
-- **WHEN** the production inventory is inspected for executable evidence work
-- **THEN** `isomer-kaoju-trial` owns bounded method trials and generated-data capability probes while `isomer-kaoju-reproduce` owns only work that satisfies the stronger reproduction contract
-- **AND** neither skill treats a repaired or capability-probe result as faithful paper reproduction
-
-#### Scenario: Skill identity and resource boundary are consistent
-- **WHEN** a production Kaoju skill is inspected
-- **THEN** its folder name, `SKILL.md` frontmatter name, `agents/openai.yaml` display name, and default-prompt invocation use the same `isomer-kaoju-*` name
-- **AND** every active filesystem-linked resource resolves within that skill directory, shared machine data is queried through `isomer-cli ext kaoju`, and shared procedures are routed through `isomer-kaoju-shared`
+- **WHEN** executable evidence members are inspected
+- **THEN** `trial` maps to `isomer-kaoju-trial` and `reproduce` maps to `isomer-kaoju-reproduce`
+- **AND** neither capability weakens the accepted evidence distinction
 
 #### Scenario: Artifact identity is consistent
-- **WHEN** a production Kaoju skill names, resolves, produces, consumes, or queries a durable extension artifact
-- **THEN** it uses the exact registered `KAOJU:WHAT` identifier in prose, local projections, source declarations, and commands
-- **AND** it does not use an angle-wrapped token, a bare object name, lowercase or mixed case, or an artifact alias
+- **WHEN** a protected Kaoju member names a durable extension artifact
+- **THEN** it continues to use the exact registered `KAOJU:WHAT` identifier
 
 ### Requirement: Kaoju Pipeline Command Surface
-`isomer-kaoju-pipeline` SHALL use the complex-procedure shape as the single extension entry skill, with separate helper, survey-intent, legacy-procedure, and miscellaneous command groups.
+`isomer-ext-kaoju-entrypoint` SHALL remain the single Kaoju execution entrypoint, and `isomer-ext-kaoju-welcome` SHALL provide a separate read-only teaching surface for its survey intents, compatibility procedures, and grouped managers.
 
-#### Scenario: Survey-process commands match the ten use cases
-- **WHEN** the pipeline command inventory is inspected
+#### Scenario: Concrete Kaoju task uses entrypoint
+- **WHEN** a user requests reading-list work, source ingestion, direction selection, comparison, code preparation, trial execution, paper production, or wiki export
+- **THEN** `isomer-ext-kaoju-entrypoint` selects and executes the applicable public command or protected capability
+- **AND** existing interaction, evidence, Gate, checkpoint, and terminal contracts remain in force
+
+#### Scenario: Newcomer asks how to use Kaoju
+- **WHEN** a user asks what Kaoju is designed for, which procedure fits, or how to form a request
+- **THEN** `isomer-ext-kaoju-welcome` presents curated typical use cases and exact entrypoint examples
+- **AND** it does not run a Kaoju manager or research procedure
+
+#### Scenario: Historical pipeline identity is used
+- **WHEN** compatibility lookup encounters `isomer-kaoju-pipeline`
+- **THEN** it resolves to `isomer-ext-kaoju-entrypoint`
+- **AND** it does not resolve to the welcome skill
+
+#### Scenario: Nested manager form is taught
+- **WHEN** welcome explains a grouped manager or nested subcommand such as paper-template management
+- **THEN** it shows the accepted public entrypoint command form and representative task
+- **AND** it does not expose internal object-generator notation as the ordinary user invocation
+
+#### Scenario: Survey-process commands match ten use cases
+- **WHEN** public help is inspected
 - **THEN** it exposes `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`
-- **AND** each command links to one local command page containing its bounded stage recipe, owners, decisions, durable outputs, terminal states, and resume inputs
+- **AND** each command page preserves its bounded recipe, owners, decisions, durable outputs, terminal states, and resume inputs
 
 #### Scenario: Existing procedures remain callable
-- **WHEN** the pipeline compatibility inventory is inspected
-- **THEN** it retains `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`
-- **AND** compatibility pages state how each procedure maps to current capability owners and canonical artifacts
+- **WHEN** compatibility procedures are inspected
+- **THEN** the accepted landscape, intake, expansion, theory comparison, method trial, comparative, audit, paper, and template procedures remain public commands of the new entrypoint
 
-#### Scenario: CRUD actions are grouped by object
-- **WHEN** helper commands are inspected
-- **THEN** `manage-survey` groups `list`, `show`, `status`, and `export`
-- **AND** `manage-dataset` groups `register`, `list`, `show`, `refresh`, and `remove`
-- **AND** `manage-paper-template` groups template `export`, `apply`, `inspect`, and `status` actions rather than exposing unrelated generic CRUD verbs
+#### Scenario: CRUD actions remain grouped by object
+- **WHEN** manager actions are inspected
+- **THEN** survey and dataset actions remain grouped under their accepted public manager commands
+
+#### Scenario: Paper-template actions remain grouped by object
+- **WHEN** the role-aware paper-template manager is migrated into the public pack
+- **THEN** `manage-paper-template()` remains one parent command with declared children `list()`, `show()`, `create()`, `copy()`, `update()`, `replace()`, `merge()`, `file()`, `metadata()`, `export()`, `observe()`, `archive()`, `delete()`, and `migrate()`
+- **AND** `file()` declares `put()` and `remove()` children while `metadata()` declares `patch()`
+- **AND** internal routes may use complete chains such as `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`
+
+#### Scenario: Paper-template role remains command context
+- **WHEN** a paper-template action selects content authoring or LaTeX presentation state
+- **THEN** the manager resolves explicit `--kind content|latex` context before role-local discovery or mutation
+- **AND** content and LaTeX do not become skills, subskills, or command-path components
+
+#### Scenario: Compatibility template creation remains content-only
+- **WHEN** the retained `create-paper-template` procedure is invoked
+- **THEN** it creates or updates a named content template backed by `KAOJU:PAPER-TEMPLATE-MYST`
+- **AND** LaTeX stock creation routes through `manage-paper-template()` with `--kind latex`
 
 #### Scenario: Interaction and resume stay out of the procedure list
 - **WHEN** a user requests clarification before work or resumes accepted prior state
 - **THEN** clarification-first is represented as an interaction mode shared by procedures
 - **AND** resume is represented by a Research Task, Run checkpoint, accepted input refs, and starting stage rather than a separate procedure
 
-#### Scenario: Generic maintenance procedures are absent
-- **WHEN** the pipeline public procedure list is inspected
-- **THEN** it does not include standalone source-audit, repository-refresh, generic environment-repair, full-Kaoju, resume, or list-passes procedures
-- **AND** `prepare-code-run` remains a specific UC-09 survey intent rather than a generic environment administration command
+#### Scenario: Generic maintenance remains absent
+- **WHEN** the public command list is inspected
+- **THEN** it excludes standalone source-audit, repository-refresh, generic environment-repair, full-Kaoju, resume, and list-passes commands
+
+#### Scenario: Empty invocation uses help
+- **WHEN** the public entrypoint is invoked without a task or command
+- **THEN** it executes help and reports the public command groups
 
 ### Requirement: Literature-First Landscape Survey
 The `landscape-pass` procedure SHALL produce a bounded literature-first survey across papers, technical reports, source code repositories, datasets, and models.
@@ -260,60 +309,146 @@ All production Kaoju procedures SHALL discover accepted durable inputs through d
 - **AND** it does not scan the Topic Workspace directory tree or trust conversation memory as canonical state
 
 ### Requirement: Kaoju Survey Process Data Is Extension-Queried
-Kaoju active guidance SHALL obtain the checked survey-process inventory through the package-owned Kaoju extension query instead of a family-root contract file.
+Kaoju active guidance SHALL query the checked process contract through the package extension while resolving protected members through catalog metadata.
 
-#### Scenario: Pipeline loads its checked contract
-- **WHEN** `isomer-kaoju-pipeline` starts a Kaoju routing task
-- **THEN** it runs `isomer-cli --print-json ext kaoju process show` and treats the returned version, entry skill, skill inventory, survey intents, compatibility procedures, manager actions, aliases, and policy decisions as the checked machine contract
-- **AND** it does not open `../contracts`, an absolute checkout path, or another skill's resources
+#### Scenario: Entrypoint loads checked contract
+- **WHEN** `isomer-ext-kaoju-entrypoint` starts a routing task
+- **THEN** it runs `isomer-cli --print-json ext kaoju process show`
+- **AND** the response identifies the new public entry skill, public commands, protected logical ids, binding policy, manager-action hierarchy, independent content and LaTeX template roles, and current paper-template implementation decisions
 
-#### Scenario: Pipeline loads a command process
-- **WHEN** the selected survey intent, compatibility procedure, or grouped manager action has a procedure used only by the pipeline
-- **THEN** the pipeline loads the corresponding command page from its own `commands/` directory
-- **AND** the machine contract identifies the command without becoming a duplicate prose procedure
+#### Scenario: Entrypoint loads local command process
+- **WHEN** a selected public command has a parent-owned procedure
+- **THEN** it loads the corresponding command page from the public pack's `commands/` directory
+- **AND** it does not duplicate that procedure in a protected member
 
 ### Requirement: Kaoju Cross-Skill Procedures Are Shared-Skill Owned
-Kaoju guidance used across multiple stages SHALL remain in `isomer-kaoju-shared` and SHALL be consumed through skill routing rather than sibling filesystem references.
+Kaoju guidance used across multiple protected stages SHALL remain owned by logical capability `isomer-kaoju-shared` and routed through the public parent.
 
-#### Scenario: Stage needs common Kaoju discipline
-- **WHEN** a stage needs common evidence semantics, source identity, lineage, latest-context, Gate, owner-routing, Artifact recording, or terminal-state procedure
-- **THEN** it invokes or follows `isomer-kaoju-shared` and loads only its own bundle-local stage guidance
-- **AND** it does not copy the complete shared command process or traverse into the shared skill directory
+#### Scenario: Stage needs common discipline
+- **WHEN** a protected Kaoju member needs common evidence, source identity, lineage, context, Gate, owner-routing, Artifact recording, or terminal rules
+- **THEN** it invokes `isomer-ext-kaoju-entrypoint->shared` or a declared shared subcommand
+- **AND** it does not traverse into the shared member or duplicate the complete process
+
+#### Scenario: Shared member is privately projected
+- **WHEN** a Kaoju member is selected for bounded private projection
+- **THEN** manifest dependency closure includes `isomer-kaoju-shared` when required
 
 ### Requirement: Kaoju Pipeline Supports Authorized Run-To Recovery
-The Kaoju pipeline SHALL keep each survey intent and compatibility procedure bounded while allowing a prompt-level controller to chain their producer and repair routes after explicit run-to authorization for a named target.
+The public Kaoju entrypoint SHALL keep each survey command bounded while allowing authorized target-scoped chaining across protected members and public procedures.
 
-#### Scenario: Kaoju target lacks accepted artifacts
-- **WHEN** a Kaoju target such as synthesis, drafting, PDF construction, comparison, or export lacks accepted prerequisite artifacts
-- **AND** the required artifacts have known Kaoju or platform owner routes
-- **THEN** the Kaoju pipeline's numbered workflow makes the bounded target report `paused` with exact missing semantic ids, producer routes, and resume point
-- **AND** the user is offered inclusive run-to recovery before those producer routes execute
+#### Scenario: Target lacks accepted artifacts
+- **WHEN** synthesis, drafting, PDF construction, comparison, or export lacks known producible artifacts
+- **THEN** the operation reports paused status, exact missing semantic ids, producer routes, and resume point
+- **AND** it offers inclusive run-to recovery
 
-#### Scenario: Authorized Kaoju run-to chains bounded procedures
-- **WHEN** the user authorizes run-to for a Kaoju target
-- **THEN** the controller uses separate bounded Kaoju procedures to produce or repair the required inputs in dependency order
-- **AND** it consumes each procedure's terminal report and accepted refs before selecting the next planned procedure or resuming the target
-- **AND** every procedure retains its own Run, audit boundary, evidence semantics, and terminal report
+#### Scenario: Authorized run-to chains procedures
+- **WHEN** the user authorizes a named target
+- **THEN** the public entrypoint may call bounded public commands and protected member designators in prerequisite order
+- **AND** each invoked capability preserves its own Gates and terminal contract
 
 #### Scenario: Kaoju audit recommends repair
 - **WHEN** an audit procedure remains non-repairing and returns defects with bounded producer or repair routes inside an authorized target closure
 - **THEN** the controller invokes those repair owners as separate procedures
 - **AND** it starts a fresh audit after repair before allowing synthesis or paper writing to consume the repaired evidence
 
-#### Scenario: Kaoju has no run-to authorization
-- **WHEN** a bounded Kaoju procedure returns a terminal report without an active target-scoped run-to grant
-- **THEN** the pipeline does not select another macro procedure autonomously
-- **AND** it returns the recommended next procedure to the user as before
+#### Scenario: No run-to authorization exists
+- **WHEN** a bounded procedure recommends another macro action without authorization
+- **THEN** the public entrypoint reports the recommendation and stops
 
 ### Requirement: Kaoju Run-To Preserves Interaction and Gate Contracts
-Kaoju run-to traversal SHALL automate only routine in-scope prerequisite routing and SHALL preserve every applicable clarification, Proceed Decision, resource, publication, and human Gate contract.
+Kaoju run-to SHALL automate only routine in-scope prerequisite routing and preserve clarification, Proceed Decision, resource, publication, and human Gate contracts.
 
-#### Scenario: Routine transitive prerequisite is discovered
-- **WHEN** a Kaoju prerequisite procedure discovers another routine in-scope input needed for the same target
-- **THEN** the controller adds the known producer route to the active plan without another routine confirmation
-- **AND** the producer still resolves durable state through the state DB and writes through its typed Artifact bindings
+#### Scenario: Routine prerequisite is discovered
+- **WHEN** a protected member or public procedure reports a routine producible prerequisite
+- **THEN** the entrypoint may invoke its declared owner under active run-to authorization
 
-#### Scenario: Kaoju traversal reaches a protected boundary
-- **WHEN** the next stage requires a nondelegable Gate or a material choice that changes survey direction, evidence meaning, resource posture, or publication state
-- **THEN** the controller checkpoints the active procedures and pauses
-- **AND** it asks only for the decision needed to resume the named target
+#### Scenario: Protected boundary is reached
+- **WHEN** continuation requires an unresolved choice, Gate, unauthorized resource, or no-progress repeat
+- **THEN** the entrypoint pauses with the current durable state and precise resume guidance
+
+### Requirement: Public Template Management Distinguishes Template Roles
+The public Kaoju `manage-paper-template` command SHALL retain one grouped action surface while resolving content-template and LaTeX-template roles explicitly.
+
+#### Scenario: Help is requested
+- **WHEN** a user inspects `manage-paper-template` help
+- **THEN** it explains content templates, LaTeX templates, their independent `main` defaults, and supported management actions
+- **AND** it does not describe all paper templates as MyST-oriented trees
+
+#### Scenario: Natural-language task is routed
+- **WHEN** task language names MyST structure, content sections, LaTeX, TeX, a document class, a style, or a venue template
+- **THEN** the entrypoint routes the task with the corresponding template role
+- **AND** existing evidence, Gate, Run, and owner boundaries remain unchanged
+
+### Requirement: Kaoju Entrypoint Explains Every Protected Route
+The `isomer-ext-kaoju-entrypoint` skill SHALL provide one context-aware `When to Route Here` sentence for every protected Kaoju subskill in its protected-subskill table. Each sentence SHALL assume the Kaoju survey context and identify the evidence-stage condition, publication output, or bounded support need that selects the member.
+
+#### Scenario: Kaoju protected inventory is inspected
+- **WHEN** `isomer-ext-kaoju-entrypoint/SKILL.md` is inspected
+- **THEN** all 13 protected-member rows contain one routing sentence
+- **AND** the existing member names, logical ids, and internal designators remain unchanged
+
+#### Scenario: Source-evidence routes overlap
+- **WHEN** a task may require source discovery, acquisition, examination, comparison, or audit
+- **THEN** the applicable routing sentences distinguish `discover`, `acquire`, `examine`, `compare`, and `audit` by evidence state and intended output
+
+#### Scenario: Execution routes overlap
+- **WHEN** a source-code task may be a bounded environment or method trial or a genuine reproduction claim
+- **THEN** the routing sentences distinguish `trial` from `reproduce` by the requested fidelity and claim contract
+
+#### Scenario: Closeout routes overlap
+- **WHEN** accepted evidence may need synthesis, authored survey output, or export
+- **THEN** the applicable routing sentences distinguish `synthesize`, `write`, and `export` by whether the task creates conclusions, prose, or a target projection
+
+#### Scenario: Shared support is selected
+- **WHEN** a Kaoju task needs cross-stage evidence, Gate, Artifact, lineage, or terminal-state rules rather than a standalone survey stage
+- **THEN** the `shared` sentence identifies it as internal cross-stage support and does not present it as an independent public workflow
+
+### Requirement: Kaoju Template Separation Survives Skill Regrouping
+The Kaoju public pack and protected `write` member SHALL preserve the implemented separation between canonical content-template state and named LaTeX presentation stock while changing only skill packaging and routing identities.
+
+#### Scenario: Role-aware process contract is rewritten
+- **WHEN** regrouping updates the checked Kaoju survey-process resource
+- **THEN** its public entry skill becomes `isomer-ext-kaoju-entrypoint` and its focused skills resolve through protected logical ids and parent-owned designators
+- **AND** its manager actions, `template_roles`, independent `main` defaults, `KAOJU:PAPER-TEMPLATE-MYST`, `KAOJU:PAPER-TEMPLATE-LATEX`, preamble, marker, and include composition modes, derived snapshot identities, and drift policy remain intact
+
+#### Scenario: Protected write bundle is moved
+- **WHEN** `isomer-kaoju-write` becomes protected member `write`
+- **THEN** it retains its private artifact-binding guidance and paper-contract, manuscript-structure, LaTeX-build, validation, and survey-quality references
+- **AND** its content-template selection, LaTeX stock selection, exact snapshot composition, entrypoint-aware build, paper-local repair, and publication-lineage behavior remain effective
+
+#### Scenario: Package-owned template services remain external to skill bundles
+- **WHEN** the Kaoju skill pack is materialized or `write` is privately projected
+- **THEN** template state, payload, support, validation, migration, composition, build, binding, semantic, and process services remain package-owned under `isomer_labs.kaoju`
+- **AND** active skills query those services through `isomer-cli ext kaoju` without copying or traversing to their source files
+
+#### Scenario: Existing Topic Workspace template state is encountered
+- **WHEN** regrouped skills operate on a Topic Workspace already migrated to the content-template and LaTeX-template contract
+- **THEN** they preserve its stable refs, state tokens, managed trees, exports, TeX snapshots, drafts, builds, PDFs, and historical source records
+- **AND** skill installation, upgrade, or first invocation does not rerun template-contract migration or adopt another LaTeX source implicitly
+
+### Requirement: Direct User Intent Remains Public
+Accepted Kaoju survey intents SHALL remain public commands of `isomer-ext-kaoju-entrypoint` even when protected members perform their bounded stages.
+
+#### Scenario: User requests source-code survey work
+- **WHEN** the user explicitly requests source ingestion, code-run preparation, or a source-code trial
+- **THEN** the public entrypoint exposes the corresponding accepted command
+- **AND** it routes protected acquisition, examination, trial, service, or platform owners without changing their authority
+
+#### Scenario: User requests a protected stage by task
+- **WHEN** a concrete Kaoju task maps directly to audit, comparison, synthesis, writing, or export but omits a public subcommand
+- **THEN** task-only entrypoint routing may select the applicable protected member
+- **AND** the member remains absent from top-level host discovery
+
+### Requirement: Kaoju Welcome Maps the Complete Public Command Inventory
+The Kaoju welcome skill SHALL maintain a manifest-validated command map and curated use-case guide for the current Kaoju public entrypoint.
+
+#### Scenario: Command map is validated
+- **WHEN** Kaoju welcome validation runs
+- **THEN** every current public survey-intent, compatibility-procedure, manager, and help command appears exactly once
+- **AND** missing, duplicate, extra, or stale command ids fail validation
+
+#### Scenario: Typical use cases are curated
+- **WHEN** default Kaoju welcome output is inspected
+- **THEN** it prioritizes landscape discovery, reading-list work, evidence intake, comparison, trials, paper production, and wiki export
+- **AND** it does not dump the complete command inventory before offering those representative patterns
+

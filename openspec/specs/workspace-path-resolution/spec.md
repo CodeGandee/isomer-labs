@@ -3,7 +3,6 @@
 ## Purpose
 TBD - created by archiving change define-workspace-path-resolution. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Workspace Path Resolution Precedence
 The system SHALL resolve Project, Topic Workspace, Workspace Runtime, Run, Artifact, View Manifest, log, and Agent Workspace paths through a single Workspace Path Resolver using deterministic precedence.
 
@@ -843,3 +842,22 @@ Workspace Path Resolution SHALL expose a built-in topic-scoped root for non-cano
 - **WHEN** an authorized template export materializes the effective exchange root
 - **THEN** Workspace Path Resolution creates or validates the resolved directory according to its storage profile before the service creates the named child
 - **AND** path materialization does not create canonical template content or an empty canonical record
+
+### Requirement: Paper Template Exchange Separates Content and LaTeX Working Copies
+Workspace Path Resolution SHALL expose kind-specific safe children beneath the topic paper-template exchange root.
+
+#### Scenario: Default content working path resolves
+- **WHEN** a content-template export omits an explicit target
+- **THEN** the service resolves `<exchange-root>/content/<name>/`
+- **AND** content `main` resolves `<exchange-root>/content/main/`
+
+#### Scenario: Default LaTeX working path resolves
+- **WHEN** a LaTeX-template export omits an explicit target
+- **THEN** the service resolves `<exchange-root>/latex/<name>/`
+- **AND** LaTeX `main` resolves `<exchange-root>/latex/main/`
+
+#### Scenario: Legacy working path is inspected
+- **WHEN** migration finds `<exchange-root>/<name>/` with recognized legacy content-template metadata
+- **THEN** it reports the compatibility source and may register or copy it to the content subdirectory without overwriting edited content
+- **AND** it never infers that the legacy path is LaTeX solely from its location
+

@@ -2,21 +2,19 @@
 
 ## Purpose
 TBD - created by syncing change revise-kaoju-survey-process. Update Purpose after archive.
-
 ## Requirements
-
 ### Requirement: Kaoju Proposes and Records Survey Directions
-The system SHALL derive candidate survey directions from the active Research Topic and SHALL return the final human-selected directions as one current `kaoju:direction-set` artifact distinct from `kaoju:survey-contract`.
+The system SHALL derive candidate survey directions from the active Research Topic, SHALL return the final human-reviewed directions as one current `KAOJU:DIRECTION-SET` record distinct from `KAOJU:SURVEY-CONTRACT`, and SHALL project every durable proposal concept into the canonical Research Idea portfolio as part of the accepted write.
 
 #### Scenario: Agent proposes bounded directions
 - **WHEN** the actor asks for useful next survey directions from a Research Topic
 - **THEN** the frame skill proposes three distinct directions by default and explains their relationship to the topic
-- **AND** each direction contains a stable direction id, scoped question, boundary, expected source classes, coverage date, expected evidence depth, and deliverables
+- **AND** each direction contains a stable direction id, stable canonical idea identity for new writes, title, scoped question, boundary, expected source classes, coverage date, expected evidence depth, and deliverables
 
 #### Scenario: Human controls the selected set
 - **WHEN** the actor reviews proposed directions
-- **THEN** the system permits multi-selection, rejection, revision, and actor-authored custom directions
-- **AND** it does not create the accepted direction set until the actor confirms the selection
+- **THEN** the system permits multi-selection, non-selection without closure, explicit deferral, explicit closure, revision, and actor-authored custom directions
+- **AND** it does not create the accepted Direction Set or promised canonical Research Idea effects until the actor confirms the authored option outcomes
 
 #### Scenario: Current host affects empirical feasibility
 - **WHEN** one or more proposed directions depend on empirical work whose feasibility varies with the current host hardware or environment
@@ -25,31 +23,77 @@ The system SHALL derive candidate survey directions from the active Research Top
 
 #### Scenario: Direction set becomes discovery input
 - **WHEN** the actor accepts one or more directions
-- **THEN** the system creates or revises the current `kaoju:direction-set` with selection provenance and a distinct stable entry for each direction
-- **AND** downstream reading-list discovery consumes selected direction refs rather than inferring directions from the survey contract or chat history
+- **THEN** the system creates or revises the current `KAOJU:DIRECTION-SET` with selection provenance, a distinct stable entry for each direction, and the accepted canonical Research Idea refs
+- **AND** downstream reading-list discovery consumes selected direction and idea refs rather than inferring directions from the Survey Contract, rendered output, or chat history
+
+#### Scenario: Confirmed direction proposals enter the canonical portfolio
+- **WHEN** a new idea-bearing Direction Set is accepted
+- **THEN** the same transaction writes one canonical Research Idea per durable proposal, an exact Idea Realization to its object-valued `$.sections.proposals[<index>]` path, one proposal-generation group, the Direction Set Decision Record, every authored decision option, and all justified state transitions
+- **AND** the accepted result returns those canonical refs for terminal verification and Project Web indexing
+
+#### Scenario: Non-selected direction remains available
+- **WHEN** a direction participates in the confirmed decision but the actor neither selects, defers, nor closes it
+- **THEN** its decision option outcome records that it was not selected by this decision while its canonical decision state remains `open`
+- **AND** the system does not treat non-selection as rejection, deferral, closure, archival, or evidence refutation
+
+#### Scenario: Direction is explicitly deferred or closed
+- **WHEN** the actor explicitly defers or closes a proposed direction
+- **THEN** the accepted Direction Set records its authored outcome, rationale, actor, and applicable reason code and commits the corresponding canonical decision-state transition
+- **AND** a closed direction has the required closure reason and remains queryable for GUI review and later reopening
+
+#### Scenario: Direction revision preserves or changes concept identity
+- **WHEN** an accepted Direction Set revision changes wording, boundary detail, evidence depth, or deliverables without changing the direction concept
+- **THEN** it retains the same `idea_id` and adds or refreshes an Idea Realization without creating an idea-level `revision_of` edge
+- **AND** a concept-changing replacement creates a new Research Idea with explicit justified idea lineage while record revision lineage remains separate
+
+#### Scenario: Kaoju operates without DeepSci
+- **WHEN** a Topic Workspace installs Kaoju without the optional DeepSci extension
+- **THEN** Kaoju resolves the paradigm-neutral Research Idea Recording contract and completes the same canonical writes and validation
+- **AND** no Kaoju skill depends on `isomer-deepsci-shared` or a DeepSci payload profile
 
 ### Requirement: Kaoju Maintains One Reading List per Direction
-The system SHALL maintain one scoped current `kaoju:reading-list` for each selected direction and SHALL preserve prior revisions.
+The system SHALL maintain one scoped current `kaoju:reading-list` for each selected direction, SHALL preserve prior revisions, and SHALL derive and persist the effective priority and secondary target counts that bound discovery.
 
 #### Scenario: Default reading-list target is applied
-- **WHEN** the actor asks to collect online information for one accepted direction
+- **WHEN** the actor asks to collect online information for one accepted direction without specifying a count
 - **THEN** the discover skill targets three priority items and three secondary items
-- **AND** it records achieved counts, unresolved deficits, search boundaries, and why each selected item has its priority
+- **AND** the Reading List records the default target, achieved counts, unresolved deficits, search boundaries, and why each selected item has its priority
+
+#### Scenario: Actor specifies category targets
+- **WHEN** the actor specifies a priority count, a secondary count, or both for one direction
+- **THEN** the discover skill uses each supplied non-negative integer as that category's target and defaults each omitted category to three
+- **AND** the combined effective target must contain at least one work
+- **AND** the Reading List records the effective counts with a user-category derivation
+
+#### Scenario: Actor specifies a total target
+- **WHEN** the actor requests a positive integer total of `N` works without category counts
+- **THEN** the discover skill targets `ceil(N / 2)` priority works and `floor(N / 2)` secondary works
+- **AND** the Reading List records `N`, the derived category counts, and a user-total derivation
+
+#### Scenario: Count request is invalid or ambiguous
+- **WHEN** the actor supplies a negative or fractional count, a zero total, category counts whose effective sum is zero, or both total and category count modes
+- **THEN** the system requests clarification before discovery
+- **AND** it does not invent, clamp, or silently prioritize a count
 
 #### Scenario: Shorter result is a warning
-- **WHEN** bounded discovery cannot identify three suitable priority and three suitable secondary items
-- **THEN** the system records the reachable list and a non-blocking coverage warning
+- **WHEN** bounded discovery cannot identify enough suitable priority or secondary items to meet the effective target
+- **THEN** the system records the reachable list, achieved counts, category deficits, and a non-blocking coverage warning against that target
 - **AND** the actor may approve the shorter list or request further discovery
 
 #### Scenario: Candidate is blocked during discovery
 - **WHEN** a selected candidate cannot be accessed or its identity cannot be resolved
-- **THEN** the system preserves the candidate and blocker in discovery provenance without counting it toward the reachable 3+3 target
+- **THEN** the system preserves the candidate and blocker in discovery provenance without counting it toward the applicable reachable target
 - **AND** it performs bounded backfill before reporting any remaining coverage deficit
+
+#### Scenario: Legacy list omits target metadata
+- **WHEN** the system validates a Reading List created before configurable target metadata was recorded
+- **THEN** it interprets the missing target as three priority items and three secondary items
+- **AND** it does not require migration or mutation of the existing Artifact
 
 #### Scenario: Different directions do not collide
 - **WHEN** a topic contains reading lists for two accepted directions
-- **THEN** each list uses the applicable direction scope key and remains independently queryable and revisable
-- **AND** a revision to one direction's list does not supersede the other direction's list
+- **THEN** each list uses the applicable direction scope key and independently records its effective target
+- **AND** a target or item revision for one direction does not supersede the other direction's list
 
 ### Requirement: Reading-List Discovery Preserves Search and Identity Evidence
 Reading-list construction SHALL search across papers, technical reports, source-code repositories, datasets, and models while treating papers and technical reports as the primary works.
@@ -174,3 +218,27 @@ Each survey intent SHALL checkpoint completed stages and SHALL resume from state
 - **WHEN** the actor asks to continue a paused survey intent
 - **THEN** the pipeline resolves the Run and referenced artifacts from Workspace Runtime, validates their current identities and checksums, and starts at the first incomplete stage
 - **AND** it does not repeat a completed durable stage unless its inputs are stale or the actor requests refresh
+
+### Requirement: Kaoju Updates Direction-linked Research Ideas Explicitly
+Kaoju downstream work SHALL update a direction-linked canonical Research Idea only when an accepted output explicitly justifies the applicable exploration, evidence, decision, visibility, archive, or lineage effect.
+
+#### Scenario: Focused direction research begins or completes
+- **WHEN** an accepted Kaoju operation establishes that focused work began or completed for a direction-linked Research Idea
+- **THEN** it records the justified `exploring` or `explored` transition with exact Research Task, Run, Artifact, Evidence Item, or Provenance Record refs
+- **AND** it does not change decision or evidence state unless the same accepted output independently justifies that effect
+
+#### Scenario: Audit or synthesis assesses direction evidence
+- **WHEN** an accepted Kaoju audit, comparison, or synthesis explicitly assesses the evidence for a direction-linked Research Idea
+- **THEN** it records the justified evidence-state transition and exact supporting and challenging refs
+- **AND** support does not imply selection and refutation does not imply closure
+
+#### Scenario: Discovery identifies a new conceptual direction
+- **WHEN** accepted discovery, comparison, audit, or synthesis authors a durable concept that differs from the current direction
+- **THEN** it creates a new Research Idea, exact Idea Realization, and justified `derived_from`, `follow_up_to`, `alternative_to`, `merged_from`, or other supported lineage edge
+- **AND** it does not overwrite the parent direction or infer idea lineage from record lineage alone
+
+#### Scenario: Survey material is not an idea
+- **WHEN** Kaoju records a reading-list item, Source Identity, repository, dataset, model, comparison candidate, Research Claim, audit repair route, paper structure, section, or output Artifact
+- **THEN** it preserves that object's existing canonical type and relationship to the applicable direction
+- **AND** it does not create a Research Idea unless the actor or accepted profile explicitly promotes a distinct durable concept
+

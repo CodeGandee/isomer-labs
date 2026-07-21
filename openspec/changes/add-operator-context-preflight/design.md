@@ -6,6 +6,8 @@ Isomer currently resolves Effective Topic Context from explicit selectors, cwd, 
 
 The observed failure crossed these boundaries: the prompt selected one Research Topic, the command ran at the Project root without an explicit topic selector, Effective Topic Context selected the Project Manifest default, and the agent treated the resulting not-found error as permission to copy material to an actor-local directory. The CLI behaved consistently with its selection rules, but neither the agent workflow nor the command result made the target mismatch sufficiently visible.
 
+Since this proposal was created, Kaoju paper production has adopted an agent-fill TeX composition contract. Named `KAOJU:PAPER-TEMPLATE-LATEX` stock can be exported for manual editing, while `init-tex` snapshots that stock and scaffolds a paper-local `KAOJU:PAPER-DRAFT-TEX` whose fill manifest the write agent completes before `build-pdf`. Context preflight must preserve one Research Topic across both workflows without treating named-stock editing and paper-local TeX filling as interchangeable intents.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -15,7 +17,8 @@ The observed failure crossed these boundaries: the prompt selected one Research 
 - Preserve deterministic Effective Context precedence while making source strength and overrides visible.
 - Make operator entrypoint and research workflows carry one reconciled target through every downstream CLI call.
 - Make switched Topic Actor or Agent posture explicit in session planning, cwd selection, command selectors, and provenance.
-- Return selected topic metadata with context-sensitive Kaoju template successes and failures.
+- Return selected topic metadata with context-sensitive Kaoju named-template, TeX composition, status, and PDF-build successes and failures.
+- Keep named LaTeX stock exchange separate from paper-local derived TeX filling and repair.
 - Stop ad hoc filesystem recovery when a typed operation fails because of unresolved or conflicting context.
 
 **Non-Goals:**
@@ -25,6 +28,7 @@ The observed failure crossed these boundaries: the prompt selected one Research 
 - Requiring all topic-scoped commands to run from the Topic Workspace or all Project-scoped commands to run from the Project root.
 - Removing Project Manifest defaults or the sole-manifest-actor fallback from existing Effective Context resolution.
 - Changing the canonical Kaoju template exchange surface or making arbitrary directory copies part of the template service.
+- Changing the Kaoju agent-fill composition contract, MyST authority, fill obligations, or PDF build Gates.
 
 ## Decisions
 
@@ -64,7 +68,9 @@ Alternative considered: rely on cwd for all downstream commands. This was reject
 
 ### Preserve Context on Typed Failures
 
-Context-sensitive Kaoju template payloads include a compact selected-context block on both success and structured failure. It identifies Research Topic, Topic Workspace, workspace path, and relevant resolution sources without duplicating the full Effective Topic Context. A not-found diagnostic therefore identifies where the lookup occurred and can recommend an explicit topic selector.
+Context-sensitive Kaoju named-template, `init-tex`, `tex-status`, and `build-pdf` payloads include a compact selected-context block on both success and structured failure. It identifies Research Topic, Topic Workspace, workspace path, and relevant resolution sources without duplicating the full Effective Topic Context. A not-found or composition diagnostic therefore identifies where the lookup occurred and can recommend an explicit topic selector.
+
+The entrypoint and Kaoju write workflow also preserve intent after context resolution. “Export the LaTeX template for me to edit” selects named LaTeX stock exchange through `manage-paper-template()->export()` and its resolved `<exchange-root>/latex/<name>/` path. A request to fill or repair the current paper TeX selects the paper-local `KAOJU:PAPER-DRAFT-TEX` and its fill contract. Neither route silently substitutes the other, and paper-local repair never mutates named stock without a separate explicit request.
 
 Skills treat a typed command failure as a failed operation against the pinned target. They may inspect, correct selectors, or route to the owning setup workflow, but they do not change Research Topic, add an alternate export target, or copy files directly unless the user explicitly requests a separate unmanaged copy operation.
 
@@ -77,14 +83,15 @@ Alternative considered: make the CLI search all registered topics after a not-fo
 - [Risk] Additional preflight commands increase agent latency and transcript size. → Mitigation: keep `location` and `check` progressive and compact, and require them only for context-sensitive routes rather than orientation-only or context-free commands.
 - [Risk] Additive JSON fields or command names may affect strict consumers. → Mitigation: give each new subcommand its own payload slice and output schema tests; preserve existing `self identity` fields.
 - [Risk] Skill text can drift from CLI behavior. → Mitigation: add validator checks and unit fixtures for target extraction, explicit selector propagation, switched posture, conflict handling, and no-copy recovery.
-- [Risk] The active welcome-skill change edits the same packaged entrypoint area. → Mitigation: implement after reconciling that change and preserve its independent public welcome routing.
+- [Risk] Context-preflight edits could regress the recently completed independent welcome and entrypoint routing split. → Mitigation: treat the committed public-pair structure as the implementation baseline and limit context changes to route-and-proceed workflows.
+- [Risk] Agents could confuse named LaTeX stock export with the newer paper-local agent-fill TeX workflow. → Mitigation: validate intent-specific routing and test that template edit requests use the exchange surface while paper composition requests use the derived TeX tree.
 
 ## Migration Plan
 
 1. Add ambient classification and alignment domain helpers with unit tests covering Project root, Topic Workspace, Topic Main, Topic Actor Workspace, Agent Workspace, nested cwd, custom paths, and ambiguous matches.
 2. Register `project self location` and `project self check`, add deterministic text and JSON payloads, and update the progressive query catalog and generated guidance.
-3. Add selected-context metadata to Kaoju template service results and structured errors while preserving existing template state and paths.
-4. Update operator entrypoint, identity-switch, shared research preflight, and production research skill guidance plus their validators and fixtures.
+3. Add selected-context metadata to Kaoju named-template, `init-tex`, `tex-status`, and `build-pdf` results and structured errors while preserving template state, exchange paths, paper-local TeX state, and build Gates.
+4. Update operator entrypoint, identity-switch, shared research preflight, and production research skill guidance plus their validators and fixtures, preserving the independent welcome split and agent-fill composition contract.
 5. Update CLI and system-skill documentation, then run focused tests followed by repository lint, typecheck, and unit tests.
 
 No persistent data migration is required. Rollback removes the additive CLI surfaces and skill requirements; existing manifests, Workspace Runtime data, templates, and Effective Context behavior remain valid.
@@ -93,4 +100,4 @@ No persistent data migration is required. Rollback removes the additive CLI surf
 
 - Should the alignment verdict names be `aligned`, `explicit_override`, `unresolved`, and `conflict`, or use a more general diagnostic status vocabulary already used by the CLI?
 - Should `project self check` accept only `--scope` plus existing selectors, or also expose a convenience `--posture` option that maps to the same explicit Topic Actor or Agent inputs without persisting state?
-- Should selected-context metadata be added first to Kaoju template operations only, or standardized across all context-sensitive extension command envelopes in a follow-up change?
+- Should selected-context metadata remain scoped to context-sensitive Kaoju paper operations in this change, or become a common extension-command envelope in a follow-up change?

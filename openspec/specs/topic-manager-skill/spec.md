@@ -4,20 +4,25 @@
 Define the operator skill that manages initialized Research Topics after Topic Creator handoff.
 ## Requirements
 ### Requirement: Topic Manager Skill Bundle
-The repository SHALL provide a command-style operator skill named `isomer-op-topic-mgr` for managing an initialized Research Topic after Topic Creator handoff.
+The core public pack SHALL preserve protected logical capability `isomer-op-topic-mgr` as member `topic-manage` for initialized Research Topic management after Topic Creator handoff.
 
-#### Scenario: Topic manager bundle exists
-- **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-op-topic-mgr/SKILL.md` and `skillset/operator/isomer-op-topic-mgr/agents/openai.yaml`
+#### Scenario: Topic Manager protected bundle exists
+- **WHEN** the core pack is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/subskills/isomer-op-topic-mgr/SKILL.md` and `agents/openai.yaml`
 
-#### Scenario: Topic manager metadata is consistent
-- **WHEN** the topic manager skill bundle is inspected
-- **THEN** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-topic-mgr`
+#### Scenario: Topic Manager metadata is consistent
+- **WHEN** the protected bundle is inspected
+- **THEN** its folder and frontmatter retain logical id `isomer-op-topic-mgr`
+- **AND** its metadata version is release-aligned and ordinary default guidance uses `$isomer-op-entrypoint use topic-manage to <task>`
 
-#### Scenario: Topic manager is initialized-topic scoped
-- **WHEN** the skill entrypoint describes its purpose
-- **THEN** it states that `isomer-op-topic-creator` owns topic initialization
-- **AND** it states that `isomer-op-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, and diagnostics
+#### Scenario: Topic Manager remains initialized-topic scoped
+- **WHEN** its entrypoint describes purpose
+- **THEN** it states that protected logical capability `isomer-op-topic-creator` owns initialization
+- **AND** it owns initialized-topic storage, Topic Actors, team topology, environment mutation, verification, and diagnostics as before
+
+#### Scenario: Public parent routes initialized-topic work
+- **WHEN** a user asks to manage an initialized Research Topic
+- **THEN** the public core entrypoint invokes `isomer-op-entrypoint->topic-manage`
 
 ### Requirement: Initialized Topic Guard
 The Topic Manager skill SHALL require Project Manifest-backed selected Research Topic and Topic Workspace context before managing topic state.
@@ -33,7 +38,17 @@ The Topic Manager skill SHALL require Project Manifest-backed selected Research 
 - **AND** it does not derive a topic id, register a topic, create a Topic Workspace, or write topic intent material itself
 
 ### Requirement: Scope-Prefixed Command Structure
-The Topic Manager skill SHALL use grouped, one-level, scope-prefixed kebab-case subcommands with one executable reference page per subcommand.
+The protected Topic Manager SHALL retain its scope-prefixed routines under the parent-owned invocation designator.
+
+#### Scenario: Internal command is invoked
+- **WHEN** an active capability needs one Topic Manager routine
+- **THEN** it invokes `isomer-op-entrypoint->topic-manage-><scope-command>()`
+- **AND** the calling page declares the standard invocation notation
+
+#### Scenario: User describes a scoped task
+- **WHEN** a user asks the public core entrypoint for storage, actor, team, environment, or diagnostic work
+- **THEN** the parent selects the matching protected Topic Manager command
+- **AND** the user is not required to invoke the protected logical id directly
 
 #### Scenario: Entrypoint routes by subcommand
 - **WHEN** an agent invokes `isomer-op-topic-mgr`
@@ -247,3 +262,4 @@ The Topic Manager skill SHALL use `isomer-cli project topic-main-guidance` as th
 - **WHEN** operator skillset validation inspects Topic Manager documentation
 - **THEN** it accepts concise references to the CLI command, marker names, and `.j2` template source of truth
 - **AND** it reports diagnostics if Topic Manager docs reintroduce the full guidance block body as copied prose
+

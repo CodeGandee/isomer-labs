@@ -4,52 +4,39 @@
 TBD - created by archiving change add-gui-manager-system-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: GUI Manager Operator Skill
-The packaged operator skillset SHALL include `isomer-op-gui-mgr` as the user-facing operator skill for Project Web GUI lifecycle guidance, backend API reference, and GUI troubleshooting.
+The core public pack SHALL preserve `isomer-op-gui-mgr` as protected member `gui` for Project Web GUI lifecycle guidance, backend API reference, and troubleshooting.
 
-#### Scenario: GUI manager skill exists
-- **WHEN** packaged operator system skills are inspected
-- **THEN** `operator/isomer-op-gui-mgr/SKILL.md` exists
-- **AND** the skill frontmatter name is `isomer-op-gui-mgr`
-- **AND** `operator/isomer-op-gui-mgr/agents/openai.yaml` uses `isomer-op-gui-mgr` as its display name
+#### Scenario: GUI manager member exists
+- **WHEN** packaged core skills are inspected
+- **THEN** `operator/isomer-op-entrypoint/subskills/isomer-op-gui-mgr/SKILL.md` exists
+- **AND** its folder and frontmatter retain logical id `isomer-op-gui-mgr`
+- **AND** its UI metadata version is release-aligned
 
 #### Scenario: GUI manager is command-style
-- **WHEN** the GUI manager skill is inspected
-- **THEN** it defines a default help workflow
-- **AND** it lists bounded subcommands or reference pages for launch, status, backend API reference, record refresh or index maintenance, and troubleshooting
-- **AND** the top-level skill instructs agents to load only the selected reference page for one bounded GUI operation
+- **WHEN** the protected GUI member is inspected
+- **THEN** it defines default help and bounded launch, status, API-reference, refresh, and troubleshooting routines
+- **AND** it loads only the selected detail page for one bounded operation
 
-#### Scenario: GUI manager owns GUI operation routing
-- **WHEN** a Project Operator asks how to start, restart, inspect, debug, refresh, or diagnose the Project Web GUI
-- **THEN** operator routing identifies `isomer-op-gui-mgr` as the owning user-facing skill
-- **AND** it does not route that request first to Project Manager, Topic Manager, or a service skill unless the request is actually about Project initialization, Topic Workspace repair, or lower-level service support
+#### Scenario: Public entrypoint owns GUI routing
+- **WHEN** a user asks to start, restart, inspect, debug, refresh, or diagnose Project Web GUI
+- **THEN** `$isomer-op-entrypoint use gui to <task>` routes to `isomer-op-entrypoint->gui`
+- **AND** the request is not routed first to another owner unless its actual subject is Project initialization, Topic Workspace repair, or service support
+
+#### Scenario: GUI manager is not top-level
+- **WHEN** ordinary core host discovery runs
+- **THEN** it does not list `isomer-op-gui-mgr` as an independent public skill
 
 ### Requirement: GUI Manager Discoverability
-The packaged operator routing surfaces SHALL expose `isomer-op-gui-mgr` from both informed-user dispatch and read-only welcome menus.
+GUI management SHALL be discoverable through public core help, route-by-task behavior, and protected member metadata.
 
-#### Scenario: Entrypoint routes GUI requests
-- **WHEN** `isomer-op-entrypoint` routing references are inspected
-- **THEN** the system skill index lists `isomer-op-gui-mgr` as an active operator skill
-- **AND** it maps Project Web GUI lifecycle, cache-mode debugging, GUI refresh, backend API reference, recent-errors inspection, and GUI troubleshooting requests to `isomer-op-gui-mgr`
+#### Scenario: Public help lists GUI route
+- **WHEN** `isomer-op-entrypoint` help is shown
+- **THEN** it lists public subcommand `gui` and a concise purpose
+- **AND** it does not require users to know the protected logical id
 
-#### Scenario: Welcome options include GUI manager
-- **WHEN** `isomer-op-welcome` option-menu references are inspected
-- **THEN** `show-options` lists Project Web GUI lifecycle, refresh, troubleshooting, or backend API reference as a supported action
-- **AND** it names `isomer-op-gui-mgr` as the owner skill
-
-#### Scenario: Welcome skill map includes GUI manager
-- **WHEN** `isomer-op-welcome` skill-map references are inspected
-- **THEN** `show-skill-map` includes `isomer-op-gui-mgr` in the active owner-skill map
-- **AND** it gives direct invocation language such as `Use $isomer-op-gui-mgr help` or a GUI Manager subcommand
-
-#### Scenario: Welcome path choice can select GUI manager
-- **WHEN** `isomer-op-welcome` path-choice guidance is inspected
-- **THEN** `choose-path` prefers `isomer-op-gui-mgr` for GUI Backend lifecycle, Project Web cache/debug, backend API reference, recent-errors, and GUI refresh questions
-- **AND** it still routes Project setup to Project Manager and initialized-topic repair to Topic Manager
-
-#### Scenario: Welcome help names GUI manager
-- **WHEN** `isomer-op-welcome` help references are inspected
-- **THEN** `help` names `isomer-op-gui-mgr` with the active owner skills
-- **AND** it describes the skill as the owner for Project Web GUI lifecycle and backend API guidance
+#### Scenario: Internal catalog lists capability
+- **WHEN** pack metadata is queried
+- **THEN** it reports logical id `isomer-op-gui-mgr`, member `gui`, nested path, and invocation designator
 
 ### Requirement: GUI Lifecycle Guidance
 `isomer-op-gui-mgr` SHALL describe the supported local GUI Backend lifecycle commands and cache-mode choices.

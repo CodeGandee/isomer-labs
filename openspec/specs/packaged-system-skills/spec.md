@@ -3,20 +3,24 @@
 ## Purpose
 TBD - created by archiving change package-system-skills-as-assets. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: System Skills Are Package Assets
-The system SHALL distribute official non-development Isomer system skills as package-owned resources under the `isomer_labs` package.
+The system SHALL distribute official non-development Isomer system skills as package-owned public packs containing independent welcome and entrypoint skills plus protected nested capabilities under the `isomer_labs` package.
 
-#### Scenario: Packaged root contains distributable skillset material
+#### Scenario: Packaged root contains distributable pack material
 - **WHEN** package resources are inspected for system skills
-- **THEN** the packaged root contains `manifest.toml`, `README.md`, `misc/`, `operator/`, `research-paradigm/`, and `service/`
-- **AND** it does not contain `dev/`
+- **THEN** the packaged root contains `manifest.toml`, `README.md`, the core public welcome and entrypoint, and the optional DeepSci and Kaoju public welcome and entrypoint pairs
+- **AND** every protected capability is below its owning execution entrypoint's `subskills/` directory
+- **AND** the packaged root does not contain `dev/`
 
-#### Scenario: Manifest-listed skills resolve inside package assets
+#### Scenario: Manifest paths resolve inside package assets
 - **WHEN** the system loads `assets/system_skills/manifest.toml`
-- **THEN** every skill path listed in every manifest group resolves below the packaged system-skill root
-- **AND** each listed skill directory contains `SKILL.md`
+- **THEN** every public-skill path and protected capability path resolves below the packaged system-skill root
+- **AND** each resolved public skill and capability directory contains `SKILL.md`
 
+#### Scenario: Protected capability is not duplicated
+- **WHEN** package assets are inspected
+- **THEN** no manifest-declared protected logical id also exists as an independently installable top-level skill directory
+- **AND** the independent welcome directories are classified as public skills rather than protected capabilities
 ### Requirement: System Skill Discovery Uses Package Resources
 The system SHALL expose package-resource helpers for discovering and reading official system skills without a repository checkout.
 
@@ -31,85 +35,123 @@ The system SHALL expose package-resource helpers for discovering and reading off
 - **AND** it does not require repository-root `skillset/` to exist
 
 ### Requirement: System Skills Can Be Materialized Safely
-The system SHALL support copying manifest-selected packaged system skills to a filesystem target while preserving relative skill paths.
+The system SHALL materialize manifest-selected packs as complete sets of top-level public skill directories while preserving protected nested paths under the designated execution entrypoint.
 
-#### Scenario: Materialize selected group
+#### Scenario: Materialize core group
 - **WHEN** a caller materializes the `core` group to an empty target directory
-- **THEN** the target receives `manifest.toml` and only the skill directories listed for that group
-- **AND** each copied skill keeps its manifest-relative path such as `operator/isomer-op-project-mgr`
+- **THEN** the target receives `manifest.toml`, `isomer-op-welcome`, and `isomer-op-entrypoint`
+- **AND** protected core capabilities remain below `isomer-op-entrypoint/subskills/`
+- **AND** no protected capability is copied beside the two public skills
+
+#### Scenario: Materialize selected extension
+- **WHEN** a caller materializes extension `deepsci` or `kaoju`
+- **THEN** the target receives the complete core public pair and the selected extension's welcome and entrypoint pair
+- **AND** it does not receive the unselected extension pack
 
 #### Scenario: Development skills are never materialized from package assets
-- **WHEN** a caller materializes any packaged system-skill group
+- **WHEN** a caller materializes any packaged system-skill selection
 - **THEN** no `dev/` directory or `isomer-dev-*` skill is copied from package assets
-
 ### Requirement: Core Packaged Skills Include Entrypoint
-The packaged core system-skill group SHALL include `operator/isomer-op-entrypoint` and materialize it with the rest of the core operator, service, and misc skills.
+The packaged core system-skill group SHALL include `operator/isomer-op-entrypoint` as its designated execution entrypoint and `operator/isomer-op-welcome` as its independent public onboarding skill, while all other core capabilities remain protected members of the entrypoint.
 
-#### Scenario: Core manifest includes entrypoint
+#### Scenario: Core manifest declares public pair
 - **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
-- **THEN** `groups.core.skills` includes `operator/isomer-op-entrypoint`
+- **THEN** core declares public skills `isomer-op-welcome` with role `welcome` and `isomer-op-entrypoint` with role `entrypoint`
+- **AND** `entry_skill` is `isomer-op-entrypoint`
+
+#### Scenario: Core materialization copies two public roots
+- **WHEN** a caller materializes the `core` group
+- **THEN** the target receives standalone `isomer-op-welcome` and complete `isomer-op-entrypoint` directories
+- **AND** no other core logical capability is a top-level projection
+
+#### Scenario: Packaged discovery distinguishes roles
+- **WHEN** code asks for catalog metadata for the `core` group
+- **THEN** it identifies the ordered public pair, their roles, paths, descriptions, versions, and commands
+- **AND** it separately identifies the protected logical capabilities owned by `isomer-op-entrypoint`
+
+#### Scenario: Core manifest declares public pack
+- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
+- **THEN** the core group declares `operator/isomer-op-entrypoint` as its public pack path and `isomer-op-entrypoint` as its entry skill
 - **AND** the listed path resolves below the packaged system-skill root
-- **AND** the listed directory contains `SKILL.md`
 
-#### Scenario: Core materialization copies entrypoint
-- **WHEN** a caller materializes the `core` group to an empty target directory
-- **THEN** the target receives `operator/isomer-op-entrypoint/SKILL.md`
-- **AND** it receives the entrypoint's `agents/openai.yaml` and directly linked references
-
-#### Scenario: Packaged skill discovery returns entrypoint
-- **WHEN** code asks for manifest-relative skill paths for the `core` group
-- **THEN** the result includes `operator/isomer-op-entrypoint`
-- **AND** it keeps the path manifest-relative rather than deriving a repository checkout path
-
+#### Scenario: Packaged discovery returns core pack and members
+- **WHEN** code asks for catalog metadata for the `core` group
+- **THEN** the result identifies one public pack and the ordered protected logical capabilities it owns
+- **AND** it does not classify those protected members as independent public install units
 ### Requirement: System Skill Manifest Classifies Groups
-The packaged system-skill manifest SHALL classify each manifest group as core or extension so callers can distinguish always-available system skills from optional system extensions.
+The packaged system-skill manifest SHALL classify packs, public skills, and protected logical capabilities so callers can distinguish pack mutation units, newcomer and execution surfaces, and internally routed members.
+
+#### Scenario: Pack public roles are complete
+- **WHEN** manifest v4 loads a core or extension pack
+- **THEN** the pack declares exactly one public skill with role `welcome` and exactly one public skill with role `entrypoint`
+- **AND** the pack's `entry_skill` names the entrypoint-role record
+
+#### Scenario: Public skill metadata is complete
+- **WHEN** manifest v4 loads a public skill
+- **THEN** the record declares canonical name, pack id, role, source path, ordered public commands, aliases, callback stages, and applicable compatibility floor
+- **AND** public names and source paths are globally unique
+
+#### Scenario: Protected capability metadata is complete
+- **WHEN** manifest v4 loads a protected capability
+- **THEN** it declares logical id, pack id, nested entrypoint path, scoped member name, invocation designator, area, dependencies, aliases, callback stages, and applicable compatibility floor
+- **AND** its invocation designator begins with the owning pack's execution entrypoint rather than its welcome skill
+
+#### Scenario: Invalid classification is rejected
+- **WHEN** a pack lacks one required public role, a public identity collides, a protected capability escapes the entrypoint, or an extension public name does not match its extension id and role
+- **THEN** manifest loading fails with a deterministic package asset diagnostic
 
 #### Scenario: Core group is always available
-- **WHEN** the system loads the packaged system-skill manifest
-- **THEN** each core group declares that its skills are always available for Project operator discovery
-- **AND** the core group does not require a Project Manifest operator extension declaration before its catalog metadata is listed
+- **WHEN** the manifest loads the core pack
+- **THEN** it declares `kind = "core"`, `always_available = true`, and no extension id
+- **AND** it declares one public entry skill and its protected member inventory
 
-#### Scenario: Extension group has stable extension id
-- **WHEN** the system loads a packaged system-skill manifest group whose kind is extension
-- **THEN** the group declares a stable extension id
-- **AND** callers can filter catalog metadata by that extension id
-
-#### Scenario: Invalid group classification is rejected
-- **WHEN** a packaged system-skill manifest group omits group classification or declares an invalid extension id
-- **THEN** system-skill manifest loading fails with a deterministic package asset diagnostic
-
+#### Scenario: Extension pack has stable extension id
+- **WHEN** the manifest loads a pack whose kind is extension
+- **THEN** it declares a stable extension id, one `isomer-ext-<extension-id>-entrypoint` public skill, ordered public commands, and protected members
+- **AND** callers can filter catalog metadata by extension id
 ### Requirement: System Skill Manifest Declares Callback Insertion Points
-The packaged system-skill manifest SHALL declare callback stage definitions and per-skill callback insertion points as catalog metadata.
+The packaged system-skill manifest SHALL declare callback stages against stable logical capability ids and SHALL provide their owning pack and invocation designators as catalog metadata.
 
 #### Scenario: Stage definitions are loaded from manifest
 - **WHEN** the system loads `assets/system_skills/manifest.toml`
 - **THEN** callback insertion point stage ids, labels, and descriptions are derived from the manifest rather than hardcoded only in Python
 
-#### Scenario: Per-skill insertion points are manifest-relative
-- **WHEN** the manifest declares callback insertion points for a packaged system skill
-- **THEN** the declaration is keyed by the skill's manifest-relative path
-- **AND** every declared stage id resolves to a manifest callback stage definition
-- **AND** every referenced skill path resolves below the packaged system-skill root and contains `SKILL.md`
+#### Scenario: Per-capability insertion points use logical ids
+- **WHEN** the manifest declares callback insertion points for a public entrypoint or protected capability
+- **THEN** the declaration is keyed by its canonical logical id
+- **AND** every stage resolves to a manifest stage definition
+- **AND** every protected target resolves to one nested path and invocation designator
 
-#### Scenario: Skills without declarations expose no insertion points
-- **WHEN** a packaged system skill has no callback insertion point declaration in the manifest
-- **THEN** the system treats that skill as exposing no callback insertion points
+#### Scenario: Capability without declaration exposes no insertion point
+- **WHEN** a packaged capability has no callback insertion point declaration
+- **THEN** the system treats it as exposing no callback insertion points
 
-#### Scenario: Callback insertion point discovery is deterministic
+#### Scenario: Callback discovery is deterministic
 - **WHEN** code asks for packaged callback insertion points
-- **THEN** the result is derived from the packaged manifest, grouped by manifest group, and returned in deterministic manifest order with target skill name, skill path, group name, optional extension id, stage id, and stage metadata
+- **THEN** the result is returned in manifest order with target logical id, pack id, nested skill path, invocation designator, group, optional extension id, stage id, and stage metadata
 
 ### Requirement: Public System Skill Installation Documentation
-The system SHALL document how users install packaged Isomer system skills into supported agent hosts from the published repository.
+The system SHALL document welcome-first onboarding and entrypoint execution for public packs on supported agent hosts.
 
-#### Scenario: Install docs prefer skills CLI
+#### Scenario: Install docs list public pairs
 - **WHEN** a user follows public system-skill installation documentation
-- **THEN** the docs SHALL recommend `npx skills add CodeGandee/isomer-labs` or an equivalent repository URL as the primary installation mechanism
-- **AND** the docs SHALL show how to select skills with `--skill`
+- **THEN** the docs list `isomer-op-welcome` with `isomer-op-entrypoint`, `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`
+- **AND** they explain that selecting either public name through Isomer pack installation installs the complete owning pack
 
-#### Scenario: Agent target is explicit
-- **WHEN** docs show a skill installation command
-- **THEN** the command SHALL include or explain `--agent <agent>` so users know which agent host receives the skills
+#### Scenario: Newcomer and informed-user routes differ
+- **WHEN** docs explain ordinary use
+- **THEN** they recommend `$<welcome>` for orientation, typical use cases, and command learning
+- **AND** they recommend `$<entrypoint> use <command> to <task>` or a concrete task-only entrypoint request for execution
+
+#### Scenario: Protected members are not user install choices
+- **WHEN** docs describe operator, service, shared, DeepSci, or Kaoju members
+- **THEN** they describe those members as entrypoint-routed protected capabilities
+- **AND** they do not instruct users to install or invoke them as top-level skills
+
+#### Scenario: Install docs list public packs
+- **WHEN** a user follows public system-skill installation documentation
+- **THEN** the docs identify `isomer-op-entrypoint`, `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-entrypoint` as the complete public Isomer surface
+- **AND** they show repository or `isomer-cli system-skills` selection commands with an explicit target or agent scope
 
 #### Scenario: Entrypoint skill is discoverable
 - **WHEN** docs explain operator skill installation
@@ -120,40 +162,43 @@ The system SHALL document how users install packaged Isomer system skills into s
 - **WHEN** docs explain DeepSci skill installation
 - **THEN** they SHALL state that DeepSci skills are optional extension skills and do not need to be installed for basic Project lifecycle CLI usage
 
+#### Scenario: Entrypoint is the invocation surface
+- **WHEN** docs explain ordinary use
+- **THEN** they demonstrate `$<public-entrypoint> use <subcommand> to <task>` and task-only routing
+- **AND** they state that empty invocation means `help`
+
+#### Scenario: Host refresh is required after migration
+- **WHEN** docs explain migration from a flat installation
+- **THEN** they tell the user to run a managed upgrade and refresh the agent host or begin a new agent session
 ### Requirement: Core Packaged Skills Include Toolbox Manager
-The packaged core system-skill group SHALL include `operator/isomer-op-toolbox-mgr` and materialize it with the rest of the core operator skills.
+The packaged core public pack SHALL include `isomer-op-toolbox-mgr` as the protected `toolbox` member.
 
-#### Scenario: Core manifest includes toolbox manager
-- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
-- **THEN** `groups.core.skills` includes `operator/isomer-op-toolbox-mgr`
-- **AND** `groups.core.skills` does not include `operator/isomer-op-toolbox-creator`
-- **AND** the listed manager path resolves below the packaged system-skill root
-- **AND** the listed manager directory contains `SKILL.md`
+#### Scenario: Core manifest includes toolbox member
+- **WHEN** the core protected inventory is inspected
+- **THEN** it maps member `toolbox` to logical id `isomer-op-toolbox-mgr` below `operator/isomer-op-entrypoint/subskills/isomer-op-toolbox-mgr`
+- **AND** it does not include `isomer-op-toolbox-creator`
 
-#### Scenario: Core materialization copies toolbox manager
-- **WHEN** a caller materializes the `core` group to an empty target directory
-- **THEN** the target receives `operator/isomer-op-toolbox-mgr/SKILL.md`
-- **AND** it receives the manager skill's directly linked command pages
-- **AND** it does not receive `operator/isomer-op-toolbox-creator/`
-
-#### Scenario: Packaged skill discovery returns toolbox manager
-- **WHEN** code asks for manifest-relative skill paths for the `core` group
-- **THEN** the result includes `operator/isomer-op-toolbox-mgr`
-- **AND** the result does not include `operator/isomer-op-toolbox-creator`
-- **AND** it keeps the manager path manifest-relative rather than deriving a repository checkout path
+#### Scenario: Core materialization nests toolbox manager
+- **WHEN** the core pack is materialized
+- **THEN** the Toolbox Manager bundle and its directly linked resources are copied below the parent pack
+- **AND** no top-level `isomer-op-toolbox-mgr` directory is created
 
 ### Requirement: Core Isomer Skills Include Internal Houmao Bridge Support
-The packaged Isomer system-skill catalog SHALL keep Isomer-facing Houmao bridge and Topic Service Agent support available in the core skill set while keeping Houmao-owned projected skill material Project-local and opt-in.
+The packaged core public pack SHALL retain Isomer-facing Houmao bridge and Topic Service Agent support as protected service members while keeping Houmao-owned projected material Project-local and opt-in.
 
-#### Scenario: Core operator installation does not expose Houmao administration
-- **WHEN** a user installs only the basic Isomer operator skill set
-- **THEN** the installed user-facing skills do not require the user to install or invoke Houmao-owned system skills directly
-- **AND** Houmao-specific procedures remain reachable only through Isomer-managed routing or an explicit advanced support path
+#### Scenario: Core installation does not expose Houmao administration
+- **WHEN** a user installs the core pack
+- **THEN** no independent Houmao or `isomer-srv-*` skill is advertised as a public Isomer entrypoint
+- **AND** Houmao procedures remain reachable through protected Isomer routing or an explicit advanced support path
 
-#### Scenario: Core includes Isomer-facing bridge skills
-- **WHEN** the packaged system-skill manifest is inspected
-- **THEN** the core group may include Isomer-facing bridge/support skills such as `isomer-srv-houmao-interop` and `isomer-srv-topic-service-agent-support`
-- **AND** those skills do not require Project-local Houmao skill projection, Houmao credentials, or live Houmao state merely to report disabled or not-configured integration
+#### Scenario: Core includes bridge members
+- **WHEN** the core protected inventory is inspected
+- **THEN** it includes logical ids `isomer-srv-houmao-interop` and `isomer-srv-topic-service-agent-support`
+- **AND** those members can report disabled or not-configured integration without requiring live Houmao state
+
+#### Scenario: Project-local Houmao projection remains opt-in
+- **WHEN** a Project has not enabled Houmao integration
+- **THEN** core pack installation does not create `.isomer-labs/houmao-skills/`
 
 #### Scenario: Project-local projection remains opt-in
 - **WHEN** a Project has not enabled Houmao integration
@@ -166,41 +211,44 @@ The packaged Isomer system-skill catalog SHALL keep Isomer-facing Houmao bridge 
 - **AND** it directs users to Isomer setup and Project integration commands instead of direct Houmao skill installation as the primary route
 
 ### Requirement: Core Packaged Skills Include GUI Manager
-The packaged core system-skill group SHALL include `operator/isomer-op-gui-mgr` and materialize it with the rest of the core operator skills.
+The packaged core public pack SHALL include `isomer-op-gui-mgr` as the protected `gui` member.
 
-#### Scenario: Core manifest includes GUI manager
-- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
-- **THEN** `groups.core.skills` includes `operator/isomer-op-gui-mgr`
-- **AND** the listed path resolves below the packaged system-skill root
-- **AND** the listed directory contains `SKILL.md`
+#### Scenario: Core manifest includes GUI member
+- **WHEN** the core protected inventory is inspected
+- **THEN** it maps member `gui` to logical id `isomer-op-gui-mgr` below `operator/isomer-op-entrypoint/subskills/isomer-op-gui-mgr`
 
-#### Scenario: Core materialization copies GUI manager
-- **WHEN** a caller materializes the `core` group to an empty target directory
-- **THEN** the target receives `operator/isomer-op-gui-mgr/SKILL.md`
-- **AND** it receives the GUI manager skill's directly linked reference pages
-
-#### Scenario: Packaged skill discovery returns GUI manager
-- **WHEN** code asks for manifest-relative skill paths for the `core` group
-- **THEN** the result includes `operator/isomer-op-gui-mgr`
-- **AND** it keeps the path manifest-relative rather than deriving a repository checkout path
+#### Scenario: Core materialization nests GUI manager
+- **WHEN** the core pack is materialized
+- **THEN** the GUI Manager bundle and directly linked resources are copied below the parent pack
+- **AND** no top-level `isomer-op-gui-mgr` directory is created
 
 ### Requirement: Packaged Kaoju Extension Group
-The packaged system-skill manifest SHALL expose Kaoju as an optional extension group with stable id `kaoju` and the complete fourteen-skill survey-process inventory.
+The packaged catalog SHALL expose Kaoju as optional extension `kaoju` through independent public skills `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint`, with the existing thirteen protected capabilities owned by the entrypoint.
 
 #### Scenario: Kaoju manifest group is classified and complete
-- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
-- **THEN** group `kaoju` declares `kind = "extension"`, `extension_id = "kaoju"`, and `always_available = false`
-- **AND** it lists the fourteen production paths for `isomer-kaoju-pipeline`, `isomer-kaoju-shared`, `isomer-kaoju-workspace-mgr`, `isomer-kaoju-frame`, `isomer-kaoju-discover`, `isomer-kaoju-acquire`, `isomer-kaoju-examine`, `isomer-kaoju-reproduce`, `isomer-kaoju-trial`, `isomer-kaoju-compare`, `isomer-kaoju-audit`, `isomer-kaoju-synthesize`, `isomer-kaoju-write`, and `isomer-kaoju-export`
+- **WHEN** `manifest.toml` is inspected
+- **THEN** pack `kaoju` declares `kind = "extension"`, `extension_id = "kaoju"`, `always_available = false`, public welcome `isomer-ext-kaoju-welcome`, and execution entrypoint `isomer-ext-kaoju-entrypoint`
+- **AND** it owns protected logical ids for shared, workspace, frame, discover, acquire, examine, reproduce, trial, compare, audit, synthesize, write, and export
 
-#### Scenario: Kaoju paths resolve inside package assets
-- **WHEN** packaged system-skill discovery loads the `kaoju` group
-- **THEN** every listed path resolves below the packaged system-skill root
-- **AND** every listed directory contains `SKILL.md`, `agents/openai.yaml`, and its directly linked active commands, references, assets, or scripts
+#### Scenario: Kaoju paths resolve inside their owners
+- **WHEN** Kaoju catalog metadata loads
+- **THEN** the welcome path resolves as an independent sibling bundle
+- **AND** every protected path resolves below `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/`
 
-#### Scenario: Kaoju extension materializes safely
-- **WHEN** a caller materializes or installs extension `kaoju`
-- **THEN** the selected output includes the core group plus all fourteen Kaoju skills according to existing selector rules
-- **AND** it does not include DeepSci skills unless DeepSci or all extensions were also selected
+#### Scenario: Kaoju materializes safely
+- **WHEN** extension `kaoju` is selected
+- **THEN** output includes core plus both Kaoju public skills and the complete protected entrypoint inventory
+- **AND** it does not include DeepSci unless selected
+
+#### Scenario: Kaoju discovery distinguishes learning and execution
+- **WHEN** extension discovery metadata is queried for `kaoju`
+- **THEN** it reports `isomer-ext-kaoju-welcome` as the onboarding surface and `isomer-ext-kaoju-entrypoint` as the execution surface
+- **AND** it reports entrypoint commands and protected logical members from manifest metadata
+
+#### Scenario: Kaoju paths resolve inside the pack
+- **WHEN** Kaoju catalog metadata loads
+- **THEN** every protected path resolves below `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/`
+- **AND** every member contains its required skill metadata and active resources
 
 #### Scenario: Kaoju callback insertion points are cataloged
 - **WHEN** callback insertion-point metadata is queried for extension `kaoju`
@@ -209,72 +257,111 @@ The packaged system-skill manifest SHALL expose Kaoju as an optional extension g
 
 #### Scenario: Kaoju entry surface declares survey intents
 - **WHEN** extension discovery metadata is queried for `kaoju`
-- **THEN** `isomer-kaoju-pipeline` remains the entry skill and its ordered command ids include all ten survey-process intents plus retained compatibility procedures and grouped managers
-- **AND** the metadata is derived from the packaged manifest rather than a duplicate hard-coded command list
+- **THEN** it reports `isomer-ext-kaoju-entrypoint`, the accepted ordered public command inventory, and protected logical members from manifest metadata
+
+#### Scenario: Kaoju role-aware baseline is packaged
+- **WHEN** the Kaoju public pack and protected `write` member are materialized
+- **THEN** public template-manager commands retain explicit content-versus-LaTeX role handling and the protected writer retains its private role-aware paper-production resources
+- **AND** package-owned `isomer_labs.kaoju` services remain the machine authority for template state, composition, migration, validation, bindings, semantics, and process data
 
 #### Scenario: Kaoju package is self-contained
 - **WHEN** an installed package materializes the Kaoju extension
 - **THEN** every skill can resolve its active direct resources, semantic and binding references, command pages, templates, and helper scripts without a repository checkout
 - **AND** no active skill requires feature-design files, archived OpenSpec changes, external source checkouts, provider credentials, or the external `imsight-llm-wiki` skill merely to load or validate
-
 ### Requirement: System Skill Manifest Describes Extension Entry Surfaces
-The packaged system-skill manifest SHALL describe how users enter each optional system-skill extension without requiring a repository checkout or extension-specific CLI code.
+The packaged system-skill manifest SHALL describe both the welcome and execution surfaces of each optional extension without requiring a repository checkout or extension-specific CLI inventory.
 
-#### Scenario: Extension declares entry skill and commands
-- **WHEN** the system loads a packaged group whose kind is `extension`
-- **THEN** the group declares one entry skill that belongs to its packaged skill inventory
-- **AND** it declares an ordered list of public command ids exposed through that entry skill
+#### Scenario: Extension declares public pair
+- **WHEN** the system loads a pack whose kind is `extension`
+- **THEN** it declares one `isomer-ext-<extension-id>-welcome` public skill and one `isomer-ext-<extension-id>-entrypoint` public skill
+- **AND** it declares ordered public commands on the public skill that owns each command
 
 #### Scenario: Extension discovery metadata is package-derived
 - **WHEN** code asks for packaged system-skill extensions
-- **THEN** each result includes the manifest-owned extension id, group, description, entry skill, commands, and skill paths
+- **THEN** each result includes extension id, pack description, ordered public skill records, designated execution entrypoint, command inventories, and protected member summaries
+- **AND** the result does not depend on a repository checkout
+
+#### Scenario: Invalid extension public metadata is rejected
+- **WHEN** an extension welcome or entrypoint is missing, has the wrong role or name, lies outside the extension family, or declares an invalid command id
+- **THEN** manifest loading fails with a deterministic package asset diagnostic
+
+#### Scenario: Extension declares entrypoint and commands
+- **WHEN** the system loads an extension pack
+- **THEN** its entry skill belongs to the public pack path and matches `isomer-ext-<extension-id>-entrypoint`
+- **AND** it declares an ordered public command list and protected capability inventory
+
+#### Scenario: Extension discovery is package-derived
+- **WHEN** code asks for packaged extensions
+- **THEN** each result includes extension id, pack id, description, entry skill, public commands, public source path, and protected logical members
 - **AND** the result does not depend on a repository checkout
 
 #### Scenario: Invalid extension entry metadata is rejected
-- **WHEN** an extension entry skill is missing, is not part of that extension's skill inventory, or a public command id is invalid
-- **THEN** system-skill manifest loading fails with a deterministic package asset diagnostic
+- **WHEN** an extension entry skill is missing, violates the naming rule, or has an invalid public command or member mapping
+- **THEN** manifest loading fails with a deterministic diagnostic
 
 #### Scenario: Core groups reject extension entry metadata
 - **WHEN** a core group declares an extension entry skill or public extension commands
 - **THEN** system-skill manifest loading fails with a deterministic package asset diagnostic\n
-
 ### Requirement: Core Packaged Skills Include System Skill Manager
-The packaged core system-skill group SHALL include `operator/isomer-op-system-skill-mgr` so every complete Isomer operator installation can manage optional extensions.
+The core public pack SHALL include `isomer-op-system-skill-mgr` as the protected `system-skills` member.
 
-#### Scenario: Core manifest includes manager
-- **WHEN** the packaged system-skill manifest is inspected
-- **THEN** the core group lists `operator/isomer-op-system-skill-mgr`
-- **AND** the path resolves to a valid packaged skill directory
+#### Scenario: Core manifest includes manager member
+- **WHEN** the core protected inventory is inspected
+- **THEN** it maps `system-skills` to logical id `isomer-op-system-skill-mgr`
+- **AND** the nested path resolves to a valid skill bundle
 
 #### Scenario: Core installation projects manager
 - **WHEN** the core group is installed or materialized
 - **THEN** it includes the manager's `SKILL.md`, `agents/openai.yaml`, and directly linked references
 
-#### Scenario: Core catalog exposes manager
+#### Scenario: Core catalog exposes route without public duplication
 - **WHEN** system-skill catalog listing runs
-- **THEN** it reports `isomer-op-system-skill-mgr` as a core operator skill
-- **AND** it does not classify the manager as an optional extension
+- **THEN** it reports the manager as a protected core member routed by `isomer-op-entrypoint`
+- **AND** it does not classify the manager as a public pack or optional extension
 
 ### Requirement: Extension Catalog Supports Inventory Classification
-The packaged system-skill catalog SHALL provide stable extension-family membership for explicit-root and live-inventory classification.
+The packaged system-skill catalog SHALL provide stable extension-family membership and public roles for explicit-root and live-inventory classification.
 
-#### Scenario: Catalog maps extension members
+#### Scenario: Catalog maps extension public skills
 - **WHEN** internal inspection classifies receipt records or inventory names
-- **THEN** it derives each extension's entry skill and complete member set from package-owned catalog metadata
-- **AND** agents do not maintain duplicate hard-coded member lists
+- **THEN** it derives each extension's welcome, entrypoint, and complete protected member set from package-owned catalog metadata
+- **AND** agents do not maintain duplicate hard-coded member or public-skill lists
 
+#### Scenario: One public name does not prove complete coverage
+- **WHEN** live inventory contains only an extension welcome or only its entrypoint
+- **THEN** classification reports the observed public role
+- **AND** it does not claim the extension pack is complete or host-usable from that name alone
+
+#### Scenario: Catalog maps extension pack and members
+- **WHEN** internal inspection classifies receipt records or live inventory names
+- **THEN** it derives the extension entrypoint, protected logical members, and expected nested paths from package-owned metadata
+- **AND** agents do not maintain duplicate member lists
+
+#### Scenario: Name-only inventory sees an entrypoint
+- **WHEN** live inventory contains an extension public entrypoint but no receipt or root evidence
+- **THEN** classification reports the entrypoint as seen
+- **AND** it does not report protected member coverage as complete
 ### Requirement: Materialized Skills Preserve Standalone Resource Boundaries
-System-skill materialization SHALL copy declared skill bundles as ordinary standalone directories and SHALL not treat undeclared family-root support files as implicit skill dependencies.
+Public pack materialization and protected private projection SHALL preserve every declared skill bundle's active resource boundary.
 
-#### Scenario: Extension skills are materialized
-- **WHEN** a caller materializes a packaged extension group
-- **THEN** each manifest-listed skill directory contains every private active resource it needs and no active reference depends on the source package's sibling layout
-- **AND** shared machine resources remain available through the installed extension CLI rather than being copied beside the skills
+#### Scenario: Public pack is materialized
+- **WHEN** a caller materializes a packaged public pack
+- **THEN** every nested protected skill can resolve its bundle-local resources without leaving its directory
+- **AND** shared machine resources remain available through the installed extension CLI
+
+#### Scenario: Protected member is privately projected
+- **WHEN** an internal adapter projects a protected logical capability and its dependencies
+- **THEN** each copied member remains a self-contained ordinary directory
+- **AND** no source-package sibling, symlink, or undeclared family-root support file is required
 
 #### Scenario: Family-root support file is undeclared
 - **WHEN** a system-skill family root contains a file or directory that is not a manifest-listed skill bundle
 - **THEN** materialization does not copy it as an implicit dependency of selected skills
 - **AND** validation fails if active skill guidance requires that undeclared path
+
+#### Scenario: Undeclared support path is required
+- **WHEN** active guidance depends on a path not owned by its bundle or declared package service
+- **THEN** validation fails with a deterministic resource-boundary diagnostic
 
 #### Scenario: Materialized projection does not preserve symlinks
 - **WHEN** package tests materialize skills into a temporary target
@@ -346,3 +433,25 @@ System-skill validation SHALL reject active guidance that assigns repository acq
 - **WHEN** active skill guidance creates a successful non-main repository binding before external acquisition and identity verification complete
 - **THEN** validation reports the ordering violation
 - **AND** it directs the skill author to use a read-only default-path query before acquisition and semantic registration afterward
+
+### Requirement: Core Packaged Skills Include Operation Set Recording
+The packaged core system-skill group SHALL include `research/isomer-research-operation-set-recording` as the provider-neutral owner of operation-set research acceptance guidance.
+
+#### Scenario: Core manifest includes recording skill
+- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
+- **THEN** `groups.core.skills` includes `research/isomer-research-operation-set-recording`
+- **AND** the path resolves to a skill directory containing `SKILL.md`, `agents/openai.yaml`, and its directly required references
+
+#### Scenario: Recording skill has a bounded workflow
+- **WHEN** the packaged skill is inspected
+- **THEN** its numbered workflow covers worker context, inspection, binding resolution, manifest completion, preview, apply, verify, partial recovery, and legacy repair
+- **AND** it forbids inferred record or Research Idea lineage
+
+#### Scenario: Core materialization copies recording skill
+- **WHEN** a caller materializes or installs the core system-skill group
+- **THEN** the target includes the operation-set recording skill and its required resources at the manifest-relative path
+
+#### Scenario: Skill metadata version matches package release
+- **WHEN** a release or release candidate validates packaged system skills
+- **THEN** the new skill's `agents/openai.yaml` metadata version matches `project.version` under the existing release rule
+

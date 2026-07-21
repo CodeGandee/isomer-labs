@@ -4,22 +4,22 @@
 TBD - created by archiving change move-houmao-interop-to-service. Update Purpose after archive.
 ## Requirements
 ### Requirement: Houmao Interop Service Skill Inventory
-The repository SHALL provide the Houmao interop skill as a service skill named `isomer-srv-houmao-interop`.
+The core public pack SHALL preserve protected service logical capability `isomer-srv-houmao-interop` as scoped member `houmao`.
 
-#### Scenario: Service skill folder exists
-- **WHEN** the packaged system skill inventory is inspected
-- **THEN** it contains `service/isomer-srv-houmao-interop`
-- **AND** it does not contain active `operator/isomer-op-houmao-interop` or `service/isomer-op-houmao-interop` folders
+#### Scenario: Protected service bundle exists
+- **WHEN** packaged core inventory is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/subskills/isomer-srv-houmao-interop`
+- **AND** it does not contain active `isomer-op-houmao-interop` compatibility bundles
 
-#### Scenario: Service skill identity is consistent
-- **WHEN** `service/isomer-srv-houmao-interop` is inspected
-- **THEN** its folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-srv-houmao-interop`
-- **AND** its local references and scenarios invoke `isomer-srv-houmao-interop` when naming the skill directly
+#### Scenario: Service identity is consistent
+- **WHEN** the protected bundle is inspected
+- **THEN** its folder, `SKILL.md` frontmatter, metadata, callbacks, and provenance identity use `isomer-srv-houmao-interop`
+- **AND** ordinary user guidance uses the public core entrypoint rather than direct service invocation
 
-#### Scenario: Manifest lists service path
-- **WHEN** `src/isomer_labs/assets/system_skills/manifest.toml` is inspected
-- **THEN** it lists `service/isomer-srv-houmao-interop`
-- **AND** it does not list `operator/isomer-op-houmao-interop`
+#### Scenario: Manifest maps protected service
+- **WHEN** `manifest.toml` is inspected
+- **THEN** logical id `isomer-srv-houmao-interop` maps to member `houmao`, its nested path, and `isomer-op-entrypoint->houmao`
+- **AND** no independent public service path is listed
 
 ### Requirement: Houmao Interop Service Responsibility
 The Houmao interop service skill SHALL provide bounded operational support for Houmao adapter/runtime explanation, customization guidance, template mapping, and runtime inspection at the command of a Project Operator Session, Operator Agent, or Service Request.
@@ -56,7 +56,16 @@ The repository SHALL validate the Houmao interop service skill as part of active
 - **THEN** no alias, wrapper, duplicate folder, or manifest entry keeps `isomer-op-houmao-interop` available as an active compatibility skill
 
 ### Requirement: Houmao Interop Routes Through Isomer Skill Context
-The Houmao interop service skill SHALL route Houmao-specific procedures through Isomer-provided skill context rather than assuming direct operator installation of Houmao system skills or implicit Houmao project discovery.
+The protected Houmao member SHALL preserve Isomer-managed Houmao context routing under the public parent.
+
+#### Scenario: Houmao support is selected
+- **WHEN** an owning operator workflow needs bounded Houmao behavior
+- **THEN** it invokes `isomer-op-entrypoint->houmao`
+- **AND** the protected member resolves the supported Isomer skill-context surface before using Houmao-owned procedures
+
+#### Scenario: Integration is absent or disabled
+- **WHEN** Houmao integration is not configured or disabled
+- **THEN** the protected member reports that posture without requiring direct Houmao skill installation or live state
 
 #### Scenario: Service requests skill context before routing
 - **WHEN** `isomer-srv-houmao-interop` needs to delegate to a Houmao-owned procedure

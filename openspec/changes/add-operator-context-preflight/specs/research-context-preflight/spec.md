@@ -19,7 +19,7 @@ The latest-context preflight SHALL reconcile prompt-selected Research Topic and 
 - **AND** it requires a corrected selector, identity reset, or explicit scope decision rather than choosing from chat memory
 
 #### Scenario: Subsequent record queries retain selected topic
-- **WHEN** preflight resolves one Research Topic and continues to runtime inspection, record queries, template operations, or accepted durable writes
+- **WHEN** preflight resolves one Research Topic and continues to runtime inspection, record queries, template operations, TeX composition or PDF build operations, or accepted durable writes
 - **THEN** every applicable CLI call carries the resolved `--topic` selector
 - **AND** changing cwd during the stage does not change the Research Topic target
 

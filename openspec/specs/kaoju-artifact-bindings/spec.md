@@ -3,7 +3,6 @@
 ## Purpose
 TBD - created by archiving change add-family-neutral-research-artifact-bindings. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Kaoju Artifact Semantics Are Storage-Neutral
 The Kaoju extension SHALL define one shared artifact semantic registry whose entries describe durable survey meanings independently of storage implementation and are queryable through the package-owned Kaoju extension surface.
 
@@ -252,3 +251,76 @@ The `kaoju:paper-template-myst` binding SHALL support one stable mutable current
 - **WHEN** a named template is exported
 - **THEN** the external working directory and export observation remain distinct from the mutable canonical record
 - **AND** editing the directory does not change database state until explicit low-level CRUD succeeds
+
+### Requirement: LaTeX Template Stock Has a Dedicated Binding
+The Kaoju binding registry SHALL define `KAOJU:PAPER-TEMPLATE-LATEX` as a managed-directory mutable-state Artifact with template-name scope and mutable-named selection.
+
+#### Scenario: Binding is described
+- **WHEN** a caller describes `KAOJU:PAPER-TEMPLATE-LATEX`
+- **THEN** the registry reports producer `isomer-kaoju-write`, directory-manifest content, required template-name scope, mutable-state revision mode, mutable-named selection, and ready or blocked validation posture
+- **AND** the semantic registry describes it as named LaTeX presentation stock rather than canonical paper content
+
+#### Scenario: Generic Artifact mutation is attempted
+- **WHEN** a caller uses generic Artifact put or revise for `KAOJU:PAPER-TEMPLATE-LATEX`
+- **THEN** the service rejects the mutation and directs the caller to the named-template owner
+- **AND** no alternate stable record is created
+
+### Requirement: Paper Lineage Distinguishes Both Template Roles
+Paper bindings SHALL distinguish content-template, LaTeX-template, TeX-snapshot, and TeX-draft relationships.
+
+#### Scenario: Canonical MyST draft is recorded
+- **WHEN** `KAOJU:PAPER-DRAFT-MYST` is created or revised
+- **THEN** its `paper_template` relationship identifies the observed content template
+- **AND** it does not claim a LaTeX presentation relationship
+
+#### Scenario: TeX snapshot is recorded
+- **WHEN** `KAOJU:PAPER-TEMPLATE-TEX` is created or revised from stocked LaTeX state
+- **THEN** its required relationship identifies `paper_template_latex`
+- **AND** its manifest records the observed state token and digest
+
+#### Scenario: TeX draft is recorded
+- **WHEN** `KAOJU:PAPER-DRAFT-TEX` is composed
+- **THEN** it relates separately to `paper_draft_myst` and `paper_template_tex`
+- **AND** publication bundles preserve both upstream template roles through lineage
+
+### Requirement: Template Exchange Evidence Records Its Kind
+Mutation audits, exports, and export manifests SHALL record whether the subject is a content template or LaTeX template.
+
+#### Scenario: Same name exists in both kinds
+- **WHEN** content `main` and LaTeX `main` each produce audits or working-copy exports
+- **THEN** every record contains an exact template kind and stable target ref
+- **AND** query and discovery logic can distinguish them without inspecting file extensions
+
+### Requirement: Kaoju Direction Set Binding Declares Canonical Research Idea Effects
+The versioned `KAOJU:DIRECTION-SET` binding and structured payload profile for new accepted writes SHALL declare and validate the canonical Research Idea effects promised for every durable survey-direction proposal while retaining prior Direction Set payloads as readable migration inputs.
+
+#### Scenario: Idea-bearing Direction Set profile is resolved
+- **WHEN** a Kaoju producer resolves the active Direction Set binding for a new accepted write
+- **THEN** the binding identifies a versioned structured Decision Record profile whose proposal mappings carry or receive stable canonical `idea_id` values, exact proposal paths, generation membership, authored decision option outcomes, and applicable state-transition context
+- **AND** the profile remains storage-neutral and does not embed Project Web behavior or a Kaoju-specific database path
+
+#### Scenario: Direction proposal mapping validates
+- **WHEN** a Direction Set payload claims canonical Research Idea effects
+- **THEN** validation resolves each `idea_id` to exactly one object-valued proposal path, retains the direction id as a source-local alias, validates proposal and decision membership uniqueness, and validates required closure or deferral rationale
+- **AND** collection paths, rendered Markdown, selection arrays, and whole-record paths cannot serve as the proposal's Idea Realization path
+
+#### Scenario: Direction Set acceptance is atomic
+- **WHEN** a valid idea-bearing Direction Set, its Decision Record option set, and every promised Research Idea effect validate
+- **THEN** the artifact service commits the Direction Set record, canonical Research Ideas, Idea Realizations, generation membership, decision options, lineage, and transitions in one transaction
+- **AND** it returns all resulting refs to the Kaoju frame and pipeline skills
+
+#### Scenario: Promised direction effect fails
+- **WHEN** a Direction Set has a duplicate or missing canonical identity, invalid exact path, unresolved parent, incomplete authored option set, invalid facet, missing closure reason, or cross-topic ref
+- **THEN** the artifact service rejects the accepted write without leaving a Direction Set or partial canonical Research Idea effects committed
+- **AND** deterministic diagnostics identify the proposal and failed effect
+
+#### Scenario: Legacy Direction Set remains readable
+- **WHEN** a Direction Set written under the prior profile contains proposals, selections, and confirmation but lacks canonical idea identity or per-proposal disposition
+- **THEN** the binding remains readable and eligible for an explicit previewable migration
+- **AND** ordinary reads do not infer current disposition, rationale, exploration, evidence, or idea lineage from omission or nearby prose
+
+#### Scenario: Legacy Direction Set migration is applied
+- **WHEN** an actor approves a validated migration plan for a legacy Direction Set
+- **THEN** the migration creates one canonical Research Idea per durable proposal, preserves the direction id as an alias, records exact realizations and any decision outcomes directly justified by selections and confirmation, and records migration provenance
+- **AND** ambiguous facets, reasons, and lineage remain `unknown` or diagnosed rather than fabricated
+

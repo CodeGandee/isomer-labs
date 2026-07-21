@@ -9,7 +9,7 @@ Project Operator Sessions can enter `isomer-op-entrypoint` from the Project root
 - Require `isomer-op-entrypoint` to run context preflight for context-sensitive routes, reconcile prompt targets with ambient and default context, and pin the resolved `--topic`, `--topic-actor`, or `--agent` selectors on downstream commands.
 - Strengthen identity switching so its one-task or persistent session posture is carried explicitly into downstream command planning and checked against the resolved worker cwd without creating shared persistent identity state.
 - Require research preflight and production research skills to stop on target conflicts, report the conflicting sources, and avoid raw filesystem copies or alternate output locations as recovery from a failed typed operation.
-- Include selected-context metadata in context-sensitive Kaoju template command results and diagnostics so wrong-topic selection is visible before an agent attempts recovery.
+- Include selected-context metadata in context-sensitive Kaoju named-template, TeX composition, status, and PDF-build results and diagnostics so wrong-topic selection is visible before an agent attempts recovery.
 
 ## Capabilities
 
@@ -25,8 +25,8 @@ None.
 - `operator-switch-identity-skill`: Carry session-local switched posture into downstream context checks, selectors, cwd discipline, and provenance without treating manifest defaults as active identity.
 - `research-context-preflight`: Reconcile prompt-selected research targets with resolved context before durable work and retain the selected target on subsequent commands.
 - `research-paradigm-skills`: Require production extension skills to consume the reconciled target and reject ad hoc filesystem fallback after typed command failure.
-- `kaoju-cli-services`: Report selected Research Topic and Topic Workspace context in template operation results and failures.
+- `kaoju-cli-services`: Report selected Research Topic and Topic Workspace context in named-template and TeX composition or build results and failures.
 
 ## Impact
 
-The change affects Project self-query CLI registration and payloads, cwd-to-workspace classification, Effective Context reporting, operator entrypoint and identity-switch skill guidance, shared research preflight guidance, Kaoju production skill guidance, Kaoju template service output, unit tests, packaged-skill validation, and CLI documentation. It introduces no shared current-identity file, no OS-level impersonation, and no new runtime identity authority. Implementation must coordinate with the active `add-independent-pack-welcome-skills` change because both changes touch packaged operator and extension entrypoint guidance.
+The change affects Project self-query CLI registration and payloads, cwd-to-workspace classification, Effective Context reporting, operator entrypoint and identity-switch skill guidance, shared research preflight guidance, Kaoju production skill guidance, Kaoju paper-service output, unit tests, packaged-skill validation, and CLI documentation. It introduces no shared current-identity file, no OS-level impersonation, and no new runtime identity authority. Implementation must preserve the completed independent public welcome and entrypoint routing structure and the current Kaoju agent-fill TeX composition contract.

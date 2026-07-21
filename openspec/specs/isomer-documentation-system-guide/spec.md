@@ -5,7 +5,17 @@ TBD - created by archiving change rewrite-docs-comprehensive-system-guide. Updat
 ## Requirements
 
 ### Requirement: Documentation Information Architecture
-The system SHALL provide a coherent `docs/` documentation set with stable tutorial, manual, developer, and UI contract entry points for published users, operators, and contributors.
+The documentation SHALL include welcome-first onboarding paths for core Isomer, DeepSci, and Kaoju alongside informed-user entrypoint and CLI references.
+
+#### Scenario: Documentation tree is inspected
+- **WHEN** public documentation navigation is inspected
+- **THEN** installation and quickstart pages link to packaged system-skill onboarding, core welcome, extension welcomes, entrypoint execution, and CLI reference
+- **AND** newcomer guidance is not buried only inside the complete command reference
+
+#### Scenario: Packaged skill guide is inspected
+- **WHEN** docs explain the packaged public surface
+- **THEN** they present each pack as a welcome and entrypoint pair
+- **AND** they distinguish protected subskills from both public roles
 
 #### Scenario: Required docs pages exist
 - **WHEN** repository documentation is validated
@@ -27,7 +37,6 @@ The system SHALL provide a coherent `docs/` documentation set with stable tutori
 #### Scenario: System skill install path is documented
 - **WHEN** docs show how to install Isomer system skills for an agent
 - **THEN** they recommend `npx skills add` examples and distinguish core skills from DeepSci extension skills
-
 ### Requirement: System Design Documentation
 The system SHALL document the current Isomer Labs architecture using canonical domain language and explicit state ownership boundaries.
 
@@ -76,7 +85,27 @@ The system SHALL document every public `isomer-cli` command with purpose, prereq
 - **THEN** they contain no active `project repos acquire`, `repository_acquisition`, fixed depth-one clone, or Isomer-owned repository cleanup workflow
 
 ### Requirement: Intended Usage Workflows
-The system SHALL document operator-oriented workflows for the current supported paths through Project setup, validation, runtime preparation, external repository acquisition and registration, team profile work, Agent Team Instance records, Houmao materialization, quick launch, inspection, stop, reconciliation, and adoption.
+The documentation SHALL show newcomer workflows that begin with welcome and informed-user workflows that begin directly with an execution entrypoint.
+
+#### Scenario: First-time core user is guided
+- **WHEN** a reader does not yet know Isomer task vocabulary or command ids
+- **THEN** docs recommend `$isomer-op-welcome` to explore typical Project, Topic, topology, extension, GUI, and Toolbox patterns
+- **AND** they show how welcome hands a selected task to `$isomer-op-entrypoint`
+
+#### Scenario: First-time extension user is guided
+- **WHEN** a reader wants to understand DeepSci or Kaoju before starting work
+- **THEN** docs recommend the corresponding `$isomer-ext-<extension-id>-welcome`
+- **AND** they show a representative exact execution request through `$isomer-ext-<extension-id>-entrypoint`
+
+#### Scenario: Informed user has a concrete task
+- **WHEN** a reader already knows the intended public command or can state a concrete task
+- **THEN** docs allow direct entrypoint invocation without requiring a welcome step
+- **AND** they explain that the entrypoint proceeds through protected owners and prerequisite recovery as applicable
+
+#### Scenario: Routing cues are documented
+- **WHEN** docs include representative user phrases or keywords
+- **THEN** they label them as routing cues and pair them with deterministic public command forms
+- **AND** they do not claim that natural-language routing depends on an undocumented exact keyword grammar
 
 #### Scenario: Minimal project workflow is documented
 - **WHEN** a new user follows the getting-started guide
@@ -94,7 +123,6 @@ The system SHALL document operator-oriented workflows for the current supported 
 - **WHEN** a user or agent needs a Canonical External Repository
 - **THEN** the docs show how to query or choose a non-mutating target, run user-selected or task-appropriate repository commands outside `isomer-cli`, verify source identity, register the existing path, and record applicable provenance
 - **AND** failure examples do not create a successful binding or imply that Isomer cleans partial filesystem content
-
 ### Requirement: Assumptions and Non-goals Documentation
 The system SHALL document current assumptions, side-effect boundaries, security posture, adapter boundaries, and non-goals so readers do not infer unsupported guarantees.
 
@@ -126,7 +154,19 @@ The system SHALL document durable runtime files, generated adapter files, manife
 - **THEN** they state that these files are durable adapter records only when the relevant path plan, Artifact locator, or Provenance Record classifies them as durable rather than cache-like generated material
 
 ### Requirement: Documentation Verification
-The system SHALL provide a repository-local documentation verification path that can be run during implementation and review.
+Documentation validation SHALL verify public welcome names, entrypoint names, role descriptions, and example command ids against the packaged manifest.
+
+#### Scenario: Public pair drifts
+- **WHEN** documentation omits a declared welcome, swaps welcome and entrypoint roles, or names a stale public skill
+- **THEN** documentation validation reports the affected page and expected manifest identity
+
+#### Scenario: Example command drifts
+- **WHEN** a welcome or documentation example names a public entrypoint command absent from manifest v4
+- **THEN** validation reports the stale command and owning entrypoint
+
+#### Scenario: Protected direct invocation appears
+- **WHEN** newcomer documentation tells users to invoke a protected logical id directly
+- **THEN** validation reports the route and recommends the owning public entrypoint form
 
 #### Scenario: Docs validation command exists
 - **WHEN** contributors inspect development commands
@@ -152,7 +192,6 @@ The system SHALL provide a repository-local documentation verification path that
 - **WHEN** docs validation scans active documentation, tutorials, and system-skill explanations
 - **THEN** it reports `project repos acquire`, `repository_acquisition`, the removed repository service, fixed Isomer-owned clone behavior, registration before verification, and claims that Isomer cleans partial external acquisitions
 - **AND** it accepts direct repository commands only when nearby guidance identifies them as user-controlled or agent-controlled external operations followed by non-executing Isomer registration
-
 ### Requirement: Semantic Workspace Path Documentation
 The documentation SHALL explain that semantic surface labels are the workspace path contract and default directories are one layout profile.
 

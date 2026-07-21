@@ -4,31 +4,36 @@
 Define the module-level operator skill for Topic Team Specialization, including local subcommands, copied-template workflow, guide and plan artifacts, and validation boundaries.
 ## Requirements
 ### Requirement: Skill Creator Bundle Layout
-The repository SHALL provide a lean operator skill bundle named `isomer-op-topic-team-specialize` for Topic Team Specialization.
+The core public pack SHALL preserve the Topic Team Specialization module as protected logical capability `isomer-op-topic-team-specialize` and scoped member `topic-team`.
 
-#### Scenario: Skill bundle exists
-- **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-op-topic-team-specialize/SKILL.md` and `skillset/operator/isomer-op-topic-team-specialize/agents/openai.yaml`
+#### Scenario: Protected bundle exists
+- **WHEN** the core pack is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/subskills/isomer-op-topic-team-specialize/SKILL.md` and `agents/openai.yaml`
+
+#### Scenario: Frontmatter preserves identity
+- **WHEN** the protected `SKILL.md` is inspected
+- **THEN** its frontmatter contains `name: isomer-op-topic-team-specialize`, a trigger-oriented description, and standard invocation notation where required
 
 #### Scenario: Frontmatter is minimal
-- **WHEN** `skillset/operator/isomer-op-topic-team-specialize/SKILL.md` is inspected
+- **WHEN** `operator/isomer-op-entrypoint/subskills/isomer-op-topic-team-specialize/SKILL.md` is inspected
 - **THEN** its YAML frontmatter contains `name: isomer-op-topic-team-specialize` and a trigger-oriented `description`, with no extra frontmatter fields
 
 #### Scenario: UI metadata is present
-- **WHEN** `skillset/operator/isomer-op-topic-team-specialize/agents/openai.yaml` is inspected
-- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-op-topic-team-specialize`
+- **WHEN** the protected `agents/openai.yaml` is inspected
+- **THEN** it contains display name, short description, release-aligned version, and default guidance that uses `$isomer-op-entrypoint use topic-team to <task>`
 
 #### Scenario: Eval scaffolding is absent
 - **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
 - **THEN** it does not contain an `evals/` directory or auxiliary docs that are not needed to execute the skill
 
 #### Scenario: Local subcommands exist
-- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local subcommand pages named `help`, `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step` under `references/`
+- **WHEN** the protected bundle is inspected
+- **THEN** it retains `help`, `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, `draft-profile`, `approve-profile`, `materialize-profile`, `fast-forward`, and `step-by-step`
 
-#### Scenario: Subcommands are grouped by contract
-- **WHEN** the skill entrypoint, workflow text, or operator documentation lists local subcommands
-- **THEN** it groups `init-topic`, `clarify-topic`, `ensure-topic-registration`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, `finalize-topic-team`, `approve-profile`, and `materialize-profile` as procedural subcommands, `resolve-project`, `inspect-template`, `resolve-context`, `map-placeholders`, and `draft-profile` as helper subcommands, and `help`, `fast-forward`, and `step-by-step` as misc subcommands
+#### Scenario: Subcommands remain grouped by contract
+- **WHEN** protected help or workflow text lists commands
+- **THEN** it preserves the accepted procedural, helper, and misc command grouping
+- **AND** helper commands remain absent from ordinary public help unless explicitly promoted
 
 #### Scenario: Help lists public subcommands only
 - **WHEN** the user invokes the local `help` subcommand
@@ -46,33 +51,31 @@ The repository SHALL provide a lean operator skill bundle named `isomer-op-topic
 - **WHEN** the user invokes the local `help` subcommand
 - **THEN** the skill prints what `isomer-op-topic-team-specialize` does, how to invoke it, available modes, public subcommands, outputs, and guardrails
 
-#### Scenario: Empty invocation defaults to help
-- **WHEN** the skill is invoked without a prompt
-- **THEN** the entrypoint selects `help` and prints the same usage output
+#### Scenario: Parent routes specialization
+- **WHEN** explicit or contextual formal Agent Team intent selects Topic Team Specialization
+- **THEN** the public core entrypoint invokes `isomer-op-entrypoint->topic-team`
+- **AND** internal command routing uses `isomer-op-entrypoint->topic-team-><command>()`
 
-#### Scenario: Step-by-step performs guided specialization
-- **WHEN** the user asks to specialize step by step, proceed interactively, or confirm each stage
-- **THEN** the module skill executes `step-by-step`, follows the same required static-material path as `fast-forward`, explains the current step, and waits for user confirmation before continuing to the next step
+#### Scenario: Empty protected invocation defaults to help
+- **WHEN** the protected member is entered without a selected routine
+- **THEN** it executes its local help behavior
 
-#### Scenario: Service routing subcommand is absent
-- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
-- **THEN** it does not contain `references/route-service.md`
+#### Scenario: Step-by-step remains guided
+- **WHEN** the user requests interactive specialization
+- **THEN** the protected member executes `step-by-step`, explains each stage, and waits for confirmation as before
 
-#### Scenario: Required support references are local
-- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
-- **THEN** it contains local support references for Isomer domain language and static/runtime file boundaries under `references/`
+#### Scenario: Service and launch routines remain absent
+- **WHEN** the protected bundle is inspected
+- **THEN** it does not contain `route-service` or `launch-team` as local subcommands
 
-#### Scenario: External support refs are absent
-- **WHEN** the `isomer-op-topic-team-specialize` skill entrypoint and local references are inspected
-- **THEN** they do not reference `.imsight-arts/`, `docs/`, `extern/`, or absolute local support paths for information needed to execute the skill
+#### Scenario: Required support remains local
+- **WHEN** the protected bundle and active resources are inspected
+- **THEN** required domain and static-runtime boundary references remain inside the bundle
+- **AND** they do not depend on `.imsight-arts/`, `docs/`, `extern/`, or absolute local paths
 
-#### Scenario: Runtime launch subcommand is absent
-- **WHEN** the `isomer-op-topic-team-specialize` skill folder is inspected
-- **THEN** it does not contain `references/launch-team.md`
-
-#### Scenario: Incorporated standalone skills are absent
-- **WHEN** the operator skillset is inspected
-- **THEN** it does not contain standalone `isomer-op-project-aware`, `isomer-op-template-inspect`, `isomer-op-topic-context-resolve`, `isomer-op-service-request-route`, `isomer-op-placeholder-reconcile`, `isomer-op-topic-profile-draft`, `isomer-op-profile-review-approval`, `isomer-op-profile-materialize`, or `isomer-op-team-launch-orchestrate` skill folders
+#### Scenario: Incorporated retired helpers remain absent
+- **WHEN** the protected inventory is inspected
+- **THEN** it does not restore the former standalone project-aware, template-inspect, topic-context, service-route, placeholder, draft, review, materialize, or launch helper skills
 
 ### Requirement: Imsight Workflow Entrypoint
 The module skill SHALL follow the Imsight skill-entrypoint structure.
@@ -197,23 +200,23 @@ The module skill SHALL produce human-readable specialization artifacts that can 
 - **THEN** it does not claim that the topic team is launched, launchable, attached to an Agent Team Instance, registered in Workspace Runtime, or ready for adapter execution
 
 ### Requirement: Skill Validation
-The implementation SHALL validate the module skill with repository validation surfaces.
+Repository validation SHALL validate Topic Team Specialization through its protected bundle and parent route.
 
 #### Scenario: Repository operator validation runs
 - **WHEN** the module skill bundle is ready for review
 - **THEN** a developer or agent can run `pixi run validate-operator-skills` and receive a passing result
 
-#### Scenario: Operator skillset validation runs
-- **WHEN** `pixi run validate-operator-skills` runs
-- **THEN** it accepts the module skill without `references/launch-team.md`, detects missing required guide, plan, support-reference, subcommand-group, predecessor-artifact, or static-material terms including `init-topic`, `clarify-topic`, `adapt-team-template`, `clarify-topic-team`, `setup-topic-env`, `setup-agent-workspace`, `validate-topic-team`, and `finalize-topic-team`, verifies local subcommand workflow structure and naming, rejects external support refs, rejects unexpected runtime launch subcommand pages, and does not require `evals/`
+#### Scenario: Protected module is valid
+- **WHEN** operator skill validation runs
+- **THEN** it validates the nested bundle, logical identity, command inventory, parent member mapping, object notation, resources, and existing Topic Team behavior
 
 #### Scenario: Unit validation covers removed launch subcommand
 - **WHEN** `pixi run python -m unittest tests.unit.test_validate_skillsets` runs
 - **THEN** the tests cover the accepted static-material subcommand set and fail if `launch-team` is required or listed as a public subcommand
 
-#### Scenario: OpenSpec validation runs
-- **WHEN** `openspec validate limit-topic-team-specialize-to-static-materials --strict` runs
-- **THEN** the change artifacts validate without schema or scenario-format errors
+#### Scenario: Direct public invocation is introduced
+- **WHEN** active user guidance advertises `$isomer-op-topic-team-specialize` as a top-level skill
+- **THEN** validation reports the stale invocation and requires `$isomer-op-entrypoint use topic-team to <task>`
 
 ### Requirement: Topic Initialization Subcommand
 The module skill SHALL provide an `init-topic` subcommand that starts the user-facing Topic Team Specialization flow by creating or selecting a provisional Topic Workspace before topic intent resolution when the Research Topic is new or unclear, while routing authoritative Project registration through `ensure-topic-registration`.
@@ -939,3 +942,4 @@ The Topic Team Specialization skill SHALL keep Topic Actor bindings and formal t
 #### Scenario: Actor preparation does not create team material
 - **WHEN** common topic preparation or human-orchestrated actor preparation runs
 - **THEN** Topic Team Specialization requirements for Domain Agent Team Template adaptation, Topic Agent Team Profile Bundle materialization, formal per-Agent Workspace setup, and launch approval remain unsatisfied until the team specialization workflow runs
+

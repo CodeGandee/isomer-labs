@@ -4,35 +4,31 @@
 TBD - created by archiving change add-topic-creator-skill. Update Purpose after archive.
 ## Requirements
 ### Requirement: Topic Creator Operator Skill
-The repository SHALL provide a command-style operator skill named `isomer-op-topic-creator` as the canonical user-facing workflow for initializing a Research Topic from empty or partial Project state to manual-research-ready Topic Workspace.
+The core public pack SHALL preserve protected logical capability `isomer-op-topic-creator` as member `topic-create` for taking empty or partial Project state to a manual-research-ready Topic Workspace.
 
-#### Scenario: Topic creator skill bundle exists
-- **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-op-topic-creator/SKILL.md` and `skillset/operator/isomer-op-topic-creator/agents/openai.yaml`
-- **AND** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-topic-creator`
+#### Scenario: Topic Creator protected bundle exists
+- **WHEN** the core pack is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/subskills/isomer-op-topic-creator/SKILL.md` and `agents/openai.yaml`
+- **AND** the folder and frontmatter retain logical id `isomer-op-topic-creator`
+- **AND** its metadata version matches the package release
 
-#### Scenario: Topic creator is the user-facing topic initialization entrypoint
-- **WHEN** a user asks to create, initialize, prepare, or start a Research Topic for manual research from empty or partial Project state
-- **THEN** the operator routes to `isomer-op-topic-creator`
-- **AND** the user does not need to know the separate project manager, topic manager, service setup, or research bootstrap skill sequence
+#### Scenario: Topic Creator is the protected initialization owner
+- **WHEN** a user asks to create, initialize, prepare, or start a Research Topic from empty or partial Project state
+- **THEN** `$isomer-op-entrypoint use topic-create to <task>` invokes `isomer-op-entrypoint->topic-create`
+- **AND** the user does not need to know the protected Project Manager, Topic Manager, service, or research bootstrap sequence
+
+#### Scenario: Protected identity remains durable
+- **WHEN** a route, binding, callback, or provenance field names the Topic Creator owner
+- **THEN** it uses logical id `isomer-op-topic-creator`
+- **AND** runtime invocation resolves through the parent designator
 
 ### Requirement: Topic Creator Command Surface
-The Topic Creator skill SHALL expose a command-style workflow with stage commands that can plan, run, resume, inspect, and repair topic initialization.
+The protected Topic Creator SHALL retain its bounded command surface while the public parent owns ordinary invocation.
 
-#### Scenario: Public commands are listed
-- **WHEN** `isomer-op-topic-creator help` runs or the skill is invoked without a prompt
-- **THEN** it lists `help`, `plan`, `create`, `ensure-project`, `define-topic`, `register-topic`, `init-runtime`, `setup-topic-env`, `setup-actors`, `bootstrap-research`, `start-manual-research`, `status`, and `repair`
-- **AND** it prints what the skill does, required inputs, command functionalities, outputs, and guardrails
-
-#### Scenario: Create runs the happy path
-- **WHEN** the user invokes `create` with a concrete topic statement or registered topic ref
-- **THEN** the workflow runs the topic initialization ladder from Project readiness through manual-research handoff where each stage is already satisfied, created, delegated, or reported as blocked
-- **AND** it reports the next incomplete stage instead of asking the user to discover another operator skill
-
-#### Scenario: Plan is dry-run
-- **WHEN** the user invokes `plan`
-- **THEN** the skill resolves the current Project and topic state, reports proposed stage actions, required inputs, expected delegated owners, command shapes, blockers, and next action
-- **AND** it does not create or modify Project, Topic Workspace, runtime, repository, actor, bootstrap, or start-pack state
+#### Scenario: Public parent selects creation
+- **WHEN** the user supplies a concrete Topic creation task
+- **THEN** the parent routes it into the protected member's applicable subcommand
+- **AND** it preserves existing clarification, Gate, service delegation, and finalize behavior
 
 #### Scenario: Status explains progress
 - **WHEN** the user invokes `status`
@@ -43,6 +39,14 @@ The Topic Creator skill SHALL expose a command-style workflow with stage command
 - **WHEN** the user invokes `repair` after a failed or partial topic initialization
 - **THEN** the skill uses recorded state and Project Manifest-backed context to resume from the blocked stage
 - **AND** it does not rerun already-ready destructive or expensive stages unless the user explicitly asks
+
+#### Scenario: Internal command is named
+- **WHEN** another protected workflow invokes a Topic Creator subcommand
+- **THEN** it uses `isomer-op-entrypoint->topic-create-><command>()` and declares invocation notation
+
+#### Scenario: Empty protected invocation occurs internally
+- **WHEN** the protected member is invoked without a selected command
+- **THEN** it uses its own help routine without becoming a top-level public skill
 
 ### Requirement: Topic Creator Initialization Ladder
 The Topic Creator skill SHALL define the ordered readiness ladder for making a Topic Workspace available for manual research.
@@ -355,3 +359,4 @@ The Topic Creator skill SHALL route Houmao-backed Topic Service Master preparati
 - **WHEN** Project Houmao integration is disabled during setup-actors
 - **THEN** Topic Creator reports Topic Service Master preparation and binding as skipped
 - **AND** it does not create suggested-name bindings in the Topic Workspace Manifest
+

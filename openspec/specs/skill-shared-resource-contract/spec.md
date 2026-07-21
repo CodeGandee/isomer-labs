@@ -2,20 +2,37 @@
 
 ## Purpose
 TBD - created by syncing completed OpenSpec changes.
-
 ## Requirements
+### Requirement: Private Skill Resources Determine the Bundle Boundary
+Official public packs and protected subskills SHALL own every active private resource inside one bundle boundary, and command families SHALL use the boundary of their containing skill or subskill. Private means scoped ownership and lifecycle, not secrecy or access control.
 
-### Requirement: Private Skill Resources Are Bundle-Local
-Official system skills SHALL store every active resource consumed by only one skill inside that skill's directory and SHALL reference it without leaving the skill boundary.
+#### Scenario: Protected member consumes a private resource
+- **WHEN** a protected capability needs a command page, reference, asset, template, or script that no other capability or package service consumes
+- **THEN** the resource is stored below `subskills/<logical-id>/` for that capability and reached through a descendant-relative reference
+- **AND** it does not traverse into the parent, sibling subskills, or a family-root support path
 
-#### Scenario: One skill consumes an active resource
-- **WHEN** an active skill needs a command page, reference, asset, template, or script that no other skill or package service consumes
-- **THEN** the resource is stored below that skill's directory and is reached through a descendant-relative reference
-- **AND** the skill does not use parent traversal, an absolute source path, a sibling-skill path, or a family-root support path to load it
+#### Scenario: Public entrypoint consumes a private resource
+- **WHEN** a command or reference belongs only to public entrypoint routing
+- **THEN** it remains inside the public pack outside protected member directories
 
-#### Scenario: Standalone projection loads private resources
-- **WHEN** the skill directory is copied to an ordinary standalone installation without repository siblings or symlinks
-- **THEN** every private active resource still resolves within the copied directory
+#### Scenario: Nested command uses support resources
+- **WHEN** a parent or child command uses a detail page, script, reference, asset, or template
+- **THEN** that resource is owned by the command's containing public pack or protected subskill
+- **AND** the command does not establish an independent resource root
+
+#### Scenario: Command family needs its own resource root
+- **WHEN** a command family needs private scripts, references, commands, assets, templates, runtime metadata, or other files that should be loaded, validated, maintained, or projected as one scoped unit
+- **THEN** the family is authored as a subskill instead of a subcommand
+- **AND** the subskill owns those resources inside its bundle boundary
+
+#### Scenario: Kaoju manager uses package-owned machine resources
+- **WHEN** a public Kaoju command or protected member needs template, composition, migration, validation, binding, semantic, or process behavior implemented by the package
+- **THEN** it invokes the checked `isomer-cli ext kaoju` surface
+- **AND** those Python modules and JSON resources remain outside the public pack and protected subskill resource trees
+
+#### Scenario: Private projection loads resources
+- **WHEN** a protected member is copied as a bounded private projection without its source siblings
+- **THEN** every private active resource still resolves within the copied member directory
 
 ### Requirement: Shared Machine Resources Use Extension Queries
 Machine-readable resources consumed by more than one skill or by both skills and package services SHALL be package-owned by the matching extension implementation and SHALL be exposed to agents through read-only `isomer-cli ext <prefix>` queries.
@@ -36,29 +53,43 @@ Machine-readable resources consumed by more than one skill or by both skills and
 - **AND** active skill guidance does not fall back to repository traversal or a hand-authored duplicate
 
 ### Requirement: Shared Procedures Use a Prefix Shared Skill
-Procedural guidance used by multiple skills in one named skill family SHALL be owned by the family's `<prefix>-shared` skill, while a procedure used by only one skill SHALL remain local to that skill.
+Procedural guidance used by multiple protected members in one family SHALL be owned by that family's protected shared member and consumed through the parent-owned invocation designator.
 
-#### Scenario: Several skills need the same procedure
-- **WHEN** two or more `isomer-<family>-*` skills need the same command process, evidence discipline, Gate behavior, owner-routing sequence, or terminal protocol
-- **THEN** `isomer-<family>-shared` owns the active procedure and the consumer skills invoke or route to that skill by name
-- **AND** consumers do not load the shared procedure through a filesystem path or copy the full procedure into each skill
+#### Scenario: Several DeepSci members need one procedure
+- **WHEN** two or more DeepSci capabilities need the same evidence, Gate, recording, or terminal process
+- **THEN** logical capability `isomer-deepsci-shared` owns it
+- **AND** consumers route through `isomer-ext-deepsci-entrypoint->shared` or a declared subcommand designator
 
-#### Scenario: One skill owns a bounded procedure
-- **WHEN** a command process is used only by one skill
-- **THEN** that skill stores the process in its own `SKILL.md` or a bundle-local active resource
+#### Scenario: Several Kaoju members need one procedure
+- **WHEN** two or more Kaoju capabilities need the same source identity, lineage, clarification, Gate, owner-routing, or terminal process
+- **THEN** logical capability `isomer-kaoju-shared` owns it
+- **AND** consumers route through `isomer-ext-kaoju-entrypoint->shared` or a declared subcommand designator
+
+#### Scenario: Core members need shared support
+- **WHEN** multiple core capabilities need bounded-run, package-specific, tool-pack, research-idea, or operation-set procedures
+- **THEN** they route through the applicable protected member of `isomer-op-entrypoint`
+- **AND** no separate top-level shared skill is required
+
+#### Scenario: One capability owns a bounded procedure
+- **WHEN** a command process is used by only one protected capability
+- **THEN** that capability keeps the process in its own bundle
 
 ### Requirement: Validation Uses Real Installation Boundaries
-System-skill packaging and family validators SHALL enforce the skill/shared-resource contract against ordinary copied skill directories and installed package resources.
+System-skill validation SHALL test complete public packs and bounded protected projections against their actual resource and dependency boundaries.
 
-#### Scenario: Active reference crosses a skill boundary
-- **WHEN** an active skill or active linked resource contains a filesystem reference that traverses above the owning skill directory or depends on an undeclared family-root file
-- **THEN** validation fails with the owning skill, source file, line when available, and offending reference
-- **AND** the diagnostic identifies whether the resource must become bundle-local or extension-queryable
+#### Scenario: Active reference crosses a protected boundary
+- **WHEN** a protected member traverses into its parent or sibling bundle without a declared invocation or package query
+- **THEN** validation fails with the logical id, source file, and offending reference
 
 #### Scenario: Symlink projection masks a missing resource
 - **WHEN** repository symlinks would make an otherwise invalid parent-relative reference resolve
 - **THEN** validation still fails by evaluating the logical skill boundary and a flat copied projection
 
-#### Scenario: Shared procedure bypasses its shared skill
-- **WHEN** family-specific validation finds a known cross-skill process loaded through a sibling path or duplicated where the family contract requires `<prefix>-shared` routing
-- **THEN** validation reports the required shared skill and the consumer that bypassed it
+#### Scenario: Selective projection omits a dependency
+- **WHEN** a private-projection fixture selects a protected member without its manifest dependency closure
+- **THEN** validation reports the missing logical ids and does not classify the projection as ready
+
+#### Scenario: Shared procedure bypasses protected shared member
+- **WHEN** family validation finds a cross-member process copied or loaded through a sibling path
+- **THEN** it reports the required shared logical id and parent-owned invocation designator
+

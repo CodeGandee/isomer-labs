@@ -4,23 +4,28 @@
 Define the lean operator skill bundle for Isomer Project initialization, inspection, validation, runtime preparation guidance, and Project-level Houmao bootstrap.
 ## Requirements
 ### Requirement: Project Manager Skill Bundle
-The repository SHALL provide a lean operator skill bundle named `isomer-op-project-mgr` for Isomer Project initialization, inspection, validation, and runtime preparation guidance.
+The core public pack SHALL preserve a lean protected bundle with logical id `isomer-op-project-mgr` for Project initialization, inspection, validation, cleanup, relocation, and runtime preparation guidance.
 
-#### Scenario: Skill bundle exists
-- **WHEN** the operator skillset is inspected
-- **THEN** it contains `skillset/operator/isomer-op-project-mgr/SKILL.md` and `skillset/operator/isomer-op-project-mgr/agents/openai.yaml`
+#### Scenario: Protected bundle exists
+- **WHEN** the core pack is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/subskills/isomer-op-project-mgr/SKILL.md` and `agents/openai.yaml`
+- **AND** manifest member `project` maps to that logical id and path
 
-#### Scenario: Frontmatter is minimal
-- **WHEN** `skillset/operator/isomer-op-project-mgr/SKILL.md` is inspected
-- **THEN** its YAML frontmatter contains `name: isomer-op-project-mgr` and a trigger-oriented `description`, with no extra frontmatter fields
+#### Scenario: Frontmatter preserves logical identity
+- **WHEN** the protected `SKILL.md` is inspected
+- **THEN** its frontmatter contains `name: isomer-op-project-mgr`, a trigger-oriented description, and the standard invocation notation when object designators appear
 
 #### Scenario: UI metadata is present
-- **WHEN** `skillset/operator/isomer-op-project-mgr/agents/openai.yaml` is inspected
-- **THEN** it contains `interface.display_name`, `interface.short_description`, and `interface.default_prompt`, and the default prompt names `$isomer-op-project-mgr`
+- **WHEN** the protected `agents/openai.yaml` is inspected
+- **THEN** it contains display name, short description, release-aligned version, and a default prompt that routes ordinary users through `$isomer-op-entrypoint use project to <task>`
+
+#### Scenario: Parent routes Project work
+- **WHEN** a user asks the public core entrypoint for Project lifecycle work
+- **THEN** it invokes `isomer-op-entrypoint->project` and preserves the Project Manager workflow
 
 #### Scenario: Eval scaffolding is absent
-- **WHEN** the `isomer-op-project-mgr` skill folder is inspected
-- **THEN** it does not contain an `evals/` directory or auxiliary docs that are not needed to execute the skill
+- **WHEN** the protected bundle is inspected
+- **THEN** it does not contain an `evals/` directory or auxiliary documentation that is not needed to execute the capability
 
 ### Requirement: Project Manager Skill Workflow
 The project manager skill SHALL follow the Imsight skill-entrypoint structure and expose short local subcommands for Project lifecycle work.
@@ -365,3 +370,4 @@ The project-manager skill SHALL delegate additive system-extension reconciliatio
 - **WHEN** Project initialization succeeds but delegated extension reconciliation fails
 - **THEN** the project manager reports the Project as initialized and extension reconciliation as a distinct partial outcome
 - **AND** it provides a retry route through the system-skill manager
+

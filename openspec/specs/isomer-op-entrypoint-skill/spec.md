@@ -3,85 +3,110 @@
 ## Purpose
 TBD - created by archiving change add-isomer-op-entrypoint-skill. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Entrypoint Operator Skill Inventory
-The system SHALL provide `isomer-op-entrypoint` as an active Project Operator Session and Operator Agent skill for informed-user task routing across Isomer system skills and CLI surfaces.
+The system SHALL provide `isomer-op-entrypoint` as the public core execution skill for informed-user task routing while providing `isomer-op-welcome` as a separate public newcomer skill.
 
-#### Scenario: Entrypoint skill assets exist
-- **WHEN** the packaged operator skillset is inspected
-- **THEN** it contains `operator/isomer-op-entrypoint/SKILL.md`
-- **AND** it contains `operator/isomer-op-entrypoint/agents/openai.yaml`
-- **AND** it contains directly linked local reference pages for routing rules, system skill indexes, CLI indexes, input surfaces, and extension skills
+#### Scenario: Entrypoint assets exist
+- **WHEN** the packaged core skillset is inspected
+- **THEN** it contains `operator/isomer-op-entrypoint/SKILL.md`, `agents/openai.yaml`, directly linked routing resources, and the declared protected subskill inventory
+- **AND** it contains no protected `isomer-op-welcome` bundle
+
+#### Scenario: Public core pair is distinct
+- **WHEN** the core catalog is inspected
+- **THEN** `isomer-op-entrypoint` has role `entrypoint` and `isomer-op-welcome` has role `welcome`
+- **AND** both public skills belong to the same complete core pack without sharing private resources
 
 #### Scenario: Entrypoint identity is consistent
 - **WHEN** `operator/isomer-op-entrypoint` is inspected
-- **THEN** the folder name, `SKILL.md` frontmatter `name`, `agents/openai.yaml` display name, and default prompt use `isomer-op-entrypoint`
-- **AND** the frontmatter description identifies the skill as an entrypoint to system skills and Isomer CLI functionality
+- **THEN** its folder, frontmatter, UI metadata, and default prompt use `isomer-op-entrypoint`
+- **AND** its description identifies route-and-proceed execution rather than newcomer tutorial ownership
+
+#### Scenario: Entrypoint owns protected routes
+- **WHEN** the parent route table is inspected
+- **THEN** it maps every core scoped member to one nested protected logical capability
+- **AND** it declares the standard object invocation notation
 
 #### Scenario: Entrypoint has a workflow-shaped skill body
-- **WHEN** `operator/isomer-op-entrypoint/SKILL.md` is inspected
-- **THEN** it has a near-top `## Workflow` section with numbered steps
-- **AND** the workflow tells the agent to parse the user task, perform safe context discovery when useful, classify a route, load the selected route reference or owner skill, proceed with the chosen route, and report the result
-- **AND** it includes a fallback for tasks that do not map cleanly to the default steps
-
+- **WHEN** the public `SKILL.md` is inspected
+- **THEN** it has a near-top numbered Workflow that parses the task, discovers safe context when useful, selects a route, loads only the selected protected member or CLI guidance, proceeds, and reports the result
+- **AND** it has a freeform fallback
 ### Requirement: Entrypoint Routes Then Proceeds
-The entrypoint SHALL choose the next Isomer system skill or CLI surface from the user's task and proceed with that selected route by default.
+The entrypoint SHALL resolve a public command or concrete task to one protected member, optional public extension entrypoint, or CLI surface and proceed by default, while orientation-only requests route to the independent welcome skill.
 
-#### Scenario: Concrete task is executed through selected route
-- **WHEN** the user gives a concrete task, prompt, or file and does not ask only for help or explanation
-- **THEN** the entrypoint selects one owner skill, extension skill, or CLI command family
-- **AND** it proceeds with that route or reports a blocker that prevents safe execution
-- **AND** it does not stop after only listing possible routes
+#### Scenario: User invokes a public execution command
+- **WHEN** the user supplies `$isomer-op-entrypoint use <command> to <task>`
+- **THEN** the entrypoint resolves the command and proceeds through the matching route or reports a concrete blocker
+
+#### Scenario: Invocation is empty
+- **WHEN** the user invokes `$isomer-op-entrypoint` without a task or command
+- **THEN** the entrypoint delegates read-only output to `$isomer-op-welcome` while preserving supplied context
+- **AND** it does not load a private welcome subskill
+
+#### Scenario: User asks how to use Isomer
+- **WHEN** the request is orientation, command-learning, route comparison, or typical-use-case discovery rather than execution
+- **THEN** the entrypoint delegates to `$isomer-op-welcome` without losing supplied context
+- **AND** welcome remains non-mutating
+
+#### Scenario: Concrete task has no command
+- **WHEN** the user gives a concrete task, prompt, or file without asking only for help
+- **THEN** the entrypoint selects one protected member, public extension entrypoint, or CLI command family
+- **AND** it proceeds or reports a blocker instead of stopping after route enumeration
 
 #### Scenario: Explanation-only task stays non-mutating
-- **WHEN** the user asks only what route to use, how Isomer routing works, or what options exist
-- **THEN** the entrypoint may answer with a routing explanation
-- **AND** it does not run mutating commands or invoke mutating owner workflows
+- **WHEN** the user asks only what route to use or what options exist
+- **THEN** the entrypoint may explain routing without invoking mutating workflows
 
-#### Scenario: Ambiguous mutation uses read-only preflight first
-- **WHEN** the user request implies action but lacks enough Project, Topic, actor, agent, or workspace context
-- **THEN** the entrypoint uses read-only context commands or existing prompt evidence before mutation
-- **AND** it asks for missing information or reports a blocker when the selected route cannot be resolved safely
-
+#### Scenario: Ambiguous mutation uses read-only preflight
+- **WHEN** action lacks enough Project, Topic, actor, agent, or workspace context
+- **THEN** the entrypoint uses read-only evidence before mutation and pauses for information only when the route cannot be resolved safely
 ### Requirement: Entrypoint Indexes All System Skill Families
-The entrypoint SHALL include route guidance for operator, service, misc, and extension system skills while preserving their ownership boundaries.
+The entrypoint SHALL index core protected operator, service, and shared capabilities while linking public welcome skills as orientation surfaces rather than protected owner routes.
 
-#### Scenario: Operator owner routes are indexed
-- **WHEN** the entrypoint skill index is inspected
-- **THEN** it lists active operator routes for welcome, project lifecycle, topic creation, initialized-topic management, identity switching, and Topic Team Specialization
-- **AND** it distinguishes `isomer-op-welcome` as read-only orientation from `isomer-op-entrypoint` as route-and-proceed dispatch
+#### Scenario: Operator routes are indexed
+- **WHEN** the entrypoint protected route table is inspected
+- **THEN** it contains Project lifecycle, GUI, identity, system-skill management, Toolbox management, Topic creation, Topic management, and Topic Team Specialization members
+- **AND** it does not contain member `welcome`
 
-#### Scenario: Service skill routes are bounded
-- **WHEN** service skills are mentioned in entrypoint guidance
-- **THEN** the guidance identifies them as bounded support routes
-- **AND** normal project, topic, environment, Houmao, or agent workspace requests route through the owning operator workflow before service delegation unless the user explicitly invokes a service skill
+#### Scenario: Welcome route is public
+- **WHEN** entrypoint guidance explains orientation
+- **THEN** it names `$isomer-op-welcome` as the public core learning surface
+- **AND** it does not use `isomer-op-entrypoint->welcome` as an active designator
 
-#### Scenario: Misc helper routes are explicit
-- **WHEN** misc skills are mentioned in entrypoint guidance
-- **THEN** `isomer-misc-tool-packs` is treated as an explicit named helper route rather than an automatic package mutation route
-- **AND** package install, update, or removal requests for a Topic Workspace remain routed to the owning topic or environment setup workflow
+#### Scenario: Service and shared routes stay bounded
+- **WHEN** service or shared support is needed
+- **THEN** entrypoint routing uses the applicable protected member under its existing owner boundary
+- **AND** public guidance does not present protected logical ids as peer welcome or entrypoint skills
 
 #### Scenario: Retired routes are excluded
-- **WHEN** active entrypoint guidance is inspected
-- **THEN** it does not present `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, or `isomer-admin-*` names as active invokable routes
-
+- **WHEN** active guidance is inspected
+- **THEN** it does not present retired topic workspace, topic preparation, manual session, operator Houmao, admin, or research-v1 names as active routes
 ### Requirement: Entrypoint Includes Extension Skill Routing
-The entrypoint SHALL treat domain extension skills, including production DeepSci skills, as first-class system-skill routes.
+The core entrypoint SHALL route optional research paradigms through their public extension entrypoints and SHALL point orientation-only extension questions to their public welcome skills.
 
-#### Scenario: DeepSci extension index exists
-- **WHEN** entrypoint references are inspected
-- **THEN** they include DeepSci extension routes for workspace bootstrap, pipeline passes, scouting, baselines, ideation, optimization, experiments, analysis, decisions, finalization, science checks, writing, review, rebuttal, plotting, figure polish, Nature data, Nature figures, paper-to-PPT, and Nature-style polishing
+#### Scenario: Extension public pairs are indexed
+- **WHEN** entrypoint extension references are inspected
+- **THEN** they identify `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint` and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`
+- **AND** they distinguish learning from execution
 
-#### Scenario: Prepared research-stage task routes to DeepSci
-- **WHEN** the user asks for research-stage work and the Topic Workspace has the required readiness or the prompt supplies accepted DeepSci context
-- **THEN** the entrypoint routes to the matching `isomer-deepsci-*` skill or `isomer-deepsci-pipeline`
-- **AND** it preserves that skill's callbacks, latest-context preflight, worker-output policy, placeholder binding, and blocker rules
+#### Scenario: Prepared extension task is selected
+- **WHEN** a concrete task maps to DeepSci or Kaoju and required readiness exists
+- **THEN** the core entrypoint routes to the matching extension execution entrypoint
+- **AND** the extension entrypoint selects its protected member while preserving existing callbacks, evidence, Gate, and output contracts
+
+#### Scenario: Extension comparison is requested
+- **WHEN** the user asks how to use one extension or compare its typical workflows without requesting execution
+- **THEN** the core entrypoint routes to the applicable extension welcome or core welcome comparison guidance
+- **AND** it performs no extension task mutation
 
 #### Scenario: Missing DeepSci readiness routes to setup
 - **WHEN** the user asks for DeepSci research work but required Topic Workspace, Topic Actor, Agent Workspace, or DeepSci bootstrap readiness is missing
 - **THEN** the entrypoint routes to `isomer-op-topic-creator`, `isomer-op-topic-mgr`, `isomer-op-topic-team-specialize`, `isomer-srv-agent-env-setup` through its owner, or `isomer-deepsci-workspace-mgr` as appropriate
 - **AND** it does not let an ordinary research-stage skill fabricate missing readiness
 
+#### Scenario: Extension is unavailable
+- **WHEN** a concrete task maps to an optional extension that is not declared or host-usable
+- **THEN** the core entrypoint routes extension reconciliation through its protected `system-skills` member
+- **AND** it resumes the public extension entrypoint after successful reconciliation
 ### Requirement: Entrypoint Includes CLI Surface Routing
 The entrypoint SHALL include concise routing guidance for Isomer CLI command families without duplicating full CLI help.
 
@@ -110,11 +135,24 @@ The entrypoint SHALL report concise routing and execution results by default, wi
 - **THEN** the entrypoint includes route candidates, route rationale, commands run, read-only versus mutation posture, selected Project or Topic context, selected actor or agent identity, extension-skill readiness checks, and service-skill delegation notes
 
 ### Requirement: Entrypoint Validation
-The repository SHALL validate `isomer-op-entrypoint` as a routing contract, not merely as a generic skill folder.
+The repository SHALL validate `isomer-op-entrypoint` as the public core execution surface and enforce its boundary with the independent welcome skill.
 
-#### Scenario: Entrypoint validator accepts valid skill
-- **WHEN** operator skill validation runs against a valid `isomer-op-entrypoint`
-- **THEN** validation passes the entrypoint's frontmatter, manifest, workflow, local references, output contract, route-and-proceed language, active owner routes, extension routes, CLI routes, service boundary, misc boundary, retired-route exclusions, and global `isomer-cli` command guidance
+#### Scenario: Valid entrypoint passes
+- **WHEN** operator validation runs against a valid core pack
+- **THEN** it checks public execution invocation, route-and-proceed language, protected inventory, CLI routes, extension public pairs, service and shared boundaries, compatibility delegation, and retired-route exclusions
+- **AND** it confirms that welcome is absent from the protected inventory
+
+#### Scenario: Entrypoint retains private welcome
+- **WHEN** the entrypoint contains a protected `welcome` member, private welcome resources, or active `isomer-op-entrypoint->welcome` guidance
+- **THEN** validation reports that welcome must be the independent public `isomer-op-welcome` skill
+
+#### Scenario: Compatibility command duplicates welcome content
+- **WHEN** a retained entrypoint help or onboarding alias copies the welcome procedure instead of delegating to the public welcome skill
+- **THEN** validation reports duplicate ownership and the canonical welcome route
+
+#### Scenario: Valid core pack passes
+- **WHEN** operator skill validation runs
+- **THEN** it checks public invocation, empty-help behavior, route-and-proceed language, protected inventory, member mappings, CLI routes, extension entrypoints, object notation, service boundaries, shared boundaries, and retired-route exclusions
 
 #### Scenario: Entrypoint validator rejects stale or unsafe routes
 - **WHEN** active entrypoint guidance presents retired operator skills, old admin names, service skills as normal first-click owner routes, or `pixi run isomer-cli` command guidance
@@ -124,23 +162,29 @@ The repository SHALL validate `isomer-op-entrypoint` as a routing contract, not 
 - **WHEN** active entrypoint guidance omits DeepSci extension-skill routing
 - **THEN** operator skill validation reports that extension skill coverage is incomplete
 
+#### Scenario: Direct protected public route is introduced
+- **WHEN** active entrypoint guidance tells a user to invoke a protected logical id directly
+- **THEN** validation reports the route and its required parent form
+
+#### Scenario: Protected member coverage is incomplete
+- **WHEN** a manifest core member is missing from the parent route table or a parent route lacks manifest metadata
+- **THEN** validation fails with the member or route identity
 ### Requirement: Entrypoint Routes Toolbox Tasks
-The `isomer-op-entrypoint` skill SHALL route concrete project-local Toolbox tasks to `isomer-op-toolbox-mgr` while preserving owner boundaries for misc helper skills and direct CLI requests.
+The public core entrypoint SHALL route project-local Toolbox tasks through protected member `toolbox`, whose logical id remains `isomer-op-toolbox-mgr`.
 
 #### Scenario: System skill index includes Toolbox manager
 - **WHEN** the entrypoint system skill index is inspected
 - **THEN** it lists `isomer-op-toolbox-mgr` as the active operator owner for creating, converting, installing, inspecting, updating, disabling, uninstalling, and explaining project-local Toolboxes
 - **AND** it includes Toolbox callback declarations, callback insertion points, Runtime Params, and effective-state inspection in that owner boundary
 
-#### Scenario: Concrete Toolbox task routes to owner skill
-- **WHEN** the user gives a concrete task to create a Toolbox, convert a skill into Toolbox material, insert a Toolbox callback, list callback insertion points, manage Toolbox Runtime Params, or inspect Toolbox effective state
-- **THEN** the entrypoint selects `isomer-op-toolbox-mgr` as the owner skill
-- **AND** it proceeds through that owner route or reports the blocker that prevents safe execution
+#### Scenario: Toolbox command is selected
+- **WHEN** a user asks to create, convert, install, inspect, update, disable, uninstall, or explain a Project-local Toolbox
+- **THEN** the entrypoint invokes `isomer-op-entrypoint->toolbox` and proceeds under the Toolbox Manager contract
 
-#### Scenario: Toolbox route is distinct from tool packs
-- **WHEN** the user asks for project-local Toolbox callback or Runtime Param management
-- **THEN** the entrypoint does not route the task to `isomer-misc-tool-packs`
-- **AND** package or installable toolset requests still use the existing misc helper boundary only when explicitly requested
+#### Scenario: Toolbox and tool packs stay distinct
+- **WHEN** a request concerns named dependency bundles rather than Toolbox configuration
+- **THEN** the entrypoint may route to protected member `tool-packs`
+- **AND** it does not conflate that helper with Toolbox management
 
 ### Requirement: Entrypoint Indexes Toolbox CLI Families
 The `isomer-op-entrypoint` skill SHALL include concise CLI routing guidance for existing Toolbox command families.
@@ -157,22 +201,17 @@ The `isomer-op-entrypoint` skill SHALL include concise CLI routing guidance for 
 - **THEN** the entrypoint may route to the matching CLI family, inspect CLI help when flags are needed, and preserve read-only or mutation posture in its output\n
 
 ### Requirement: Entrypoint Delegates System Skill Management
-The operator entrypoint SHALL route extension detection, reconciliation, installation, status, and repair to `isomer-op-system-skill-mgr`.
+The public core entrypoint SHALL route detection, reconciliation, installation, status, upgrade, and repair through protected member `system-skills`.
 
-#### Scenario: Extension management request selects owner
-- **WHEN** the user asks to find, install, register, reconcile, inspect, or repair Isomer system-skill extensions
-- **THEN** the entrypoint selects `isomer-op-system-skill-mgr`
-- **AND** it proceeds through that owner rather than embedding provider-specific root discovery
-
-#### Scenario: Extension research request uses owner evidence
-- **WHEN** a concrete research request maps to an optional extension that is not already declared
-- **THEN** the entrypoint delegates availability resolution and any authorized registration to the system-skill manager
-- **AND** it resumes the selected research route after reconciliation succeeds
+#### Scenario: Extension management request selects protected owner
+- **WHEN** the user asks to find, install, register, reconcile, inspect, upgrade, or repair Isomer system-skill extensions
+- **THEN** the entrypoint invokes `isomer-op-entrypoint->system-skills`
+- **AND** the protected manager uses pack-aware evidence and operations
 
 #### Scenario: Declared extension is trusted
 - **WHEN** a concrete request maps to a Project-declared extension
-- **THEN** the entrypoint trusts the Project declaration and attempts the selected extension route
-- **AND** a later unavailable-skill failure is reported with system-skill-manager repair guidance
+- **THEN** the entrypoint attempts the matching public extension entrypoint
+- **AND** later unavailable-pack evidence produces protected manager repair guidance
 
 ### Requirement: Entrypoint Does Not Encode Provider Discovery Paths
 Entrypoint extension routing SHALL use Project declarations and the system-skill manager instead of hard-coded project or user-home skill roots.
@@ -237,3 +276,43 @@ The operator entrypoint SHALL make the difference between an ordinary paused req
 - **WHEN** run-to satisfies the prerequisite closure and completes the original target
 - **THEN** Essential Output leads with the target outcome
 - **AND** it summarizes prerequisite owner work, important Runs or accepted refs, preserved Gates, and target validation without presenting each intermediate terminal report as a separate user action request
+
+### Requirement: Entrypoint Routes Operation Set Acceptance
+`isomer-op-entrypoint` SHALL make operation-set inspection, acceptance, verification, and legacy repair discoverable through the focused core recording skill and research CLI family.
+
+#### Scenario: Research output closeout selects focused skill
+- **WHEN** a user asks to persist, reconcile, close, verify, or repair files in a worker operation set
+- **THEN** the entrypoint routes to `isomer-research-operation-set-recording` and proceeds with that workflow when context is sufficient
+
+#### Scenario: Explicit CLI request uses operation-set commands
+- **WHEN** a user explicitly asks for the CLI surface
+- **THEN** entrypoint guidance names `isomer-cli ext research operation-sets inspect`, `accept`, and `verify` and preserves preview-before-apply behavior
+
+#### Scenario: Project manager does not own research semantics
+- **WHEN** an operation-set task requires record kinds, semantic bindings, artifact lineage, or Research Idea effects
+- **THEN** the entrypoint does not treat generic Project lifecycle management as the recording authority
+
+#### Scenario: Entrypoint validation checks route coverage
+- **WHEN** operator skill validation inspects entrypoint research routes
+- **THEN** it reports missing focused-skill or operation-set CLI coverage and stale guidance that treats plain worker files as accepted records
+
+### Requirement: Core Entrypoint Explains Every Protected Route
+The `isomer-op-entrypoint` skill SHALL provide one context-aware `When to Route Here` sentence for every protected operator, service, and shared subskill in its protected-subskill table. The sentences SHALL convert the existing category labels into actionable selection conditions while preserving owner and delegation boundaries.
+
+#### Scenario: Core protected inventory is inspected
+- **WHEN** `isomer-op-entrypoint/SKILL.md` is inspected
+- **THEN** all 20 protected-member rows contain one routing sentence
+- **AND** the existing member names, logical ids, areas, and internal designators remain unchanged
+
+#### Scenario: Project and Topic lifecycle routes overlap
+- **WHEN** a request could relate to Project lifecycle, blank-state Research Topic setup, initialized Research Topic management, or formal Topic Agent Team specialization
+- **THEN** the applicable routing sentences distinguish `project`, `topic-create`, `topic-manage`, and `topic-team` by lifecycle state and requested outcome
+
+#### Scenario: Service or shared support is considered
+- **WHEN** a task may require environment, package repository, Houmao, Topic Service Agent, bounded-run, NVIDIA, package-specific, Tool Pack, research-idea, or Operation Set support
+- **THEN** the routing sentences identify the bounded support condition without replacing the normal operator-owner route
+
+#### Scenario: Public command and protected member share a name
+- **WHEN** the table explains a protected member such as `gui`
+- **THEN** the sentence does not change the distinction between the bare protected designator and the parenthesized public subcommand designator
+

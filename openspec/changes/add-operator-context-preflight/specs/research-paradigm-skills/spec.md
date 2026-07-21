@@ -18,10 +18,20 @@ Production research-paradigm skills SHALL consume the reconciled task target fro
 - **THEN** the skill preserves the canonical exchange surface and stops, corrects the explicit selector, or routes to the owning readiness workflow
 - **AND** it does not copy the requested material into a Topic Actor Workspace, Agent Workspace, Topic Main repository, or arbitrary alternate directory
 
-#### Scenario: Default Kaoju template edit request uses canonical exchange surface
+#### Scenario: Default Kaoju template edit request uses named-stock exchange surface
 - **WHEN** the user asks to get, edit, or export the Kaoju LaTeX template without naming a custom output target
-- **THEN** the write workflow selects the canonical `main` LaTeX template for the reconciled Research Topic and invokes the typed export without `--target`
+- **THEN** the write workflow selects named LaTeX stock `main` for the reconciled Research Topic and invokes the typed export without `--target`
 - **AND** it reports the CLI-resolved writing-template exchange path rather than constructing an actor-local path
+
+#### Scenario: Named LaTeX stock edit is not paper composition
+- **WHEN** the user asks to export the LaTeX template for manual editing without selecting a paper-local TeX draft
+- **THEN** the write workflow routes to `manage-paper-template()->export()` for named `KAOJU:PAPER-TEMPLATE-LATEX` stock
+- **AND** it does not invoke `init-tex`, select `KAOJU:PAPER-DRAFT-TEX`, or represent the export as an agent-fill composition tree
+
+#### Scenario: Paper-local TeX fill does not export or mutate stock
+- **WHEN** the user asks to fill or repair the derived TeX for a selected paper line
+- **THEN** the write workflow uses the selected `KAOJU:PAPER-DRAFT-TEX`, its fill manifest, and the agent-fill composition contract under the reconciled Research Topic
+- **AND** it does not export or mutate named LaTeX stock unless the user separately requests that template operation
 
 #### Scenario: Explicit alternate copy remains a separate operation
 - **WHEN** the user explicitly requests an additional unmanaged copy outside the canonical exchange surface

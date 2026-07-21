@@ -3,51 +3,76 @@
 ## Purpose
 
 Define the `isomer-deepsci-pipeline` production DeepSci skill, which executes named single-pass recipes that chain other production DeepSci skills with automatic artifact handoffs while preserving each wrapped skill's gate discipline.
-
 ## Requirements
-
 ### Requirement: Pipeline skill exists
+The project SHALL provide `isomer-ext-deepsci-entrypoint` as the DeepSci execution entrypoint and `isomer-ext-deepsci-welcome` as its independent public newcomer skill.
 
-The project SHALL provide a production DeepSci skill named `isomer-deepsci-pipeline` under `skillset/research-paradigm/deepsci/isomer-deepsci-pipeline/`.
+#### Scenario: DeepSci public pair is packaged
+- **WHEN** the production DeepSci pack is inspected
+- **THEN** it contains sibling public bundles `isomer-ext-deepsci-welcome` and `isomer-ext-deepsci-entrypoint`
+- **AND** all existing DeepSci stage capabilities remain protected below the entrypoint
 
-#### Scenario: Skill folder is present
+#### Scenario: DeepSci public roles are distinct
+- **WHEN** DeepSci metadata is inspected
+- **THEN** welcome describes typical production-research patterns and performs no research task mutation
+- **AND** entrypoint executes named pass commands or routes concrete tasks through protected DeepSci stages
 
-- **WHEN** the production DeepSci research-paradigm skillset is inspected
-- **THEN** it contains a folder named `isomer-deepsci-pipeline`
-- **AND** the folder contains `SKILL.md` with valid YAML frontmatter including `name: isomer-deepsci-pipeline`
-- **AND** the folder contains `agents/openai.yaml` with skill metadata
+#### Scenario: Historical pipeline identity is used
+- **WHEN** compatibility lookup encounters `isomer-deepsci-pipeline`
+- **THEN** it resolves to the execution entrypoint rather than the welcome skill
+- **AND** guidance recommends the welcome skill only for onboarding or command-learning intent
 
+#### Scenario: Public entrypoint folder is present
+- **WHEN** the production DeepSci package is inspected
+- **THEN** it contains `isomer-ext-deepsci-entrypoint/SKILL.md` with matching frontmatter and `agents/openai.yaml`
+- **AND** it does not contain a top-level or nested `isomer-deepsci-pipeline` skill folder
+
+#### Scenario: Old pipeline id is resolved
+- **WHEN** catalog compatibility lookup receives `isomer-deepsci-pipeline`
+- **THEN** it resolves to `isomer-ext-deepsci-entrypoint`
+- **AND** it reports the old id as deprecated without a shim directory
+
+#### Scenario: DeepSci protected inventory exists
+- **WHEN** the public pack's `subskills/` tree is inspected
+- **THEN** it contains protected logical capabilities for analysis, baseline, decision, experiment, figure polish, finalize, idea, Nature data, Nature figure, Nature paper-to-PPT, Nature polishing, optimize, paper outline, paper plot, rebuttal, review, science, scout, shared, workspace management, and write
+- **AND** each capability retains its `isomer-deepsci-*` folder and frontmatter identity
 ### Requirement: Pipeline passes are self-contained subcommand pages
-
-The skill SHALL define each pass as a dedicated subcommand page under its `commands/` directory. Each page embeds the pass recipe as a readable table and describes any pass-specific behavior, entry context, and notes.
+The DeepSci execution entrypoint SHALL retain self-contained pass command pages, while the independent DeepSci welcome skill SHALL own only newcomer use-case and command-learning resources.
 
 #### Scenario: Pass page is inspected
+- **WHEN** an active DeepSci pass command is inspected
+- **THEN** its execution stages, handoffs, Gates, callbacks, and terminal contract remain owned by `isomer-ext-deepsci-entrypoint`
+- **AND** the welcome skill links to the public command without copying the pass procedure
 
-- **WHEN** a page under `isomer-deepsci-pipeline/commands/` is read
-- **THEN** it contains a recipe table with stage order, skill, consumed artifacts, produced artifacts, continue condition, pause condition, and expensive flag
-- **AND** each stage's skill value is an existing production DeepSci skill name
+#### Scenario: Welcome example references a pass
+- **WHEN** DeepSci welcome teaches a hypothesis, empirical, paper, revision, rebuttal, or polish pattern
+- **THEN** it provides an exact `$isomer-ext-deepsci-entrypoint use <pass> to <task>` example
+- **AND** it explains prerequisites and mutation posture without executing the pass
 
 #### Scenario: Pass recipe is valid
+- **WHEN** the entrypoint validates a recipe
+- **THEN** every stage resolves to one manifest-declared protected DeepSci member
+- **AND** every artifact id remains valid under the production semantic-placeholder and binding contracts
+- **AND** the first stage's consumed artifacts are empty or satisfied by accepted context
 
-- **WHEN** the skill validates a recipe before execution
-- **THEN** every artifact id in the recipe appears either in the production DeepSci semantic-placeholder registry or in the producing or consuming skill's placeholder registry
-- **AND** the first stage's consumed artifacts are empty or satisfied by the caller-provided context
-
+#### Scenario: Object notation is declared
+- **WHEN** a pass page uses protected invocation designators
+- **THEN** its frontmatter declares the standard `skill_invocation_notation` value
 ### Requirement: Skill executes stages in order
+When invoked with a public pass command, `isomer-ext-deepsci-entrypoint` SHALL run the pass's protected stages sequentially.
 
-When invoked with a pipeline name, the skill SHALL run the pass's stages sequentially from first to last.
+#### Scenario: Public pass invocation executes
+- **WHEN** the user invokes `$isomer-ext-deepsci-entrypoint use empirical-pass to <task>` with valid context
+- **THEN** the entrypoint runs the first declared protected stage and advances until completion or a pause condition
 
-#### Scenario: Normal execution
-
-- **WHEN** the skill is invoked with `pipeline: empirical-pass` and valid initial context
-- **THEN** it runs the first stage
-- **AND** after each stage completes, it runs the next stage until the terminal stage finishes or a pause condition is met
+#### Scenario: Task-only invocation selects a stage or pass
+- **WHEN** a concrete DeepSci task omits a public subcommand
+- **THEN** the entrypoint selects the matching pass or protected member and proceeds
 
 #### Scenario: Stage failure blocks progression
-
-- **WHEN** a stage emits a blocker record
-- **THEN** the skill does not start the next stage
-- **AND** it produces a terminal report with `status: blocked`
+- **WHEN** a protected stage emits a blocker record
+- **THEN** the entrypoint does not start the next stage
+- **AND** it produces a blocked terminal report
 
 ### Requirement: Skill passes artifacts between stages automatically
 
@@ -90,53 +115,112 @@ At the end of a pipeline run, the skill SHALL produce a `pipeline-terminal-repor
 - **THEN** the terminal report contains `status: paused` or `status: blocked`, the completed stages, the current stage, the reason for stopping, and a `resume_point`
 
 ### Requirement: Initial pipeline catalog
+The DeepSci pack SHALL preserve its accepted execution-pass catalog and expose complete newcomer mapping for that catalog through the independent welcome skill.
 
-The skill SHALL ship with a catalog of common single-pass recipes covering empirical research, paper writing, review, rebuttal, and publication packaging.
+#### Scenario: Execution pass catalog is inspected
+- **WHEN** `isomer-ext-deepsci-entrypoint` public commands are read from the manifest
+- **THEN** they include the accepted empirical, hypothesis, paper, polish, rebuttal, revision, submission, list, and help commands in deterministic order
+- **AND** protected stage ownership remains unchanged
+
+#### Scenario: Welcome command map is inspected
+- **WHEN** `isomer-ext-deepsci-welcome` command-map guidance is validated
+- **THEN** every manifest-declared DeepSci entrypoint command appears exactly once with a one-sentence use condition and exact invocation
+- **AND** no protected DeepSci logical id is advertised as a direct public skill
 
 #### Scenario: Catalog is inspected
-
-- **WHEN** `isomer-deepsci-pipeline/commands/` is listed
-- **THEN** it contains at minimum `empirical-pass.md`, `hypothesis-pass.md`, `paper-pass.md`, `revision-pass.md`, `rebuttal-pass.md`, `polish-pass.md`, `submission-pass.md`, and `list-passes.md`
+- **WHEN** `isomer-ext-deepsci-entrypoint/commands/` is listed
+- **THEN** it contains `empirical-pass.md`, `hypothesis-pass.md`, `paper-pass.md`, `revision-pass.md`, `rebuttal-pass.md`, `polish-pass.md`, `submission-pass.md`, and `list-passes.md`
 
 #### Scenario: Recipe stages are bounded
-
-- **WHEN** any shipped recipe is inspected
-- **THEN** it contains no backward edges, loop constructs, or references to looping
-- **AND** it names only production DeepSci skills as stages
-
+- **WHEN** a shipped recipe is inspected
+- **THEN** it contains no backward edges or internal macro loops
+- **AND** it names only declared protected DeepSci logical capabilities as stages
 ### Requirement: DeepSci Pipeline Supports Authorized Run-To Control
-The DeepSci pipeline SHALL preserve linear single-pass recipes while allowing the current agent to act as their external controller after explicit run-to authorization for a named target.
+The public DeepSci entrypoint SHALL preserve linear pass recipes while allowing target-scoped run-to control across protected members after explicit authorization.
 
 #### Scenario: DeepSci target lacks a producible input
-- **WHEN** the selected pass or target lacks an input that an available DeepSci or platform owner can produce
-- **THEN** the DeepSci pipeline's numbered workflow makes the bounded operation record `paused`, the missing placeholder or accepted ref, its producer route, and a resume point
-- **AND** it offers run-to recovery rather than classifying the producible gap as a terminal blocker
+- **WHEN** a selected pass or protected target lacks an input that a known owner can produce
+- **THEN** the current operation records paused status, missing accepted ref, producer route, and resume point
+- **AND** it offers run-to recovery
 
-#### Scenario: Run-to controller consumes a DeepSci terminal report
-- **WHEN** an authorized pass completes or pauses with a recommended producer, repair, revision, or resume route inside the target closure
-- **THEN** the current agent may invoke the recommended bounded skill or pass as the external controller
-- **AND** it refreshes latest context and accepted records before advancing the internal plan
-- **AND** the individual pass recipe remains linear and contains no backward edge or internal macro loop
+#### Scenario: Run-to controller consumes terminal report
+- **WHEN** authorized continuation selects another DeepSci member or pass
+- **THEN** the parent invokes the catalog-declared protected designator and refreshes current accepted context before advancing
+- **AND** the individual pass remains linear
 
 #### Scenario: DeepSci target becomes ready
-- **WHEN** the run-to controller produces every accepted input required by the original DeepSci target
-- **THEN** it resumes and executes that target
-- **AND** it stops after the target's acceptance and validation conditions are met
+- **WHEN** every accepted prerequisite exists
+- **THEN** the entrypoint resumes and executes the original target
+- **AND** it stops after that target's acceptance conditions are met
 
-#### Scenario: DeepSci has no run-to authorization
-- **WHEN** a DeepSci pipeline terminal report recommends a different macro action without an active target-scoped run-to grant
-- **THEN** the pipeline surfaces the recommendation to the user or external controller
-- **AND** it does not select the next macro action itself
+#### Scenario: No run-to authorization exists
+- **WHEN** a terminal report recommends another macro action without active authorization
+- **THEN** the entrypoint reports the recommendation to the user
+- **AND** it does not select the action autonomously
 
 ### Requirement: DeepSci Run-To Preserves Wrapped Skill Boundaries
-The DeepSci run-to controller SHALL preserve callbacks, latest-context preflight, worker-output policy, placeholder bindings, quality gates, resource checks, and blocker semantics for every wrapped skill.
+DeepSci run-to control SHALL preserve each protected member's callbacks, preflight, output policy, bindings, quality gates, resource checks, and blocker semantics.
 
-#### Scenario: Controller advances to another pass
-- **WHEN** run-to requires another DeepSci pass or focused production skill
-- **THEN** that invocation receives the accepted outputs of completed prerequisites
-- **AND** it applies its own begin and end callbacks, current-context checks, durable recording, and terminal reporting
+#### Scenario: Controller invokes another protected member
+- **WHEN** run-to requires a focused DeepSci capability
+- **THEN** the parent routes through that member's invocation designator and accepted inputs
+- **AND** callback resolution uses the member's preserved logical id
 
-#### Scenario: Controller reaches a protected or repeating route
-- **WHEN** continuation requires a nondelegable Gate, a material research choice, an unauthorized resource change, or repeats a recovery route without producing new accepted state
-- **THEN** the controller pauses with completed artifacts and a precise resume point
-- **AND** it does not continue under the prior run-to grant until the boundary is resolved
+#### Scenario: Protected or repeating route is reached
+- **WHEN** continuation reaches a nondelegable Gate, material research choice, unauthorized resource change, or no-progress repeat
+- **THEN** control pauses with completed artifacts and a precise resume point
+
+### Requirement: DeepSci Pipeline Requires Accepted Stage Outputs
+`isomer-deepsci-pipeline` SHALL advance between stages using verified durable record refs and operation-set closeout status rather than plain file paths.
+
+#### Scenario: Stage with files hands off a complete receipt
+- **WHEN** a pipeline stage produces material operation-set files and otherwise satisfies its continue condition
+- **THEN** the pipeline verifies that stage's complete acceptance receipt and passes the resulting durable record refs to the next stage
+
+#### Scenario: Stage without files declares closeout not applicable
+- **WHEN** a stage opens no operation set and produces or consumes only durable records
+- **THEN** the stage handoff records `closeout: not_applicable` with those durable refs and may continue
+
+#### Scenario: Partial acceptance stops progression
+- **WHEN** a stage has a missing, partial, stale, or unverifiable acceptance receipt
+- **THEN** the pipeline does not start the next stage and emits a paused terminal report with the stage id and receipt recovery action
+
+#### Scenario: File path is not an artifact handoff
+- **WHEN** a stage reports only a worker output path or terminal prose for a produced artifact
+- **THEN** the pipeline treats the artifact as unavailable until a durable record ref is accepted and verified
+
+### Requirement: Pipeline Completion Reports Acceptance Evidence
+The DeepSci pipeline SHALL include operation-set closeout evidence in its terminal report and SHALL reconcile any pipeline-level material files before reporting `status: complete`.
+
+#### Scenario: Successful terminal report lists receipts
+- **WHEN** every stage and the pipeline itself complete successfully
+- **THEN** the terminal report lists each applicable acceptance receipt id, accepted durable record refs, any `not_applicable` closeouts, the final artifact ref, and the recommended next action
+
+#### Scenario: Pipeline-level report file is reconciled
+- **WHEN** the controller writes a pipeline-level report or other material file into its own operation set
+- **THEN** it accepts and verifies that set before the terminal status becomes `complete`
+
+#### Scenario: Terminal acceptance failure pauses pipeline
+- **WHEN** pipeline-level closeout cannot complete after all research stages ran
+- **THEN** the terminal report uses `status: paused`, preserves completed stage refs, and provides the acceptance resume point
+
+### Requirement: DeepSci Entrypoint Explains Every Protected Route
+The `isomer-ext-deepsci-entrypoint` skill SHALL provide one context-aware `When to Route Here` sentence for every protected DeepSci subskill in its protected-subskill table. Each sentence SHALL assume the DeepSci pack context and identify the research-stage condition or bounded support need that selects the member.
+
+#### Scenario: DeepSci protected inventory is inspected
+- **WHEN** `isomer-ext-deepsci-entrypoint/SKILL.md` is inspected
+- **THEN** all 21 protected-member rows contain one routing sentence
+- **AND** the existing member names, logical ids, and internal designators remain unchanged
+
+#### Scenario: Early research routes overlap
+- **WHEN** a task may require framing, comparator establishment, hypothesis development, optimization, or a bounded experiment
+- **THEN** the applicable routing sentences distinguish `scout`, `baseline`, `idea`, `optimize`, and `experiment` by readiness and intended output
+
+#### Scenario: Publication routes overlap
+- **WHEN** a task may require paper planning, plotting, visual refinement, Nature-specific data or figure work, review, rebuttal, finalization, or prose polishing
+- **THEN** the applicable routing sentences distinguish the protected publication members by artifact state and requested transformation
+
+#### Scenario: Shared support is selected
+- **WHEN** a DeepSci task needs cross-stage context, output, lineage, evidence, or recording rules rather than a standalone research stage
+- **THEN** the `shared` sentence identifies it as internal cross-stage support and does not present it as an independent public workflow
+
