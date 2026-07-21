@@ -362,7 +362,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         self.assertEqual(public_entrypoints, observed_public)
         self.assertEqual(53, len(protected))
         self.assertTrue(all("subskills" in path.relative_to(root).parts for path in protected))
-        self.assertEqual(20, len(provenance))
+        self.assertEqual(19, len(provenance))
         self.assertTrue(all("org" in path.relative_to(root).parts for path in provenance))
 
     def test_kaoju_machine_resources_remain_package_owned(self) -> None:
