@@ -11,6 +11,7 @@ from typing import Any, Literal, Mapping
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from isomer_labs.core.artifact_identity import ArtifactIdentityError, parse_artifact_identity
+from isomer_labs.kaoju.mindsets import validate_packaged_defaults
 
 
 CONTRACT_RESOURCE = "resources/survey-process.v2.json"
@@ -135,8 +136,8 @@ def load_contract() -> KaojuContract:
         if invocation_designator != f"{entry_skill}->{member_name}":
             raise ValueError(f"Kaoju protected member {logical_id!r} has a noncanonical invocation designator.")
         protected_members.append(KaojuProtectedMember(logical_id, member_name, invocation_designator))
-    if len(protected_members) != 14:
-        raise ValueError(f"Kaoju contract must declare fourteen protected members, found {len(protected_members)}.")
+    if len(protected_members) != 15:
+        raise ValueError(f"Kaoju contract must declare fifteen protected members, found {len(protected_members)}.")
     if len({item.logical_id for item in protected_members}) != len(protected_members):
         raise ValueError("Kaoju protected member logical ids must be unique.")
     if len({item.member_name for item in protected_members}) != len(protected_members):
@@ -146,10 +147,36 @@ def load_contract() -> KaojuContract:
     intents = _unique_strings(raw["survey_intents"], "survey_intents")
     compatibility = _unique_strings(raw["compatibility_procedures"], "compatibility_procedures")
     exploration = _unique_strings(raw["exploration_procedures"], "exploration_procedures")
-    if len(skills) != 15:
-        raise ValueError(f"Kaoju contract must declare fifteen skills, found {len(skills)}.")
-    if len(intents) != 10:
-        raise ValueError(f"Kaoju contract must declare ten survey intents, found {len(intents)}.")
+    if len(skills) != 16:
+        raise ValueError(f"Kaoju contract must declare sixteen skills, found {len(skills)}.")
+    if len(intents) != 11:
+        raise ValueError(f"Kaoju contract must declare eleven survey intents, found {len(intents)}.")
+    mindset_config = raw.get("mindsets")
+    if not isinstance(mindset_config, dict):
+        raise ValueError("Kaoju contract must declare checked mindset route metadata.")
+    expected_mindset_metadata = {
+        "source_schema_version": "isomer-kaoju-mindset-source.v1",
+        "source_semantic_label": "topic.intent.kaoju_mindsets",
+        "record_semantic_id": "KAOJU:MINDSET-RECORD",
+        "repair_designator": "isomer-ext-kaoju-entrypoint->topic-creator",
+        "ensure_mode": "create-missing-before-concrete-mutation-bearing-run",
+    }
+    for field, expected in expected_mindset_metadata.items():
+        if mindset_config.get(field) != expected:
+            raise ValueError(f"Kaoju mindset metadata {field} must be {expected!r}.")
+    expected_read_only_commands = ["help", "explore", "manage-survey:list", "manage-survey:show", "manage-survey:status"]
+    if mindset_config.get("read_only_commands") != expected_read_only_commands:
+        raise ValueError("Kaoju mindset metadata must declare the checked non-mutating help, explore, and status-only routes.")
+    routes = mindset_config.get("routes")
+    if not isinstance(routes, list) or {str(item.get("mindset_key")) for item in routes if isinstance(item, dict)} != {"paper.deep-dive", "paper.skimming", "source-code.ingest"}:
+        raise ValueError("Kaoju mindset routes must cover the three checked Source keys exactly.")
+    forbidden_mindset_fields = {"sources", "source_bodies", "runtime_fallback", "default_payloads"}
+    if forbidden_mindset_fields & set(mindset_config):
+        raise ValueError("Kaoju process metadata cannot embed Mindset Source bodies or a packaged runtime fallback.")
+    default_diagnostics = validate_packaged_defaults(process=raw)
+    if default_diagnostics:
+        detail = "; ".join(f"{item.location}: {item.message}" for item in default_diagnostics)
+        raise ValueError(f"Kaoju packaged Mindset Sources are invalid: {detail}")
     raw_managers = raw["manager_actions"]
     if not isinstance(raw_managers, dict):
         raise ValueError("Kaoju manager_actions must be an object.")

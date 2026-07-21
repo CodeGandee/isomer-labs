@@ -113,6 +113,7 @@ class KaojuSkillAssetTests(unittest.TestCase):
             "external-owner-routing.md",
             "interaction-and-gates.md",
             "lineage.md",
+            "mindset-contract.md",
             "prerequisite-recovery.md",
             "research-idea-recording.md",
             "source-identity.md",
@@ -142,6 +143,18 @@ class KaojuSkillAssetTests(unittest.TestCase):
         text = (pipeline / "SKILL.md").read_text(encoding="utf-8")
         for name in forbidden:
             self.assertNotRegex(text, rf"(?m)^\| `{re.escape(name)}` \|")
+
+    def test_mindsets_add_topic_creation_without_a_manager_or_specialized_cli(self) -> None:
+        text = (ENTRYPOINT / "SKILL.md").read_text(encoding="utf-8")
+        commands = {path.stem for path in (ENTRYPOINT / "commands").glob("*.md")}
+        subskills = {path.name for path in SUBSKILLS.glob("isomer-kaoju-*") if path.is_dir()}
+        self.assertIn("create-topic", commands)
+        self.assertIn("isomer-kaoju-topic-creator", subskills)
+        self.assertNotIn("manage-mindset", commands)
+        self.assertNotIn("isomer-kaoju-mindsets", subskills)
+        self.assertNotIn("ext kaoju mindsets", text)
+        for forbidden in ("KAOJU:MINDSET-SOURCE", "manage-mindset", "isomer-cli ext kaoju mindsets"):
+            self.assertNotIn(forbidden, text)
 
 
 if __name__ == "__main__":

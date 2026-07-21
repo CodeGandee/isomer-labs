@@ -179,6 +179,7 @@ EXPECTED_KAOJU_SKILLS = frozenset(
         "isomer-kaoju-reproduce",
         "isomer-kaoju-shared",
         "isomer-kaoju-synthesize",
+        "isomer-kaoju-topic-creator",
         "isomer-kaoju-trial",
         "isomer-kaoju-workspace-mgr",
         "isomer-kaoju-write",
@@ -2547,10 +2548,10 @@ def validate_kaoju_package_contract(
     contract_path = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
     intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
-    if len(skills) != 15:
-        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare fifteen skills, found {len(skills)}")
-    if len(intents) != 10:
-        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare ten survey intents, found {len(intents)}")
+    if len(skills) != 16:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare sixteen skills, found {len(skills)}")
+    if len(intents) != 11:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare eleven survey intents, found {len(intents)}")
 
     actual_skills = tuple(path.name for path in research_family_skill_dirs(kaoju_root, KAOJU_SKILL_NAME_RE))
     if set(actual_skills) != set(skills):

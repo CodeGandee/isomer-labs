@@ -419,6 +419,7 @@ LEGACY_AGENT_ENV_SURFACES = frozenset(
     }
 )
 TOPIC_LABELS = (
+    "topic.intent.kaoju_mindsets",
     "topic.runtime.db",
     "topic.tmp",
     "topic.repos.main",

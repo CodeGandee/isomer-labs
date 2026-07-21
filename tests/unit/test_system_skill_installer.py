@@ -198,6 +198,13 @@ class SystemSkillInstallerTests(unittest.TestCase):
         self.assertTrue((target.skill_root / "isomer-ext-kaoju-welcome" / "SKILL.md").is_file())
         self.assertTrue((target.skill_root / "isomer-op-welcome" / "SKILL.md").is_file())
         self.assertTrue((kaoju_root / "commands" / "comparative-pass.md").is_file())
+        self.assertTrue((kaoju_root / "commands" / "create-topic.md").is_file())
+        topic_creator = kaoju_root / "subskills" / "isomer-kaoju-topic-creator"
+        self.assertTrue((topic_creator / "SKILL-MAIN.md").is_file())
+        self.assertEqual(
+            {"paper.deep-dive.json", "paper.skimming.json", "source-code.ingest.json"},
+            {path.name for path in (topic_creator / "assets" / "defaults" / "mindsets").glob("*.json")},
+        )
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())
@@ -213,7 +220,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         kaoju_status = next(record for record in status.installed if record.pack_id == "kaoju")
         self.assertEqual("verified", kaoju_status.pack_status)
         self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in kaoju_status.public_skills))
-        self.assertEqual(14, len(kaoju_status.protected_members))
+        self.assertEqual(15, len(kaoju_status.protected_members))
 
         upgraded = upgrade_system_skills(target, selection)
         self.assertEqual(2, len(upgraded.refreshed))

@@ -12,6 +12,10 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 - `KAOJU:PROCEED-DECISION`: explicit clarify, proceed, pause, reject, or stop decision.
 - `KAOJU:SURVEY-TERMINAL-REPORT`: complete, paused, or blocked outcome with accepted refs, limitations, and resume point.
 
+## Run Reflection
+
+- `KAOJU:MINDSET-RECORD`: Run-scoped materialized answers to an immutable snapshot of one topic Mindset Source, with pinned survey context, exact prompts and notes, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state. The mutable Mindset Source itself is derived intent, not an Artifact.
+
 ## Discovery and Acquisition
 
 - `KAOJU:DISCOVERY-LEDGER`: bounded searches, routes, dates, identities, version families, dispositions, gaps, and frontier.

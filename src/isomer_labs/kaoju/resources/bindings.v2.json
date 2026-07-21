@@ -3,6 +3,43 @@
   "family": "kaoju",
   "bindings": [
     {
+      "semantic_id": "KAOJU:MINDSET-RECORD",
+      "artifact_type": "mindset-record",
+      "record_kind": "artifact",
+      "profile_ref": "isomer:research/record-format/profile/kaoju/reflection/mindset-record/v1",
+      "semantic_label": "topic.records.artifacts",
+      "content_mode": "structured_file",
+      "producer": "isomer-ext-kaoju-entrypoint",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit"
+      ],
+      "relationships": [
+        "run",
+        "survey_contract"
+      ],
+      "revision_mode": "current_state",
+      "scope_key_policy": {
+        "mode": "required",
+        "dimension": "run"
+      },
+      "latest_selection_policy": "scoped_current",
+      "validation": {
+        "required": true,
+        "contract": "structured-record"
+      },
+      "acceptance": {
+        "statuses": [
+          "active",
+          "ready",
+          "complete",
+          "blocked"
+        ],
+        "gate": "none"
+      },
+      "status": "active"
+    },
+    {
       "semantic_id": "KAOJU:WORKSPACE-READINESS",
       "artifact_type": "workspace-readiness",
       "record_kind": "artifact",

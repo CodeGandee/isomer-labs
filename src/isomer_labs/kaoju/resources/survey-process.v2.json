@@ -13,6 +13,11 @@
       "invocation_designator": "isomer-ext-kaoju-entrypoint->workspace"
     },
     {
+      "logical_id": "isomer-kaoju-topic-creator",
+      "member_name": "topic-creator",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->topic-creator"
+    },
+    {
       "logical_id": "isomer-kaoju-frame",
       "member_name": "frame",
       "invocation_designator": "isomer-ext-kaoju-entrypoint->frame"
@@ -77,6 +82,7 @@
     "isomer-ext-kaoju-entrypoint",
     "isomer-kaoju-shared",
     "isomer-kaoju-workspace-mgr",
+    "isomer-kaoju-topic-creator",
     "isomer-kaoju-frame",
     "isomer-kaoju-discover",
     "isomer-kaoju-acquire",
@@ -91,6 +97,7 @@
     "isomer-kaoju-explore"
   ],
   "survey_intents": [
+    "create-topic",
     "choose-directions",
     "build-reading-list",
     "ingest-reading-item",
@@ -145,6 +152,34 @@
       "archive",
       "delete",
       "migrate"
+    ]
+  },
+  "mindsets": {
+    "source_schema_version": "isomer-kaoju-mindset-source.v1",
+    "source_semantic_label": "topic.intent.kaoju_mindsets",
+    "record_semantic_id": "KAOJU:MINDSET-RECORD",
+    "repair_designator": "isomer-ext-kaoju-entrypoint->topic-creator",
+    "ensure_mode": "create-missing-before-concrete-mutation-bearing-run",
+    "read_only_commands": ["help", "explore", "manage-survey:list", "manage-survey:show", "manage-survey:status"],
+    "routes": [
+      {
+        "mindset_key": "paper.deep-dive",
+        "actions": ["ingest-reading-item", "examine"],
+        "source_kinds": ["paper", "report"],
+        "depths": ["deep", "full-text"]
+      },
+      {
+        "mindset_key": "paper.skimming",
+        "actions": ["ingest-reading-item", "examine"],
+        "source_kinds": ["paper", "report"],
+        "depths": ["skim", "triage"]
+      },
+      {
+        "mindset_key": "source-code.ingest",
+        "actions": ["ingest-source-code", "examine"],
+        "source_kinds": ["repository", "source-tree"],
+        "depths": ["ingest", "deep"]
+      }
     ]
   },
   "template_roles": {

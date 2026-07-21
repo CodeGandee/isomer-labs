@@ -29,12 +29,12 @@ class KaojuContractTests(unittest.TestCase):
 
     def test_checked_process_semantics_and_bindings_are_complete(self) -> None:
         contract = load_contract()
-        self.assertEqual(15, len(contract.skills))
-        self.assertEqual(10, len(contract.survey_intents))
+        self.assertEqual(16, len(contract.skills))
+        self.assertEqual(11, len(contract.survey_intents))
         self.assertEqual(("explore",), contract.exploration_procedures)
         self.assertEqual("isomer-ext-kaoju-entrypoint", contract.entry_skill)
         self.assertEqual("isomer-ext-kaoju-entrypoint", contract.skills[0])
-        self.assertEqual(14, len(contract.protected_members))
+        self.assertEqual(15, len(contract.protected_members))
         self.assertEqual(tuple(contract.skills[1:]), tuple(item.logical_id for item in contract.protected_members))
         self.assertEqual(
             "isomer-ext-kaoju-entrypoint->trial",
@@ -52,7 +52,7 @@ class KaojuContractTests(unittest.TestCase):
 
         bindings = load_binding_registry()
         semantics = load_semantic_registry()
-        self.assertEqual(63, len(bindings))
+        self.assertEqual(64, len(bindings))
         self.assertEqual(set(bindings), set(semantics))
         self.assertEqual((), resource_coverage_diagnostics())
         for semantic_id in bindings:
@@ -132,7 +132,8 @@ class KaojuContractTests(unittest.TestCase):
         raw_bindings = self.resource_json("bindings.v2.json")
         duplicate_bindings = deepcopy(raw_bindings)
         duplicate_bindings["bindings"][1]["semantic_id"] = duplicate_bindings["bindings"][0]["semantic_id"]  # type: ignore[index]
-        self.assertTrue(any("duplicate KAOJU:WORKSPACE-READINESS" in item for item in validate_binding_registry_document(duplicate_bindings)))
+        first_binding = raw_bindings["bindings"][0]["semantic_id"]  # type: ignore[index]
+        self.assertTrue(any(f"duplicate {first_binding}" in item for item in validate_binding_registry_document(duplicate_bindings)))
 
         invalid_binding_ids = (
             "kaoju:survey-contract",
@@ -150,7 +151,8 @@ class KaojuContractTests(unittest.TestCase):
         raw_semantics = self.resource_json("artifact-semantics.v1.json")
         duplicate_semantics = deepcopy(raw_semantics)
         duplicate_semantics["artifacts"].append(deepcopy(duplicate_semantics["artifacts"][0]))  # type: ignore[union-attr,index]
-        self.assertTrue(any("duplicate KAOJU:WORKSPACE-READINESS" in item for item in validate_semantic_registry_document(duplicate_semantics)))
+        first_semantic = raw_semantics["artifacts"][0]["semantic_id"]  # type: ignore[index]
+        self.assertTrue(any(f"duplicate {first_semantic}" in item for item in validate_semantic_registry_document(duplicate_semantics)))
         malformed_semantics = deepcopy(raw_semantics)
         malformed_semantics["artifacts"][0]["semantic_id"] = "KAOJU:WORKSPACE_READINESS"  # type: ignore[index]
         self.assertTrue(validate_semantic_registry_document(malformed_semantics))

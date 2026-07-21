@@ -13,7 +13,22 @@ import unittest
 from unittest.mock import patch
 
 from isomer_labs import cli
+from isomer_labs.kaoju.mindsets import (
+    canonical_digest,
+    ensure_mindset_sources,
+    load_mindset_source,
+    materialize_record_payload,
+    mindset_source_child,
+    packaged_default_root,
+    replace_mindset_source,
+)
+from isomer_labs.models import SelectionRequest
+from isomer_labs.project import discover_project
+from isomer_labs.project.context import resolve_effective_topic_context
+from isomer_labs.project.validation import build_project_state
 from isomer_labs.records.store import ResearchRecordError
+from isomer_labs.skills.installer import install_system_skills, resolve_system_skill_selection, resolve_targets, upgrade_system_skills
+from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
 
 def write(path: Path, content: str) -> None:
@@ -100,6 +115,249 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
 
     def artifact(self, *arguments: str) -> tuple[int, dict[str, object]]:
         return self.run_cli("project", "--root", str(self.root), "artifacts", *arguments, "--topic", "alpha")
+
+    def topic_context(self) -> object:
+        project, diagnostics = discover_project(cwd=self.root, env={})
+        self.assertEqual([], diagnostics)
+        assert project is not None
+        state = build_project_state(project)
+        self.assertEqual([], state.diagnostics)
+        context, diagnostics = resolve_effective_topic_context(state, SelectionRequest(), cwd=self.root, env={})
+        self.assertEqual([], diagnostics)
+        assert context is not None
+        return context
+
+    def test_late_install_is_read_only_then_lazy_ensure_specializes_and_preserves_topic_sources(self) -> None:
+        overview = self.root / "topic-workspaces/alpha/intent/src/topic-overview.md"
+        write(
+            overview,
+            """
+            # Alpha Survey
+
+            Survey compiler reliability, with emphasis on silent miscompilation evidence.
+            """,
+        )
+        mindset_root = self.root / "topic-workspaces/alpha/intent/derived/mindsets"
+        self.assertFalse(mindset_root.exists())
+
+        target = resolve_targets("generic", scope="project", cwd=self.root)[0]
+        selection = resolve_system_skill_selection(extensions=("kaoju",))
+        installed = install_system_skills(target, selection)
+        self.assertTrue(installed.ok)
+        self.assertFalse(mindset_root.exists(), "installing Kaoju must not scan or mutate existing topics")
+        core_topic_creator = target.skill_root / "isomer-op-entrypoint/subskills/isomer-op-topic-creator/SKILL-MAIN.md"
+        core_text = core_topic_creator.read_text(encoding="utf-8")
+        self.assertNotIn("topic.intent.kaoju_mindsets", core_text)
+        self.assertNotIn("mindset-source", core_text.lower())
+
+        context = self.topic_context()
+        resolution, diagnostics = resolve_semantic_path(context, "topic.intent.kaoju_mindsets", env={}, cwd=self.root)
+        self.assertEqual([], diagnostics)
+        assert resolution is not None
+        self.assertEqual(mindset_root, resolution.path)
+        self.assertFalse(mindset_root.exists(), "read-only semantic resolution must not initialize mindset intent")
+
+        def specialize(seed: dict[str, object], overview_text: str) -> dict[str, object]:
+            if seed["mindset_key"] == "paper.deep-dive" and "miscompilation" in overview_text:
+                questions = seed["questions"]
+                assert isinstance(questions, list)
+                questions[0]["additional_notes"] = "Ask how the paper bears on silent miscompilation evidence."
+            return seed
+
+        created = ensure_mindset_sources(context, env={}, cwd=self.root, specialize=specialize)
+        self.assertTrue(created["ok"], created)
+        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "source-code.ingest")), {item["mindset_key"] for item in created["created"]})
+        deep, diagnostics = load_mindset_source(mindset_source_child(mindset_root, "paper.deep-dive"))
+        self.assertEqual([], diagnostics)
+        assert deep is not None
+        self.assertEqual("Ask how the paper bears on silent miscompilation evidence.", deep["questions"][0]["additional_notes"])
+        skim, diagnostics = load_mindset_source(mindset_source_child(mindset_root, "paper.skimming"))
+        seed_skim, seed_diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics + seed_diagnostics)
+        self.assertEqual(seed_skim, skim, "a seed remains an unchanged topic-owned copy when specialization adds no value")
+
+        assert skim is not None
+        skim["questions"][0]["additional_notes"] = "User-authored triage emphasis."
+        skim_path = mindset_source_child(mindset_root, "paper.skimming")
+        replaced = replace_mindset_source(skim_path, skim, observed_digest=canonical_digest(seed_skim or {}))
+        upgraded = upgrade_system_skills(target, selection)
+        self.assertTrue(upgraded.ok)
+        replay = ensure_mindset_sources(context, env={}, cwd=self.root)
+        self.assertFalse(replay["mutated"])
+        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "source-code.ingest")), {item["mindset_key"] for item in replay["preserved"]})
+        persisted, diagnostics = load_mindset_source(skim_path)
+        self.assertEqual([], diagnostics)
+        assert persisted is not None
+        self.assertEqual(replaced["new_digest"], canonical_digest(persisted))
+        self.assertEqual("User-authored triage emphasis.", persisted["questions"][0]["additional_notes"])
+
+    def test_mindset_record_create_scoped_revision_and_fail_closed_validation(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        payload = materialize_record_payload(
+            source,
+            relative_path="paper.skimming.json",
+            topic_id="alpha",
+            run_ref="run-mindset-1",
+            survey_contract_ref="survey-contract-1",
+            survey_context_refs=("direction-set-1",),
+        )
+        payload_path = self.root / "mindset-record-v1.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+        relationships = '[{"role":"run","target_ref":"run-mindset-1"},{"role":"survey_contract","target_ref":"survey-contract-1"}]'
+        status, created = self.artifact(
+            "put",
+            "KAOJU:MINDSET-RECORD",
+            str(payload_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--scope-key",
+            "run-mindset-1",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "mindset-record-v1",
+            "--status",
+            "active",
+        )
+        self.assertEqual(0, status, created)
+        status, latest = self.artifact("latest", "KAOJU:MINDSET-RECORD", "--scope-key", "run-mindset-1")
+        self.assertEqual(0, status, latest)
+        self.assertEqual(["mindset-record-v1"], [item["record_id"] for item in latest["records"]])
+
+        revision = json.loads(json.dumps(payload))
+        revision["sections"]["source_snapshot"]["questions"][0]["answer_state"] = "answered"
+        revision["sections"]["source_snapshot"]["questions"][0]["answer"] = "The paper is a triage candidate."
+        revision_path = self.root / "mindset-record-v2.json"
+        revision_path.write_text(json.dumps(revision), encoding="utf-8")
+        status, revised = self.artifact(
+            "revise",
+            "mindset-record-v1",
+            str(revision_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "mindset-record-v2",
+        )
+        self.assertEqual(0, status, revised)
+        status, prior = self.artifact("show", "mindset-record-v1")
+        self.assertEqual(0, status, prior)
+        self.assertEqual("mindset-record-v1", prior["record"]["id"])
+
+        status, rejected = self.artifact(
+            "revise",
+            "mindset-record-v1",
+            str(revision_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--relationships-json",
+            relationships,
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_record_revision_stale", rejected["error"]["code"])
+
+        changed_snapshot = json.loads(json.dumps(revision))
+        changed_snapshot["sections"]["source_snapshot"]["questions"][0]["prompt"] = "Changed prompt"
+        changed_path = self.root / "mindset-record-changed.json"
+        changed_path.write_text(json.dumps(changed_snapshot), encoding="utf-8")
+        status, rejected = self.artifact(
+            "revise",
+            "mindset-record-v2",
+            str(changed_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--relationships-json",
+            relationships,
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+
+        invalid_evidence = json.loads(json.dumps(payload))
+        invalid_evidence["sections"]["source_snapshot"]["questions"][0]["evidence_refs"] = ["../cross-topic"]
+        invalid_evidence_path = self.root / "mindset-record-invalid-evidence.json"
+        invalid_evidence_path.write_text(json.dumps(invalid_evidence), encoding="utf-8")
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:MINDSET-RECORD",
+            str(invalid_evidence_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--scope-key",
+            "run-mindset-1",
+            "--relationships-json",
+            relationships,
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+
+        malformed = json.loads(json.dumps(payload))
+        malformed["sections"]["source_snapshot"]["relative_path"] = "../paper.skimming.json"
+        malformed_path = self.root / "mindset-record-malformed.json"
+        malformed_path.write_text(json.dumps(malformed), encoding="utf-8")
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:MINDSET-RECORD",
+            str(malformed_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--scope-key",
+            "run-mindset-1",
+            "--relationships-json",
+            relationships,
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+
+        cross_topic = json.loads(json.dumps(payload))
+        cross_topic["sections"]["survey_context"]["topic_id"] = "other"
+        cross_topic_path = self.root / "mindset-record-cross-topic.json"
+        cross_topic_path.write_text(json.dumps(cross_topic), encoding="utf-8")
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:MINDSET-RECORD",
+            str(cross_topic_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--scope-key",
+            "run-mindset-1",
+            "--relationships-json",
+            relationships,
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_record_topic_mismatch", rejected["error"]["code"])
+
+        terminal = json.loads(json.dumps(revision))
+        for row in terminal["sections"]["source_snapshot"]["questions"]:
+            if row["answer_state"] == "unanswered":
+                row["answer_state"] = "unresolved"
+                row["rationale"] = "No evidence was available."
+        collector = terminal["sections"]["source_snapshot"]["additional_question_collector"]
+        collector["answer_state"] = "answered"
+        collector["answer"] = "No explicit supplemental questions."
+        collector["checked"] = True
+        terminal["sections"]["unresolved_questions"] = [
+            row["question_id"]
+            for row in terminal["sections"]["source_snapshot"]["questions"]
+            if row["answer_state"] == "unresolved"
+        ]
+        terminal["sections"]["terminal_status"] = "complete"
+        terminal_path = self.root / "mindset-record-terminal.json"
+        terminal_path.write_text(json.dumps(terminal), encoding="utf-8")
+        status, completed = self.artifact(
+            "revise",
+            "mindset-record-v2",
+            str(terminal_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "mindset-record-v3",
+        )
+        self.assertEqual(0, status, completed)
 
     def direction_payload(self, name: str, title: str, *, initial: bool = True) -> Path:
         path = self.root / name

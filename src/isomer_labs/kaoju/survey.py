@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable, Literal, Mapping, Sequence
 
 from isomer_labs.kaoju.repository_evidence import repository_blocker_diagnostics, repository_evidence_diagnostics
+from isomer_labs.kaoju.mindsets import validate_mindset_record
 
 
 @dataclass(frozen=True)
@@ -511,6 +512,11 @@ def _validate_artifact_library(payload: Mapping[str, Any], diagnostics: list[Con
                     diagnostics.append(ContractDiagnostic("artifact_library_repository_ref_mismatch", "Repository material content_ref must match its semantic repository label.", f"sections.materials/{index}/content_ref"))
 
 
+def _validate_mindset_record(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
+    for item in validate_mindset_record(payload):
+        diagnostics.append(ContractDiagnostic(item.code, item.message, item.location, "warning" if item.severity == "warning" else "error"))
+
+
 def _validate_material_acquisition_manifest(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
     materials = _sequence(_mapping(payload.get("sections")).get("materials"))
     for index, material in enumerate(materials):
@@ -600,6 +606,7 @@ def _validate_trial_result(payload: Mapping[str, Any], diagnostics: list[Contrac
 
 
 _SEMANTIC_VALIDATORS = {
+    "KAOJU:MINDSET-RECORD": _validate_mindset_record,
     "KAOJU:DIRECTION-SET": _validate_direction_set,
     "KAOJU:READING-LIST": _validate_reading_list,
     "KAOJU:SOURCE-DIGEST": _validate_source_digest,

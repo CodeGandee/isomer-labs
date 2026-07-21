@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 from dataclasses import dataclass
+import json
 from pathlib import Path
 import shutil
 from typing import Any, Mapping, Sequence
@@ -23,6 +24,7 @@ from isomer_labs.kaoju.content import (
     validate_directory_manifest,
 )
 from isomer_labs.kaoju.contracts import KaojuBinding, describe_binding, load_binding_registry
+from isomer_labs.kaoju.mindsets import validate_mindset_record
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.records.index import query_index_list, refresh_query_index_for_record
 from isomer_labs.records.store import (
@@ -103,6 +105,7 @@ class KaojuArtifactService:
         self._validate_status(binding, status)
         self._validate_scope(binding, scope_key)
         self._validate_relationships(binding, relationships or [])
+        self._validate_mindset_context(binding, content, relationships or [], scope_key=scope_key)
         contract_diagnostics = self._validate_content_contract(binding, content)
         if idempotency_key is not None:
             existing = self._idempotent_record(idempotency_key)
@@ -178,9 +181,23 @@ class KaojuArtifactService:
         self._authorize(binding, producer)
         self._validate_relationships(binding, relationships or [])
         contract_diagnostics = self._validate_content_contract(binding, content)
+        if binding.semantic_id == "KAOJU:MINDSET-RECORD":
+            prior_path = record.get("content_path")
+            try:
+                candidate_payload = json.loads(content.read_text(encoding="utf-8"))
+                prior_payload = json.loads(Path(str(prior_path)).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise KaojuServiceError("artifact_contract_invalid", f"Mindset Record revision inputs are unreadable: {exc}") from exc
+            revision_diagnostics = validate_mindset_record(candidate_payload, prior_payload=prior_payload)
+            if revision_diagnostics:
+                detail = "; ".join(f"{item.location}: {item.message}" for item in revision_diagnostics)
+                raise KaojuServiceError("artifact_contract_invalid", f"KAOJU:MINDSET-RECORD revision violates its semantic contract: {detail}")
         inherited_scope = metadata.get("scope_key") if isinstance(metadata, dict) else None
         selected_scope = scope_key or (inherited_scope if isinstance(inherited_scope, str) else None)
         self._validate_scope(binding, selected_scope)
+        if binding.semantic_id == "KAOJU:MINDSET-RECORD":
+            self._validate_mindset_current_revision(record_id, selected_scope)
+        self._validate_mindset_context(binding, content, relationships or [], scope_key=selected_scope)
         selected_id = new_record_id or f"artifact-{binding.artifact_type}-{uuid.uuid4().hex[:12]}"
         prepared = self._prepare_content(binding, content, record_id=selected_id, external=False, repository_evidence=None)
         request = self._request(
@@ -277,7 +294,7 @@ class KaojuArtifactService:
             raise KaojuServiceError("workspace_runtime_missing", "Workspace Runtime is unavailable.", tuple(item.message for item in diagnostics))
         changes: builtins.list[dict[str, str]] = []
         skipped: builtins.list[dict[str, object]] = []
-        fields = ("direction_id", "source_id", "paper_line", "template_name", "export_target", "environment_id", "trial_id", "survey_id")
+        fields = ("direction_id", "source_id", "paper_line", "template_name", "export_target", "environment_id", "trial_id", "run_id", "survey_id")
         try:
             for record in store.list_lifecycle_records():
                 if record.topic_workspace_id != self.context.topic_workspace_id or record.transition_metadata.get("scope_key"):
@@ -339,6 +356,55 @@ class KaojuArtifactService:
         accepted = tuple(str(value) for value in binding.acceptance.get("statuses", ()))
         if status not in accepted:
             raise KaojuServiceError("artifact_status_invalid", f"Status {status!r} is not accepted for {binding.semantic_id}; expected one of: {', '.join(accepted)}.")
+
+    def _validate_mindset_context(
+        self,
+        binding: KaojuBinding,
+        content: Path,
+        relationships: Sequence[dict[str, object]],
+        *,
+        scope_key: str | None,
+    ) -> None:
+        if binding.semantic_id != "KAOJU:MINDSET-RECORD":
+            return
+        try:
+            payload = json.loads(content.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return
+        sections = payload.get("sections") if isinstance(payload, dict) else None
+        survey_context = sections.get("survey_context") if isinstance(sections, dict) else None
+        if not isinstance(survey_context, dict):
+            return
+        expected_topic = self.context.research_topic.id
+        if survey_context.get("topic_id") != expected_topic:
+            raise KaojuServiceError("mindset_record_topic_mismatch", f"Mindset Record topic_id must match the selected Research Topic {expected_topic!r}.")
+        if scope_key != survey_context.get("run_ref"):
+            raise KaojuServiceError("mindset_record_run_scope_mismatch", "Mindset Record scope key must equal sections.survey_context.run_ref.")
+        refs = {
+            str(item.get("role")): next(
+                (str(item[field]) for field in ("target_record_id", "target_ref", "record_id") if isinstance(item.get(field), str) and str(item[field]).strip()),
+                "",
+            )
+            for item in relationships
+        }
+        if refs.get("run") != survey_context.get("run_ref"):
+            raise KaojuServiceError("mindset_record_run_relationship_mismatch", "Mindset Record run relationship must match its pinned run_ref.")
+        if refs.get("survey_contract") != survey_context.get("survey_contract_ref"):
+            raise KaojuServiceError("mindset_record_survey_relationship_mismatch", "Mindset Record survey_contract relationship must match its pinned survey_contract_ref.")
+
+    def _validate_mindset_current_revision(self, record_id: str, scope_key: str | None) -> None:
+        latest = self.latest("KAOJU:MINDSET-RECORD", scope_key=scope_key)
+        records = latest.get("records")
+        latest_ids = {
+            str(item.get("record_id"))
+            for item in records
+            if isinstance(item, dict) and isinstance(item.get("record_id"), str)
+        } if isinstance(records, list) else set()
+        if record_id not in latest_ids:
+            raise KaojuServiceError(
+                "mindset_record_revision_stale",
+                f"Mindset Record {record_id!r} is not the current revision for Run scope {scope_key!r}; re-read the scoped-current Record before checkpointing.",
+            )
 
     def _validate_content_contract(self, binding: KaojuBinding, content: Path) -> builtins.list[ContractDiagnostic]:
         contract_path = content

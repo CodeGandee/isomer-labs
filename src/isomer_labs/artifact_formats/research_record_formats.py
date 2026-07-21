@@ -19,6 +19,10 @@ SCHEMA_RESOURCE = "assets/research_record_formats/schemas/research-structured-re
 TEMPLATE_RESOURCE = "assets/research_record_formats/templates/markdown/research-structured-record.v1.md.j2"
 SCHEMA_REF = "isomer:research/record-format/schema/research-structured-record/v1"
 TEMPLATE_REF = "isomer:research/record-format/template/markdown/research-structured-record/v1"
+MINDSET_RECORD_SCHEMA_RESOURCE = "assets/research_record_formats/schemas/mindset-record.v1.schema.json"
+MINDSET_RECORD_TEMPLATE_RESOURCE = "assets/research_record_formats/templates/markdown/mindset-record.v1.md.j2"
+MINDSET_RECORD_SCHEMA_REF = "isomer:research/record-format/schema/mindset-record/v1"
+MINDSET_RECORD_TEMPLATE_REF = "isomer:research/record-format/template/markdown/mindset-record/v1"
 SUPPORTED_CATALOG_VERSION = "isomer-research-record-format-catalog.v1"
 SUPPORTED_PROFILE_VERSIONS = ("v1", "v2")
 SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -79,9 +83,10 @@ class ResearchRecordFormatProvider:
         raw = self._profiles.get(ref)
         if raw is None:
             return None
+        is_mindset_record = raw["semantic_id"] == "KAOJU:MINDSET-RECORD"
         profile = {
-            "schema_ref": SCHEMA_REF,
-            "templates": {"markdown": TEMPLATE_REF},
+            "schema_ref": MINDSET_RECORD_SCHEMA_REF if is_mindset_record else SCHEMA_REF,
+            "templates": {"markdown": MINDSET_RECORD_TEMPLATE_REF if is_mindset_record else TEMPLATE_REF},
             "media_type": "application/json",
             "schema_version": "research-structured-record.v1",
             "compatibility_version": raw["version"],
@@ -105,11 +110,15 @@ class ResearchRecordFormatProvider:
         return _resolution(ref, "profile", json.dumps(profile, indent=2, sort_keys=True))
 
     def resolve_schema(self, ref: str) -> ArtifactFormatResolution | None:
+        if ref == MINDSET_RECORD_SCHEMA_REF:
+            return _resolution(ref, "schema", _resource_text(MINDSET_RECORD_SCHEMA_RESOURCE), media_type="application/schema+json")
         if ref != SCHEMA_REF:
             return None
         return _resolution(ref, "schema", _resource_text(SCHEMA_RESOURCE), media_type="application/schema+json")
 
     def resolve_template(self, ref: str) -> ArtifactFormatResolution | None:
+        if ref == MINDSET_RECORD_TEMPLATE_REF:
+            return _resolution(ref, "template", _resource_text(MINDSET_RECORD_TEMPLATE_RESOURCE), media_type="text/markdown")
         if ref != TEMPLATE_REF:
             return None
         return _resolution(ref, "template", _resource_text(TEMPLATE_RESOURCE), media_type="text/markdown")

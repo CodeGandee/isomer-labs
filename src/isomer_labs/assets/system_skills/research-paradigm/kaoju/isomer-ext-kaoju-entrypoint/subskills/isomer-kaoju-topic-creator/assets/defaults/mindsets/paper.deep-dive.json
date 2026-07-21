@@ -1,0 +1,85 @@
+{
+  "schema_version": "isomer-kaoju-mindset-source.v1",
+  "mindset_key": "paper.deep-dive",
+  "purpose": "Guide a survey-relative full-text paper examination without confusing source statements, interpretation, and evidence strength.",
+  "applicability": {
+    "actions": ["ingest-reading-item", "examine"],
+    "source_kinds": ["paper", "report"],
+    "depths": ["deep", "full-text"]
+  },
+  "questions": [
+    {
+      "question_id": "survey-role",
+      "prompt": "How does this paper relate to the active survey question, accepted boundary, and selected direction, and what role could it play in the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Answer relative to the pinned Research Topic and current Survey Contract, or mark unresolved with rationale.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the paper identity and applicable survey-context refs."
+    },
+    {
+      "question_id": "survey-relevant-claims",
+      "prompt": "Which of the paper's claims directly answer, support, challenge, refine, or fall outside the active survey question?",
+      "additional_notes": "",
+      "answer_expectation": "Classify only claims established at the achieved inspection depth.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact paper locators and applicable Claim-Evidence Ledger refs."
+    },
+    {
+      "question_id": "portfolio-novelty",
+      "prompt": "Relative to works already represented in the survey, what is genuinely new, duplicative, complementary, or contradictory?",
+      "additional_notes": "",
+      "answer_expectation": "Compare against the current accepted evidence portfolio and mark unavailable comparisons unresolved.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite compared work refs and exact supporting locators."
+    },
+    {
+      "question_id": "comparison-mechanism",
+      "prompt": "Which mechanisms, assumptions, definitions, and method components matter to the survey's comparison dimensions?",
+      "additional_notes": "",
+      "answer_expectation": "Identify comparison-relevant components without inventing unstated mechanisms.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite sections, equations, algorithms, or definitions at exact locators."
+    },
+    {
+      "question_id": "survey-claim-evidence",
+      "prompt": "Which exact sections, equations, figures, tables, or appendices support or challenge the survey-relevant claims, and what is my interpretation rather than a source statement?",
+      "additional_notes": "",
+      "answer_expectation": "Separate source statements from agent interpretation and label inconclusive evidence.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite every claim to exact page, section, equation, figure, table, or appendix locators."
+    },
+    {
+      "question_id": "evaluation-transferability",
+      "prompt": "Do the datasets, metrics, baselines, controls, and ablations test the claims under conditions that fit the survey's scope and intended comparisons?",
+      "additional_notes": "",
+      "answer_expectation": "Assess transferability only against the current survey scope and comparison contract.",
+      "required_posture": "answer-or-not-applicable",
+      "evidence_expectation": "Cite evaluation protocols, tables, appendices, and survey comparison refs."
+    },
+    {
+      "question_id": "boundary-limitations",
+      "prompt": "Which limitations, failure modes, contradictions, missing implementation details, or reproducibility gaps restrict how this paper can be used in the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Record explicit and observed limits without filling gaps from memory.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite limitation statements, contradictory results, omissions, or associated-code evidence."
+    },
+    {
+      "question_id": "survey-update-and-gaps",
+      "prompt": "What updates to the survey taxonomy, comparison structure, Claim-Evidence Ledger, or reading path should I recommend, and which survey questions remain unresolved?",
+      "additional_notes": "",
+      "answer_expectation": "Recommend bounded changes while keeping unresolved questions explicit.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the findings and survey records that justify each recommendation."
+    }
+  ],
+  "additional_question_collector": {
+    "question_id": "additional-questions",
+    "prompt": "Did the user explicitly assign any additional questions to this Mindset Record that the fixed Mindset Source questions do not cover?",
+    "additional_notes": "",
+    "answer_expectation": "Register only questions explicitly targeted to the Mindset Record. Save ordinary paper or source-code questions and findings in the applicable reading Artifacts. If no additional questions were explicitly assigned, record none.",
+    "required_posture": "collect-explicit-only",
+    "evidence_expectation": "Record the explicit association basis and cite evidence when the supplemental question is answered.",
+    "repeatable": true
+  }
+}

@@ -7,6 +7,7 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 | Identity or Route | Responsibility |
 | --- | --- |
 | `isomer-ext-kaoju-entrypoint` | Public pack that routes one user intent or retained compatibility procedure and preserves its Run checkpoint. |
+| `isomer-ext-kaoju-entrypoint->topic-creator` | Derive, preserve, inspect, regenerate, replace, or reconcile topic-owned Kaoju Mindset Sources after generic topic state exists. |
 | `isomer-ext-kaoju-entrypoint->shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
 | `isomer-ext-kaoju-entrypoint->workspace` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
 | `isomer-ext-kaoju-entrypoint->frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
@@ -23,13 +24,15 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 
 ## User-Intent Surface
 
-The public entrypoint accepts `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`. It exposes ten survey intents in order: `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
+The public entrypoint accepts `$isomer-ext-kaoju-entrypoint use <subcommand> to <task>`. It exposes eleven survey intents in order: `create-topic`, `choose-directions`, `build-reading-list`, `ingest-reading-item`, `draft-paper`, `manage-paper-template`, `build-paper-pdf`, `export-survey-wiki`, `ingest-source-code`, `prepare-code-run`, and `run-code-trial`.
 
 Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `direction-expansion-pass`, `theory-comparison-pass`, `method-trial-pass`, `comparative-pass`, `audit-survey-pass`, `paper-pass`, and `create-paper-template`. `method-trial-pass` routes ordinary bounded trials to `isomer-kaoju-trial`; `paper-pass` composes MyST drafting with an optional PDF stage; `create-paper-template` constructs a mutable named content template. `manage-paper-template` resolves content versus LaTeX role before managing either namespace.
 
 ## Durable State and CLI Boundaries
 
 The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover ordinary durable state through typed query surfaces and persist ordinary bindings through typed `put` or `revise`. Mutable named templates use only `ext kaoju paper template`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-state resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, scan directories as a fallback, edit SQL, or mutate managed content directly.
+
+Kaoju topic creation keeps packaged 8/6/8 mindset defaults inside the protected topic-creator bundle and copies or specializes them into `topic.intent.kaoju_mindsets` only after one concrete `topic.intent.overview` exists. These directly editable JSON files are Mindset Sources, a derived-intent question list with `additional_notes`, not Artifacts or Workflows. An applicable paper or source-code examination snapshots one Source into a Run-scoped `KAOJU:MINDSET-RECORD` before focused work. The Record preserves exact questions, notes, survey context, answers, evidence, collector posture, and unresolved state after later Source edits. Installation and read-only routes never enumerate or mutate topics; the first concrete mutation-bearing Kaoju action lazily creates missing Sources through the extension-local topic creator.
 
 `isomer-cli project runs` owns resumable procedure checkpoints. The acting user or agent runs prompt-sensitive repository commands outside Isomer, verifies the resulting source and immutable identity, then uses `project repos register` for topology and typed Artifacts for research provenance. `project service-requests` records and synchronously dispatches Service Team work. Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
 
@@ -78,4 +81,4 @@ Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJ
 
 ## Installation
 
-Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 13 protected members. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.
+Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 15 protected members. Installation does not enumerate Research Topics or initialize Mindset Sources. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.

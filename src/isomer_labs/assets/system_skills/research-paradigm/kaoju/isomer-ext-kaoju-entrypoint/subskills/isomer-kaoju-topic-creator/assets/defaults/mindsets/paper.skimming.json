@@ -1,0 +1,69 @@
+{
+  "schema_version": "isomer-kaoju-mindset-source.v1",
+  "mindset_key": "paper.skimming",
+  "purpose": "Guide survey-relative paper triage while stating the evidence depth actually achieved.",
+  "applicability": {
+    "actions": ["ingest-reading-item", "examine"],
+    "source_kinds": ["paper", "report"],
+    "depths": ["skim", "triage"]
+  },
+  "questions": [
+    {
+      "question_id": "survey-fit",
+      "prompt": "What exact work and version am I inspecting, and how does it fit the active survey question, boundary, and selected direction?",
+      "additional_notes": "",
+      "answer_expectation": "Establish identity and survey fit only from the material and survey context available.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite source identity and current survey-context refs."
+    },
+    {
+      "question_id": "topic-relevant-claim",
+      "prompt": "What survey-relevant problem and principal claim can I establish at the inspection depth actually achieved?",
+      "additional_notes": "",
+      "answer_expectation": "State the achieved depth and avoid presenting abstract-only evidence as full-text examination.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the exact inspected abstract, summary, section, or other locator."
+    },
+    {
+      "question_id": "portfolio-relation",
+      "prompt": "Does this work add a new contribution, duplicate known work, complement a current category, or challenge an existing survey claim?",
+      "additional_notes": "",
+      "answer_expectation": "Offer a provisional portfolio relation or mark it unresolved pending deeper inspection.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite current survey records and the visible work evidence used for comparison."
+    },
+    {
+      "question_id": "survey-evidence-signal",
+      "prompt": "What is the strongest visible evidence relevant to the survey, where is it located, and what evidence depth have I actually achieved?",
+      "additional_notes": "",
+      "answer_expectation": "Name the strongest inspected evidence and calibrate every claim to its depth.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the exact visible locator and record the achieved evidence depth."
+    },
+    {
+      "question_id": "scope-and-credibility-risk",
+      "prompt": "Which assumptions, evaluation settings, missing comparisons, contradictions, or identity and access uncertainties limit its relevance to this survey?",
+      "additional_notes": "",
+      "answer_expectation": "Record visible risks and leave uninspected risks unresolved.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact risk evidence or the access and identity blocker."
+    },
+    {
+      "question_id": "survey-triage",
+      "prompt": "What survey disposition should I recommend: deep dive, defer, or exclude from the current boundary, what gap would it fill, and what must be verified first?",
+      "additional_notes": "",
+      "answer_expectation": "Recommend a bounded disposition with verification prerequisites and no automatic acceptance.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the inspected signals, survey gap, and any blocker behind the recommendation."
+    }
+  ],
+  "additional_question_collector": {
+    "question_id": "additional-questions",
+    "prompt": "Did the user explicitly assign any additional questions to this Mindset Record that the fixed Mindset Source questions do not cover?",
+    "additional_notes": "",
+    "answer_expectation": "Register only questions explicitly targeted to the Mindset Record. Save ordinary paper or source-code questions and findings in the applicable reading Artifacts. If no additional questions were explicitly assigned, record none.",
+    "required_posture": "collect-explicit-only",
+    "evidence_expectation": "Record the explicit association basis and cite evidence when the supplemental question is answered.",
+    "repeatable": true
+  }
+}

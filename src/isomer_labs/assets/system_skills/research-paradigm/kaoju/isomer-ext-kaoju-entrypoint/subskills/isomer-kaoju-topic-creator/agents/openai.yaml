@@ -1,0 +1,7 @@
+metadata:
+  version: "0.4.0"
+
+interface:
+  display_name: "isomer-kaoju-topic-creator"
+  short_description: "Derive and preserve topic-owned Kaoju Mindset Sources."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint->topic-creator to create or repair topic-owned Kaoju Mindset Sources."

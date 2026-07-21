@@ -13,6 +13,7 @@ If the goal does not map cleanly to one command, use the native planning tool to
 
 | Command | When to Use | Exact Public Invocation |
 | --- | --- | --- |
+| `create-topic` | Use after generic topic creation to derive or repair topic-owned Kaoju Mindset Sources without beginning a research Run. | `$isomer-ext-kaoju-entrypoint use create-topic to initialize Kaoju derived intent for <topic>` |
 | `choose-directions` | Use to frame a bounded survey and select research directions. | `$isomer-ext-kaoju-entrypoint use choose-directions to <task>` |
 | `build-reading-list` | Use to discover a bounded candidate source list with selection provenance. | `$isomer-ext-kaoju-entrypoint use build-reading-list to <task>` |
 | `ingest-reading-item` | Use to acquire and examine one accepted paper or report. | `$isomer-ext-kaoju-entrypoint use ingest-reading-item to <task>` |

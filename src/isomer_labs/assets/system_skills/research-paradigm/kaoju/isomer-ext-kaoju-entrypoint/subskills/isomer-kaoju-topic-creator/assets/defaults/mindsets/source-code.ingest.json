@@ -1,0 +1,85 @@
+{
+  "schema_version": "isomer-kaoju-mindset-source.v1",
+  "mindset_key": "source-code.ingest",
+  "purpose": "Guide survey-relative repository and source-tree examination without confusing inspected implementation with executed behavior.",
+  "applicability": {
+    "actions": ["ingest-source-code", "examine"],
+    "source_kinds": ["repository", "source-tree"],
+    "depths": ["ingest", "deep"]
+  },
+  "questions": [
+    {
+      "question_id": "survey-role-and-identity",
+      "prompt": "How does this exact repository revision relate to the active survey question, selected direction, and associated works, and what are its source, license, and access posture?",
+      "additional_notes": "",
+      "answer_expectation": "Establish immutable identity, relationship, license, access, and survey role without inferring equivalence from names.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the Canonical External Repository ref, immutable commit or digest, and relationship evidence."
+    },
+    {
+      "question_id": "survey-relevant-architecture",
+      "prompt": "Which entrypoints and modules implement the concepts, methods, data paths, or evaluators that matter to the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Map only inspected architecture relevant to the survey.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite immutable commit, file, symbol, and line ranges."
+    },
+    {
+      "question_id": "claim-code-map",
+      "prompt": "Which survey-relevant paper claims, equations, or algorithms map to exact files and symbols, and what remains unmatched?",
+      "additional_notes": "",
+      "answer_expectation": "Separate verified mappings, partial mappings, and unmatched claims.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite paper locators and exact immutable code locators for each mapping."
+    },
+    {
+      "question_id": "behavior-path",
+      "prompt": "How do inputs, preprocessing, method logic, evaluation, and outputs connect for the behavior relevant to the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Describe the inspected static path without claiming execution success.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite entrypoints, call paths, configuration, and output code at exact locators."
+    },
+    {
+      "question_id": "comparison-sensitive-configuration",
+      "prompt": "Which defaults, flags, seeds, thresholds, dependencies, hardware, datasets, or services could change the survey's interpretation or comparison?",
+      "additional_notes": "",
+      "answer_expectation": "Identify comparison-sensitive configuration and unknown runtime dependencies.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite configuration files, defaults, dependency manifests, and code consumers."
+    },
+    {
+      "question_id": "survey-evidence-surfaces",
+      "prompt": "What do tests, examples, benchmarks, and existing logs establish about the survey-relevant claims without executing the repository?",
+      "additional_notes": "",
+      "answer_expectation": "Report what static evidence surfaces establish and do not treat them as a fresh execution observation.",
+      "required_posture": "answer-or-not-applicable",
+      "evidence_expectation": "Cite exact test, example, benchmark, or log locators and their provenance."
+    },
+    {
+      "question_id": "paper-code-divergence",
+      "prompt": "What is missing, stale, stubbed, inconsistent, or divergent from the associated paper or the role assigned to this source in the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Record verified divergence, absence, or uncertainty without filling implementation gaps.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite paired paper and immutable code locators or explicit absence evidence."
+    },
+    {
+      "question_id": "survey-readiness-and-risks",
+      "prompt": "What further source inspection, environment preparation, bounded trial, or reproduction should I recommend for the survey, and what blockers, side effects, or resource risks qualify that recommendation?",
+      "additional_notes": "",
+      "answer_expectation": "Recommend the smallest justified next evidence step without authorizing execution or satisfying a Gate.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the code findings, unresolved claims, dependencies, blockers, and risk evidence behind the recommendation."
+    }
+  ],
+  "additional_question_collector": {
+    "question_id": "additional-questions",
+    "prompt": "Did the user explicitly assign any additional questions to this Mindset Record that the fixed Mindset Source questions do not cover?",
+    "additional_notes": "",
+    "answer_expectation": "Register only questions explicitly targeted to the Mindset Record. Save ordinary paper or source-code questions and findings in the applicable reading Artifacts. If no additional questions were explicitly assigned, record none.",
+    "required_posture": "collect-explicit-only",
+    "evidence_expectation": "Record the explicit association basis and cite evidence when the supplemental question is answered.",
+    "repeatable": true
+  }
+}

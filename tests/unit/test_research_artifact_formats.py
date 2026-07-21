@@ -51,7 +51,7 @@ class ResearchArtifactFormatProviderTests(TestCase):
 
     def test_catalog_profiles_resolve_with_declarative_metadata(self) -> None:
         provider = ResearchRecordFormatProvider()
-        self.assertEqual(48, len(provider.profile_refs()))
+        self.assertEqual(49, len(provider.profile_refs()))
         registry = ArtifactFormatRegistry()
         registry.register_provider(provider)
         profile, resolution, diagnostics = ArtifactFormatResolver(registry).resolve_profile(SURVEY_CONTRACT_REF)
@@ -142,6 +142,8 @@ class ResearchArtifactFormatProviderTests(TestCase):
             "assets/research_record_formats/profiles/kaoju.v1.json",
             "assets/research_record_formats/schemas/research-structured-record.v1.schema.json",
             "assets/research_record_formats/templates/markdown/research-structured-record.v1.md.j2",
+            "assets/research_record_formats/schemas/mindset-record.v1.schema.json",
+            "assets/research_record_formats/templates/markdown/mindset-record.v1.md.j2",
         ):
             self.assertTrue(package.joinpath(relative).is_file(), relative)
 

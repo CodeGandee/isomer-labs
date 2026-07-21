@@ -7,6 +7,20 @@
   },
   "artifacts": [
     {
+      "semantic_id": "KAOJU:MINDSET-RECORD",
+      "category": "Run Reflection",
+      "meaning": "Run-scoped materialized answers to an immutable snapshot of one topic Mindset Source and its pinned survey context.",
+      "minimum_content": [
+        "Source label, relative path, key, digest, materialized questions and notes, Run and Survey Contract refs, answer states, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state."
+      ],
+      "producer": "isomer-ext-kaoju-entrypoint",
+      "consumers": [
+        "isomer-kaoju-examine",
+        "isomer-kaoju-audit"
+      ],
+      "update_intent": "Revise the Run-scoped current record with optimistic concurrency while preserving its immutable Source snapshot and every prior revision."
+    },
+    {
       "semantic_id": "KAOJU:WORKSPACE-READINESS",
       "category": "Workspace and Control",
       "meaning": "resolved Topic Workspace readiness, limits, blockers, and next allowed stage.",

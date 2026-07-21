@@ -1,0 +1,70 @@
+# {{ payload.title }}
+
+{{ payload.summary }}
+
+- Source: `{{ payload.sections.source_snapshot.semantic_label }}/{{ payload.sections.source_snapshot.relative_path }}`
+- Mindset key: `{{ payload.sections.source_snapshot.mindset_key }}`
+- Snapshotted digest: `{{ payload.sections.source_snapshot.digest }}`
+- Run: `{{ payload.sections.survey_context.run_ref }}`
+- Survey Contract: `{{ payload.sections.survey_context.survey_contract_ref }}`
+- Survey context: {{ payload.sections.survey_context.context_refs | join(", ") }}
+
+## Materialized Source Questions
+
+{% for question in payload.sections.source_snapshot.questions %}
+### {{ question.question_id }}
+
+{{ question.prompt }}
+
+- Additional notes: {{ question.additional_notes or "none" }}
+- Required posture: `{{ question.required_posture }}`
+- Answer expectation: {{ question.answer_expectation }}
+- Evidence expectation: {{ question.evidence_expectation }}
+- Answer state: `{{ question.answer_state }}`
+- Answer: {{ question.answer or "not recorded" }}
+- Rationale: {{ question.rationale or "none" }}
+- Evidence: {{ question.evidence_refs | join(", ") or "none" }}
+
+{% endfor %}
+## Additional-Question Collector
+
+Checked: `{{ payload.sections.source_snapshot.additional_question_collector.checked }}`
+
+{{ payload.sections.source_snapshot.additional_question_collector.prompt }}
+
+- Additional notes: {{ payload.sections.source_snapshot.additional_question_collector.additional_notes or "none" }}
+- Answer state: `{{ payload.sections.source_snapshot.additional_question_collector.answer_state }}`
+- Answer or rationale: {{ payload.sections.source_snapshot.additional_question_collector.answer or payload.sections.source_snapshot.additional_question_collector.rationale or "not recorded" }}
+- Evidence: {{ payload.sections.source_snapshot.additional_question_collector.evidence_refs | join(", ") or "none" }}
+
+## Explicitly Assigned Supplemental Questions
+
+{% if payload.sections.supplemental_questions %}{% for question in payload.sections.supplemental_questions %}
+### {{ question.question_id }}
+
+{{ question.prompt }}
+
+- Origin: `{{ question.origin }}`
+- Association: {{ question.association_basis }}
+- Introduction stage: `{{ question.introduction_stage }}`
+- Disposition: `{{ question.disposition }}`
+- Answer state: `{{ question.answer_state }}`
+- Answer or rationale: {{ question.answer or question.rationale or "not recorded" }}
+- Evidence: {{ question.evidence_refs | join(", ") or "none" }}
+
+{% endfor %}{% else %}None.
+{% endif %}
+
+## Source Update Status
+
+`{{ payload.sections.source_update.disposition }}`
+
+{% if payload.sections.source_update.new_relative_path %}- New Source: `{{ payload.sections.source_update.new_relative_path }}`
+- New digest: `{{ payload.sections.source_update.new_digest }}`
+{% endif %}
+
+## Unresolved Questions
+
+{% if payload.sections.unresolved_questions %}{% for question_id in payload.sections.unresolved_questions %}- `{{ question_id }}`
+{% endfor %}{% else %}None.
+{% endif %}

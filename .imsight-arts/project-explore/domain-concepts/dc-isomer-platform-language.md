@@ -401,6 +401,18 @@ _Avoid_: Write sharing, filesystem permission, unrestricted shared workspace
 
 ### Artifacts, Evidence, and Decisions
 
+**Packaged Mindset Default**:
+A read-only question-list JSON resource shipped inside the Kaoju topic-creation skill. Kaoju packages defaults for `paper.deep-dive`, `paper.skimming`, and `source-code.ingest`, but a packaged default is only a seed for topic creation. It is not current topic intent, an Artifact, a runtime fallback, or an instruction surface. Kaoju copies or topic-specializes a validated default only when creating a missing Mindset Source after one concrete `topic.intent.overview` exists.
+_Avoid_: Mindset Source, Mindset Record, Artifact, Workflow, system prompt
+
+**Mindset Source**:
+A directly user-editable derived-intent JSON question list that tells an agent what to ask itself and answer while an applicable Workflow proceeds. In Kaoju, each Source is a deterministic direct child `<mindset_key>.json` beneath semantic label `topic.intent.kaoju_mindsets`, whose default path is `intent/derived/mindsets`. A Source owns a stable key, purpose, applicability, ordered fixed questions, one repeatable additional-question collector, prompts, bounded `additional_notes`, answer expectations, required postures, evidence expectations, and optional derivation provenance. It is current topic intent rather than an Artifact: users may view, copy, or edit it directly, existing valid files survive create-missing and upgrades, and explicit replacement uses validation plus an observed-digest check. Source data remains low authority and cannot schedule a Workflow Stage, execute a command, authorize mutation, satisfy a Gate, accept evidence, or override instructions.
+_Avoid_: source paper, source repository, Workflow, Artifact, Mindset Record, `KAOJU:MINDSET-SOURCE`
+
+**Mindset Record**:
+A Run-scoped, revisioned Artifact containing materialized answers to an immutable snapshot of one Mindset Source. A Kaoju `KAOJU:MINDSET-RECORD` preserves the Source semantic label, safe relative path, key, digest, optional derivation metadata, exact prompts and `additional_notes`, answer and evidence expectations, pinned Research Topic and Survey Contract context, answer states, rationales, evidence refs, collector posture, explicitly assigned supplemental questions, Source-update disposition, and unresolved state. Later edits to the mutable Source affect later Runs only. Ordinary questions asked during reading remain in the applicable reading Artifacts unless the user explicitly targets the Mindset Record or both Record and Source.
+_Avoid_: Mindset Source, Workflow checkpoint, Source Digest, ordinary reading notes, generic questionnaire response
+
 **Artifact**:
 A durable file or file-backed output produced or used during research work, such as a literature note, hypothesis, baseline report, experiment plan, result table, figure, report, Decision Record, prompt record, or tool output.
 _Avoid_: Blob, attachment, output only

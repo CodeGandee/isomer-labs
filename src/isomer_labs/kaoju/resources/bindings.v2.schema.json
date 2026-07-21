@@ -142,6 +142,7 @@
                 "export_target",
                 "environment",
                 "trial",
+                "run",
                 "request"
               ]
             }

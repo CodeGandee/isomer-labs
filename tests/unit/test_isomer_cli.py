@@ -3297,7 +3297,7 @@ class IsomerCliTests(unittest.TestCase):
             [(public["name"], public["role"]) for public in data["extensions"][0]["public_skills"]],
         )
         kaoju_members = {item["logical_id"]: item for item in data["extensions"][1]["protected_members"]}
-        self.assertEqual(14, len(kaoju_members))
+        self.assertEqual(15, len(kaoju_members))
         self.assertEqual("trial", kaoju_members["isomer-kaoju-trial"]["member_name"])
         self.assertEqual(
             "isomer-ext-kaoju-entrypoint->trial",
@@ -3506,7 +3506,7 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(72, len(data["insertion_points"]))
+        self.assertEqual(74, len(data["insertion_points"]))
         catalog_skills = {item["target_skill"] for item in data["insertion_points"]}
         self.assertIn("isomer-kaoju-trial", catalog_skills)
         self.assertIn("isomer-kaoju-export", catalog_skills)
@@ -4519,6 +4519,19 @@ class IsomerCliTests(unittest.TestCase):
         topic_workspace = self.default_topic_workspace(root)
         manifest_path = topic_workspace / "topic-workspace.toml"
         records_artifacts = topic_workspace / "records" / "artifacts"
+        mindset_root = topic_workspace / "intent" / "derived" / "mindsets"
+
+        status, output = self.run_cli(["project", "paths", "get", "topic.intent.kaoju_mindsets", "--topic", "default", "--json"], cwd=root)
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertFalse(data["mutated"])
+        self.assertEqual("topic.intent.kaoju_mindsets", data["path"]["semantic_label"])
+        self.assertEqual("topic_derived_intent_dir", data["path"]["storage_profile"])
+        self.assertEqual("durable", data["path"]["durability"])
+        self.assertEqual("topic", data["path"]["owner"])
+        self.assertEqual(str(mindset_root), data["path"]["path"])
+        self.assertFalse(manifest_path.exists())
+        self.assertFalse(mindset_root.exists())
 
         status, output = self.run_cli(["project", "paths", "get", "records_artifacts", "--topic", "default", "--json"], cwd=root)
         data = json.loads(output)
@@ -4587,6 +4600,16 @@ class IsomerCliTests(unittest.TestCase):
         self.assertTrue(manifest_path.is_file())
         self.assertTrue(records_artifacts.is_dir())
         self.assertIn('label = "topic.records.artifacts"', manifest_path.read_text(encoding="utf-8"))
+
+        status, output = self.run_cli(
+            ["project", "paths", "materialize-default", "--topic", "default", "--label", "topic.intent.kaoju_mindsets", "--json"],
+            cwd=root,
+        )
+        data = json.loads(output)
+        self.assertEqual(0, status, output)
+        self.assertTrue(data["mutated"])
+        self.assertTrue(mindset_root.is_dir())
+        self.assertIn('label = "topic.intent.kaoju_mindsets"', manifest_path.read_text(encoding="utf-8"))
 
         status, output = self.run_cli(
             ["project", "paths", "materialize-default", "--topic", "default", "--label", "topic.workspace.summary", "--json"],
