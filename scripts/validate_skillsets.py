@@ -98,6 +98,7 @@ ACTIVE_REF_ROOTS = (
 ACTIVE_REF_FILES = ("AGENTS.md", "ROADMAP.md", "pyproject.toml")
 ACTIVE_REF_SUFFIXES = {".md", ".toml", ".yaml", ".yml", ".py", ".json"}
 FORBIDDEN_REPO_LOCAL_ISOMER_CLI = "pixi run isomer-cli"
+COMMAND_LOCAL_ISOMER_JSON_RE = re.compile(r"\bisomer-cli\b[^`;&|\n]*?(?<![\w-])--json(?![\w-])")
 COPIED_TOPIC_MAIN_GUIDANCE_TERMS = (
     "This repository is an Isomer Topic Main Development Repository.",
     "This repository uses Pixi as the primary package manager and execution environment. Invoke Python through Pixi",
@@ -3126,6 +3127,15 @@ def validate_global_isomer_cli_invocation(repo_root: Path, roots: tuple[Path, ..
                         line_number,
                         code,
                         "non-dev skills must call global isomer-cli directly instead of 'pixi run isomer-cli'",
+                    )
+                if COMMAND_LOCAL_ISOMER_JSON_RE.search(line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        code,
+                        "isomer-cli command examples must use global '--print-json' immediately after 'isomer-cli' instead of command-local '--json'",
                     )
     return diagnostics
 

@@ -2318,6 +2318,31 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
 
+    def test_global_cli_validator_rejects_command_local_json(self) -> None:
+        root = self.make_root()
+        write(
+            root / "skillset" / "operator" / "isomer-op-example" / "SKILL.md",
+            "Run `isomer-cli project system-extensions list --json`.\n"
+            "Run `isomer-cli --print-json project validate && isomer-cli project system-extensions remember kaoju --json`.\n",
+        )
+
+        diagnostics = validator.validate_global_isomer_cli_invocation(root, (root / "skillset",), code="SKL004")
+
+        self.assertEqual(2, len(diagnostics), messages(diagnostics))
+        self.assertTrue(all("command-local '--json'" in message for message in messages(diagnostics)), messages(diagnostics))
+
+    def test_global_cli_validator_accepts_global_print_json_and_json_bearing_options(self) -> None:
+        root = self.make_root()
+        write(
+            root / "skillset" / "operator" / "isomer-op-example" / "SKILL.md",
+            "Run `isomer-cli --print-json project system-extensions list`.\n"
+            "Run `isomer-cli --print-json ext research records create --metadata-json '{}' --payload-json payload.json`.\n",
+        )
+
+        diagnostics = validator.validate_global_isomer_cli_invocation(root, (root / "skillset",), code="SKL004")
+
+        self.assertEqual([], messages(diagnostics))
+
     def test_operator_validator_accepts_welcome_contract(self) -> None:
         root = self.make_root()
         self.write_welcome_skill(root)

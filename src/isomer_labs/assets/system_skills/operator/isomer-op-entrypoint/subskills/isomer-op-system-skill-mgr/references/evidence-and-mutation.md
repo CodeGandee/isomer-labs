@@ -5,10 +5,10 @@
 Use global `isomer-cli` from the working environment. Do not prefix it with a repository-local environment command.
 
 ```text
-isomer-cli project system-extensions list --json
+isomer-cli --print-json project system-extensions list
 isomer-cli internals inspect-system-skill-root --skill-root <root> --category extensions [--extension <id>]
 isomer-cli internals classify-system-skill-inventory --skill-name <name>... [--inventory-json <file-or-stdin>]
-isomer-cli project system-extensions remember <extension-id> --json
+isomer-cli --print-json project system-extensions remember <extension-id>
 isomer-cli --print-json system-skills install --target <host-known-target> --scope <selected-scope> --extension <extension-id>
 isomer-cli --print-json system-skills upgrade --target <host-known-target> --scope <selected-scope> --extension <extension-id>
 ```

@@ -4,7 +4,7 @@ Use this subcommand for read-only availability discovery.
 
 ## Workflow
 
-1. Resolve the selected Project when one exists and run `isomer-cli project system-extensions list --json`.
+1. Resolve the selected Project when one exists and run `isomer-cli --print-json project system-extensions list`.
 2. Report declared extensions with `project_manifest` routing evidence. Do not rewrite their declarations. Continue when the request needs current-host usability evidence.
 3. Collect project-scope skill roots from the current host context and pass each root explicitly to `internals inspect-system-skill-root`. Interpret current v5 receipt evidence before explicit-root integrity evidence.
 4. If no complete usable managed pack is found, submit the host-visible skill names to `internals classify-system-skill-inventory` as the final limited evidence level.
