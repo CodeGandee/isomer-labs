@@ -2,6 +2,28 @@
 
 Define the current structural template and validation scope for active packaged Isomer system skills and their executable subpages.
 ## Requirements
+### Requirement: Template Validation Enforces Discovery-Safe Filenames
+The repository SHALL validate entrypoint filenames by manifest role and SHALL reject recursively discoverable `SKILL.md` files that are not declared public roots.
+
+#### Scenario: Public skill filename is validated
+- **WHEN** validation inspects a manifest-declared public welcome or execution entrypoint
+- **THEN** the bundle must contain `SKILL.md`
+- **AND** it must not substitute `SKILL-MAIN.md` for the public entrypoint
+
+#### Scenario: Protected skill filename is validated
+- **WHEN** validation inspects a manifest-declared protected capability
+- **THEN** the bundle must contain `SKILL-MAIN.md`
+- **AND** it must not contain `SKILL.md`
+
+#### Scenario: Provenance snapshot resembles a skill
+- **WHEN** `org/`, `migrate/`, `templates/`, or another passive subtree contains a preserved entrypoint document
+- **THEN** that document must use a non-`SKILL.md` filename such as `SKILL-SOURCE.md`
+- **AND** passive validation exclusion does not permit a host-discovery filename
+
+#### Scenario: Public pack contains an unexpected discovery file
+- **WHEN** recursive validation finds a `SKILL.md` below a declared public root other than that root's own entrypoint
+- **THEN** `pixi run validate-skills` fails with the public pack and nested file path
+
 ### Requirement: Active Packaged Skill Scope
 The system SHALL derive current-template conformance scope from every public welcome, public entrypoint, and protected subskill declared by the packaged system-skill manifest.
 
@@ -24,7 +46,7 @@ The system SHALL derive current-template conformance scope from every public wel
 - **THEN** validation reports the undeclared path rather than silently treating it as active or ignoring it
 
 ### Requirement: Current-Template Skill Entrypoints
-Every public pack and protected subskill `SKILL.md` SHALL conform to the current entrypoint template, and every page that uses object invocation notation SHALL declare the standard notation frontmatter.
+Every public pack `SKILL.md` and protected subskill `SKILL-MAIN.md` SHALL conform to the current entrypoint template, and every page that uses object invocation notation SHALL declare the standard notation frontmatter.
 
 #### Scenario: Public entrypoint is inspected
 - **WHEN** a public pack `SKILL.md` is validated
@@ -32,14 +54,14 @@ Every public pack and protected subskill `SKILL.md` SHALL conform to the current
 - **AND** empty invocation routes to help
 
 #### Scenario: Protected entrypoint is inspected
-- **WHEN** a declared protected member `SKILL.md` is validated
+- **WHEN** a declared protected member `SKILL-MAIN.md` is validated
 - **THEN** it follows the same structural template and preserves its logical-id frontmatter name
 - **AND** it does not advertise itself as an independently installed public skill
 
 #### Scenario: Object notation appears
-- **WHEN** an active `SKILL.md`, command page, or reference page uses `X->Y`, `X->cmd()`, `X->parent()->child()`, or an equivalent object designator
+- **WHEN** an active entrypoint, command page, or reference page uses `X->Y`, `X->cmd()`, `X->parent()->child()`, or an equivalent object designator
 - **THEN** its YAML frontmatter contains the exact standard `skill_invocation_notation` value
-- **AND** bare components identify skill or subskill entrypoints while every parenthesized component identifies a subcommand
+- **AND** the notice identifies `SKILL.md` for top-level skills, `SKILL-MAIN.md` for parent-selected subskills, bare components for skill paths, and parenthesized components for subcommands
 
 #### Scenario: Object notation has the wrong component form
 - **WHEN** an active page writes a skill or subskill entrypoint with `()`, writes any object-style subcommand without `()`, or appends a bare component after a command component
@@ -51,10 +73,10 @@ Every public pack and protected subskill `SKILL.md` SHALL conform to the current
 - **AND** the child and its support files remain inside the containing skill or subskill's resource boundary
 
 ### Requirement: Current-Template Workflows
-Every active packaged skill entrypoint and executable subpage SHALL present `## Workflow` as ordered numbered steps, keep detailed branches in named detail sections or bounded nested lists, and end with a fallback that uses the agent's native planning tool when the request does not map cleanly to the default steps.
+Every active packaged public `SKILL.md`, protected `SKILL-MAIN.md`, and executable subpage SHALL present `## Workflow` as ordered numbered steps, keep detailed branches in named detail sections or bounded nested lists, and end with a fallback that uses the agent's native planning tool when the request does not map cleanly to the default steps.
 
 #### Scenario: Entrypoint workflow is validated
-- **WHEN** validation inspects an active `SKILL.md`
+- **WHEN** validation inspects an active public or protected entrypoint
 - **THEN** the entrypoint has numbered workflow steps and a freeform fallback
 
 #### Scenario: Executable subpage workflow is validated
@@ -130,12 +152,12 @@ The repository SHALL validate public skill roles, protected nesting, and role-sp
 - **THEN** `pixi run validate-skills` fails with the affected file and negative-only Guardrails rule
 
 ### Requirement: Public Entrypoints Explain Protected-Subskill Selection
-Every public packaged system-skill entrypoint that owns protected subskills SHALL include a `When to Route Here` column in its `## Protected Subskills` table and SHALL provide one substantive routing sentence for every manifest-declared protected member. Each sentence SHALL express the decisive parent selection condition in the context of the owning entrypoint, SHALL preserve material boundaries with adjacent routes, and SHALL leave the protected member's detailed workflow contract authoritative.
+Every public packaged system-skill entrypoint that owns protected subskills SHALL include a `When to Route Here` column in its `## Protected Subskills` table and SHALL provide one substantive routing sentence for every manifest-declared protected member. Each sentence SHALL express the decisive parent selection condition in the context of the owning entrypoint and SHALL preserve material boundaries with adjacent routes. After selecting a row, the public entrypoint SHALL explicitly load the selected member's `SKILL-MAIN.md` and SHALL leave that protected entrypoint's detailed workflow contract authoritative.
 
 #### Scenario: Protected member table is inspected
 - **WHEN** a public entrypoint owns manifest-declared protected members
 - **THEN** its protected-subskill table contains exactly one row and one `When to Route Here` sentence for every declared member
-- **AND** the sentence gives the entrypoint enough information to select that member before loading its full `SKILL.md`
+- **AND** the sentence gives the entrypoint enough information to select that member before loading its full `SKILL-MAIN.md`
 
 #### Scenario: Parent context already establishes the extension
 - **WHEN** a DeepSci or Kaoju entrypoint summarizes one of its protected members
@@ -144,8 +166,8 @@ Every public packaged system-skill entrypoint that owns protected subskills SHAL
 
 #### Scenario: Protected workflow is selected
 - **WHEN** the entrypoint selects a protected member using its routing sentence
-- **THEN** it loads and follows the protected member's complete triggers, gates, callbacks, inputs, outputs, blockers, and handoffs
-- **AND** it does not treat the parent sentence as a replacement workflow contract
+- **THEN** it resolves the manifest-declared nested directory and loads only that member's `SKILL-MAIN.md` plus directly required bundle-local resources
+- **AND** it follows the protected member's complete triggers, gates, callbacks, inputs, outputs, blockers, and handoffs rather than treating the parent sentence as a replacement workflow contract
 
 #### Scenario: Protected visibility is preserved
 - **WHEN** routing guidance names a protected member
@@ -188,4 +210,3 @@ Every public welcome `SKILL.md` SHALL use a concise progressive-disclosure forma
 - **WHEN** a welcome skill documents the sibling entrypoint's full command inventory
 - **THEN** the exhaustive map is loaded only through `show-command-map`, `help`, or an explicit complete-output request
 - **AND** default welcome output remains a concise selection of high-value patterns
-
