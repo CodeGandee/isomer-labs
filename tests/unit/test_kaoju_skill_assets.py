@@ -156,6 +156,21 @@ class KaojuSkillAssetTests(unittest.TestCase):
         for forbidden in ("KAOJU:MINDSET-SOURCE", "manage-mindset", "isomer-cli ext kaoju mindsets"):
             self.assertNotIn(forbidden, text)
 
+    def test_mindset_consumers_record_verified_absence_and_skip_record_work(self) -> None:
+        entrypoint = (ENTRYPOINT / "SKILL.md").read_text(encoding="utf-8")
+        shared = (SUBSKILLS / "isomer-kaoju-shared/references/mindset-contract.md").read_text(encoding="utf-8")
+        reading = (ENTRYPOINT / "commands/ingest-reading-item.md").read_text(encoding="utf-8")
+        source_code = (ENTRYPOINT / "commands/ingest-source-code.md").read_text(encoding="utf-8")
+        examine = (SUBSKILLS / "isomer-kaoju-examine/SKILL-MAIN.md").read_text(encoding="utf-8")
+        combined = "\n".join((entrypoint, shared, reading, source_code, examine))
+        self.assertIn("project runs resolve-mindset", entrypoint)
+        self.assertIn("skipped_source_missing", entrypoint)
+        self.assertIn("skipped_source_missing", shared)
+        self.assertIn("recorded", combined)
+        self.assertIn("skip Record loading", combined)
+        self.assertIn("perform no Mindset Record Artifact operation", combined)
+        self.assertNotIn("create-missing mode before Run creation", combined)
+
 
 if __name__ == "__main__":
     unittest.main()

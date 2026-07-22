@@ -118,6 +118,30 @@ The package SHALL provide a self-contained production Kaoju pack with independen
 - **THEN** it uses exact registered id `KAOJU:MINDSET-RECORD`
 - **AND** it does not assign an Artifact id to a Mindset Source file
 
+#### Scenario: Kaoju welcome is self-contained
+- **WHEN** `isomer-ext-kaoju-welcome` is copied or linked as part of the pack
+- **THEN** it resolves its active typical-use-case and command-map resources without loading private files from the entrypoint or protected subskills
+- **AND** it may reference public entrypoint invocation names without becoming an execution owner
+
+#### Scenario: Shared machine contracts remain package-owned
+- **WHEN** welcome or entrypoint needs current Kaoju command or process metadata
+- **THEN** checked machine contracts remain owned by the installed Kaoju Python package and manifest
+- **AND** welcome does not introduce a second survey-process registry
+
+#### Scenario: Public identity is consistent
+- **WHEN** the Kaoju public pack is inspected
+- **THEN** its folder, frontmatter, metadata, and public default prompt use `isomer-ext-kaoju-entrypoint`
+
+#### Scenario: Protected identity is consistent
+- **WHEN** a protected Kaoju bundle is inspected
+- **THEN** its folder and frontmatter retain its `isomer-kaoju-*` logical id
+- **AND** its active resources remain self-contained
+
+#### Scenario: Trial and reproduction remain distinct
+- **WHEN** executable evidence members are inspected
+- **THEN** `trial` maps to `isomer-kaoju-trial` and `reproduce` maps to `isomer-kaoju-reproduce`
+- **AND** neither capability weakens the accepted evidence distinction
+
 ### Requirement: Kaoju Pipeline Command Surface
 `isomer-ext-kaoju-entrypoint` SHALL remain the single Kaoju execution entrypoint and SHALL expose checked survey, topic-preparation, exploration, compatibility, and grouped-management commands without promoting protected members as public skills.
 
@@ -130,6 +154,69 @@ The package SHALL provide a self-contained production Kaoju pack with independen
 - **WHEN** the checked public command inventory is inspected
 - **THEN** the ten existing survey-process commands remain unchanged and `create-topic` is classified separately as topic preparation
 - **AND** no specialized mindset-management command group is added
+
+#### Scenario: Concrete Kaoju task uses entrypoint
+- **WHEN** a user requests reading-list work, source ingestion, direction selection, comparison, code preparation, trial execution, paper production, wiki export, or task planning
+- **THEN** `isomer-ext-kaoju-entrypoint` selects and executes the applicable public command or protected capability
+- **AND** existing interaction, evidence, Gate, checkpoint, and terminal contracts remain in force
+
+#### Scenario: Newcomer asks how to use Kaoju
+- **WHEN** a user asks what Kaoju is designed for, which procedure fits, or how to form a request
+- **THEN** `isomer-ext-kaoju-welcome` presents curated typical use cases and exact entrypoint examples
+- **AND** it does not run a Kaoju manager or research procedure
+
+#### Scenario: Historical pipeline identity is used
+- **WHEN** compatibility lookup encounters `isomer-kaoju-pipeline`
+- **THEN** it resolves to `isomer-ext-kaoju-entrypoint`
+- **AND** it does not resolve to the welcome skill
+
+#### Scenario: Nested manager form is taught
+- **WHEN** welcome explains a grouped manager or nested subcommand such as paper-template management
+- **THEN** it shows the accepted public entrypoint command form and representative task
+- **AND** it does not expose internal object-generator notation as the ordinary user invocation
+
+#### Scenario: Exploration procedure is public
+- **WHEN** public help or the command map is inspected
+- **THEN** it exposes `explore` as an exploration procedure
+- **AND** `explore` routes to the protected `isomer-kaoju-explore` member
+- **AND** the `explore` command page delegates interactive planning to that member and routes to the selected command after consent
+
+#### Scenario: Existing procedures remain callable
+- **WHEN** compatibility procedures are inspected
+- **THEN** the accepted landscape, intake, expansion, theory comparison, method trial, comparative, audit, paper, and template procedures remain public commands of the new entrypoint
+
+#### Scenario: CRUD actions remain grouped by object
+- **WHEN** manager actions are inspected
+- **THEN** survey and dataset actions remain grouped under their accepted public manager commands
+
+#### Scenario: Paper-template actions remain grouped by object
+- **WHEN** the role-aware paper-template manager is migrated into the public pack
+- **THEN** `manage-paper-template()` remains one parent command with declared children `list()`, `show()`, `create()`, `copy()`, `update()`, `replace()`, `merge()`, `file()`, `metadata()`, `export()`, `observe()`, `archive()`, `delete()`, and `migrate()`
+- **AND** `file()` declares `put()` and `remove()` children while `metadata()` declares `patch()`
+- **AND** internal routes may use complete chains such as `isomer-ext-kaoju-entrypoint->manage-paper-template()->file()->put()`
+
+#### Scenario: Paper-template role remains command context
+- **WHEN** a paper-template action selects content authoring or LaTeX presentation state
+- **THEN** the manager resolves explicit `--kind content|latex` context before role-local discovery or mutation
+- **AND** content and LaTeX do not become skills, subskills, or command-path components
+
+#### Scenario: Compatibility template creation remains content-only
+- **WHEN** the retained `create-paper-template` procedure is invoked
+- **THEN** it creates or updates a named content template backed by `KAOJU:PAPER-TEMPLATE-MYST`
+- **AND** LaTeX stock creation routes through `manage-paper-template()` with `--kind latex`
+
+#### Scenario: Interaction and resume stay out of the procedure list
+- **WHEN** a user requests clarification before work or resumes accepted prior state
+- **THEN** clarification-first is represented as an interaction mode shared by procedures
+- **AND** resume is represented by a Research Task, Run checkpoint, accepted input refs, and starting stage rather than a separate procedure
+
+#### Scenario: Generic maintenance remains absent
+- **WHEN** the public command list is inspected
+- **THEN** it excludes standalone source-audit, repository-refresh, generic environment-repair, full-Kaoju, resume, and list-passes commands
+
+#### Scenario: Empty invocation uses help
+- **WHEN** the public entrypoint is invoked without a task or command
+- **THEN** it executes help and reports the public command groups including survey intents, compatibility procedures, exploration procedures, and grouped managers
 
 ### Requirement: Kaoju Entrypoint Explains Every Protected Route
 The `isomer-ext-kaoju-entrypoint` skill SHALL provide one context-aware `When to Route Here` sentence for every protected Kaoju subskill in its protected-subskill table.
@@ -153,6 +240,18 @@ The `isomer-ext-kaoju-entrypoint` skill SHALL provide one context-aware `When to
 - **WHEN** a Kaoju task needs cross-stage evidence, Gate, Artifact, lineage, or terminal-state rules rather than topic creation or a standalone survey stage
 - **THEN** the `shared` sentence identifies it as internal cross-stage support and does not present it as an independent public workflow
 
+#### Scenario: Source-evidence routes overlap
+- **WHEN** a task may require source discovery, acquisition, examination, comparison, or audit
+- **THEN** the applicable routing sentences distinguish `discover`, `acquire`, `examine`, `compare`, and `audit` by evidence state and intended output
+
+#### Scenario: Execution routes overlap
+- **WHEN** a source-code task may be a bounded environment or method trial or a genuine reproduction claim
+- **THEN** the routing sentences distinguish `trial` from `reproduce` by the requested fidelity and claim contract
+
+#### Scenario: Closeout routes overlap
+- **WHEN** accepted evidence may need synthesis, authored survey output, or export
+- **THEN** the applicable routing sentences distinguish `synthesize`, `write`, and `export` by whether the task creates conclusions, prose, or a target projection
+
 ### Requirement: Kaoju Welcome Maps the Complete Public Command Inventory
 The Kaoju welcome skill SHALL teach every checked public Kaoju command and SHALL keep protected implementation members out of the public command map.
 
@@ -160,3 +259,8 @@ The Kaoju welcome skill SHALL teach every checked public Kaoju command and SHALL
 - **WHEN** welcome resources are compared with checked public command metadata
 - **THEN** `create-topic` appears once with a Kaoju topic-preparation description and exact public invocation shape
 - **AND** neither `topic-creator` nor a mindset manager appears as an independently invocable public skill
+
+#### Scenario: Typical use cases are curated
+- **WHEN** default Kaoju welcome output is inspected
+- **THEN** it prioritizes landscape discovery, reading-list work, evidence intake, comparison, trials, paper production, and wiki export
+- **AND** it does not dump the complete command inventory before offering those representative patterns

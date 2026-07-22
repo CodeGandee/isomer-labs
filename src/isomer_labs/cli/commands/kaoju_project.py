@@ -214,6 +214,26 @@ def register_kaoju_project_commands(project: click.Group) -> None:
     def runs_begin(ctx: click.Context, **values: Any) -> int:
         return _with_run_service(ctx, values, lambda service: service.begin(procedure_id=str(values["procedure_id"]), control_mode=str(values["control_mode"]), input_refs=list(values["input_refs"]), expected_output_refs=list(values["expected_output_refs"]), stage_id=str(values["stage_id"]), research_task_id=values.get("research_task_id"), run_id=values.get("new_run_id"), resume_hint=values.get("resume_hint")))
 
+    @runs_group.command(name="resolve-mindset", help="Persist one verified recorded or missing-Source mindset posture on a Run.")
+    @common_options
+    @topic_selection_options
+    @click.option("--mindset-key", required=True, help="Selected checked mindset key.")
+    @click.option("--record-ref", default=None, help="Run-scoped KAOJU:MINDSET-RECORD ref.")
+    @click.option("--source-missing", is_flag=True, help="Verify the deterministic Source path is absent and record a skipped posture.")
+    @click.argument("run_id")
+    @click.pass_context
+    def runs_resolve_mindset(ctx: click.Context, run_id: str, **values: Any) -> int:
+        return _with_run_service(
+            ctx,
+            values,
+            lambda service: service.resolve_mindset(
+                run_id,
+                mindset_key=str(values["mindset_key"]),
+                record_ref=values.get("record_ref"),
+                source_missing=bool(values.get("source_missing")),
+            ),
+        )
+
     @runs_group.command(name="checkpoint", help="Record one resumable Run checkpoint.")
     @common_options
     @topic_selection_options

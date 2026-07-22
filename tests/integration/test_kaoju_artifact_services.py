@@ -127,7 +127,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         assert context is not None
         return context
 
-    def test_late_install_is_read_only_then_lazy_ensure_specializes_and_preserves_topic_sources(self) -> None:
+    def test_late_install_is_read_only_then_explicit_ensure_specializes_and_preserves_topic_sources(self) -> None:
         overview = self.root / "topic-workspaces/alpha/intent/src/topic-overview.md"
         write(
             overview,
@@ -190,6 +190,273 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         assert persisted is not None
         self.assertEqual(replaced["new_digest"], canonical_digest(persisted))
         self.assertEqual("User-authored triage emphasis.", persisted["questions"][0]["additional_notes"])
+
+    def test_missing_mindset_source_resolution_is_durable_and_nonblocking(self) -> None:
+        status, begun = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "begin",
+            "--procedure-id",
+            "ingest-reading-item",
+            "--stage-id",
+            "resolve-mindset",
+            "--id",
+            "run-mindset-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, begun)
+
+        status, resolved = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-missing",
+            "--mindset-key",
+            "paper.skimming",
+            "--source-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, resolved)
+        self.assertTrue(resolved["mutated"])
+        self.assertEqual("skipped_source_missing", resolved["mindset_resolution"]["disposition"])
+        self.assertEqual("absent", resolved["mindset_resolution"]["record_status"])
+        self.assertEqual([], resolved["record"]["transition_metadata"]["input_refs"])
+
+        context = self.topic_context()
+        source_root, diagnostics = resolve_semantic_path(context, "topic.intent.kaoju_mindsets", env={}, cwd=self.root)  # type: ignore[arg-type]
+        self.assertEqual([], diagnostics)
+        assert source_root is not None
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source_path = mindset_source_child(source_root.path, "paper.skimming")
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(json.dumps(source), encoding="utf-8")
+
+        status, replay = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-missing",
+            "--mindset-key",
+            "paper.skimming",
+            "--source-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, replay)
+        self.assertFalse(replay["mutated"])
+        self.assertEqual("skipped_source_missing", replay["mindset_resolution"]["disposition"])
+
+        status, rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-missing",
+            "--mindset-key",
+            "paper.deep-dive",
+            "--source-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_resolution_conflict", rejected["error"]["code"])
+
+        status, checkpoint = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "checkpoint",
+            "run-mindset-missing",
+            "--stage-id",
+            "examine",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, checkpoint)
+        self.assertEqual("skipped_source_missing", checkpoint["mindset_resolution"]["disposition"])
+
+        status, completed = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "complete",
+            "run-mindset-missing",
+            "--terminal-status",
+            "complete",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, completed)
+        self.assertEqual("absent", completed["mindset_resolution"]["record_status"])
+
+    def test_present_mindset_source_requires_a_verified_run_scoped_record(self) -> None:
+        context = self.topic_context()
+        source_root, diagnostics = resolve_semantic_path(context, "topic.intent.kaoju_mindsets", env={}, cwd=self.root)  # type: ignore[arg-type]
+        self.assertEqual([], diagnostics)
+        assert source_root is not None
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source_path = mindset_source_child(source_root.path, "paper.skimming")
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(json.dumps(source), encoding="utf-8")
+
+        status, begun = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "begin",
+            "--procedure-id",
+            "ingest-reading-item",
+            "--stage-id",
+            "resolve-mindset",
+            "--id",
+            "run-mindset-present",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, begun)
+
+        status, rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-present",
+            "--mindset-key",
+            "paper.skimming",
+            "--source-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_source_not_missing", rejected["error"]["code"])
+
+        status, rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-present",
+            "--mindset-key",
+            "paper.skimming",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_resolution_mode_invalid", rejected["error"]["code"])
+
+        status, rejected = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-present",
+            "--mindset-key",
+            "paper.skimming",
+            "--record-ref",
+            "mindset-record-present",
+            "--source-missing",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("mindset_resolution_mode_invalid", rejected["error"]["code"])
+
+        payload = materialize_record_payload(
+            source,
+            relative_path="paper.skimming.json",
+            topic_id="alpha",
+            run_ref="run-mindset-present",
+            survey_contract_ref="survey-contract-1",
+            survey_context_refs=("direction-set-1",),
+        )
+        payload_path = self.root / "mindset-record-present.json"
+        payload_path.write_text(json.dumps(payload), encoding="utf-8")
+        relationships = '[{"role":"run","target_ref":"run-mindset-present"},{"role":"survey_contract","target_ref":"survey-contract-1"}]'
+        status, created = self.artifact(
+            "put",
+            "KAOJU:MINDSET-RECORD",
+            str(payload_path),
+            "--producer",
+            "isomer-ext-kaoju-entrypoint",
+            "--scope-key",
+            "run-mindset-present",
+            "--relationships-json",
+            relationships,
+            "--id",
+            "mindset-record-present",
+            "--status",
+            "active",
+        )
+        self.assertEqual(0, status, created)
+
+        status, resolved = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-present",
+            "--mindset-key",
+            "paper.skimming",
+            "--record-ref",
+            "mindset-record-present",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, resolved)
+        self.assertEqual("recorded", resolved["mindset_resolution"]["disposition"])
+        self.assertEqual("mindset-record-present", resolved["mindset_resolution"]["record_ref"])
+        self.assertIn("mindset-record-present", resolved["record"]["transition_metadata"]["input_refs"])
+
+        status, replay = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "resolve-mindset",
+            "run-mindset-present",
+            "--mindset-key",
+            "paper.skimming",
+            "--record-ref",
+            "mindset-record-present",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, replay)
+        self.assertFalse(replay["mutated"])
+        self.assertEqual("recorded", replay["mindset_resolution"]["disposition"])
+
+        status, status_payload = self.run_cli(
+            "project",
+            "--root",
+            str(self.root),
+            "runs",
+            "status",
+            "run-mindset-present",
+            "--topic",
+            "alpha",
+        )
+        self.assertEqual(0, status, status_payload)
+        self.assertEqual("available", status_payload["mindset_resolution"]["record_status"])
 
     def test_mindset_record_create_scoped_revision_and_fail_closed_validation(self) -> None:
         source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))

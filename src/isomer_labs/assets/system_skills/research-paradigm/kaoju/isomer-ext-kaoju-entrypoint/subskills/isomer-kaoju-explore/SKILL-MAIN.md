@@ -10,7 +10,7 @@ skill_invocation_notation: >
   `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
   subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
   by parent subcommand parent. Intermediate subcommands act as object generators.
-  Forms such as `X()` and `X->Y()` are invalid for skill or subcommand entrypoints.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
 ---
 
 # Kaoju Explore
@@ -49,17 +49,17 @@ If the task does not map cleanly to these steps, use the native planning tool to
 
 ## Subcommand Routing
 
-| Subcommand | When to Use | Public Invocation |
+| Subcommand | When to Use | Public Request |
 | --- | --- | --- |
-| `auto` | General task; let the subskill pick the context mode. | `$isomer-ext-kaoju-entrypoint->explore()->auto()` |
-| `directions` | Framing, scope, or direction questions. | `$isomer-ext-kaoju-entrypoint->explore()->directions()` |
-| `reading-list` | Source discovery or reading-list planning. | `$isomer-ext-kaoju-entrypoint->explore()->reading-list()` |
-| `intake` | Paper, report, or code intake planning. | `$isomer-ext-kaoju-entrypoint->explore()->intake()` |
-| `comparison` | Theory or method comparison planning. | `$isomer-ext-kaoju-entrypoint->explore()->comparison()` |
-| `trial` | Code trial or reproduction planning. | `$isomer-ext-kaoju-entrypoint->explore()->trial()` |
-| `paper` | Paper drafting or template planning. | `$isomer-ext-kaoju-entrypoint->explore()->paper()` |
-| `wiki` | Wiki export planning. | `$isomer-ext-kaoju-entrypoint->explore()->wiki()` |
-| `help` | List modes and when to use them. | `$isomer-ext-kaoju-entrypoint->explore()->help()` |
+| `auto` | General task; let the subskill pick the context mode. | `$isomer-ext-kaoju-entrypoint use explore to plan this Kaoju task` |
+| `directions` | Framing, scope, or direction questions. | `$isomer-ext-kaoju-entrypoint use explore to plan survey directions` |
+| `reading-list` | Source discovery or reading-list planning. | `$isomer-ext-kaoju-entrypoint use explore to plan a reading list` |
+| `intake` | Paper, report, or code intake planning. | `$isomer-ext-kaoju-entrypoint use explore to plan source intake` |
+| `comparison` | Theory or method comparison planning. | `$isomer-ext-kaoju-entrypoint use explore to plan a comparison` |
+| `trial` | Code trial or reproduction planning. | `$isomer-ext-kaoju-entrypoint use explore to plan a trial` |
+| `paper` | Paper drafting or template planning. | `$isomer-ext-kaoju-entrypoint use explore to plan paper work` |
+| `wiki` | Wiki export planning. | `$isomer-ext-kaoju-entrypoint use explore to plan a wiki export` |
+| `help` | List modes and when to use them. | `$isomer-ext-kaoju-entrypoint use explore to show planning modes` |
 
 ## Reference Routing
 
@@ -87,4 +87,4 @@ The consent step is mandatory. Context conflicts, missing workspace readiness, o
 
 ## Chat Response
 
-Present normal chat responses in natural-language Markdown. Lead with the selected mode and current outcome. Summarize the agreed plan and the recommended invocation. If paused, state the missing decision or consent clearly.
+Present normal chat responses in natural-language Markdown. Lead with the selected mode and current outcome. Summarize the agreed plan and the recommended invocation. If paused, state the missing decision or consent clearly. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

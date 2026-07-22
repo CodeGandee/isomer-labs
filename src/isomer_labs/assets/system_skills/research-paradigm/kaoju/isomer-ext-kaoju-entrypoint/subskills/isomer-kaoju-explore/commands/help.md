@@ -3,7 +3,7 @@
 ## Workflow
 
 1. **List the available exploration modes**: `auto`, `directions`, `reading-list`, `intake`, `comparison`, `trial`, `paper`, and `wiki`.
-2. **For each mode, state when to use it and the exact public invocation** in the form `$isomer-ext-kaoju-entrypoint->explore()-><mode>()`.
+2. **For each mode, state when to use it and an exact public request** in the form `$isomer-ext-kaoju-entrypoint use explore to plan <task>`.
 3. **Offer the user a choice**: ask which mode fits their task, or run `auto` if they prefer the subskill to decide.
 4. **Do not create files, artifacts, Runs, Gates, or Service Requests** while answering help.
 

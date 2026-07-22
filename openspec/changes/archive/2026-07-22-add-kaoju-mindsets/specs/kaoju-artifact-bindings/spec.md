@@ -66,6 +66,16 @@ The production Kaoju binding inventory SHALL cover every durable object required
 - **THEN** they cover workspace readiness, binding index, `KAOJU:SURVEY-CONTRACT`, Comparison Intent Document, `KAOJU:PROCEED-DECISION`, `KAOJU:DISCOVERY-LEDGER`, `KAOJU:RELATED-WORK-CATALOG` and its deltas, `KAOJU:CURATED-INTAKE-DELTA`, Source Digest, Source Access Blocker, `KAOJU:CLAIM-EVIDENCE-LEDGER`, material acquisition, Topic Dataset Manifest, Generated Dataset, Method Trial, theory comparison, Comparison Matrix, Audit Report, `KAOJU:CLAIM-STATUS-TABLE`, `KAOJU:FIELD-SUMMARY`, Kaoju Dossier, terminal report, method-trial Runs, comparison Runs, and `KAOJU:MINDSET-RECORD`
 - **AND** neither `KAOJU:MINDSET-SOURCE` nor another semantic id is registered for a topic Mindset Source file
 
+#### Scenario: Survey-process inventory is present
+- **WHEN** the July 14 survey-process binding inventory is inspected
+- **THEN** it includes exact bindings for `kaoju:direction-set`, `kaoju:reading-list`, `kaoju:artifact-library`, `kaoju:associated-source-code`, `kaoju:paper-structure-myst`, `kaoju:paper-template-myst`, `kaoju:paper-draft-myst`, `kaoju:paper-draft-md`, `kaoju:citation-map`, `kaoju:paper-template-export`, `kaoju:paper-template-manifest`, `kaoju:paper-revision-log`, `kaoju:paper-template-tex`, `kaoju:paper-draft-tex`, `kaoju:paper-pdf`, `kaoju:paper-compile-log`, `kaoju:paper-pdf-revision-log`, `kaoju:llm-wiki-export`, `kaoju:llm-wiki-metadata`, `kaoju:llm-wiki-viewer`, `kaoju:llm-wiki-viewer-manifest`, `kaoju:env-prep-plan`, `kaoju:env-gate-revision`, `kaoju:pixi-env-ref`, `kaoju:smoke-run-script`, `kaoju:smoke-run-result`, `kaoju:method-trial-plan`, and `kaoju:method-trial-result`
+- **AND** existing `kaoju:method-trial-run`, evidence, catalog, decision, and synthesis bindings are reused where the use cases name them
+
+#### Scenario: Legacy writing semantics have migration disposition
+- **WHEN** `kaoju:writing-template`, `kaoju:survey-manuscript`, `kaoju:paper-build-run`, `kaoju:paper-validation-report`, or `kaoju:publication-bundle` remains readable
+- **THEN** the binding registry marks its legacy or compatibility status and permitted migration relationships
+- **AND** no legacy TeX record is treated as canonical MyST content
+
 #### Scenario: New durable output needs a disposition
 - **WHEN** a later Kaoju skill adds an accepted durable output
 - **THEN** it adds a semantic registry entry, binding entry, and family-neutral profile or records an explicit non-structured binding disposition

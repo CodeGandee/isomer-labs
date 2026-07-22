@@ -49,6 +49,8 @@ class KaojuContractTests(unittest.TestCase):
         )
         self.assertNotIn("semantic_aliases", contract.raw)
         self.assertNotIn("binding_registry_resource", contract.raw)
+        self.assertEqual("record-or-skip-missing-per-run", contract.raw["mindsets"]["resolution_mode"])
+        self.assertNotIn("ensure_mode", contract.raw["mindsets"])
 
         bindings = load_binding_registry()
         semantics = load_semantic_registry()

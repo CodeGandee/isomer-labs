@@ -4,7 +4,7 @@ The extension query `isomer-cli --print-json ext kaoju bindings describe KAOJU:W
 
 Produced semantic ids: `KAOJU:SOURCE-DIGEST`, `KAOJU:CLAIM-EVIDENCE-LEDGER`
 
-Consumed semantic id: `KAOJU:MINDSET-RECORD`. The public entrypoint produces and hands off this Run-scoped Record. Examine revises it through the binding-permitted current-state path while preserving its immutable Source snapshot.
+Conditionally consumed semantic id: `KAOJU:MINDSET-RECORD`. For a `recorded` Run, the public entrypoint produces and hands off this Run-scoped Record and Examine revises it through the binding-permitted current-state path while preserving its immutable Source snapshot. For `skipped_source_missing`, Examine verifies Run state and performs no Mindset Record operation.
 
 Resolve each contract with `isomer-cli --print-json ext kaoju bindings describe KAOJU:WHAT`. Create accepted state with `isomer-cli --print-json project artifacts put`, revise current state with `isomer-cli --print-json project artifacts revise`, and supply only the binding-defined scope key, content, relationships, producer identity, and idempotency key.
 

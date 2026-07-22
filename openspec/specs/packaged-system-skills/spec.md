@@ -22,6 +22,7 @@ The system SHALL distribute official non-development Isomer system skills as pac
 - **WHEN** package assets are inspected
 - **THEN** no manifest-declared protected logical id also exists as an independently installable top-level skill directory
 - **AND** the independent welcome directories are classified as public skills rather than protected capabilities
+
 ### Requirement: System Skill Discovery Uses Package Resources
 The system SHALL expose package-resource helpers for discovering and reading official system skills without a repository checkout and SHALL resolve the entrypoint filename from the manifest-owned public or protected role.
 
@@ -66,6 +67,7 @@ The system SHALL materialize manifest-selected packs as complete sets of top-lev
 #### Scenario: Development skills are never materialized from package assets
 - **WHEN** a caller materializes any packaged system-skill selection
 - **THEN** no `dev/` directory or `isomer-dev-*` skill is copied from package assets
+
 ### Requirement: Core Packaged Skills Include Entrypoint
 The packaged core system-skill group SHALL include `operator/isomer-op-entrypoint` as its designated execution entrypoint and `operator/isomer-op-welcome` as its independent public onboarding skill, while all other core capabilities remain protected members of the entrypoint.
 
@@ -93,6 +95,7 @@ The packaged core system-skill group SHALL include `operator/isomer-op-entrypoin
 - **WHEN** code asks for catalog metadata for the `core` group
 - **THEN** the result identifies one public pack and the ordered protected logical capabilities it owns
 - **AND** it does not classify those protected members as independent public install units
+
 ### Requirement: System Skill Manifest Classifies Groups
 The packaged system-skill manifest SHALL classify packs, public skills, and protected logical capabilities so callers can distinguish pack mutation units, newcomer and execution surfaces, and internally routed members.
 
@@ -124,6 +127,7 @@ The packaged system-skill manifest SHALL classify packs, public skills, and prot
 - **WHEN** the manifest loads a pack whose kind is extension
 - **THEN** it declares a stable extension id, one `isomer-ext-<extension-id>-entrypoint` public skill, ordered public commands, and protected members
 - **AND** callers can filter catalog metadata by extension id
+
 ### Requirement: System Skill Manifest Declares Callback Insertion Points
 The packaged system-skill manifest SHALL declare callback stages against stable logical capability ids and SHALL provide their owning pack and invocation designators as catalog metadata.
 
@@ -185,6 +189,7 @@ The system SHALL document welcome-first onboarding and entrypoint execution for 
 #### Scenario: Host refresh is required after migration
 - **WHEN** docs explain migration from a flat installation
 - **THEN** they tell the user to run a managed upgrade and refresh the agent host or begin a new agent session
+
 ### Requirement: Core Packaged Skills Include Toolbox Manager
 The packaged core public pack SHALL include `isomer-op-toolbox-mgr` as the protected `toolbox` member.
 
@@ -238,12 +243,22 @@ The packaged core public pack SHALL include `isomer-op-gui-mgr` as the protected
 - **AND** no top-level `isomer-op-gui-mgr` directory is created
 
 ### Requirement: Packaged Kaoju Extension Group
-The packaged catalog SHALL expose Kaoju as optional extension `kaoju` through independent public skills `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint`, with the existing thirteen protected capabilities owned by the entrypoint.
+The packaged system-skill manifest SHALL expose the complete Kaoju public pair and protected member inventory, including the Kaoju-specific topic-creation owner and its private default resources.
 
 #### Scenario: Kaoju manifest group is classified and complete
-- **WHEN** `manifest.toml` is inspected
-- **THEN** pack `kaoju` declares `kind = "extension"`, `extension_id = "kaoju"`, `always_available = false`, public welcome `isomer-ext-kaoju-welcome`, and execution entrypoint `isomer-ext-kaoju-entrypoint`
-- **AND** it owns protected logical ids for shared, workspace, frame, discover, acquire, examine, reproduce, trial, compare, audit, synthesize, write, and export
+- **WHEN** packaged skill metadata is loaded
+- **THEN** the Kaoju extension declares public welcome and entrypoint bundles plus exactly fifteen protected members, including `isomer-kaoju-topic-creator`
+- **AND** the public command metadata includes `create-topic` as topic preparation without exposing the protected owner as another public skill
+
+#### Scenario: Kaoju topic creator is materialized
+- **WHEN** the Kaoju pack or the topic-creator dependency closure is materialized
+- **THEN** `isomer-kaoju-topic-creator` includes its local skill guidance and validated `assets/defaults/mindsets/*.json` resources
+- **AND** the materialized bundle does not depend on a repository checkout, family-root symlink, or undeclared resource path
+
+#### Scenario: Obsolete mindset manager is absent
+- **WHEN** the packaged Kaoju inventory and public CLI documentation are inspected
+- **THEN** they contain no protected `isomer-kaoju-mindsets` manager, eight-leaf mindset command tree, or specialized `ext kaoju mindsets` group
+- **AND** Mindset Source editing is documented as owner-editable derived intent
 
 #### Scenario: Kaoju paths resolve inside their owners
 - **WHEN** Kaoju catalog metadata loads
@@ -283,6 +298,7 @@ The packaged catalog SHALL expose Kaoju as optional extension `kaoju` through in
 - **WHEN** an installed package materializes the Kaoju extension
 - **THEN** every skill can resolve its active direct resources, semantic and binding references, command pages, templates, and helper scripts without a repository checkout
 - **AND** no active skill requires feature-design files, archived OpenSpec changes, external source checkouts, provider credentials, or the external `imsight-llm-wiki` skill merely to load or validate
+
 ### Requirement: System Skill Manifest Describes Extension Entry Surfaces
 The packaged system-skill manifest SHALL describe both the welcome and execution surfaces of each optional extension without requiring a repository checkout or extension-specific CLI inventory.
 
@@ -317,6 +333,7 @@ The packaged system-skill manifest SHALL describe both the welcome and execution
 #### Scenario: Core groups reject extension entry metadata
 - **WHEN** a core group declares an extension entry skill or public extension commands
 - **THEN** system-skill manifest loading fails with a deterministic package asset diagnostic\n
+
 ### Requirement: Core Packaged Skills Include System Skill Manager
 The core public pack SHALL include `isomer-op-system-skill-mgr` as the protected `system-skills` member.
 
@@ -356,6 +373,7 @@ The packaged system-skill catalog SHALL provide stable extension-family membersh
 - **WHEN** live inventory contains an extension public entrypoint but no receipt or root evidence
 - **THEN** classification reports the entrypoint as seen
 - **AND** it does not report protected member coverage as complete
+
 ### Requirement: Materialized Skills Preserve Standalone Resource Boundaries
 Public pack materialization and protected private projection SHALL preserve every declared skill bundle's active resource boundary while applying the destination role's canonical entrypoint filename.
 
@@ -384,17 +402,22 @@ Public pack materialization and protected private projection SHALL preserve ever
 - **AND** each active local link is validated relative to its owning copied skill
 
 ### Requirement: Packaged Kaoju Shared Data Is CLI-Owned
-The packaged Kaoju skill family SHALL not own canonical survey-process, binding-registry, or binding-schema data outside its fourteen declared skill bundles.
+The packaged Kaoju skill family SHALL keep canonical survey-process, binding-registry, and binding-schema data package-owned while allowing a declared skill bundle to own local schema-valid seed resources used only by that skill workflow.
 
 #### Scenario: Packaged Kaoju resources are inspected
 - **WHEN** package assets and the Kaoju Python package are inspected
-- **THEN** canonical survey-process and binding data are stored with the package-owned Kaoju extension implementation and load through its shared contract loader
-- **AND** the system-skill family root contains only declared skill bundles and family documentation needed for discovery
+- **THEN** canonical survey-process and binding data remain with the package-owned Kaoju extension implementation and load through its shared contract loader
+- **AND** `isomer-kaoju-topic-creator` owns only its local generation guidance and validated default mindset JSON, and the system-skill family root contains only the seventeen declared skill bundles and family documentation needed for discovery
 
 #### Scenario: Kaoju package is used without repository layout
-- **WHEN** an installed package materializes Kaoju skills and an agent queries their shared contracts
-- **THEN** skill-local resources resolve from each materialized bundle and shared data resolves through `isomer-cli ext kaoju`
+- **WHEN** an installed package materializes Kaoju skills and an agent creates or repairs a Kaoju topic
+- **THEN** skill-local default resources resolve inside `isomer-kaoju-topic-creator`, shared machine data resolves through the installed package, and topic files resolve through Workspace Path Resolution
 - **AND** no operation requires `.kimi-code`, a repository symlink, or `src/isomer_labs/assets/system_skills/research-paradigm/kaoju/contracts`
+
+#### Scenario: Kaoju is installed after topics exist
+- **WHEN** the pack is registered, installed, refreshed, or materialized while existing Research Topics are available
+- **THEN** package lifecycle work does not enumerate Topic Workspaces, create `intent/derived/mindsets`, or invoke the generic Topic Creator
+- **AND** extension-local lazy initialization remains the responsibility of a later concrete mutation-bearing Kaoju request with one reconciled topic
 
 ### Requirement: Packaged Extension Skills Use Manifest-Owned Artifact Identities
 Packaged extension skills SHALL use exact uppercase `EXTENSION-NAME:WHAT` artifact identifiers whose namespace is the uppercase projection of the owning manifest group id.
@@ -469,3 +492,19 @@ The packaged core system-skill group SHALL include `research/isomer-research-ope
 #### Scenario: Skill metadata version matches package release
 - **WHEN** a release or release candidate validates packaged system skills
 - **THEN** the new skill's `agents/openai.yaml` metadata version matches `project.version` under the existing release rule
+
+### Requirement: Packaged System Skill CLI Examples Use Supported JSON Options
+Packaged system-skill instructions SHALL place the global `--print-json` option immediately after `isomer-cli` when they request deterministic structured output, and repository validation SHALL reject `isomer-cli` command examples that use the unsupported command-local `--json` token.
+
+#### Scenario: Structured-output example uses the global option
+- **WHEN** a packaged system skill documents an Isomer CLI command that requests deterministic JSON output
+- **THEN** the example uses `isomer-cli --print-json <command>`
+- **AND** packaged skill validation accepts the option placement
+
+#### Scenario: Command-local JSON option is rejected
+- **WHEN** a packaged system skill contains an `isomer-cli <command> --json` example
+- **THEN** packaged skill validation reports the file and line as unsupported command-local JSON syntax
+
+#### Scenario: JSON-bearing command options remain valid
+- **WHEN** a packaged system skill uses a supported option whose exact name is not `--json`, such as `--metadata-json`
+- **THEN** packaged skill validation does not classify that option as command-local structured-output syntax

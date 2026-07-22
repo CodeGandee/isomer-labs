@@ -159,7 +159,7 @@ def load_contract() -> KaojuContract:
         "source_semantic_label": "topic.intent.kaoju_mindsets",
         "record_semantic_id": "KAOJU:MINDSET-RECORD",
         "repair_designator": "isomer-ext-kaoju-entrypoint->topic-creator",
-        "ensure_mode": "create-missing-before-concrete-mutation-bearing-run",
+        "resolution_mode": "record-or-skip-missing-per-run",
     }
     for field, expected in expected_mindset_metadata.items():
         if mindset_config.get(field) != expected:
