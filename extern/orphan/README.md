@@ -10,6 +10,7 @@ Everything here is ignored by `extern/.gitignore` except this `README.md`.
 - `DeepScientist/` — Local clone of the DeepScientist repository (`https://github.com/ResearAI/DeepScientist.git`).
 - `houmao` — Symlink to a local Houmao source checkout (`https://github.com/igamenovoer/houmao`).
 - `houmao-agents` — Symlink to a local Houmao agents checkout (`https://github.com/igamenovoer/houmao-agents.git`).
+- `domain-skills` — Symlink to a local domain-skills checkout (`https://github.com/igamenovoer/domain-skills.git`).
 
 ## Recreating this directory
 
@@ -31,6 +32,7 @@ git clone https://github.com/igamenovoer/houmao-agents.git ~/workspace/code/houm
 # 4. Recreate the symlinks to those local checkouts.
 ln -s ~/workspace/code/houmao houmao
 ln -s ~/workspace/code/houmao-agents houmao-agents
+ln -s /data/ssd2/huangzhe/code/domain-skills domain-skills
 ```
 
 The `data/` directory contains local run snapshots and is not reproducible from upstream; restore it from backups or recreate it as needed.
