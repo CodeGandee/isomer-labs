@@ -3,4 +3,4 @@ interface:
   short_description: "Manage Isomer system-skill extensions"
   default_prompt: "Use $isomer-op-entrypoint use system-skills to perform this isomer-op-system-skill-mgr task."
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
