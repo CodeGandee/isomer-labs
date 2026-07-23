@@ -31,6 +31,7 @@ If the requested goal does not map cleanly to one command, use the native planni
 | `toolbox` | Use for project-local Toolbox, callback, insertion-point, and Runtime Param work. | `$isomer-op-entrypoint use toolbox to <task>` |
 | `topic-create` | Use to turn empty or partial Project state into a prepared Research Topic and Topic Workspace. | `$isomer-op-entrypoint use topic-create to <task>` |
 | `topic-manage` | Use to manage an initialized Research Topic after Topic Creator handoff. | `$isomer-op-entrypoint use topic-manage to <task>` |
+| `topic-git` | Use for optional Source Topic Workspace root history or sanitized remote publication. | `$isomer-op-entrypoint use topic-git to <task>` |
 | `topic-team` | Use only for explicit or contextually established formal Agent Team specialization work. | `$isomer-op-entrypoint use topic-team to <task>` |
 | `package-specifics` | Use when a named package needs source, variant, compatibility, or installation-caveat guidance. | `$isomer-op-entrypoint use package-specifics to <task>` |
 | `tool-packs` | Use when the user explicitly asks for a named installable toolset and its verification contract. | `$isomer-op-entrypoint use tool-packs to <task>` |

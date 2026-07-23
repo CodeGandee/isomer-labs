@@ -22,6 +22,7 @@ Use these docs by task. Tutorials teach a path from an empty directory to a runn
 - [Project Lifecycle](manual/project-lifecycle.md)
 - [Research Topics](manual/research-topics.md)
 - [Topic Workspaces](manual/topic-workspaces.md)
+- [Topic Workspace Git](manual/topic-workspace-git.md)
 - [Workspace Runtime](manual/workspace-runtime.md)
 - [Research Records](manual/research-records.md)
 - [Project Web GUI](manual/project-web.md)

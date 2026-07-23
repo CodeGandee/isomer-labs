@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "research_topic_id", "topic_workspace_id", "state", "repository_identity"],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-local-state.v1"},
+    "research_topic_id": {"type": "string", "minLength": 1},
+    "topic_workspace_id": {"type": "string", "minLength": 1},
+    "state": {"enum": ["disabled", "enabled", "invalid"]},
+    "repository_identity": {"type": ["string", "null"]},
+    "head_sha": {"type": ["string", "null"], "pattern": "^[0-9a-f]{7,64}$"},
+    "ignore_fingerprint": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "nested_workspaces": {"type": "array", "items": {"type": "object"}},
+    "updated_at": {"type": "string", "minLength": 1}
+  }
+}

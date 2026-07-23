@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "binding_id", "plan_id", "branch_outcomes", "resume_at", "updated_at"],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-publication-outcomes.v1"},
+    "binding_id": {"type": "string", "minLength": 1},
+    "plan_id": {"type": "string", "minLength": 1},
+    "branch_outcomes": {"type": "array", "items": {"type": "object"}},
+    "resume_at": {"type": ["string", "null"]},
+    "updated_at": {"type": "string", "minLength": 1}
+  }
+}

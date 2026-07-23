@@ -6,7 +6,7 @@ Official non-development Isomer system skills live in this package resource tree
 
 | Pack | Public Welcome | Execution Entrypoint | Protected Members |
 | --- | --- | --- | --- |
-| Core | `operator/isomer-op-welcome/` | `operator/isomer-op-entrypoint/` | 19 members below entrypoint `subskills/` |
+| Core | `operator/isomer-op-welcome/` | `operator/isomer-op-entrypoint/` | 20 members below entrypoint `subskills/` |
 | DeepSci | `research-paradigm/deepsci/isomer-ext-deepsci-welcome/` | `research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/` | 21 members below entrypoint `subskills/` |
 | Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-welcome/` | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 13 members below entrypoint `subskills/` |
 

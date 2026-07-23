@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "plan_id", "binding_id", "research_topic_id", "topic_workspace_id", "copy_path", "visibility", "fingerprints", "entries", "components", "push_order", "blockers", "approval"],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-publication-plan.v1"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "binding_id": {"type": "string", "minLength": 1},
+    "research_topic_id": {"type": "string", "minLength": 1},
+    "topic_workspace_id": {"type": "string", "minLength": 1},
+    "copy_path": {"type": "string", "minLength": 1},
+    "visibility": {"enum": ["private", "restricted", "public", "unknown"]},
+    "fingerprints": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "entries": {"type": "array", "items": {"type": "object"}},
+    "components": {"type": "array", "items": {"type": "object"}},
+    "conflicts": {"type": "array", "items": {"type": "object"}},
+    "push_order": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "approval": {"type": "object"}
+  }
+}

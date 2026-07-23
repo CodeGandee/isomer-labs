@@ -15,7 +15,7 @@ When working from a source checkout, use the developer setup in [Testing](../dev
 
 ## Install System Skills
 
-Install the packaged core pack into the coding-agent surface you use. The host discovers two public siblings: `isomer-op-welcome` teaches typical workflows without mutating the Project, and `isomer-op-entrypoint` routes concrete work to its 19 protected capabilities. Pick one target, or use `all` when you intentionally want every supported target populated. This quickstart uses user scope so the pack remains available after you create and enter the Project directory; use project scope from an existing project directory when you want a local installation.
+Install the packaged core pack into the coding-agent surface you use. The host discovers two public siblings: `isomer-op-welcome` teaches typical workflows without mutating the Project, and `isomer-op-entrypoint` routes concrete work to its 20 protected capabilities. Pick one target, or use `all` when you intentionally want every supported target populated. This quickstart uses user scope so the pack remains available after you create and enter the Project directory; use project scope from an existing project directory when you want a local installation.
 
 List optional agent-skill extensions or inspect one extension before installation:
 

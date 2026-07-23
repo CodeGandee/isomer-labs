@@ -30,6 +30,26 @@ _Avoid_: Runtime config, topic database, workspace state, command log, credentia
 A project-local directory declared by the Project Manifest and managed by Isomer Labs for one Research Topic. It owns the topic's Workspace Runtime, Pixi manifest and environment, Topic Agent Team Profile Bundle, Topic Main Development Repository, canonical external repositories, Topic Actor Workspaces, Agent Workspaces, owner-preserved records, runtime support material, local tmp surfaces, Research Inquiry graph, Research Tasks, Runs, rich research Artifacts, generated View Manifests, and logs. Its internal path contract is semantic: labels such as `topic.repos.main`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.records.artifacts`, `topic.runtime.db`, `topic.tmp`, `topic.actors.workspace`, `topic.actors.tmp`, `agent.workspace`, `agent.private_artifacts`, and `agent.tmp` resolve to concrete paths through Workspace Path Resolution. Worker-visible code work normally happens through the Topic Main Development Repository, Topic Actor Workspaces, and Agent Workspaces, while resolved records, runtime support, runtime database, canonical external repositories, and tmp surfaces remain topic-owner, runtime, supporting, or disposable local surfaces unless projected through accepted Isomer-managed paths. It may reference the selected Agent Team Instance lineage used for the topic, but it does not contain a workspace-local `teams/` directory.
 _Avoid_: Isomer Workspace, quest, quest workspace, run directory, task workspace, system workspace
 
+**Source Topic Workspace**:
+The contextual role of the canonical Topic Workspace when an operation distinguishes canonical source material from a Topic Publication Copy. It is not a separate schema type, Project Manifest registration, subtype, or fourth managed workspace. In-workspace local tracking and remote publication both read the Source Topic Workspace, but neither changes the Topic Main Development Repository, Topic Actor Workspace, Agent Workspace, or worker topology.
+_Avoid_: source workspace type, publication source workspace, fourth workspace, root repository authority
+
+**Topic Publication Copy**:
+An ignored, Project-local, disposable projection derived from one Source Topic Workspace for privacy review, fresh sanitized component history construction, and publication to one credential-safe user-selected remote. It can exist after Topic Workspace registration and before Workspace Runtime. It is rebuildable from a Publication Binding, fetched sanitized branches, and a Publication Projection Manifest after a successful publication. It is not a Topic Workspace, Topic Actor Workspace, Agent Workspace, canonical source, Workspace Runtime, Artifact authority, or research record source.
+_Avoid_: Publication Workspace, fourth workspace, canonical publication workspace, durable source copy
+
+**In-Workspace Local Tracking**:
+An optional local-only Git repository rooted at the Source Topic Workspace. It tracks approved root-owned material while excluding the canonical Topic Main Development Repository, canonical external repositories, Topic Actor Workspaces, Agent Workspaces, Workspace Runtime, local environments, credentials, and disposable surfaces. It does not configure, discover, fetch, pull, or push a remote, and it does not enable or trigger remote publication.
+_Avoid_: Topic Main replacement, publication prerequisite, root remote, nested workspace aggregation
+
+**Publication Binding**:
+A credential-safe association among one Research Topic, its canonical Topic Workspace, one Project-relative Topic Publication Copy path, one remote name and locator, and an acknowledged remote visibility of `private`, `restricted`, or `public`. Before Workspace Runtime exists, the binding may live only in the ignored copy-local Topic Git support root. A later approved publication mutation can validate and promote it to `<topic.runtime>/topic-git/`. A Publication Binding never stores credentials, signed locators, sensitive excerpts, raw private diffs, or source Git configuration.
+_Avoid_: credential record, provider account, source remote, Workspace Runtime row
+
+**Publication Projection Manifest**:
+A tracked sanitized manifest inside the Topic Publication Copy that records relative source-to-output mappings, privacy dispositions, transformations, output fingerprints, selected component branches, and exact sanitized component commits for one approved projection. It omits absolute source paths, credentials, sensitive content, excluded content, source remote configuration, and source Git ancestry. It supports conflict detection and reconstruction but does not make the Topic Publication Copy canonical.
+_Avoid_: source inventory dump, private diff, source Git manifest, canonical workspace manifest
+
 **Topic Actor Workspace**:
 A per-Topic Actor work area inside a Topic Workspace for human-orchestrated topic-local workers such as the Project Operator Session, a manually started Codex or Claude Code session, a shell worker, or a Houmao-backed worker that is not being modeled as a formal Agent Instance. Its semantic label is `topic.actors.workspace`; under `isomer-default.v1` that label resolves to `<topic-workspace>/actors/<topic-actor-name>`, and the default Git branch is `per-topic-actor/<topic-actor-name>/main` from the Topic Main Development Repository. A Topic Actor Workspace is separate from `agent.workspace`, does not imply Agent Team Instance membership, and does not make the Topic Actor an Agent Instance.
 _Avoid_: Agent Workspace, Agent Instance workspace, shared manual topic-main cwd, secure sandbox
@@ -92,6 +112,8 @@ Other space-like terms have narrower meanings:
 - **Project Config Directory** is `.isomer-labs/`. It is configuration and discovery state, not a workspace.
 - **Workspace Runtime** is persistent runtime state inside a Topic Workspace, not a separate workspace.
 - **Agent Runtime** is runtime state inside an Agent Workspace, not a separate workspace.
+- **Source Topic Workspace** is a contextual role of the canonical Topic Workspace, not a separate workspace.
+- **Topic Publication Copy** is a disposable derived projection, not a workspace.
 - **Workspace Boundary** is an advisory ownership and peer-read declaration for an Agent Workspace, not a filesystem-enforced space.
 - **Research Topic** is the root research problem or investigation intent that initiates work and Topic Team Specialization. It is not a workspace.
 - **Research Inquiry** is a question or line of inquiry under a Research Topic. It is recorded inside the topic's Topic Workspace, but it is not itself a workspace.
@@ -111,7 +133,9 @@ Project
     GUI Component Registry references
   Research Topic(s)
     Topic Workspace, declared by the Project Manifest
+      Optional in-workspace local tracking at the Topic Workspace root, independent of publication
       Workspace Runtime
+        Topic Git support files under topic-git/ when runtime is available
       Topic Agent Team Profile Bundle
       Topic Main Development Repository, semantic label topic.repos.main
         Isomer-managed worker namespace, isomer-managed/
@@ -130,6 +154,7 @@ Project
         Agent Runtime, under isomer-managed/agent-owned/runtime/
         Local Tmp Surface, semantic label agent.tmp
         Workspace Boundary
+  Ignored Topic Publication Copy or copies under Project temporary storage, derived from but outside Topic Workspaces
 ```
 
 ### Research Lifecycle

@@ -23,7 +23,7 @@ Use this public execution entrypoint as the route-and-proceed dispatcher for cor
 
 Use this skill for a concrete task, prompt, file, Research Topic, Topic Actor, Agent, DeepSci request, Kaoju request, or CLI-shaped operation. Use `$isomer-op-welcome` directly for first contact, route comparison, typical use cases, or command learning; this entrypoint preserves compatibility by delegating those read-only requests with supplied context intact.
 
-Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-entrypoint->project`, system-skill lifecycle belongs to `isomer-op-entrypoint->system-skills`, Project Web GUI work belongs to `isomer-op-entrypoint->gui`, topic creation belongs to `isomer-op-entrypoint->topic-create`, initialized-topic management belongs to `isomer-op-entrypoint->topic-manage`, identity posture belongs to `isomer-op-entrypoint->identity`, project-local Toolbox management belongs to `isomer-op-entrypoint->toolbox`, and Topic Team Specialization belongs to `isomer-op-entrypoint->topic-team`. DeepSci bootstrap uses `isomer-ext-deepsci-entrypoint->workspace`, Kaoju readiness uses `isomer-ext-kaoju-entrypoint->workspace`, and focused research uses the selected protected member of its public extension pack.
+Do not use this skill to bypass owner workflows. Project lifecycle work belongs to `isomer-op-entrypoint->project`, system-skill lifecycle belongs to `isomer-op-entrypoint->system-skills`, Project Web GUI work belongs to `isomer-op-entrypoint->gui`, topic creation belongs to `isomer-op-entrypoint->topic-create`, initialized-topic management belongs to `isomer-op-entrypoint->topic-manage`, optional Topic Workspace root tracking and sanitized remote publication belong to `isomer-op-entrypoint->topic-git`, identity posture belongs to `isomer-op-entrypoint->identity`, project-local Toolbox management belongs to `isomer-op-entrypoint->toolbox`, and Topic Team Specialization belongs to `isomer-op-entrypoint->topic-team`. DeepSci bootstrap uses `isomer-ext-deepsci-entrypoint->workspace`, Kaoju readiness uses `isomer-ext-kaoju-entrypoint->workspace`, and focused research uses the selected protected member of its public extension pack.
 
 ## Workflow
 
@@ -60,6 +60,7 @@ Use `$isomer-op-entrypoint use <subcommand> to <task>`. Public execution command
 | `toolbox` | `isomer-op-toolbox-mgr` | operator | A project-local Toolbox, callback declaration or insertion point, or Toolbox Runtime Param must be created, converted, installed, inspected, updated, disabled, or removed. | `isomer-op-entrypoint->toolbox` |
 | `topic-create` | `isomer-op-topic-creator` | operator | Empty or partial Project state must become a prepared Research Topic and Topic Workspace through the Topic Creator readiness handoff. | `isomer-op-entrypoint->topic-create` |
 | `topic-manage` | `isomer-op-topic-mgr` | operator | An initialized Research Topic after Topic Creator handoff needs storage, actor, topology, package, environment, checkpoint, or diagnostic management. | `isomer-op-entrypoint->topic-manage` |
+| `topic-git` | `isomer-op-topic-workspace-git` | operator | The request explicitly concerns Source Topic Workspace root Git status, local init, exact local commits, ignore policy, or a sanitized Topic Publication Copy and remote synchronization. | `isomer-op-entrypoint->topic-git` |
 | `topic-team` | `isomer-op-topic-team-specialize` | operator | The user explicitly requests Topic Team Specialization or established context names a formal Agent Team that must be initialized, specialized, validated, repaired, or materialized. | `isomer-op-entrypoint->topic-team` |
 | `topic-env` | `isomer-srv-topic-env-setup` | service | An owning operator workflow needs bounded service support to prepare or repair the enclosed Pixi environment and development repository for a Topic Workspace, independent of Agent Team structure. | `isomer-op-entrypoint->topic-env` |
 | `agent-env` | `isomer-srv-agent-env-setup` | service | Topic Workspace and repository predecessor evidence already exists, and an owning operator workflow needs service-safe per-Agent Workspace setup or repair. | `isomer-op-entrypoint->agent-env` |
@@ -107,12 +108,14 @@ When this skill proceeds through another owner skill, compose the final answer a
 - Delegate empty invocation, `help`, and retained welcome-style commands to `$isomer-op-welcome`; keep concrete route-and-proceed work in this execution entrypoint.
 - Treat `isomer-op-entrypoint->topic-env`, `isomer-op-entrypoint->agent-env`, `isomer-op-entrypoint->houmao`, `isomer-op-entrypoint->package-repo`, and `isomer-op-entrypoint->topic-service` as bounded support routes. Route normal user-facing requests through the owning operator workflow before service delegation.
 - Mention `isomer-op-entrypoint->tool-packs` only when explicitly requested as a named helper route. Package install, update, or removal requests for a Topic Workspace belong to `isomer-op-entrypoint->topic-manage` or the relevant environment setup workflow.
+- Route explicit root-history, root-ignore, sanitized-copy, publication-plan, and publication-sync intent to `isomer-op-entrypoint->topic-git`. A vague request to track or version a Topic Workspace starts with its read-only overall status so the user can distinguish local history from remote publication.
 
 ## Operational Notes
 
 - It routes to owner skills and CLI families, then follows their workflows and guardrails.
 - If the user did not explicitly invoke specialization, require the prompt or authoritative context to identify a formal Agent Team target and require the requested action to apply to that team.
 - Route ordinary topic preparation to `isomer-op-entrypoint->topic-create`, initialized-topic operations to `isomer-op-entrypoint->topic-manage`, and other launch or readiness work to its actual owner.
+- Topic Git is a protected skill workflow, not an Isomer CLI command family. It queries selected Isomer context read-only, then runs Git directly against validated paths.
 - Retired routes include `isomer-op-topic-workspace-mgr`, `isomer-op-topic-prepare`, `isomer-op-manual-research-session`, `isomer-op-houmao-interop`, and old `isomer-admin-*` compatibility names.
 - Installed operators should invoke global `isomer-cli` directly.
 - Select the best route, proceed, or report the blocker.

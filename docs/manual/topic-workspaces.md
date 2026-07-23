@@ -6,12 +6,13 @@ This manual page defines the Topic Workspace path contract by semantic workspace
 
 A Topic Workspace is a project-local directory declared by the Project Manifest for one Research Topic. It owns the topic's Workspace Runtime, Pixi workspace, Topic Agent Team Profile Bundle, Topic Main Development Repository, registered topology for Canonical External Repositories, Agent Workspaces, owner-preserved records, and adapter material. The user or agent, not an Isomer repository service, controls how external repository content is acquired and verified.
 
-Only two Isomer filesystem areas should be called workspaces:
+Only three Isomer filesystem areas should be called workspaces:
 
 - **Topic Workspace**: the topic-level work area declared by the Project Manifest.
+- **Topic Actor Workspace**: a per-Topic Actor work area for human-orchestrated workers outside formal Agent Instance identity.
 - **Agent Workspace**: a per-agent work area inside one Topic Workspace.
 
-Do not call `repos/topic-main`, `.isomer-labs/`, `team-profile/`, `records/`, `runtime/`, or an ordinary Git branch a workspace. Use more specific terms such as Topic Main Development Repository, Project Config Directory, Topic Agent Team Profile Bundle, Workspace Runtime, Topic Workspace Records Root, Topic Workspace Runtime Support Root, Run record directory, Research Task record directory, or Git branch.
+Do not call `repos/topic-main`, `.isomer-labs/`, `team-profile/`, `records/`, `runtime/`, an ordinary Git branch, or a Topic Publication Copy a workspace. Source Topic Workspace is a contextual role of the canonical Topic Workspace, and Topic Publication Copy is a disposable derived projection. See [Topic Workspace Git](topic-workspace-git.md) for the independent local-tracking and remote-publication layers.
 
 ## Topic Workspace Root
 
@@ -130,6 +131,7 @@ The `isomer-default.v1` Topic Workspace layout is:
     views/                                 # preserved View Manifests and GUI view material
     logs/                                  # preserved topic-level logs and diagnostics
   runtime/                                 # durable runtime support material outside state.sqlite, not normal worker input
+    topic-git/                             # schema-validated optional local-tracking and publication support files
     adapters/                              # Execution Adapter material
       houmao/                              # Houmao adapter records
         <agent-team-instance-id>/          # adapter material for one Agent Team Instance
@@ -228,6 +230,8 @@ Not every directory must exist before the workflow that owns it runs. Mutating c
   - Notes: Stores adapter manifests, command payloads, launch material, snapshots, stop outcomes, handoff payloads, observations, and normalizations.
 
 The Topic Workspace must not contain a workspace-local `teams/` directory. Domain Agent Team Templates come from Project registrations or configured Team Repositories. The one topic-specialized profile bundle lives under `team-profile/`, and runtime Agent Team Instance state lives in Workspace Runtime records plus adapter material.
+
+Topic Publication Copies live outside Topic Workspaces under ignored Project temporary storage. They are not part of this canonical layout and do not change Topic Main, Topic Actor Workspace, or Agent Workspace topology.
 
 ## Topic Main Development Repository
 

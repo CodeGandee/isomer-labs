@@ -1,6 +1,16 @@
 ---
 name: isomer-op-topic-mgr
 description: "Use when an operator needs to manage an initialized Isomer Research Topic after Topic Creator handoff, including topic storage, Topic Actors, topic agent team topology, environment package mutation, environment verification, reset checkpoints, boundary notes, and diagnostics."
+skill_invocation_notation: >
+  Top-level skill entrypoints use SKILL.md. Parent-scoped subskill entrypoints use
+  SKILL-MAIN.md and are loaded explicitly through their parent; nested SKILL.md is
+  accepted only as legacy input when SKILL-MAIN.md is absent.
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
 ---
 
 # Isomer Admin Topic Mgr
@@ -8,6 +18,8 @@ description: "Use when an operator needs to manage an initialized Isomer Researc
 ## Overview
 
 Use this command-style operator skill after `isomer-op-topic-creator` has created or resumed a Research Topic and registered a Topic Workspace. `isomer-op-topic-mgr` manages initialized-topic storage, Topic Actors, topic agent team topology, environment mutation, environment verification, reset checkpoint inspection and application, and diagnostics. It works through the Topic Workspace Manifest, Project Manifest-backed Isomer context, and semantic workspace labels such as `topic.repos.main`, `topic.repos.main.tmp`, `topic.repos.main.isomer_managed`, `topic.repos.main.projections.readonly`, `topic.repos.main.projections.writable`, `topic.repos.main.projections.manifest`, `topic.actors_root`, `topic.actors.workspace`, `topic.actors.tmp`, `topic.actors.isomer_managed`, `topic.actors.private_artifacts`, `topic.actors.logs`, `topic.actors.links`, `topic.agents_root`, `agent.workspace`, `agent.tmp`, `agent.private_artifacts`, `agent.public_share`, `agent.links`, `topic.records.*`, and `topic.runtime`. Additional non-main topic repositories use grouped `topic.repos.*` labels, fixed `storage_profile = "topic_repo"`, and default candidates under `repos/extern/...`, while user-owned nonreserved storage uses `custom.*`. Use `project paths default` to query a candidate without mutation. Use `project repos create` only when the operator explicitly wants an empty support directory without repository initialization; use `project repos register` for an existing externally acquired and verified repository. Never edit `topic-workspace.toml` by hand.
+
+Explicit requests to initialize or commit a Source Topic Workspace root repository, change its managed root ignore policy, prepare a sanitized Topic Publication Copy, configure its credential-safe remote binding, convert nested workspaces into sanitized publication submodules, or synchronize and push publication branches belong to `isomer-op-entrypoint->topic-git`. Preserve the selected topic context when delegating. Ordinary storage, actor, team, environment, reset, and diagnostic work does not enable either optional Topic Git layer.
 
 ## When to Use
 
@@ -146,6 +158,7 @@ When requested, include grouped handoff and audit fields:
 - Report blockers instead of silently repairing unsafe existing paths, non-Git repositories, branch conflicts, dirty or ambiguous repo state, missing base branches, packet/profile refs outside the selected Topic Workspace, failed package verification, or failed environment checks.
 - Treat Workspace Boundaries and Peer Read Access as advisory collaboration contracts, not filesystem-grade security isolation.
 - Reset checkpoint, reset plan, and reset apply workflows use structured records and Workspace Runtime state only. Use `isomer-cli project topic-reset ...` commands, require selected Research Topic and Topic Workspace context, inspect blockers before mutation, and never depend on project-root Git state for reset behavior.
+- Delegate explicit local root tracking and sanitized publication work to `isomer-op-entrypoint->topic-git`. Do not introduce or route to an Isomer CLI Git mutation command.
 
 ## Operational Notes
 

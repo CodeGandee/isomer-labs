@@ -139,6 +139,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         core_members = {member.logical_id for member in core.skills[0].protected_members}
         self.assertIn("isomer-op-gui-mgr", core_members)
         self.assertIn("isomer-op-system-skill-mgr", core_members)
+        self.assertIn("isomer-op-topic-workspace-git", core_members)
         self.assertIn("isomer-research-idea-recording", core_members)
         self.assertIn("isomer-research-operation-set-recording", core_members)
         self.assertNotIn("deepsci", core.selected_extensions)
@@ -257,7 +258,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
             [(item["name"], item["role"]) for item in manifest["skills"][0]["public_skills"]],
         )
         self.assertEqual(manifest["package_version"], manifest["skills"][0]["package_version"])
-        self.assertEqual(19, len(manifest["skills"][0]["protected_members"]))
+        self.assertEqual(20, len(manifest["skills"][0]["protected_members"]))
         gui = next(
             member
             for member in manifest["skills"][0]["protected_members"]

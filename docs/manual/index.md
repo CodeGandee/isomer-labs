@@ -7,6 +7,7 @@ The manual is the operator reference for Isomer Labs. It defines the domain lang
 - [Project Lifecycle](project-lifecycle.md)
 - [Research Topics](research-topics.md)
 - [Topic Workspaces](topic-workspaces.md)
+- [Topic Workspace Git](topic-workspace-git.md)
 - [Workspace Runtime](workspace-runtime.md)
 - [Research Records](research-records.md)
 - [Operation Set Acceptance](operation-set-acceptance.md)

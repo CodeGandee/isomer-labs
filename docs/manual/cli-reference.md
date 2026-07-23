@@ -45,7 +45,9 @@ The `system-skills` namespace discovers and installs packaged Isomer public skil
 - `system-skills upgrade`
 - `system-skills uninstall`
 
-The three atomic installation units are core, DeepSci, and Kaoju. Each projects a public welcome and execution entrypoint pair: `isomer-op-welcome` with `isomer-op-entrypoint`, `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`. Core owns 19 protected members, DeepSci owns 21, and Kaoju owns 13. `system-skills list` and extension discovery distinguish ordered public roles, entrypoint commands, protected logical ids, scoped members, aliases, dependencies, and compatibility metadata. Protected members are parent-routed nested bundles rather than ordinary top-level install units.
+The three atomic installation units are core, DeepSci, and Kaoju. Each projects a public welcome and execution entrypoint pair: `isomer-op-welcome` with `isomer-op-entrypoint`, `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`. Core owns 20 protected members, DeepSci owns 21, and Kaoju owns 15. `system-skills list` and extension discovery distinguish ordered public roles, entrypoint commands, protected logical ids, scoped members, aliases, dependencies, and compatibility metadata. Protected members are parent-routed nested bundles rather than ordinary top-level install units.
+
+Topic Workspace root tracking and sanitized remote publication use `$isomer-op-entrypoint use topic-git to <task>`. They are skill workflows, not an Isomer CLI mutation family. The workflow uses `isomer-cli --print-json` only for selected-context and semantic-path queries, then runs Git directly with validated `git -C` paths. See [Topic Workspace Git](topic-workspace-git.md).
 
 Supported targets are `claude-code`, `codex`, `kimi-code`, `generic`, and `all`, and every target-resolving operation requires `--target`. When `--scope` is omitted, `system-skills install` defaults to Project scope at the exact current working directory and does not search ancestor Git or Isomer roots. Explicit `--scope project` is equivalent, while `--scope user` is the only route to user-wide installation. `system-skills status`, `upgrade`, and `uninstall` require an explicit `--scope user|project`. The `all` target expands to every concrete target and deduplicates identical physical roots. Every public and protected skill carries its PEP 440 Isomer release version in `agents/openai.yaml`. Receipt v5 stores one record per pack with ordered welcome and entrypoint projections plus its ordered protected inventory; status reports per-role projection integrity, receipt drift, missing or extra nested material, and compatibility against package-owned minimum floors.
 
@@ -650,16 +652,17 @@ isomer-cli --print-json project artifacts archive <record-id> --topic my-topic -
 isomer-cli --print-json project artifacts migrate-scope --topic my-topic
 ```
 
-### `project runs begin/checkpoint/status/complete`
+### `project runs begin/checkpoint/status/resolve-mindset/complete`
 
 Record one Kaoju procedure attempt and its resumable stage state. A checkpoint carries completed Artifact refs, pending Gate, blockers, Service Requests, and an exact resume hint. Completion seals the Run; later checkpoints are rejected.
 
-**Side effects:** `begin`, `checkpoint`, and `complete` write Research Task and Run lifecycle state through Workspace Runtime. `status` is read-only. Failed, stopped, and cancelled Runs remain durable and can point to a later new attempt.
+**Side effects:** `begin`, `checkpoint`, `resolve-mindset`, and `complete` write Research Task and Run lifecycle state through Workspace Runtime. `status` is read-only. Failed, stopped, and cancelled Runs remain durable and can point to a later new attempt.
 
 ```bash
 isomer-cli --print-json project runs begin --topic my-topic --procedure-id build-reading-list --stage-id discover --id run-reading-1
 isomer-cli --print-json project runs checkpoint run-reading-1 --topic my-topic --stage-id approve --completed-ref reading-list-1 --pending-gate-ref gate-reading-1
 isomer-cli --print-json project runs status run-reading-1 --topic my-topic
+isomer-cli --print-json project runs resolve-mindset run-reading-1 --topic my-topic --mindset-key paper.deep-dive --record-ref mindset-record-1
 isomer-cli --print-json project runs complete run-reading-1 --topic my-topic --terminal-status complete --completed-ref reading-list-1
 ```
 

@@ -16,6 +16,7 @@ The main layers are:
 - **Storage profile**: the meaning attached to a path, such as durable topic records, topic repository, agent worktree, disposable topic directory, or adapter runtime directory. Isomer uses this profile because a path string alone cannot say who owns a directory, whether it is durable, or whether it is safe to share.
 - **Workspace Runtime**: `state.sqlite` inside the Topic Workspace. It stores compact durable records, including Path Plan records, readiness records, lifecycle records, Agent Team Instance records, Agent Workspace records, handoffs, validation issues, and adapter refs.
 - **Path Plan record**: a frozen runtime record that maps a semantic label and scope to a concrete path. Once runtime records depend on a path, Isomer preserves the recorded path instead of silently following later manifest edits.
+- **Topic Git support**: schema-validated optional local-tracking and publication files below `<topic.runtime>/topic-git/`. Before Workspace Runtime exists, publication-only support may live below the ignored Topic Publication Copy `.isomer/topic-git/` root.
 
 ## Resolution Order
 
@@ -130,6 +131,16 @@ isomer-cli --print-json project handoffs dispatch --topic my-topic --agent-team-
 ```
 
 Runtime commands create or update Path Plans, readiness records, lifecycle records, Agent Team Instance records, Agent Workspace records, handoff records, adapter refs, and validation issues. They also report side effects through the `mutated` flag in JSON output.
+
+Topic Git never edits `state.sqlite`. Local init, ignore, and commit require a valid runtime and persist only namespaced files under `<topic.runtime>/topic-git/`. Publication can begin before runtime and keeps its binding, plan, conflicts, and outcomes in the ignored Topic Publication Copy support root. A later approved publication mutation may promote a matching credential-safe binding into runtime support.
+
+## Put Topic Publication Material
+
+Use `$isomer-op-entrypoint use topic-git to <task>` for optional Source Topic Workspace root tracking or sanitized remote publication. Isomer CLI supplies read-only context and semantic paths; the operator runs Git directly against validated paths.
+
+Topic Publication Copies belong under effectively ignored Project-root temporary storage, normally `tmp/topic-workspace-publish/<topic-id>/`. They stay outside the Source Topic Workspace, Project Config Directory, generated content root, Houmao state, canonical repositories, and worker workspaces. The copy is disposable projection state, not durable source authority.
+
+Tracked publication files contain sanitized outputs, a Publication Projection Manifest, `topic-workspace-version.toml`, and exact submodule gitlinks. Copy-local `.isomer/topic-git/` support is never eligible for publication commits. See [Topic Workspace Git](../manual/topic-workspace-git.md) for privacy dispositions, same-remote branches, reconstruction, conflict rules, and component-first push ordering.
 
 ## Put Adapter Material
 

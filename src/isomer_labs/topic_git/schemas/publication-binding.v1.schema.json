@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "binding_id", "research_topic_id", "topic_workspace_id", "copy_path", "remote_name", "remote_url", "visibility", "created_at"],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-publication-binding.v1"},
+    "binding_id": {"type": "string", "minLength": 1},
+    "research_topic_id": {"type": "string", "minLength": 1},
+    "topic_workspace_id": {"type": "string", "minLength": 1},
+    "copy_path": {"type": "string", "minLength": 1},
+    "remote_name": {"type": "string", "pattern": "^[A-Za-z0-9._-]+$"},
+    "remote_url": {"type": "string", "minLength": 1},
+    "visibility": {"enum": ["private", "restricted", "public", "unknown"]},
+    "created_at": {"type": "string", "minLength": 1}
+  }
+}

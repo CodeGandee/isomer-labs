@@ -4,7 +4,7 @@ Isomer distributes three atomic system-skill packs. Each pack projects a public 
 
 | Pack | Public Welcome | Execution Entrypoint | Contents |
 | --- | --- | --- | --- |
-| Core | `isomer-op-welcome` | `isomer-op-entrypoint` | 19 protected operator, service, shared-support, and research-recording capabilities |
+| Core | `isomer-op-welcome` | `isomer-op-entrypoint` | 20 protected operator, service, shared-support, and research-recording capabilities |
 | DeepSci | `isomer-ext-deepsci-welcome` | `isomer-ext-deepsci-entrypoint` | 21 protected hypothesis-driven research capabilities |
 | Kaoju | `isomer-ext-kaoju-welcome` | `isomer-ext-kaoju-entrypoint` | 13 protected evidence-led survey capabilities |
 
@@ -77,7 +77,7 @@ The nested source path is package layout, not provider-neutral identity. Binding
 
 ## Protected Capability Map
 
-The manifest is authoritative. This table documents all 53 current protected mappings. Public welcomes do not appear here because they are independent public roles.
+The manifest is authoritative. This table documents all 56 current protected mappings. Public welcomes do not appear here because they are independent public roles.
 
 | Pack | Protected Logical ID | Member | Invocation Designator |
 | --- | --- | --- | --- |
@@ -88,6 +88,7 @@ The manifest is authoritative. This table documents all 53 current protected map
 | `core` | `isomer-op-toolbox-mgr` | `toolbox` | `isomer-op-entrypoint->toolbox` |
 | `core` | `isomer-op-topic-creator` | `topic-create` | `isomer-op-entrypoint->topic-create` |
 | `core` | `isomer-op-topic-mgr` | `topic-manage` | `isomer-op-entrypoint->topic-manage` |
+| `core` | `isomer-op-topic-workspace-git` | `topic-git` | `isomer-op-entrypoint->topic-git` |
 | `core` | `isomer-op-topic-team-specialize` | `topic-team` | `isomer-op-entrypoint->topic-team` |
 | `core` | `isomer-srv-topic-env-setup` | `topic-env` | `isomer-op-entrypoint->topic-env` |
 | `core` | `isomer-srv-agent-env-setup` | `agent-env` | `isomer-op-entrypoint->agent-env` |
@@ -212,7 +213,7 @@ Protected logical ids retain responsibility-oriented forms such as `isomer-op-*`
 
 Every public pack and protected member remains a complete skill bundle and must resolve its local resources without parent or sibling access. Public roots use `SKILL.md`, protected members use `SKILL-MAIN.md`, and preserved source entrypoints use `SKILL-SOURCE.md`. Shared family procedures route through the family's protected `shared` member rather than duplicated prose or sibling paths.
 
-All 59 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
+All 67 `agents/openai.yaml` files carry `metadata.version` equal to `project.version`, including release candidates. `minimum_compatible_skill_version` is a separate compatibility floor and changes only when support policy changes.
 
 Run these checks before release:
 

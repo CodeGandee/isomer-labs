@@ -280,6 +280,46 @@ isomer-cli --print-json project team-instances adopt <id> --topic my-topic --ada
 
 `adopt` records an explicit decision to associate externally launched state with the Agent Team Instance. It requires `--yes`.
 
+## Topic Git Local Init Is Blocked
+
+Symptom: local init reports that an ancestor repository tracks or does not effectively ignore the Source Topic Workspace.
+
+Diagnosis:
+
+```bash
+isomer-cli --print-json project self location
+isomer-cli --print-json project self check --scope topic --topic <topic>
+```
+
+Inspect the exact ancestor repository and Source Topic Workspace-relative paths reported by Topic Git. An ancestor Project repository does not enable local tracking.
+
+Recovery:
+
+- Update the ancestor repository in a separate user-controlled Project operation so the Source Topic Workspace is absent from its index and effectively ignored.
+- Re-run Topic Git local status and init planning.
+- Do not edit the ancestor `.gitignore` or remove ancestor index entries through Topic Git.
+
+## Topic Publication Is Stale, Missing, or Blocked
+
+Symptom: publication status reports `stale`, `copy-missing`, or `blocked`.
+
+Diagnosis:
+
+```bash
+isomer-cli --print-json project context show --topic <topic>
+isomer-cli --print-json project runtime inspect --topic <topic>
+```
+
+Recovery:
+
+- For `stale`, create a new publication plan after inspecting changed source content, expected outputs, current copy content, component topology, binding identity, and fetched refs.
+- For `copy-missing`, reconstruct from the runtime binding or resupply the credential-safe remote. An unpushed pre-runtime copy has no durable plan and must be prepared again.
+- For privacy or destination conflicts, resolve the exact blocked disposition or unsafe path without changing source files.
+- For incompatible remote refs, review a fresh branch-specific destructive plan. Any remote ref change invalidates previous force approval.
+- For partial push, resume from the recorded branch outcome. Components push before `topic-workspace/main`, so the previous superproject remains authoritative until the final push succeeds.
+
+Topic Git never repairs these states by pulling, merging, rebasing, resetting, cleaning, deleting remote branches, broad staging, or changing Source Topic Workspace Git state during publication.
+
 ## Diagnostic Checklist
 
 When a command fails unexpectedly:

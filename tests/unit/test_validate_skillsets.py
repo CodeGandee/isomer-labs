@@ -96,6 +96,91 @@ class SkillsetValidatorTests(unittest.TestCase):
         )
         return root
 
+    def test_topic_git_boundary_validator_accepts_current_contract(self) -> None:
+        self.assertEqual([], messages(validator.validate_topic_git_boundary(REPO_ROOT)))
+
+    def test_topic_git_boundary_validator_rejects_unsafe_commands_and_missing_queries(self) -> None:
+        root = self.make_v4_welcome_fixture()
+        skill = (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-op-entrypoint"
+            / "subskills"
+            / "isomer-op-topic-workspace-git"
+        )
+        local_commit = skill / "commands" / "local" / "commit.md"
+        local_commit.write_text(
+            local_commit.read_text(encoding="utf-8")
+            + """
+
+```bash
+git status
+git -C <source> add .
+git -C <source> pull
+git -C <source> push publication --all
+```
+
+isomer-cli project topic-git init
+""",
+            encoding="utf-8",
+        )
+        context = skill / "references" / "context-queries.md"
+        context.write_text(
+            context.read_text(encoding="utf-8").replace(
+                "isomer-cli --print-json project runtime inspect --topic <research-topic>",
+                "",
+            ),
+            encoding="utf-8",
+        )
+        write(root / "src" / "isomer_labs" / "topic_git" / "unsafe.py", "import subprocess\n")
+        write(root / "src" / "isomer_labs" / "cli" / "topic_git.py", "topic_git = True\n")
+
+        rendered = messages(validator.validate_topic_git_boundary(root))
+
+        for expected in (
+            "ambient cwd",
+            "broad staging",
+            "unsafe implicit-repair",
+            "broad or deleting remote mutation",
+            "must not introduce an Isomer CLI mutation family",
+            "runtime inspect",
+            "must not execute Git or arbitrary processes",
+            "must not expose or wrap Topic Git mutation",
+        ):
+            with self.subTest(expected=expected):
+                self.assertTrue(any(expected in message for message in rendered), rendered)
+
+    def test_topic_git_boundary_validator_rejects_unplanned_force_and_remote_deletion(self) -> None:
+        root = self.make_v4_welcome_fixture()
+        sync = (
+            root
+            / "skillset"
+            / "operator"
+            / "isomer-op-entrypoint"
+            / "subskills"
+            / "isomer-op-topic-workspace-git"
+            / "commands"
+            / "publish"
+            / "sync.md"
+        )
+        sync.write_text(
+            sync.read_text(encoding="utf-8")
+            + """
+
+```bash
+git -C <copy> push --force publication <commit>:refs/heads/topic-workspace/main
+git -C <copy> push publication --delete topic-workspace/main
+```
+""",
+            encoding="utf-8",
+        )
+
+        rendered = messages(validator.validate_topic_git_boundary(root))
+
+        self.assertTrue(any("exact approved branch replacement" in message for message in rendered), rendered)
+        self.assertTrue(any("broad or deleting remote mutation" in message for message in rendered), rendered)
+
     def test_public_welcome_validator_accepts_all_current_pack_pairs(self) -> None:
         diagnostics = validator.validate_public_welcome_skills(REPO_ROOT)
 
@@ -465,7 +550,7 @@ class SkillsetValidatorTests(unittest.TestCase):
 
         self.assertEqual([], messages(diagnostics))
         expected_packs = {
-            "operator/isomer-op-entrypoint/SKILL.md": (19, ("project", "topic-create", "topic-manage")),
+            "operator/isomer-op-entrypoint/SKILL.md": (20, ("project", "topic-create", "topic-manage", "topic-git")),
             "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md": (21, ("scout", "baseline", "idea", "paper-plot", "figure-polish")),
             "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (15, ("topic-creator", "trial", "reproduce", "audit", "synthesize")),
         }

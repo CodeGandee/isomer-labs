@@ -44,6 +44,9 @@ If the user's task does not map cleanly to these steps, use your native planning
 | Project-local Toolbox authoring, conversion, install, callback insertion, insertion-point discovery, Runtime Params, or effective-state inspection. | `isomer-op-entrypoint->toolbox`. |
 | New or partial Research Topic setup. | `isomer-op-entrypoint->topic-create`. |
 | Existing topic storage, actors, packages, environment verification, reset, or diagnostics. | `isomer-op-entrypoint->topic-manage`. |
+| Explicit Source Topic Workspace root Git status, local initialization, local ignore or commit planning, or exact local root commit. | `isomer-op-entrypoint->topic-git->local()`. |
+| Explicit sanitized Topic Publication Copy preparation, privacy planning, publication status, reconstruction, synchronization, or remote push. | `isomer-op-entrypoint->topic-git->publish()`. |
+| Ambiguous request to track or version a Topic Workspace without local-versus-publication intent. | `isomer-op-entrypoint->topic-git->status()`, read-only before mutation. |
 | Work as or on behalf of a Topic Actor or Agent. | `isomer-op-entrypoint->identity`. |
 | Explicit specialization invocation, or deploy, specialize, instantiate, materialize, validate, repair, launch, or use a contextually established formal Agent Team. | `isomer-op-entrypoint->topic-team`; name the Domain Agent Team Template, Topic Agent Team Profile or Bundle, Topic Team Instantiation Packet, Agent Team Instance, or selected formal-team evidence. |
 | Topic Service Master lifecycle preparation, launch, inspection, stop, or repair. | `isomer-op-entrypoint->topic-service` through the matching lifecycle subcommand after an operator owner delegates it. |

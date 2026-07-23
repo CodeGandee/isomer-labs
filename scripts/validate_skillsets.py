@@ -41,6 +41,7 @@ SWITCH_IDENTITY_SKILL = "isomer-op-switch-identity"
 TOOLBOX_MANAGER_SKILL = "isomer-op-toolbox-mgr"
 TOPIC_CREATOR_SKILL = "isomer-op-topic-creator"
 TOPIC_MANAGER_SKILL = "isomer-op-topic-mgr"
+TOPIC_GIT_SKILL = "isomer-op-topic-workspace-git"
 WELCOME_SKILL = "isomer-op-welcome"
 PACKAGE_SPECIFICS_SKILL = "isomer-misc-pkg-specifics"
 HOUMAO_INTEROP_SERVICE_SKILL = "isomer-srv-houmao-interop"
@@ -5360,6 +5361,187 @@ def validate_package_specifics_skill(repo_root: Path) -> list[Diagnostic]:
     return diagnostics
 
 
+def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
+    """Validate direct-Git and read-only-Isomer boundaries for Topic Git."""
+
+    diagnostics: list[Diagnostic] = []
+    skill_dir = packaged_capability_dir(repo_root, TOPIC_GIT_SKILL, "operator")
+    if not skill_dir.exists():
+        add(diagnostics, repo_root, skill_dir, 1, "SKL011", "Topic Git protected capability is missing")
+        return diagnostics
+
+    required_pages = (
+        "SKILL-MAIN.md",
+        "agents/openai.yaml",
+        "references/context-queries.md",
+        "references/direct-git-safety.md",
+        "references/local-safety.md",
+        "references/publication-safety.md",
+        "references/privacy-projection.md",
+        "references/persistence.md",
+        "commands/status.md",
+        "commands/local.md",
+        "commands/local/status.md",
+        "commands/local/init.md",
+        "commands/local/plan.md",
+        "commands/local/ignore.md",
+        "commands/local/commit.md",
+        "commands/publish.md",
+        "commands/publish/status.md",
+        "commands/publish/init.md",
+        "commands/publish/plan.md",
+        "commands/publish/sync.md",
+    )
+    for relative in required_pages:
+        path = skill_dir / relative
+        if not path.is_file():
+            add(diagnostics, repo_root, path, 1, "SKL011", f"Topic Git required page is missing: {relative}")
+
+    context_path = skill_dir / "references" / "context-queries.md"
+    context_text = context_path.read_text(encoding="utf-8") if context_path.is_file() else ""
+    required_queries = (
+        "isomer-cli --print-json project self location",
+        "isomer-cli --print-json project self check --scope topic --topic <research-topic>",
+        "isomer-cli --print-json project context show --topic <research-topic>",
+        "isomer-cli --print-json project workspaces list",
+        "isomer-cli --print-json project paths get topic.runtime --topic <research-topic>",
+        "isomer-cli --print-json project topic-actors list --topic <research-topic>",
+        "isomer-cli --print-json project team-instances list --topic <research-topic>",
+        "isomer-cli --print-json project runtime inspect --topic <research-topic>",
+    )
+    for query in required_queries:
+        if query not in context_text:
+            add(
+                diagnostics,
+                repo_root,
+                context_path,
+                1,
+                "SKL011",
+                f"Topic Git read-only context contract must contain {query!r}",
+            )
+
+    for path in sorted(skill_dir.rglob("*.md")):
+        lines = read_lines(path)
+        in_shell_fence = False
+        for line_number, line in enumerate(lines, start=1):
+            stripped = line.strip()
+            if stripped.startswith("```"):
+                if in_shell_fence:
+                    in_shell_fence = False
+                else:
+                    language = stripped.removeprefix("```").strip()
+                    in_shell_fence = language in {"bash", "sh", "shell"}
+                continue
+            if "isomer-cli project topic-git" in line:
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git must not introduce an Isomer CLI mutation family",
+                )
+            if not in_shell_fence:
+                continue
+            if stripped.startswith("isomer-cli ") and not stripped.startswith("isomer-cli --print-json "):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git may invoke Isomer CLI only through explicit read-only --print-json queries",
+                )
+            if not stripped.startswith("git "):
+                continue
+            if not stripped.startswith("git -C "):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git command relies on ambient cwd instead of git -C",
+                )
+            if re.search(r"\badd\s+(?:--\s+)?(?:\.|-A)(?:\s|$)", stripped):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git command uses broad staging instead of exact pathspecs",
+                )
+            if re.search(r"\s(?:pull|merge|rebase|reset|clean)(?:\s|$)", stripped):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git command uses an unsafe implicit-repair operation",
+                )
+            if re.search(r"\bpush\b.*(?:--all|--mirror|--delete)(?:\s|$)", stripped):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git command uses broad or deleting remote mutation",
+                )
+            if re.search(r"\bpush\b[^#\n]*\s:[^/\s][^\s]*$", stripped):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git command deletes a remote ref",
+                )
+            if "push --force " in stripped and (
+                path.name != "sync.md"
+                or "<replacement-commit>:refs/heads/<approved-component-branch>" not in stripped
+            ):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git force push is not the exact approved branch replacement form",
+                )
+
+    helper_root = repo_root / "src" / "isomer_labs" / "topic_git"
+    if helper_root.is_dir():
+        for path in sorted(helper_root.rglob("*.py")):
+            for line_number, line in enumerate(read_lines(path), start=1):
+                if re.search(r"\b(?:import subprocess|from subprocess|os\.system|os\.popen|Popen)\b", line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "SKL011",
+                        "Topic Git non-Git helpers must not execute Git or arbitrary processes",
+                    )
+
+    cli_root = repo_root / "src" / "isomer_labs" / "cli"
+    if cli_root.is_dir():
+        for path in sorted(cli_root.rglob("*.py")):
+            for line_number, line in enumerate(read_lines(path), start=1):
+                if "topic-git" in line or "topic_git" in line:
+                    add(
+                        diagnostics,
+                        repo_root,
+                        path,
+                        line_number,
+                        "SKL011",
+                        "Isomer CLI must not expose or wrap Topic Git mutation",
+                    )
+    return diagnostics
+
+
 def validate_manifest_catalog_skillset(repo_root: Path) -> list[Diagnostic]:
     """Validate the public-pack tree without applying retired flat-layout rules."""
 
@@ -5371,6 +5553,7 @@ def validate_manifest_catalog_skillset(repo_root: Path) -> list[Diagnostic]:
     diagnostics.extend(validate_split_output_contract_docs(repo_root, roots, code="SKL010"))
     diagnostics.extend(validate_chat_output_presentation(repo_root, roots, code="SKL006"))
     diagnostics.extend(validate_global_isomer_cli_invocation(repo_root, roots, code="SKL004"))
+    diagnostics.extend(validate_topic_git_boundary(repo_root))
     diagnostics.extend(
         validate_system_skill_repository_boundary(
             repo_root,

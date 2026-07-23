@@ -1,3 +1,16 @@
+---
+skill_invocation_notation: >
+  Top-level skill entrypoints use SKILL.md. Parent-scoped subskill entrypoints use
+  SKILL-MAIN.md and are loaded explicitly through their parent; nested SKILL.md is
+  accepted only as legacy input when SKILL-MAIN.md is absent.
+  Skill and subskill entrypoints use bare object paths: `X` invokes skill X and
+  `X->Y->Z` invokes subskill Z. Subcommands use parenthesized components:
+  `X->cmd()` invokes a direct subcommand, `X->Y->cmd()` invokes a subcommand of
+  subskill Y, and `X->parent()->child()` invokes child subcommand child exposed
+  by parent subcommand parent. Intermediate subcommands act as object generators.
+  Forms such as `X()` and `X->Y()` are invalid for skill or subskill entrypoints.
+---
+
 # CLI Index
 
 ## Workflow
@@ -53,6 +66,8 @@ Use these before ambiguous mutation:
 | Toolbox Runtime Param set, unset, import, get, explain, or validate. | `isomer-cli project toolbox-params ...` |
 | Project extension declarations and explicit-root advisory detection. | `isomer-cli project system-extensions ...` |
 | Provider-neutral explicit-root and live-inventory classification for version-aligned system skills. | `isomer-cli internals ...` |
+
+Topic Workspace root tracking and sanitized remote publication are not an Isomer CLI command family. Route them to `isomer-op-entrypoint->topic-git`; that skill uses the read-only context families above and runs path-scoped Git directly.
 
 ## Research Records and Artifact Formats
 

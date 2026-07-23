@@ -162,6 +162,7 @@ ALLOWED_PACKAGE_NAMES = {
     "runtime",
     "skills",
     "teams",
+    "topic_git",
     "web",
     "workspace",
     "__pycache__",

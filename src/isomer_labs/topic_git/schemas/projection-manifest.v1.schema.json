@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "binding_id", "plan_id", "created_at", "entries", "components"],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-projection-manifest.v1"},
+    "binding_id": {"type": "string", "minLength": 1},
+    "plan_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "minLength": 1},
+    "entries": {"type": "array", "items": {"type": "object"}},
+    "components": {"type": "array", "items": {"type": "object"}}
+  }
+}

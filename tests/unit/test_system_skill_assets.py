@@ -56,8 +56,8 @@ class SystemSkillAssetTests(unittest.TestCase):
             paths,
         )
         capabilities = iter_system_skill_capabilities()
-        self.assertEqual((19, 21, 15), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
-        self.assertEqual(55, len(capabilities))
+        self.assertEqual((20, 21, 15), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
+        self.assertEqual(56, len(capabilities))
         for skill_path in paths:
             self.assertTrue(resolve_system_skill(skill_path).joinpath("SKILL.md").is_file(), skill_path)
         for capability in capabilities:
@@ -361,7 +361,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         provenance = tuple(root.rglob("SKILL-SOURCE.md"))
 
         self.assertEqual(public_entrypoints, observed_public)
-        self.assertEqual(55, len(protected))
+        self.assertEqual(56, len(protected))
         self.assertTrue(all("subskills" in path.relative_to(root).parts for path in protected))
         self.assertEqual(19, len(provenance))
         self.assertTrue(all("org" in path.relative_to(root).parts for path in provenance))
