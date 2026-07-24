@@ -177,6 +177,12 @@ def load_contract() -> KaojuContract:
     if default_diagnostics:
         detail = "; ".join(f"{item.location}: {item.message}" for item in default_diagnostics)
         raise ValueError(f"Kaoju packaged Mindset Sources are invalid: {detail}")
+    from isomer_labs.kaoju.template_defaults import validate_packaged_templates
+
+    template_diagnostics = validate_packaged_templates()
+    if template_diagnostics:
+        detail = "; ".join(str(item.get("message")) for item in template_diagnostics)
+        raise ValueError(f"Kaoju packaged writing templates are invalid: {detail}")
     raw_managers = raw["manager_actions"]
     if not isinstance(raw_managers, dict):
         raise ValueError("Kaoju manager_actions must be an object.")

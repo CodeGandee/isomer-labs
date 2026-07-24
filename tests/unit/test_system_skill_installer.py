@@ -206,6 +206,17 @@ class SystemSkillInstallerTests(unittest.TestCase):
             {"paper.deep-dive.json", "paper.skimming.json", "source-code.ingest.json"},
             {path.name for path in (topic_creator / "assets" / "defaults" / "mindsets").glob("*.json")},
         )
+        template_defaults = (
+            kaoju_root
+            / "subskills"
+            / "isomer-kaoju-write"
+            / "assets"
+            / "defaults"
+            / "templates"
+        )
+        self.assertTrue((template_defaults / "manifest.json").is_file())
+        self.assertTrue((template_defaults / "content/main/paper.myst.md").is_file())
+        self.assertTrue((template_defaults / "latex/main/main.tex").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())

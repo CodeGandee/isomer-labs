@@ -1242,6 +1242,7 @@ def resolve_semantic_binding(
         result = _result(context, surface, path, "env", selected_env_var, agent_context, topic_actor_context)
         diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
         diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context))
+        diagnostics.extend(_template_exchange_compatibility_diagnostics(context, label, result))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
     configured_worker_output = _configured_worker_output_result(
         context,
@@ -1262,6 +1263,7 @@ def resolve_semantic_binding(
                 topic_actor_context=topic_actor_context,
             )
         )
+        diagnostics.extend(_template_exchange_compatibility_diagnostics(context, label, result))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
     if binding is not None:
         path = resolve_binding_path(
@@ -1273,12 +1275,62 @@ def resolve_semantic_binding(
         result = _result(context, surface, path, MANIFEST_SOURCE, binding.source_detail or str(manifest.path), agent_context, topic_actor_context)
         diagnostics.extend(_path_safety_diagnostics(context, result.path, label, manifest.path, scope=surface.scope))
         diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context))
+        diagnostics.extend(_template_exchange_compatibility_diagnostics(context, label, result))
         return result if not any(d.is_error for d in diagnostics) else None, diagnostics
     path = _default_path_for_result(context, surface, label, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context)
     result = _result(context, surface, path, DEFAULT_PROFILE_SOURCE, DEFAULT_LAYOUT_PROFILE, agent_context, topic_actor_context)
     diagnostics.extend(_path_safety_diagnostics(context, result.path, label, None, scope=surface.scope))
     diagnostics.extend(_tmp_surface_boundary_diagnostics(context, label, result.path, env=env, agent_context=agent_context, topic_actor_context=topic_actor_context))
+    diagnostics.extend(_template_exchange_compatibility_diagnostics(context, label, result))
     return result if not any(d.is_error for d in diagnostics) else None, diagnostics
+
+
+def _template_exchange_compatibility_diagnostics(
+    context: EffectiveTopicContext,
+    label: str,
+    result: SemanticPathResult,
+) -> list[Diagnostic]:
+    if label != "topic.paper.template_exchange_root":
+        return []
+    singular = (
+        context.topic_workspace_path / "intent" / "derived" / "writing-template"
+    ).resolve(strict=False)
+    plural = (
+        context.topic_workspace_path / "intent" / "derived" / "writing-templates"
+    ).resolve(strict=False)
+    if result.path.resolve(strict=False) == singular:
+        return [
+            Diagnostic(
+                code="ISO061",
+                severity="warning",
+                concept="Workspace Path Resolution",
+                path=singular,
+                field=label,
+                message=(
+                    "The writing-template exchange root explicitly resolves to the legacy singular "
+                    "path. The binding remains authoritative; preview migration before changing it."
+                ),
+            )
+        ]
+    if (
+        result.path.resolve(strict=False) == plural
+        and singular.is_dir()
+        and any(singular.iterdir())
+    ):
+        return [
+            Diagnostic(
+                code="ISO061",
+                severity="warning",
+                concept="Workspace Path Resolution",
+                path=singular,
+                field=label,
+                message=(
+                    "Legacy singular writing-template exchange content exists while the effective "
+                    "root is plural. Preview explicit template exchange-root migration."
+                ),
+            )
+        ]
+    return []
 
 
 def resolve_worker_output_policy(

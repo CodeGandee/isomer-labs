@@ -318,7 +318,7 @@ SEMANTIC_SURFACES = (
     _surface("topic.env.topic_setup_target_spec", "topic", "topic_env_topic_setup_target_spec", "intent/derived/isomer-env-gate.md", "topic_env_target_spec_file"),
     _surface("topic.env.agent_setup_target_spec", "topic", "topic_env_agent_setup_target_spec", "intent/derived/isomer-agent-env-gate.md", "topic_env_target_spec_file"),
     _surface("topic.env.actor_env_gates", "topic", "topic_env_actor_env_gates", "intent/derived/actor-env-gates.md", "topic_env_target_spec_file"),
-    _surface("topic.paper.template_exchange_root", "topic", "topic_paper_template_exchange_root", "intent/derived/writing-template", "topic_durable_dir"),
+    _surface("topic.paper.template_exchange_root", "topic", "topic_paper_template_exchange_root", "intent/derived/writing-templates", "topic_durable_dir"),
     _surface("topic.tmp", "topic", "topic_tmp", "tmp", "topic_disposable_dir"),
     _surface("topic.repos.main", "topic", "topic_main_repo", "repos/topic-main", "topic_repo", grouped_family="topic.repos"),
     _surface("topic.repos.main.tmp", "topic", "topic_main_tmp", "repos/topic-main/tmp", "topic_repo_disposable_dir"),

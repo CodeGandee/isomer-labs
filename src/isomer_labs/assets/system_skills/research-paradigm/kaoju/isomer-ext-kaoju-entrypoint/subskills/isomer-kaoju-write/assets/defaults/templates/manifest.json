@@ -1,0 +1,33 @@
+{
+  "schema_version": "isomer-kaoju-packaged-templates.v1",
+  "resource_version": "0.5.0",
+  "templates": {
+    "content": {
+      "name": "main",
+      "root": "content/main",
+      "tree_digest": "sha256:ca0708243b53133adf0fc90eba7afa85064a22a07b4ec6baab1a84db773c31c3",
+      "authored_metadata": {
+        "entrypoint": "paper.myst.md",
+        "use_guidance": "Use this neutral MyST scaffold as a starting structure. Adapt headings and prose to the selected survey contract and evidence; do not treat placeholder text as a topic claim."
+      }
+    },
+    "latex": {
+      "name": "main",
+      "root": "latex/main",
+      "tree_digest": "sha256:1b3b53aedb59076b302cba5760ae314cb86dd79e14eeeda79b852cbc8602e589",
+      "authored_metadata": {
+        "entrypoint": "main.tex",
+        "use_guidance": "Use this neutral article presentation when no venue-specific LaTeX stock has been selected. Inspect and repair the paper-local composed TeX before build readiness.",
+        "extensions": {
+          "latex": {
+            "composition_mode": "marker",
+            "marker": "% ISOMER_CONTENT",
+            "build_profile": "tectonic",
+            "source_provenance": "Isomer Labs packaged neutral article template",
+            "license_posture": "Project-authored template distributed with Isomer Labs"
+          }
+        }
+      }
+    }
+  }
+}

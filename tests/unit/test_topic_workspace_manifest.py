@@ -530,7 +530,7 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual([], default_diagnostics)
         self.assertIsNotNone(default)
         assert default is not None
-        self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "writing-template", default.path)
+        self.assertEqual(context.topic_workspace_path / "intent" / "derived" / "writing-templates", default.path)
         self.assertEqual("default_profile", default.source)
         self.assertEqual("topic_durable_dir", default.catalog.storage_profile)
 
@@ -556,6 +556,65 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertEqual(context.topic_workspace_path / "user-editable" / "templates", overridden.path)
         self.assertEqual("topic_workspace_manifest", overridden.source)
         self.assertIn("topic-workspace.toml", str(overridden.source_detail))
+
+    def test_template_exchange_root_reports_exact_legacy_singular_postures(self) -> None:
+        context = self.make_context()
+        singular = (
+            context.topic_workspace_path
+            / "intent"
+            / "derived"
+            / "writing-template"
+        )
+        write(singular / "content/main/paper.md", "# Legacy\n")
+
+        default, diagnostics = resolve_semantic_binding(
+            context,
+            "topic.paper.template_exchange_root",
+            env={},
+        )
+        self.assertIsNotNone(default)
+        assert default is not None
+        self.assertEqual(
+            context.topic_workspace_path
+            / "intent"
+            / "derived"
+            / "writing-templates",
+            default.path,
+        )
+        self.assertTrue(
+            any("Legacy singular" in item.message for item in diagnostics),
+            diagnostics,
+        )
+
+        write(
+            context.topic_workspace_path / "topic-workspace.toml",
+            """
+            schema_version = "isomer-topic-workspace-manifest.v1"
+            research_topic_id = "default"
+            topic_workspace_id = "default"
+
+            [[bindings]]
+            label = "topic.paper.template_exchange_root"
+            path = "intent/derived/writing-template"
+            storage_profile = "topic_durable_dir"
+            status = "active"
+            """,
+        )
+        explicit, explicit_diagnostics = resolve_semantic_binding(
+            context,
+            "topic.paper.template_exchange_root",
+            env={},
+        )
+        self.assertIsNotNone(explicit)
+        assert explicit is not None
+        self.assertEqual(singular, explicit.path)
+        self.assertTrue(
+            any(
+                "explicitly resolves to the legacy singular" in item.message
+                for item in explicit_diagnostics
+            ),
+            explicit_diagnostics,
+        )
 
     def test_unknown_topic_main_sublabel_is_reserved(self) -> None:
         context = self.make_context()
@@ -628,10 +687,10 @@ class TopicWorkspaceManifestTests(unittest.TestCase):
         self.assertIn(context.topic_workspace_path / "intent" / "src", created)
         self.assertIn(context.topic_workspace_path / "intent" / "derived", created)
         self.assertIn(context.topic_workspace_path, created)
-        self.assertIn(context.topic_workspace_path / "intent" / "derived" / "writing-template", created)
+        self.assertIn(context.topic_workspace_path / "intent" / "derived" / "writing-templates", created)
         self.assertTrue((context.topic_workspace_path / "intent" / "src").is_dir())
         self.assertTrue((context.topic_workspace_path / "intent" / "derived").is_dir())
-        self.assertTrue((context.topic_workspace_path / "intent" / "derived" / "writing-template").is_dir())
+        self.assertTrue((context.topic_workspace_path / "intent" / "derived" / "writing-templates").is_dir())
         self.assertFalse((context.topic_workspace_path / "intent" / "src" / "topic-overview.md").exists())
         self.assertFalse((context.topic_workspace_path / "intent" / "derived" / "isomer-env-gate.md").exists())
         self.assertFalse((context.topic_workspace_path / "isomer-topic-workspace-summary.md").exists())

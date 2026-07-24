@@ -339,7 +339,7 @@ Grounded optional detail that requires orphan confirmation.
         status, exported = self.paper("template", "export", "--actor", "agent:integration")
         self.assertEqual(0, status, exported)
         export_path = Path(str(exported["target"]))
-        self.assertEqual(self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main", export_path)
+        self.assertEqual(self.root / "topic-workspaces/alpha/intent/derived/writing-templates/content/main", export_path)
         export_metadata = json.loads((export_path / ".isomer-template-export.json").read_text(encoding="utf-8"))
         self.assertEqual("main", export_metadata["template_name"])
         self.assertEqual(created_template["stable_ref"], export_metadata["canonical_ref"])
@@ -377,7 +377,7 @@ Grounded optional detail that requires orphan confirmation.
         self.assertEqual(0, status, observed)
         self.assertFalse(observed["canonical"])
 
-        status, missing_latex = self.paper(
+        status, packaged_latex = self.paper(
             "init-tex",
             "--draft-ref",
             refs["draft"],
@@ -386,8 +386,18 @@ Grounded optional detail that requires orphan confirmation.
             "--paper-line",
             "paper-main",
         )
-        self.assertEqual(1, status)
-        self.assertEqual("paper_latex_template_default_missing", missing_latex["error"]["code"])
+        self.assertEqual(0, status, packaged_latex)
+        self.assertEqual("packaged-default", packaged_latex["latex_template"]["selection_source"])
+        self.assertIsNone(packaged_latex["latex_template"].get("stable_ref"))
+        self.assertIn("packaged_identity", packaged_latex["latex_template"])
+        status, latex_stock_after_fallback = self.paper(
+            "template",
+            "list",
+            "--kind",
+            "latex",
+        )
+        self.assertEqual(0, status, latex_stock_after_fallback)
+        self.assertEqual(0, latex_stock_after_fallback["count"])
 
         latex_tree = self.root / "inputs/latex-template"
         write(latex_tree / "template.tex", "\\documentclass{fixture}\n\\usepackage{surveyfixture}\n")

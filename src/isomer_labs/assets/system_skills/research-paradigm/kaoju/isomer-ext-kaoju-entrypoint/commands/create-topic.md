@@ -17,16 +17,19 @@ skill_invocation_notation: >
 
 1. Resolve one Project, Research Topic, and Topic Workspace through the public Kaoju entrypoint.
 2. Delegate missing generic topic creation, Workspace Runtime initialization, and concrete `topic.intent.overview` work to `isomer-op-entrypoint->topic-create`. Do not pass Kaoju mindset data, paths, schemas, seeds, or generation instructions into that core skill.
-3. After generic state is ready, invoke `isomer-ext-kaoju-entrypoint->topic-creator` in create-missing mode to derive the three topic-owned Mindset Sources.
-4. Preserve every existing valid Source, block on every invalid existing Source, and report created, preserved, invalid, missing, and advisory derivation-drift results by key.
-5. Stop after Kaoju derived intent is ready. This command does not begin a research Run, acquire material, examine a source, or materialize a Mindset Record.
+3. After generic state is ready, invoke `isomer-ext-kaoju-entrypoint->topic-creator` in create-missing mode to derive the three topic-owned Mindset Sources and run `isomer-cli --print-json ext kaoju paper template ensure-defaults --topic TOPIC --actor agent`.
+4. Preserve every existing valid Source and ready named template record. Create only missing state. Export absent safe working copies to `<topic.paper.template_exchange_root>/content/main/` and `/latex/main/`, while preserving edited, stale, identity-invalid, or unrecognized existing targets for explicit reconciliation.
+5. Report one resumable result with every mindset key and each template role classified as created, preserved, exported, invalid, drifted, or conflicting.
+6. Inventory the actual recognized `intent/derived` material. Explain that Mindset Sources directly control future Run reflection; `writing-templates/content/main/` is a non-canonical editable MyST structure copy; `writing-templates/latex/main/` is a non-canonical editable presentation copy; and generated environment target specifications must be regenerated from source intent rather than applied directly.
+7. Tell the user which adjustments each material supports and that they may edit before the next initialization stage or after later use. For writing-template edits, explain that the agent must promote them through typed create or optimistic-concurrency update. Tell the user to say “I have modified the derived materials, now apply them” after editing.
+8. Stop after the derived-material handoff. Do not begin environment setup, actor setup, a research Run, acquisition, examination, paper drafting, or Mindset Record materialization unless the original request explicitly included that later target.
 
 If the user's task does not map cleanly to these steps, use the native planning tool to separate generic topic prerequisites from Kaoju derived-intent creation, then execute only the authorized stages.
 
 ## Owner, Inputs, and Outputs
 
-Owner: `isomer-ext-kaoju-entrypoint->topic-creator`. Generic prerequisite owner: `isomer-op-entrypoint->topic-create`. Input: one concrete `topic.intent.overview`. Outputs: validated topic-owned `paper.deep-dive`, `paper.skimming`, and `source-code.ingest` Mindset Sources beneath `topic.intent.kaoju_mindsets`.
+Owner: `isomer-ext-kaoju-entrypoint->topic-creator`. Generic prerequisite owner: `isomer-op-entrypoint->topic-create`. Template mutation owner: `isomer-ext-kaoju-entrypoint->write`. Input: one concrete `topic.intent.overview` and ready Workspace Runtime. Outputs: validated topic-owned `paper.deep-dive`, `paper.skimming`, and `source-code.ingest` Mindset Sources beneath `topic.intent.kaoju_mindsets`; canonical content and LaTeX `main` stock; and non-canonical plural-path working copies.
 
 ## Gates, Blockers, and Resume
 
-Topic selection, topic creation, and user-authored intent choices retain their existing Gates. Missing generic state pauses at the generic owner. Invalid Source JSON pauses at Kaoju repair without overwrite. Resume at generic topic readiness, create-missing, or explicit Source reconciliation.
+Topic selection, topic creation, and user-authored intent choices retain their existing Gates. Missing generic state pauses at the generic owner. Invalid Source JSON, invalid template state, or conflicting exchange content pauses at Kaoju repair without overwrite. Retry preserves completed roles and resumes only missing work. Resume at generic topic readiness, create-missing, ensure-defaults, explicit Source reconciliation, or state-checked template reconciliation.

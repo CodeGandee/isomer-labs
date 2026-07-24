@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+from importlib import metadata
 import json
 from pathlib import Path
 import re
@@ -15,11 +16,37 @@ import yaml  # type: ignore[import-untyped]
 from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
 from isomer_labs.kaoju.contracts import load_binding_registry
-from isomer_labs.kaoju.template_support import TemplateState, validate_template_relative_path
+from isomer_labs.kaoju.template_support import (
+    TemplateSelection,
+    TemplateState,
+    validate_template_relative_path,
+)
 from isomer_labs.kaoju.template_validation import _VENUE_CONTRACTS
 
 
 FRONTMATTER_RE = re.compile(r"\A---[ \t]*\n(.*?)\n---[ \t]*(?:\n|\Z)", re.S)
+
+
+def myst_parser_version() -> str:
+    """Return the installed MyST parser version for recorded provenance."""
+
+    try:
+        return metadata.version("myst-parser")
+    except metadata.PackageNotFoundError:  # pragma: no cover
+        return "unknown"
+
+
+def _line_number(text: str, offset: int) -> int:
+    return text.count("\n", 0, offset) + 1
+
+
+def _digest_json(value: Mapping[str, object]) -> str:
+    encoded = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
 @dataclass(frozen=True)
@@ -274,10 +301,18 @@ def _unfilled_obligations(tree: Path, entrypoint: str) -> list[PaperDiagnostic]:
     return diagnostics
 
 
-def _latex_state_identity(state: TemplateState) -> dict[str, object]:
+def _latex_state_identity(
+    state: TemplateState | TemplateSelection,
+) -> dict[str, object]:
+    if isinstance(state, TemplateSelection):
+        return {
+            "kind": "latex",
+            **state.to_json(),
+        }
     return {
         "kind": "latex",
         "name": state.name,
+        "selection_source": "topic-stock",
         "stable_ref": state.record.id,
         "state_token": state.state_token,
         "tree_digest": state.tree_digest,

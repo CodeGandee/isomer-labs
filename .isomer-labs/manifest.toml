@@ -15,6 +15,12 @@ schema_version = "isomer-research-topic-registration.v1"
 config_path = ".isomer-labs/research-topics/flash-attention-4-whitebox-runtime-model.toml"
 topic_workspace_id = "flash-attention-4-whitebox-runtime-model"
 status = "active"
+[[research_topics]]
+id = "pwinfer-analysis"
+schema_version = "isomer-research-topic-registration.v1"
+config_path = ".isomer-labs/research-topics/pwinfer-analysis.toml"
+topic_workspace_id = "pwinfer-analysis"
+status = "active"
 [[topic_workspaces]]
 id = "predmem-survey"
 schema_version = "isomer-topic-workspace.v1"
@@ -26,6 +32,12 @@ id = "flash-attention-4-whitebox-runtime-model"
 schema_version = "isomer-topic-workspace.v1"
 research_topic_id = "flash-attention-4-whitebox-runtime-model"
 path = "isomer-content/topic-ws/flash-attention-4-whitebox-runtime-model"
+status = "active"
+[[topic_workspaces]]
+id = "pwinfer-analysis"
+schema_version = "isomer-topic-workspace.v1"
+research_topic_id = "pwinfer-analysis"
+path = "isomer-content/topic-ws/pwinfer-analysis"
 status = "active"
 [operator.system_extensions]
 installed = ["deepsci", "kaoju"]

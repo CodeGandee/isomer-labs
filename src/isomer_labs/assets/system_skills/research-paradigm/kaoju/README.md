@@ -7,7 +7,7 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 | Identity or Route | Responsibility |
 | --- | --- |
 | `isomer-ext-kaoju-entrypoint` | Public pack that routes one user intent or retained compatibility procedure and preserves its Run checkpoint. |
-| `isomer-ext-kaoju-entrypoint->topic-creator` | Derive, preserve, inspect, regenerate, replace, or reconcile topic-owned Kaoju Mindset Sources after generic topic state exists. |
+| `isomer-ext-kaoju-entrypoint->topic-creator` | Initialize, inventory, apply, and reconcile topic-owned Kaoju Mindset Sources and writing-template intent after generic topic state exists. |
 | `isomer-ext-kaoju-entrypoint->shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
 | `isomer-ext-kaoju-entrypoint->workspace` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
 | `isomer-ext-kaoju-entrypoint->frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
@@ -36,7 +36,11 @@ The extension-owned resources queried by `isomer-cli ext kaoju process show`, `e
 
 Paper retrieval has a separate execution and ownership boundary. `paper-search` invokes a bound external provider tool directly and maps the result into one `isomer-literature-provider-observation.v1` Artifact. Semantic Scholar is one bundle-local approach. `discover` retains strategy, candidate disposition, version-family, Discovery Ledger, and Reading List ownership; `acquire` and `examine` retain material and source-evidence ownership. `isomer-cli ext research literature` only validates, records, indexes, and queries local normalized data and never invokes a provider.
 
-Kaoju topic creation keeps packaged 8/6/8 mindset defaults inside the protected topic-creator bundle and copies or specializes them into `topic.intent.kaoju_mindsets` only after one concrete `topic.intent.overview` exists. These directly editable JSON files are Mindset Sources, a derived-intent question list with `additional_notes`, not Artifacts or Workflows. An applicable paper or source-code examination records one immutable Run mindset resolution before focused work. A present valid Source becomes a Run-scoped `KAOJU:MINDSET-RECORD` that preserves exact questions, notes, survey context, answers, evidence, collector posture, and unresolved state after later Source edits. A missing deterministic Source becomes Run database disposition `skipped_source_missing`; no placeholder Record is created, and the workflow proceeds without mindset reflection. Installation, read-only routes, and concrete research actions never create missing Sources implicitly; use explicit Kaoju `create-topic` when those files are wanted.
+Kaoju topic creation keeps packaged 8/6/8 mindset defaults inside the protected topic-creator bundle and copies or specializes them into `topic.intent.kaoju_mindsets` only after one concrete `topic.intent.overview` exists. These directly editable JSON files are Mindset Sources, a derived-intent question list with `additional_notes`, not Artifacts or Workflows. The write owner also packages checked immutable `content/main` and neutral article-style `latex/main` trees. Explicit Kaoju `create-topic` creates missing mutable named stock from those resources and exports non-canonical working copies under `intent/derived/writing-templates/<kind>/main/`. Repeated initialization preserves valid stock and edited or stale exports.
+
+Ordinary research actions do not initialize topic intent. A missing deterministic Mindset Source becomes Run database disposition `skipped_source_missing`; no placeholder Record is created, and the workflow proceeds without mindset reflection. A missing omitted writing-template default instead selects the checked immutable packaged tree without creating topic stock or exchange content. Explicit template names and refs never fall back. Every paper snapshot records whether it observed topic stock or a packaged default, and later package or topic changes do not rewrite that snapshot.
+
+After initialization, Kaoju reports the recognized derived materials and their adjustment routes. Mindset Sources are directly editable and become effective after validation. Writing-template directories are editable exchange copies whose changes require typed state-checked promotion. Generated environment target specifications must be regenerated from their source intent. A later request such as “I have modified the derived materials, now apply them” validates the complete recognized inventory and routes each change to its owner. Accepted changes affect future Runs and newly created or explicitly reinitialized paper work; existing Runs, Mindset Records, drafts, TeX snapshots, PDFs, and other historical Artifacts remain unchanged.
 
 `isomer-cli project runs` owns resumable procedure checkpoints. The acting user or agent runs prompt-sensitive repository commands outside Isomer, verifies the resulting source and immutable identity, then uses `project repos register` for topology and typed Artifacts for research provenance. `project service-requests` records and synchronously dispatches Service Team work. Pixi, smoke, code-trial, document-build, and viewer operations use provider-neutral Execution Adapter Command Requests.
 
@@ -48,7 +52,7 @@ Houmao may implement Service Dispatch Forms, launch, mailboxes, or inspection be
 accepted audit and synthesis
             |
  content template main or explicit name
- stable ref + state token + observed digest
+ topic ref + token, or packaged identity + version
             |
    paper-structure-myst
             |
@@ -56,7 +60,7 @@ accepted audit and synthesis
             |                               derived review view
             |
  independent LaTeX template main or explicit name
- stable ref + state token + observed digest
+ topic ref + token, or packaged identity + version
             |
  exact paper-template-tex snapshot
             |
@@ -81,8 +85,8 @@ If the user chooses “run to the PDF target,” the current agent maintains a p
 
 ## Migration
 
-Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJU:PAPER-TEMPLATE-TEX` records remain readable and never redefine canonical MyST. New named stock uses `ext kaoju paper template --kind content|latex`. Each role-local name owns one stable record and managed tree. Updates require the current opaque token and emit kind-qualified audit evidence. Working copies resolve to `<topic.paper.template_exchange_root>/content/<name>/` or `/latex/<name>/`. Contract migration annotates existing content records in place and adopts LaTeX only by copying one exact actor-selected historical tree with checked composition metadata. The source and all paper-line snapshots remain unchanged. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
+Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJU:PAPER-TEMPLATE-TEX` records remain readable and never redefine canonical MyST. New named stock uses `ext kaoju paper template --kind content|latex`. Each role-local name owns one stable record and managed tree. Updates require the current opaque token and emit kind-qualified audit evidence. Working copies resolve to the plural `<topic.paper.template_exchange_root>/content/<name>/` or `/latex/<name>/` layout. An explicit singular binding remains authoritative with an advisory. Unbound `intent/derived/writing-template` content is visible through `paper template migrate-exchange-root`; apply requires its exact preview token, blocks non-equivalent dual-root content, preserves historical observations, and never rewrites canonical named records. Contract migration annotates existing content records in place and adopts LaTeX only by copying one exact actor-selected historical tree with checked composition metadata. The source and all paper-line snapshots remain unchanged. The independently implemented wiki exporter and viewer are package resources and never invoke an external `imsight-llm-wiki` skill.
 
 ## Installation
 
-Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 16 protected members. Installation does not enumerate Research Topics or initialize Mindset Sources. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.
+Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 16 protected members, including validated packaged mindset and writing-template defaults. Installation does not enumerate Research Topics or initialize Sources, named stock, or exchange paths. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.

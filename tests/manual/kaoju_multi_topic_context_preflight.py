@@ -178,14 +178,14 @@ def main() -> int:
             "--project",
             str(root),
         )
-        expected = root / "topic-workspaces/beta/intent/derived/writing-template/latex/main"
+        expected = root / "topic-workspaces/beta/intent/derived/writing-templates/latex/main"
         _require(status == 0 and exported["selected_context"]["research_topic_id"] == "beta", "Beta export lost pinned context", exported)
         _require(exported["target"] == str(expected), "Export did not use beta writing-template exchange surface", exported)
         _require((expected / ".isomer-template-export.json").is_file(), "Export observation metadata is missing", exported)
         _require("/actors/" not in exported["target"] and "/agents/" not in exported["target"], "Export used a worker workspace", exported)
-        _require(not (root / "topic-workspaces/alpha/intent/derived/writing-template/latex/main").exists(), "Export leaked into the default topic")
+        _require(not (root / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main").exists(), "Export leaked into the default topic")
 
-        print("PASS: Project-root preflight pinned beta and exported to topic-workspaces/beta/intent/derived/writing-template/latex/main")
+        print("PASS: Project-root preflight pinned beta and exported to topic-workspaces/beta/intent/derived/writing-templates/latex/main")
     return 0
 
 

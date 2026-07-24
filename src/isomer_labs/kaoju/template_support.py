@@ -33,7 +33,8 @@ EXPORT_METADATA_NAME = ".isomer-template-export.json"
 TEX_SNAPSHOT_MANIFEST_NAME = ".isomer-kaoju-tex-snapshot.json"
 TEX_DRAFT_MANIFEST_NAME = ".isomer-kaoju-tex-draft.json"
 TEX_FILL_MANIFEST_NAME = ".isomer-kaoju-tex-fill.json"
-EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v2"
+EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v3"
+PREVIOUS_EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v2"
 LEGACY_EXPORT_METADATA_VERSION = "isomer-kaoju-template-export.v1"
 AUDIT_VERSION = "isomer-kaoju-template-mutation-audit.v1"
 _TEMPLATE_NAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?$")
@@ -123,6 +124,53 @@ class TemplateState:
     tree_digest: str
     authored_metadata: dict[str, object]
     root: Path
+
+
+@dataclass(frozen=True)
+class TemplateSelection:
+    """One exact topic-owned or immutable packaged template selection."""
+
+    template_kind: TemplateKindSpec
+    name: str
+    selection_source: str
+    root: Path
+    tree_digest: str
+    authored_metadata: dict[str, object]
+    stable_ref: str | None = None
+    state_token: str | None = None
+    packaged_identity: str | None = None
+    packaged_resource_version: str | None = None
+
+    @classmethod
+    def from_state(cls, template_kind: TemplateKindSpec, state: TemplateState) -> TemplateSelection:
+        return cls(
+            template_kind=template_kind,
+            name=state.name,
+            selection_source="topic-stock",
+            root=state.root,
+            tree_digest=state.tree_digest,
+            authored_metadata=state.authored_metadata,
+            stable_ref=state.record.id,
+            state_token=state.state_token,
+        )
+
+    def to_json(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "template_kind": self.template_kind.kind,
+            "name": self.name,
+            "selection_source": self.selection_source,
+            "tree_digest": self.tree_digest,
+            "authored_metadata": self.authored_metadata,
+        }
+        if self.stable_ref is not None:
+            payload["stable_ref"] = self.stable_ref
+        if self.state_token is not None:
+            payload["state_token"] = self.state_token
+        if self.packaged_identity is not None:
+            payload["packaged_identity"] = self.packaged_identity
+        if self.packaged_resource_version is not None:
+            payload["packaged_resource_version"] = self.packaged_resource_version
+        return payload
 
 
 def validate_template_name(name: str) -> str:
@@ -261,7 +309,11 @@ def _load_export_metadata(path: Path, *, expected_kind: str | None = None) -> di
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise KaojuServiceError("template_export_metadata_invalid", f"Template export metadata is unreadable: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") not in {EXPORT_METADATA_VERSION, LEGACY_EXPORT_METADATA_VERSION}:
+    if not isinstance(value, dict) or value.get("schema_version") not in {
+        EXPORT_METADATA_VERSION,
+        PREVIOUS_EXPORT_METADATA_VERSION,
+        LEGACY_EXPORT_METADATA_VERSION,
+    }:
         raise KaojuServiceError("template_export_metadata_invalid", "Template export metadata has an unsupported shape or schema version.")
     if value.get("schema_version") == LEGACY_EXPORT_METADATA_VERSION:
         value = {**value, "template_kind": "content", "compatibility_source": "legacy-unqualified-content-export"}
@@ -273,10 +325,33 @@ def _load_export_metadata(path: Path, *, expected_kind: str | None = None) -> di
             "template_export_kind_mismatch",
             f"Template export is for kind {template_kind!r}, not {expected_kind!r}.",
         )
-    required = ("template_name", "canonical_ref", "state_token", "canonical_tree_digest", "exported_tree_digest", "observed_path", "observed_at", "actor")
+    required = ("template_name", "canonical_tree_digest", "exported_tree_digest", "observed_path", "observed_at", "actor")
     missing = [field for field in required if not isinstance(value.get(field), str) or not value.get(field)]
     if missing:
         raise KaojuServiceError("template_export_metadata_invalid", f"Template export metadata is missing fields: {', '.join(missing)}")
+    selection_source = value.get("selection_source", "topic-stock")
+    if selection_source == "topic-stock":
+        topic_required = ("canonical_ref", "state_token")
+        missing_topic = [field for field in topic_required if not isinstance(value.get(field), str) or not value.get(field)]
+        if missing_topic:
+            raise KaojuServiceError(
+                "template_export_metadata_invalid",
+                f"Topic-stock export metadata is missing fields: {', '.join(missing_topic)}",
+            )
+    elif selection_source == "packaged-default":
+        packaged_required = ("packaged_identity", "packaged_resource_version")
+        missing_packaged = [field for field in packaged_required if not isinstance(value.get(field), str) or not value.get(field)]
+        if missing_packaged or value.get("canonical_ref") is not None or value.get("state_token") is not None:
+            raise KaojuServiceError(
+                "template_export_metadata_invalid",
+                "Packaged-default export metadata requires packaged identity and version and cannot claim topic state.",
+            )
+    else:
+        raise KaojuServiceError(
+            "template_export_metadata_invalid",
+            f"Template export metadata has unsupported selection_source: {selection_source!r}.",
+        )
+    value = {**value, "selection_source": selection_source}
     return value
 
 

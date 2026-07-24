@@ -73,7 +73,7 @@ If the user's task does not map cleanly to these steps, use your native planning
 
 ## Owner, Inputs, and Outputs
 
-Owner: `isomer-ext-kaoju-entrypoint->write`; CLI: `isomer-cli ext kaoju paper template list|show|create|update|file|metadata|archive|delete|exports|export|migrate`. Inputs: exact template role, role-local named state or one prepared assessed tree, current expected token for destructive operations, actor ref, authored metadata where required, and source assessment. Outputs: template role, stable ref, name, token, tree digest, authored metadata, mutation-audit ref, working-copy observation or migration result, diagnostics, and next action.
+Owner: `isomer-ext-kaoju-entrypoint->write`; CLI: `isomer-cli ext kaoju paper template list|show|create|update|file|metadata|archive|delete|exports|export|promote-export|ensure-defaults|migrate|migrate-exchange-root`. Inputs: exact template role, role-local named state or one prepared assessed tree, current expected token for destructive operations, actor ref, authored metadata where required, and source assessment. Outputs: template role, selection source, stable or packaged identity, name, token when applicable, tree digest, authored metadata, mutation-audit ref, working-copy observation or migration result, diagnostics, and next action.
 
 ## Gates, Blockers, and Resume
 

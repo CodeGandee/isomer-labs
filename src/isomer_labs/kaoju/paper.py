@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-import hashlib
-from importlib import metadata
 import io
 import json
 from pathlib import Path
@@ -29,11 +27,13 @@ from isomer_labs.kaoju.paper_support import (
     PaperDiagnostic,
     _compile_log,
     _compose_latex_tree,
+    _digest_json,
     _extract_abstract,
     _extract_frontmatter,
     _fill_obligations,
     _frontmatter_title_authors,
     _latex_state_identity,
+    _line_number,
     _load_json,
     _load_tex_manifest,
     _myst_to_tex,
@@ -49,6 +49,7 @@ from isomer_labs.kaoju.paper_support import (
     _tree_files,
     _unfilled_obligations,
     _write_json,
+    myst_parser_version,
 )
 from isomer_labs.kaoju.templates import KaojuTemplateService
 from isomer_labs.kaoju.template_support import (
@@ -254,6 +255,7 @@ class KaojuPaperService:
         draft_ref: str,
         paper_line: str,
         content_template_ref: str | None = None,
+        content_template_name: str | None = None,
         template_myst_ref: str | None = None,
         latex_template_name: str | None = None,
         latex_template_ref: str | None = None,
@@ -268,47 +270,47 @@ class KaojuPaperService:
                 "content_template_ref and the deprecated template_myst_ref alias identify different records.",
             )
         selected_content_ref = content_template_ref or template_myst_ref
-        if not selected_content_ref:
-            raise KaojuServiceError(
-                "paper_content_template_required",
-                "TeX composition requires the exact observed content-template ref.",
+        if selected_content_ref:
+            template_path, template_record = self._record_file(
+                selected_content_ref,
+                expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"},
+                allow_directory=True,
             )
+            template_metadata_value = template_record.get("transition_metadata")
+            template_metadata = template_metadata_value if isinstance(template_metadata_value, dict) else {}
+            content_template = {
+                "kind": "content",
+                "selection_source": "explicit-artifact",
+                "ref": selected_content_ref,
+                "name": template_metadata.get("template_name") if isinstance(template_metadata.get("template_name"), str) else None,
+                "state_token": template_metadata.get("state_token") if isinstance(template_metadata.get("state_token"), str) else None,
+                "tree_digest": template_metadata.get("tree_digest") if isinstance(template_metadata.get("tree_digest"), str) else checksum_file(template_path),
+            }
+        else:
+            content_selection = KaojuTemplateService(
+                self.context,
+                env=self.env,
+                cwd=self.cwd,
+                kind="content",
+            ).resolve_selection(name=content_template_name)
+            content_template = {
+                "kind": "content",
+                "ref": content_selection.stable_ref,
+                **content_selection.to_json(),
+            }
         draft_path, _draft_record = self._record_file(draft_ref, expected={"KAOJU:PAPER-DRAFT-MYST"})
-        template_path, template_record = self._record_file(
-            selected_content_ref,
-            expected={"KAOJU:PAPER-TEMPLATE-MYST", "KAOJU:PAPER-STRUCTURE-MYST"},
-            allow_directory=True,
-        )
-        template_metadata_value = template_record.get("transition_metadata")
-        template_metadata = template_metadata_value if isinstance(template_metadata_value, dict) else {}
-        content_template = {
-            "kind": "content",
-            "ref": selected_content_ref,
-            "name": template_metadata.get("template_name") if isinstance(template_metadata.get("template_name"), str) else None,
-            "state_token": template_metadata.get("state_token") if isinstance(template_metadata.get("state_token"), str) else None,
-            "tree_digest": template_metadata.get("tree_digest") if isinstance(template_metadata.get("tree_digest"), str) else checksum_file(template_path),
-        }
         latex_service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="latex")
-        try:
-            latex_state = latex_service.resolve_state(name=latex_template_name, stable_ref=latex_template_ref)
-        except KaojuServiceError as exc:
-            if exc.code == "template_not_found" and latex_template_name is None and latex_template_ref is None:
-                raise KaojuServiceError(
-                    "paper_latex_template_default_missing",
-                    "TeX composition omitted a LaTeX selector, but latex/main does not exist.",
-                    (
-                        "Create latex/main from a prepared directory.",
-                        "Adopt an exact KAOJU:PAPER-TEMPLATE-TEX source through template migration.",
-                    ),
-                ) from exc
-            raise
-        latex_metadata = latex_state.authored_metadata
+        latex_selection = latex_service.resolve_selection(
+            name=latex_template_name,
+            stable_ref=latex_template_ref,
+        )
+        latex_metadata = latex_selection.authored_metadata
         extensions = latex_metadata.get("extensions")
         latex_contract = extensions.get("latex") if isinstance(extensions, dict) else None
         if not isinstance(latex_contract, dict):
             raise KaojuServiceError(
                 "latex_template_contract_required",
-                f"Named LaTeX template {latex_state.name!r} has no checked composition contract.",
+                f"Selected LaTeX template {latex_selection.name!r} has no checked composition contract.",
             )
         stock_entrypoint = latex_metadata.get("entrypoint")
         if not isinstance(stock_entrypoint, str):
@@ -327,10 +329,12 @@ class KaojuPaperService:
         bibliography = self._bibliography_entries(citation_refs)
         constructs = sorted(set(DIRECTIVE_RE.findall(text)) | ({"table"} if "|" in text else set()) | ({"citation"} if CITATION_RE.search(text) else set()))
         fingerprint_payload = {
-            "latex_template_ref": latex_state.record.id,
-            "latex_template_name": latex_state.name,
-            "latex_template_state_token": latex_state.state_token,
-            "latex_template_tree_digest": latex_state.tree_digest,
+            "latex_template_selection_source": latex_selection.selection_source,
+            "latex_template_ref": latex_selection.stable_ref,
+            "latex_template_packaged_identity": latex_selection.packaged_identity,
+            "latex_template_name": latex_selection.name,
+            "latex_template_state_token": latex_selection.state_token,
+            "latex_template_tree_digest": latex_selection.tree_digest,
             "composition_contract": latex_contract,
             "converter": {"id": "isomer-myst-to-tex.v3", "myst_parser_version": myst_parser_version()},
             "required_constructs": constructs,
@@ -343,7 +347,7 @@ class KaojuPaperService:
             existing_manifest = self._directory_member_json(existing_template_ref, TEX_SNAPSHOT_MANIFEST_NAME)
             reused = (
                 existing_manifest.get("compatibility_fingerprint") == fingerprint
-                and existing_manifest.get("stock_tree_digest") == latex_state.tree_digest
+                and existing_manifest.get("stock_tree_digest") == latex_selection.tree_digest
             )
 
         with self._temporary_directory("paper-tex-") as temporary:
@@ -351,9 +355,9 @@ class KaojuPaperService:
                 template_ref = existing_template_ref
             else:
                 template_tree = temporary / "template"
-                latex_service._copy_canonical_tree(latex_state.root, template_tree)
+                latex_service._copy_canonical_tree(latex_selection.root, template_tree)
                 observed_snapshot_digest = _paper_tree_digest(template_tree, excluded={TEX_SNAPSHOT_MANIFEST_NAME})
-                if observed_snapshot_digest != latex_state.tree_digest:
+                if observed_snapshot_digest != latex_selection.tree_digest:
                     raise KaojuServiceError(
                         "paper_latex_snapshot_digest_mismatch",
                         "Copied LaTeX snapshot bytes do not match the selected named stock digest.",
@@ -363,8 +367,8 @@ class KaojuPaperService:
                     "kind": "latex-template-snapshot",
                     "compatibility_fingerprint": fingerprint,
                     "fingerprint_dimensions": fingerprint_payload,
-                    "stocked_latex_template": _latex_state_identity(latex_state),
-                    "stock_tree_digest": latex_state.tree_digest,
+                    "stocked_latex_template": _latex_state_identity(latex_selection),
+                    "stock_tree_digest": latex_selection.tree_digest,
                     "stock_entrypoint": stock_entrypoint,
                     "composition_contract": latex_contract,
                     "build_profile": build_profile,
@@ -376,11 +380,14 @@ class KaojuPaperService:
                     "KAOJU:PAPER-TEMPLATE-TEX",
                     template_tree,
                     paper_line,
-                    relationships=_relationships(paper_template_latex=latex_state.record.id),
+                    relationships=_relationships(
+                        paper_template_latex=latex_selection.stable_ref
+                        or str(latex_selection.packaged_identity)
+                    ),
                 )
                 template_ref = _record_id(template_result)
             draft_tree = temporary / "draft"
-            latex_service._copy_canonical_tree(latex_state.root, draft_tree)
+            latex_service._copy_canonical_tree(latex_selection.root, draft_tree)
             converted, conversion_diagnostics = _myst_to_tex(body)
             composed_entrypoint = _compose_latex_tree(
                 draft_tree,
@@ -417,8 +424,8 @@ class KaojuPaperService:
                 "source_checksum": checksum_file(draft_path),
                 "content_template": content_template,
                 "template_ref": template_ref,
-                "template_snapshot_tree_digest": latex_state.tree_digest,
-                "latex_template": _latex_state_identity(latex_state),
+                "template_snapshot_tree_digest": latex_selection.tree_digest,
+                "latex_template": _latex_state_identity(latex_selection),
                 "stock_entrypoint": stock_entrypoint,
                 "entrypoint": composed_entrypoint,
                 "composition_contract": latex_contract,
@@ -448,7 +455,7 @@ class KaojuPaperService:
             "operation": "paper.init-tex",
             "template_ref": template_ref,
             "content_template": content_template,
-            "latex_template": _latex_state_identity(latex_state),
+            "latex_template": _latex_state_identity(latex_selection),
             "entrypoint": composed_entrypoint,
             "composition_mode": latex_contract.get("composition_mode"),
             "build_profile": build_profile,
@@ -479,7 +486,22 @@ class KaojuPaperService:
         if isinstance(content_identity, dict):
             content_ref = content_identity.get("ref")
             content_name = content_identity.get("name")
-            if isinstance(content_name, str):
+            if content_identity.get("selection_source") == "packaged-default":
+                content_service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="content")
+                try:
+                    content_selection = content_service.resolve_selection()
+                except KaojuServiceError:
+                    content_posture = "invalid"
+                else:
+                    current_content = content_selection.to_json()
+                    content_posture = (
+                        "current"
+                        if content_selection.selection_source == "packaged-default"
+                        and content_selection.packaged_identity == content_identity.get("packaged_identity")
+                        and content_selection.tree_digest == content_identity.get("tree_digest")
+                        else "content-stale"
+                    )
+            elif isinstance(content_name, str):
                 content_service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="content")
                 try:
                     content_state = content_service.resolve_state(
@@ -512,17 +534,23 @@ class KaojuPaperService:
             name = latex_identity.get("name")
             service = KaojuTemplateService(self.context, env=self.env, cwd=self.cwd, kind="latex")
             try:
-                state = service.resolve_state(
-                    name=str(name) if isinstance(name, str) else None,
-                    stable_ref=str(stable_ref) if isinstance(stable_ref, str) else None,
-                )
+                if latex_identity.get("selection_source") == "packaged-default":
+                    selection = service.resolve_selection()
+                else:
+                    selection = service.resolve_selection(
+                        name=str(name) if isinstance(name, str) else None,
+                        stable_ref=str(stable_ref) if isinstance(stable_ref, str) else None,
+                    )
             except KaojuServiceError as exc:
                 stocked_posture = "missing" if exc.code in {"template_not_found", "template_record_not_found"} else "invalid"
             else:
-                current_latex = _latex_state_identity(state)
+                current_latex = _latex_state_identity(selection)
                 stocked_posture = (
                     "current"
-                    if state.state_token == latex_identity.get("state_token") and state.tree_digest == latex_identity.get("tree_digest")
+                    if selection.selection_source == latex_identity.get("selection_source", "topic-stock")
+                    and selection.state_token == latex_identity.get("state_token")
+                    and selection.tree_digest == latex_identity.get("tree_digest")
+                    and selection.packaged_identity == latex_identity.get("packaged_identity")
                     else "presentation-stale"
                 )
         return {
@@ -763,19 +791,3 @@ def _deduplicate_diagnostics(diagnostics: Sequence[PaperDiagnostic]) -> list[Pap
             seen.add(key)
             result.append(diagnostic)
     return result
-
-
-def _line_number(text: str, offset: int) -> int:
-    return text.count("\n", 0, offset) + 1
-
-
-def _digest_json(value: Mapping[str, object]) -> str:
-    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
-
-
-def myst_parser_version() -> str:
-    try:
-        return metadata.version("myst-parser")
-    except metadata.PackageNotFoundError:  # pragma: no cover
-        return "unknown"

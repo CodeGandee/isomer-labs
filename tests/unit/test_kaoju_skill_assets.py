@@ -171,6 +171,29 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("perform no Mindset Record Artifact operation", combined)
         self.assertNotIn("create-missing mode before Run creation", combined)
 
+    def test_topic_initialization_and_derived_apply_guidance_is_complete(self) -> None:
+        create_topic = (
+            ENTRYPOINT / "commands/create-topic.md"
+        ).read_text(encoding="utf-8")
+        creator = skill_entrypoint(
+            SUBSKILLS / "isomer-kaoju-topic-creator"
+        ).read_text(encoding="utf-8")
+        entrypoint = (ENTRYPOINT / "SKILL.md").read_text(encoding="utf-8")
+        writer = skill_entrypoint(
+            SUBSKILLS / "isomer-kaoju-write"
+        ).read_text(encoding="utf-8")
+        combined = "\n".join((create_topic, creator, entrypoint, writer))
+        self.assertIn("paper template ensure-defaults", create_topic)
+        self.assertIn("writing-templates/content/main/", create_topic)
+        self.assertIn("writing-templates/latex/main/", create_topic)
+        self.assertIn("I have modified the derived materials, now apply them", combined)
+        self.assertIn("complete read-only preflight", combined)
+        self.assertIn("packaged-default", combined)
+        self.assertIn("future", combined)
+        self.assertIn("historical", combined)
+        self.assertIn("Create no synthetic aggregate Artifact", creator)
+        self.assertIn("DO NOT overwrite an edited or stale export", creator)
+
 
 if __name__ == "__main__":
     unittest.main()

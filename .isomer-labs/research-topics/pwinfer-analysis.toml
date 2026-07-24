@@ -1,0 +1,4 @@
+schema_version = "isomer-research-topic-config.v1"
+research_topic_id = "pwinfer-analysis"
+topic_statement = "Survey and analyze the PowerInfer system for consumer-grade CPU/GPU large-language-model inference, starting from Tiiny-AI/PowerInfer and its associated paper, and covering its technical lineage, follow-up works, independent and derivative implementations, variants, reproducibility, industrial attention, deployment evidence, adoption, and comparative position among related heterogeneous and local LLM inference systems."
+measurable_objectives = []

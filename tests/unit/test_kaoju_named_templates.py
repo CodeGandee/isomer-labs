@@ -14,6 +14,7 @@ from unittest.mock import patch
 from isomer_labs import cli
 from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
+from isomer_labs.kaoju.derived_intent import apply_derived_intent
 from isomer_labs.kaoju.paper import KaojuPaperService, _compose_latex_tree
 from isomer_labs.kaoju.template_support import _replace_directory
 from isomer_labs.models import SelectionRequest
@@ -277,7 +278,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         status, exported = self.template_for_topic("beta", "export", "--kind", "latex", "--actor", "agent:test")
         self.assertEqual(0, status, exported)
-        expected_export = self.root / "topic-workspaces/beta/intent/derived/writing-template/latex/main"
+        expected_export = self.root / "topic-workspaces/beta/intent/derived/writing-templates/latex/main"
         self.assertEqual(str(expected_export), exported["target"])
         self.assertTrue((expected_export / ".isomer-template-export.json").is_file())
         self.assertNotIn("/actors/", str(exported["target"]))
@@ -426,7 +427,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(0, status, unchanged)
         self.assertFalse(unchanged["mutated"])
         self.assertEqual(
-            str(self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main"),
+            str(self.root / "topic-workspaces/alpha/intent/derived/writing-templates/content/main"),
             unchanged["default_working_path"],
         )
         self.assertEqual(["artifact-source-same-tree"], unchanged["source_refs"])
@@ -480,7 +481,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         status, exported = self.template("export", "--actor", "agent:test")
         self.assertEqual(0, status, exported)
-        target = self.root / "topic-workspaces/alpha/intent/derived/writing-template/content/main"
+        target = self.root / "topic-workspaces/alpha/intent/derived/writing-templates/content/main"
         self.assertEqual(str(target), exported["target"])
         self.assertTrue((target / ".isomer-template-export.json").is_file())
         self.assertTrue((target / "paper/index.md").is_file())
@@ -737,7 +738,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual("content", content["template_kind"])
         self.assertEqual("latex", latex["template_kind"])
         self.assertEqual(
-            str(self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex/main"),
+            str(self.root / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main"),
             latex["default_working_path"],
         )
         self.assertEqual([], latex["source_refs"])
@@ -751,7 +752,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         status, exported = self.template("export", "--kind", "latex", "--actor", "agent:test")
         self.assertEqual(0, status, exported)
-        target = self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex/main"
+        target = self.root / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main"
         self.assertEqual(str(target), exported["target"])
         export_metadata = json.loads((target / ".isomer-template-export.json").read_text(encoding="utf-8"))
         self.assertEqual("latex", export_metadata["template_kind"])
@@ -990,9 +991,9 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         )
         versioned_export = self.root / "topic-workspaces/alpha/exports/kaoju-paper/main/v0001"
         _write(versioned_export / "template.md", "historical export\n")
-        legacy_latex = self.root / "topic-workspaces/alpha/intent/derived/writing-template/latex-old"
+        legacy_latex = self.root / "topic-workspaces/alpha/intent/derived/writing-templates/latex-old"
         _write(legacy_latex / "main.tex", "legacy latex\n")
-        legacy_content_export = self.root / "topic-workspaces/alpha/intent/derived/writing-template/legacy-main"
+        legacy_content_export = self.root / "topic-workspaces/alpha/intent/derived/writing-templates/legacy-main"
         _write(legacy_content_export / "template.md", "legacy exported content\n")
         _write(
             legacy_content_export / ".isomer-template-export.json",
@@ -1359,6 +1360,255 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertTrue(any("template list" in example for example in examples))
         self.assertTrue(any("template show" in example for example in examples))
         self.assertTrue(any("template export" in example for example in examples))
+
+    def test_packaged_default_export_and_promotion_create_topic_stock(self) -> None:
+        status, exported = self.template(
+            "export",
+            "--kind",
+            "content",
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, exported)
+        self.assertEqual("packaged-default", exported["selection_source"])
+        self.assertIsNone(exported["stable_ref"])
+        target = Path(str(exported["target"]))
+        self.assertEqual(
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-templates/content/main",
+            target,
+        )
+        status, listed = self.template("list", "--kind", "content")
+        self.assertEqual(0, status, listed)
+        self.assertEqual(0, listed["count"])
+
+        entrypoint = target / "paper.myst.md"
+        _write(
+            entrypoint,
+            entrypoint.read_text(encoding="utf-8")
+            + "\n## Topic-Specific Comparison\n\nCompare accepted evidence.\n",
+        )
+        status, promoted = self.template(
+            "promote-export",
+            "--kind",
+            "content",
+            "--from",
+            str(target),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, promoted)
+        self.assertEqual("packaged-default", promoted["promotion_source"])
+        self.assertEqual("artifact-paper-template-myst-main", promoted["stable_ref"])
+        self.assertIsInstance(promoted["state_token"], str)
+
+    def test_default_fallback_is_strict_for_explicit_or_invalid_topic_state(self) -> None:
+        status, explicit_missing = self.template(
+            "export",
+            "--kind",
+            "content",
+            "--name",
+            "missing",
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("template_not_found", explicit_missing["error"]["code"])
+
+        store, diagnostics = open_workspace_runtime(
+            self.context(),
+            env={},
+            read_only=False,
+        )
+        self.assertEqual([], diagnostics)
+        assert store is not None
+        malformed = RuntimeLifecycleRecord(
+            id="artifact-paper-template-myst-main",
+            record_kind="artifact",
+            research_topic_id="alpha",
+            topic_workspace_id="alpha",
+            status="ready",
+            created_at="2026-07-24T00:00:00Z",
+            updated_at="2026-07-24T00:00:00Z",
+            lifecycle_refs={},
+            transition_metadata={
+                "semantic_id": "KAOJU:PAPER-TEMPLATE-MYST",
+                "template_kind": "content",
+                "template_name": "main",
+            },
+            content_path=None,
+            provenance_refs=[],
+        )
+        try:
+            store.upsert_lifecycle_record(malformed)
+            store.connection.commit()
+        finally:
+            store.close()
+        status, invalid = self.template(
+            "export",
+            "--kind",
+            "content",
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("template_state_invalid", invalid["error"]["code"])
+
+    def test_ensure_defaults_is_resumable_and_protects_edited_export(self) -> None:
+        _write(
+            self.root / "topic-workspaces/alpha/intent/src/topic-overview.md",
+            "# Alpha Survey\n\nCompare reliable systems.\n",
+        )
+        status, initialized = self.template(
+            "ensure-defaults",
+            "--actor",
+            "agent:topic-creator",
+        )
+        self.assertEqual(0, status, initialized)
+        self.assertEqual(
+            {"content", "latex"},
+            {str(role["template_kind"]) for role in initialized["roles"]},
+        )
+        self.assertTrue(all(role["created"] for role in initialized["roles"]))
+        self.assertTrue(all(role["exported"] for role in initialized["roles"]))
+
+        content_path = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-templates/content/main"
+            / "paper.myst.md"
+        )
+        _write(
+            content_path,
+            content_path.read_text(encoding="utf-8")
+            + "\n## User Adjustment\n\nPreserve this edit.\n",
+        )
+        before = content_path.read_bytes()
+        status, replay = self.template(
+            "ensure-defaults",
+            "--actor",
+            "agent:topic-creator",
+        )
+        self.assertEqual(0, status, replay)
+        roles = {
+            str(role["template_kind"]): role
+            for role in replay["roles"]
+        }
+        self.assertTrue(roles["content"]["preserved"])
+        self.assertEqual("edited", roles["content"]["export_posture"])
+        self.assertFalse(roles["content"]["exported"])
+        self.assertEqual(before, content_path.read_bytes())
+        self.assertEqual("unchanged", roles["latex"]["export_posture"])
+
+    def test_derived_apply_promotes_edits_and_preserves_future_only_boundary(self) -> None:
+        status, exported = self.template(
+            "export",
+            "--kind",
+            "latex",
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, exported)
+        target = Path(str(exported["target"]))
+        main = target / "main.tex"
+        _write(
+            main,
+            main.read_text(encoding="utf-8").replace(
+                "\\usepackage{booktabs}",
+                "\\usepackage{booktabs}\n\\usepackage{microtype}",
+            ),
+        )
+        result = apply_derived_intent(
+            self.context(),
+            env={},
+            cwd=self.root,
+            actor="agent:test",
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["mutated"])
+        self.assertTrue(result["future_effective"])
+        self.assertEqual("preserved", result["historical_scope"])
+        self.assertFalse(result["synthetic_aggregate_artifact_created"])
+        promoted = [
+            item
+            for item in result["materials"]
+            if item.get("material_type") == "writing-template-export"
+        ]
+        self.assertEqual(["promoted"], [item["apply_status"] for item in promoted])
+
+    def test_exchange_root_migration_moves_singular_export_with_preview_token(self) -> None:
+        created = self.create_main()
+        singular = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-template/content/main"
+        )
+        status, exported = self.template(
+            "export",
+            "--kind",
+            "content",
+            "--name",
+            "main",
+            "--target",
+            str(singular),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, exported)
+        status, preview = self.template("migrate-exchange-root")
+        self.assertEqual(0, status, preview)
+        self.assertEqual("ready", preview["posture"])
+        status, migrated = self.template(
+            "migrate-exchange-root",
+            "--apply",
+            "--expected-preview",
+            str(preview["preview_token"]),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, migrated)
+        plural = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-templates/content/main"
+        )
+        self.assertFalse(singular.parent.parent.exists())
+        self.assertTrue((plural / "paper/index.md").is_file())
+        self.assertEqual(created["tree_digest"], migrated["observations"][0]["tree_digest"])
+
+    def test_exchange_root_migration_blocks_non_equivalent_dual_roots(self) -> None:
+        self.create_main()
+        singular = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-template/content/main"
+        )
+        plural = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-templates/content/main"
+        )
+        status, _ = self.template(
+            "export",
+            "--name",
+            "main",
+            "--target",
+            str(singular),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status)
+        status, _ = self.template(
+            "export",
+            "--name",
+            "main",
+            "--target",
+            str(plural),
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status)
+        _write(plural / "paper/index.md", "# Conflicting plural copy\n")
+        status, preview = self.template("migrate-exchange-root")
+        self.assertEqual(1, status)
+        self.assertEqual("conflicting", preview["posture"])
+        self.assertTrue(singular.is_dir())
+        self.assertTrue(plural.is_dir())
 
 
 if __name__ == "__main__":

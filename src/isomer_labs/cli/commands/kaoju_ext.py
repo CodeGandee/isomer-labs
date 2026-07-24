@@ -24,7 +24,11 @@ from isomer_labs.kaoju.contracts import (
 )
 from isomer_labs.kaoju.context import selected_context_payload
 from isomer_labs.kaoju.paper import KaojuPaperService, REQUIRED_PAPER_SECTIONS
-from isomer_labs.kaoju.templates import DEFAULT_TEMPLATE_NAME, KaojuTemplateService
+from isomer_labs.kaoju.template_initialization import ensure_default_templates
+from isomer_labs.kaoju.template_support import DEFAULT_TEMPLATE_NAME
+from isomer_labs.kaoju.templates import (
+    KaojuTemplateService,
+)
 from isomer_labs.kaoju.wiki import KaojuWikiService
 from isomer_labs.models import EffectiveTopicContext
 
@@ -317,11 +321,36 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     def paper_template_exports(ctx: click.Context, **values: Any) -> int:
         return _with_kaoju_service(ctx, values, lambda context: _template_service(context, values).exports())
 
+    @paper_template_group.command(
+        name="ensure-defaults",
+        help="Create and safely export missing content/main and latex/main stock.",
+    )
+    @common_options
+    @topic_selection_options
+    @click.option("--actor", default="agent", show_default=True)
+    @click.pass_context
+    def paper_template_ensure_defaults(ctx: click.Context, **values: Any) -> int:
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: ensure_default_templates(
+                context,
+                env=os.environ,
+                cwd=Path.cwd(),
+                actor=str(values["actor"]),
+            ),
+            report_selected_context=True,
+        )
+
     @paper_template_group.command(name="export", help="Export or observe one stable non-canonical working directory.")
     @common_options
     @topic_selection_options
     @_template_kind_option
-    @click.option("--name", default=DEFAULT_TEMPLATE_NAME, show_default=True)
+    @click.option(
+        "--name",
+        default=None,
+        help="Exact topic-stock name. Omitted selectors resolve topic or packaged main.",
+    )
     @click.option("--target", type=click.Path(path_type=Path), default=None)
     @click.option("--observe", is_flag=True, help="Register an agent-prepared working tree without copying canonical content.")
     @click.option("--actor", default="agent", show_default=True)
@@ -329,7 +358,52 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     def paper_template_export(ctx: click.Context, **values: Any) -> int:
         if values["observe"] and values.get("target") is None:
             raise click.UsageError("--observe requires --target")
-        return _with_kaoju_service(ctx, values, lambda context: _template_service(context, values).observe_export(str(values["name"]), values["target"], actor=str(values["actor"])) if values["observe"] else _template_service(context, values).export(str(values["name"]), target=values.get("target"), actor=str(values["actor"])))
+        if values["observe"] and values.get("name") is None:
+            raise click.UsageError("--observe requires an explicit --name")
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: (
+                _template_service(context, values).observe_export(
+                    str(values["name"]),
+                    values["target"],
+                    actor=str(values["actor"]),
+                )
+                if values["observe"]
+                else _template_service(context, values).export(
+                    str(values["name"]) if values.get("name") is not None else None,
+                    target=values.get("target"),
+                    actor=str(values["actor"]),
+                )
+            ),
+        )
+
+    @paper_template_group.command(
+        name="promote-export",
+        help="Promote one assessed edited export through typed create or update.",
+    )
+    @common_options
+    @topic_selection_options
+    @_template_kind_option
+    @click.option(
+        "--from",
+        "target",
+        type=click.Path(path_type=Path, exists=True, file_okay=False),
+        required=True,
+    )
+    @click.option("--actor", default="agent", show_default=True)
+    @click.option("--change-summary", default=None)
+    @click.pass_context
+    def paper_template_promote_export(ctx: click.Context, **values: Any) -> int:
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: _template_service(context, values).promote_export(
+                values["target"],
+                actor=str(values["actor"]),
+                change_summary=values.get("change_summary"),
+            ),
+        )
 
     @paper_template_group.command(name="migrate", help="Preview or apply role-specific template-contract migration and explicit LaTeX adoption.")
     @common_options
@@ -345,6 +419,50 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     def paper_template_migrate(ctx: click.Context, **values: Any) -> int:
         metadata = _json_object_file(values.get("metadata_file"), label="Template metadata")
         return _with_kaoju_service(ctx, values, lambda context: _template_service(context, values).migrate(record_id=values.get("record_id"), name=values.get("name"), actor=str(values["actor"]), authored_metadata=metadata, expected_state=values.get("expected_state")) if values["apply"] else _template_service(context, values).inspect_migration())
+
+    @paper_template_group.command(
+        name="migrate-exchange-root",
+        help="Preview or apply the legacy singular to plural exchange-root migration.",
+    )
+    @common_options
+    @topic_selection_options
+    @click.option("--apply", is_flag=True)
+    @click.option(
+        "--expected-preview",
+        default=None,
+        help="Exact preview token required with --apply.",
+    )
+    @click.option("--actor", default="agent", show_default=True)
+    @click.pass_context
+    def paper_template_migrate_exchange_root(
+        ctx: click.Context,
+        **values: Any,
+    ) -> int:
+        if values["apply"] and not values.get("expected_preview"):
+            raise click.UsageError("--apply requires --expected-preview")
+        return _with_kaoju_service(
+            ctx,
+            values,
+            lambda context: (
+                KaojuTemplateService(
+                    context,
+                    env=os.environ,
+                    cwd=Path.cwd(),
+                    kind="content",
+                ).migrate_exchange_root(
+                    actor=str(values["actor"]),
+                    expected_preview=str(values["expected_preview"]),
+                )
+                if values["apply"]
+                else KaojuTemplateService(
+                    context,
+                    env=os.environ,
+                    cwd=Path.cwd(),
+                    kind="content",
+                ).inspect_exchange_root_migration()
+            ),
+            report_selected_context=True,
+        )
 
     @paper_group.command(name="validate", help="Validate MyST syntax, sections, placeholders, citations, displays, and source refs.")
     @common_options
@@ -405,6 +523,11 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @topic_selection_options
     @click.option("--draft-ref", required=True, help="Canonical MyST draft ref.")
     @click.option("--content-template-ref", default=None, help="Exact observed content-template or paper-structure ref.")
+    @click.option(
+        "--content-template-name",
+        default=None,
+        help="Exact named content stock. Omitted content selectors resolve content/main with packaged fallback.",
+    )
     @click.option("--template-myst-ref", default=None, help="Deprecated alias for --content-template-ref.")
     @click.option("--latex-template-name", default=None, help="Named LaTeX stock; omitted selectors resolve latex/main.")
     @click.option("--latex-template-ref", default=None, help="Exact stable named LaTeX stock ref.")
@@ -418,7 +541,7 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
         return _with_kaoju_service(
             ctx,
             values,
-            lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).init_tex(draft_ref=str(values["draft_ref"]), content_template_ref=values.get("content_template_ref"), template_myst_ref=values.get("template_myst_ref"), latex_template_name=values.get("latex_template_name"), latex_template_ref=values.get("latex_template_ref"), paper_line=str(values["paper_line"]), venue=str(values["venue"]), document_class=str(values["document_class"]), toolchain_policy=str(values["toolchain_policy"]), citation_refs=list(values["citation_refs"])),
+            lambda context: KaojuPaperService(context, env=os.environ, cwd=Path.cwd()).init_tex(draft_ref=str(values["draft_ref"]), content_template_ref=values.get("content_template_ref"), content_template_name=values.get("content_template_name"), template_myst_ref=values.get("template_myst_ref"), latex_template_name=values.get("latex_template_name"), latex_template_ref=values.get("latex_template_ref"), paper_line=str(values["paper_line"]), venue=str(values["venue"]), document_class=str(values["document_class"]), toolchain_policy=str(values["toolchain_policy"]), citation_refs=list(values["citation_refs"])),
             report_selected_context=True,
         )
 
