@@ -3,6 +3,52 @@
 ## Purpose
 TBD - created by archiving change add-kaoju-mindsets. Update Purpose after archive.
 ## Requirements
+### Requirement: Kaoju Treats a Missing Mindset Source as Optional Run State
+For an applicable action, Kaoju SHALL treat verified absence of the selected deterministic Mindset Source file as permission to proceed without mindset reflection, persist that decision on the Run, and create no Mindset Record.
+
+#### Scenario: Selected Source file is absent
+- **WHEN** an applicable action resolves one mindset key and its deterministic direct-child Source file does not exist
+- **THEN** the entrypoint begins the Run, records disposition `skipped_source_missing` with Source status `missing`, Record status `absent`, and reason `source_missing`, and proceeds without producing `KAOJU:MINDSET-RECORD`
+- **AND** it does not create the Source, read a packaged seed, invent questions, or use conversation memory as a substitute
+
+#### Scenario: Existing Source file is invalid
+- **WHEN** the selected deterministic path exists but its file is unreadable, malformed, unsafe, mismatched, ambiguous, or schema-invalid
+- **THEN** the action blocks with exact diagnostics and the explicit Kaoju `create-topic` repair route
+- **AND** it cannot record the file as missing or proceed under `skipped_source_missing`
+
+#### Scenario: Source appears after absence was recorded
+- **WHEN** a Source is added after an active Run recorded `skipped_source_missing`
+- **THEN** that Run continues without a Mindset Record and preserves its original absence posture
+- **AND** a restarted or later Run re-evaluates the deterministic path and may materialize the new Source
+
+#### Scenario: User explicitly requests Source generation
+- **WHEN** the user invokes Kaoju `create-topic` or explicitly asks the topic-creation owner to create missing Sources
+- **THEN** the topic-creation workflow may generate and validate the requested Source files from packaged defaults and topic intent
+- **AND** concrete research execution does not invoke that mutation implicitly
+
+### Requirement: Applicable Kaoju Runs Persist One Mindset Resolution
+Each applicable Kaoju Run SHALL persist exactly one immutable mindset resolution before focused-owner dispatch so later stages can distinguish a usable Mindset Record from verified Record absence.
+
+#### Scenario: Run uses a Mindset Record
+- **WHEN** the selected Source validates and its Run-scoped Mindset Record is created
+- **THEN** the Run records disposition `recorded`, Source status `present`, Record status `available`, the selected key, deterministic Source locator, and verified Record ref
+- **AND** the Record ref is included in the Run input refs and downstream handoffs
+
+#### Scenario: Run has no Mindset Record
+- **WHEN** the selected deterministic Source file is absent
+- **THEN** the Run records disposition `skipped_source_missing`, Source status `missing`, Record status `absent`, selected key, deterministic Source locator, and reason `source_missing`
+- **AND** downstream handoffs carry the Run ref and skipped resolution without a placeholder Record ref
+
+#### Scenario: Resolution is repeated
+- **WHEN** a caller repeats the exact persisted mindset resolution
+- **THEN** the operation is idempotent and returns the current Run posture
+- **AND** a different key, disposition, or Record ref is rejected as a conflicting mid-Run rewrite
+
+#### Scenario: Applicable Run has no resolution
+- **WHEN** a focused consumer receives an applicable Run with neither a verified `recorded` nor `skipped_source_missing` resolution
+- **THEN** it pauses as an orchestration error
+- **AND** it does not infer optionality merely from an absent Record ref
+
 ### Requirement: Kaoju Provides a Topic-Creation Owner
 The packaged Kaoju extension SHALL provide protected capability `isomer-kaoju-topic-creator` as member `topic-creator` at invocation designator `isomer-ext-kaoju-entrypoint->topic-creator`, with the generic Topic Creator as its delegated platform owner rather than an embedded implementation dependency.
 
@@ -148,34 +194,6 @@ The Kaoju topic-creation owner SHALL derive missing Mindset Sources from `topic.
 - **THEN** Kaoju delegates only the missing generic topic-intent prerequisite to `isomer-op-entrypoint->topic-create` when the concrete request authorizes it, otherwise it pauses with the missing stage and exact recovery route
 - **AND** it passes no mindset schema, seed JSON, semantic path, generation rule, or other Kaoju-specific intent into the generic owner and does not generate from a generic topic id, conversation memory, or another topic
 
-### Requirement: Kaoju Lazily Ensures Mindset Sources Before Concrete Work
-The public Kaoju entrypoint SHALL run an extension-local create-missing preflight before beginning the first concrete mutation-bearing Kaoju research Run for a selected topic whose Mindset Sources have not yet been initialized.
-
-#### Scenario: Concrete Kaoju action finds missing Sources
-- **WHEN** a mutation-bearing Kaoju command has one reconciled Research Topic and concrete `topic.intent.overview` but one or more packaged default keys have no Source file
-- **THEN** the entrypoint routes `isomer-kaoju-topic-creator` in create-missing mode before beginning the research Run, preserves every existing valid Source, and generates and validates every missing default-key Source
-- **AND** it proceeds to Run creation only after the selected action's required Source and all create-missing results are valid
-
-#### Scenario: Topic was created before Kaoju installation
-- **WHEN** the first concrete Kaoju action selects an existing topic after the Kaoju pack became available
-- **THEN** the same extension-local preflight initializes missing Sources from the topic overview and packaged seeds
-- **AND** neither the installer nor the generic Topic Creator needs a callback, extension descriptor, mindset path, or generation rule
-
-#### Scenario: Read-only Kaoju request finds missing Sources
-- **WHEN** welcome, help, `explore`, or a status-only management request observes missing Mindset Sources
-- **THEN** it reports the uninitialized posture and exact `create-topic` or concrete-action route without writing files
-- **AND** read-only intent does not authorize lazy create-missing mutation
-
-#### Scenario: Selected topic or mutation authority is unavailable
-- **WHEN** lazy ensure lacks one reconciled topic, enough concrete overview substance, or authority to create topic-local derived intent
-- **THEN** it pauses before Run creation with the ambiguity or missing authority and exact resume route
-- **AND** it does not scan sibling topics, generate in a guessed workspace, or open a research Run solely to record the failed ensure attempt
-
-#### Scenario: Existing Source is invalid during lazy ensure
-- **WHEN** create-missing preflight finds an existing Source with invalid filename, key, JSON, schema, or bounded content
-- **THEN** it preserves the file and pauses before Run creation with exact diagnostics and repair route
-- **AND** it does not overwrite the file, use a packaged default in its place, or create the research Run under partial mindset readiness
-
 ### Requirement: Existing Mindset Sources Remain User-Controlled
 Kaoju SHALL preserve an existing valid topic Mindset Source across explicit topic creation, lazy create-missing preflight, repair, retry, and package upgrade until the user explicitly edits, regenerates, replaces, or reconciles it.
 
@@ -210,37 +228,37 @@ Kaoju SHALL preserve an existing valid topic Mindset Source across explicit topi
 - **AND** no packaged default silently replaces or masks the invalid file
 
 ### Requirement: Applicable Kaoju Actions Select and Snapshot a Mindset Source
-The Kaoju entrypoint SHALL resolve one topic Mindset Source for each action whose checked process route requires one, validate its current file, snapshot it into a Run-scoped Mindset Record, and hand the Record ref to every consumer before substantive action work starts.
+The Kaoju entrypoint SHALL resolve one topic Mindset Source for each action whose checked process route requires one and SHALL either snapshot a valid current file into a Run-scoped Mindset Record or persist verified file absence on the Run before substantive action work starts.
 
 #### Scenario: User selects an applicable key
 - **WHEN** the user explicitly supplies a `mindset_key` whose applicability includes the selected action
 - **THEN** the entrypoint resolves the deterministic file beneath `topic.intent.kaoju_mindsets` ahead of process-route defaults
-- **AND** it records the semantic root, relative path, key, content digest, and exact question snapshot in the Mindset Record
+- **AND** it records either the exact Source snapshot and Record ref or the verified missing-Source resolution for that key
 
 #### Scenario: Process route selects a default key
 - **WHEN** no explicit key is supplied and the checked process contract has an unambiguous action, source-kind, and depth route
 - **THEN** deep or full-text paper examination selects `paper.deep-dive`, skim or triage paper examination selects `paper.skimming`, and repository or source-tree examination selects `source-code.ingest`
 - **AND** selection resolves the topic file rather than reading the packaged seed
 
-#### Scenario: Required Source remains missing after ensure
-- **WHEN** extension-local create-missing preflight cannot produce the action's required topic Source
-- **THEN** the action pauses before Run creation with the selected key, creation diagnostics, and exact Kaoju `create-topic` repair route
-- **AND** it does not invent a Source, use conversation memory, or fall back to a packaged resource
+#### Scenario: Required Source is missing
+- **WHEN** the selected deterministic topic Source file does not exist
+- **THEN** the action records `skipped_source_missing` on the Run and proceeds to focused-owner dispatch without a Mindset Record
+- **AND** it reports the selected key, missing path, and explicit Kaoju `create-topic` route for enabling the mindset in a later Run
 
 #### Scenario: Required Source is invalid at final selection
-- **WHEN** the exact topic file is ambiguous or invalid when the entrypoint revalidates it for Run snapshot
+- **WHEN** the exact topic file exists but is ambiguous, unreadable, mismatched, unsafe, or invalid when the entrypoint revalidates it for Run snapshot
 - **THEN** the Run does not proceed to focused-owner dispatch and reports the selected key, semantic path diagnostics, and repair route
-- **AND** it does not overwrite the file or substitute packaged content
+- **AND** it does not overwrite the file, mark it missing, or substitute packaged content
 
 #### Scenario: Required active survey context is unavailable
-- **WHEN** the canonical Research Topic or one unambiguous current `KAOJU:SURVEY-CONTRACT` revision cannot be resolved
+- **WHEN** a present Source must be materialized but the canonical Research Topic or one unambiguous current `KAOJU:SURVEY-CONTRACT` revision cannot be resolved
 - **THEN** the action pauses before substantive work with the missing, stale, conflicting, or ambiguous state and exact resume hint
 - **AND** it does not answer the mindset against an unpinned survey frame
 
 #### Scenario: Source changes during a Run
-- **WHEN** the topic Source changes after the Run's Mindset Record starts
-- **THEN** the active Run continues to answer its exact snapshotted questions and notes and cites the original digest
-- **AND** the changed Source applies only to a restarted or later Run
+- **WHEN** the topic Source changes or appears after the Run's recorded mindset resolution starts
+- **THEN** a `recorded` Run continues to answer its exact snapshot while a `skipped_source_missing` Run continues without mindset reflection
+- **AND** the changed or new Source applies only to a restarted or later Run
 
 ### Requirement: Mindset Records Preserve Answers and Evidence
 Each Run that uses a Mindset Source SHALL maintain a revisioned `KAOJU:MINDSET-RECORD` current-state Artifact containing the exact Source snapshot, active survey context, answers, explicitly Record-targeted supplemental questions, evidence refs, Source-update disposition, collector posture, and unresolved questions.

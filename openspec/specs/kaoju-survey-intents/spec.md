@@ -98,6 +98,11 @@ The system SHALL maintain one scoped current `kaoju:reading-list` for each selec
 ### Requirement: Reading-List Discovery Preserves Search and Identity Evidence
 Reading-list construction SHALL search across papers, technical reports, source-code repositories, datasets, and models while treating papers and technical reports as the primary works.
 
+#### Scenario: Paper retrieval uses the centralized owner
+- **WHEN** reading-list discovery needs paper identity resolution, paper query, citing-paper search, cited-paper exploration, citation-neighborhood traversal, or adjacent-paper search
+- **THEN** the discover skill invokes `isomer-ext-kaoju-entrypoint->paper-search` with the direction, query or seed, bounds, expected normalized fields, and evidence-use intent
+- **AND** repositories, datasets, models, selection, target counts, and cross-source-class coverage remain owned by discover and their existing owners
+
 #### Scenario: Candidate records query provenance
 - **WHEN** a provider query or reference traversal yields a candidate
 - **THEN** the discovery ledger records query text or seed ref, provider or access method, query time, searched-through date, discovery route, source class, and selection disposition

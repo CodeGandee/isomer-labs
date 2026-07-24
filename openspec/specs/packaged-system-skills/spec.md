@@ -243,17 +243,22 @@ The packaged core public pack SHALL include `isomer-op-gui-mgr` as the protected
 - **AND** no top-level `isomer-op-gui-mgr` directory is created
 
 ### Requirement: Packaged Kaoju Extension Group
-The packaged system-skill manifest SHALL expose the complete Kaoju public pair and protected member inventory, including the Kaoju-specific topic-creation owner and its private default resources.
+The packaged system-skill manifest SHALL expose the complete Kaoju public pair and protected member inventory, including the Kaoju-specific topic-creation owner, centralized paper-search owner, and their private resources.
 
 #### Scenario: Kaoju manifest group is classified and complete
 - **WHEN** packaged skill metadata is loaded
-- **THEN** the Kaoju extension declares public welcome and entrypoint bundles plus exactly fifteen protected members, including `isomer-kaoju-topic-creator`
-- **AND** the public command metadata includes `create-topic` as topic preparation without exposing the protected owner as another public skill
+- **THEN** the Kaoju extension declares public welcome and entrypoint bundles plus exactly sixteen protected members, including `isomer-kaoju-topic-creator` and `isomer-kaoju-paper-search`
+- **AND** the public command metadata includes `create-topic` as topic preparation without exposing either protected owner as another public skill
 
 #### Scenario: Kaoju topic creator is materialized
 - **WHEN** the Kaoju pack or the topic-creator dependency closure is materialized
 - **THEN** `isomer-kaoju-topic-creator` includes its local skill guidance and validated `assets/defaults/mindsets/*.json` resources
 - **AND** the materialized bundle does not depend on a repository checkout, family-root symlink, or undeclared resource path
+
+#### Scenario: Kaoju paper search is materialized
+- **WHEN** the Kaoju pack or paper-search dependency closure is materialized
+- **THEN** `isomer-kaoju-paper-search` includes its local action guidance, normalized-result contract, and provider-approach references including S2
+- **AND** the materialized bundle does not depend on `imsight-paper-search`, an external source checkout, or undeclared provider documentation
 
 #### Scenario: Obsolete mindset manager is absent
 - **WHEN** the packaged Kaoju inventory and public CLI documentation are inspected

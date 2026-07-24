@@ -30,6 +30,7 @@ The system SHALL provide `isomer-op-entrypoint` as the public core execution ski
 - **WHEN** the public `SKILL.md` is inspected
 - **THEN** it has a near-top numbered Workflow that parses the task, discovers safe context when useful, selects a route, loads only the selected protected member or CLI guidance, proceeds, and reports the result
 - **AND** it has a freeform fallback
+
 ### Requirement: Entrypoint Routes Then Proceeds
 The entrypoint SHALL resolve a public command or concrete task to one protected member, optional public extension entrypoint, or CLI surface and proceed by default, while orientation-only requests route to the independent welcome skill.
 
@@ -59,6 +60,7 @@ The entrypoint SHALL resolve a public command or concrete task to one protected 
 #### Scenario: Ambiguous mutation uses read-only preflight
 - **WHEN** action lacks enough Project, Topic, actor, agent, or workspace context
 - **THEN** the entrypoint uses read-only evidence before mutation and pauses for information only when the route cannot be resolved safely
+
 ### Requirement: Entrypoint Indexes All System Skill Families
 The entrypoint SHALL index core protected operator, service, and shared capabilities while linking public welcome skills as orientation surfaces rather than protected owner routes.
 
@@ -80,6 +82,7 @@ The entrypoint SHALL index core protected operator, service, and shared capabili
 #### Scenario: Retired routes are excluded
 - **WHEN** active guidance is inspected
 - **THEN** it does not present retired topic workspace, topic preparation, manual session, operator Houmao, admin, or research-v1 names as active routes
+
 ### Requirement: Entrypoint Includes Extension Skill Routing
 The core entrypoint SHALL route optional research paradigms through their public extension entrypoints and SHALL point orientation-only extension questions to their public welcome skills.
 
@@ -107,6 +110,7 @@ The core entrypoint SHALL route optional research paradigms through their public
 - **WHEN** a concrete task maps to an optional extension that is not declared or host-usable
 - **THEN** the core entrypoint routes extension reconciliation through its protected `system-skills` member
 - **AND** it resumes the public extension entrypoint after successful reconciliation
+
 ### Requirement: Entrypoint Includes CLI Surface Routing
 The entrypoint SHALL include concise routing guidance for Isomer CLI command families without duplicating full CLI help.
 
@@ -169,6 +173,7 @@ The repository SHALL validate `isomer-op-entrypoint` as the public core executio
 #### Scenario: Protected member coverage is incomplete
 - **WHEN** a manifest core member is missing from the parent route table or a parent route lacks manifest metadata
 - **THEN** validation fails with the member or route identity
+
 ### Requirement: Entrypoint Routes Toolbox Tasks
 The public core entrypoint SHALL route project-local Toolbox tasks through protected member `toolbox`, whose logical id remains `isomer-op-toolbox-mgr`.
 
@@ -316,7 +321,6 @@ The `isomer-op-entrypoint` skill SHALL provide one context-aware `When to Route 
 - **WHEN** the table explains a protected member such as `gui`
 - **THEN** the sentence does not change the distinction between the bare protected designator and the parenthesized public subcommand designator
 
-
 ### Requirement: Entrypoint Performs Context-Sensitive Preflight
 The operator entrypoint SHALL classify operation scope, reconcile task-selected targets, and pin resolved context before executing a context-sensitive route.
 
@@ -349,3 +353,25 @@ The operator entrypoint SHALL classify operation scope, reconcile task-selected 
 - **WHEN** the routed typed command fails after context has been pinned
 - **THEN** the entrypoint preserves the original target while diagnosing or rerouting the failure
 - **AND** it does not perform an unmanaged filesystem copy or change the output surface unless the user explicitly requests a separate operation
+
+### Requirement: Entrypoint Routes Topic Workspace Git Work
+The public core entrypoint SHALL route optional local Topic Workspace tracking and optional remote Topic Workspace publication through protected member `topic-git`, whose logical id is `isomer-op-topic-workspace-git`.
+
+#### Scenario: Local tracking request selects topic-git local
+- **WHEN** a concrete request asks to initialize, inspect, plan, ignore, or commit local Source Topic Workspace root history
+- **THEN** the entrypoint selects the applicable `isomer-op-entrypoint->topic-git->local()` child operation
+- **AND** it does not infer remote publication intent
+
+#### Scenario: Remote publication request selects topic-git publish
+- **WHEN** a concrete request asks to prepare, inspect, plan, or synchronize a sanitized Topic Workspace remote publication
+- **THEN** the entrypoint selects the applicable `isomer-op-entrypoint->topic-git->publish()` child operation
+- **AND** it does not require or initialize local root tracking
+
+#### Scenario: Ambiguous tracking request preserves the distinction
+- **WHEN** a user asks to track or version a Topic Workspace without saying whether the goal is local history or remote publication
+- **THEN** the entrypoint routes to Topic Git overall status and explains both independent opt-in layers before mutation
+
+#### Scenario: Entrypoint does not select a Topic Git CLI family
+- **WHEN** the entrypoint routes a Topic Git operation
+- **THEN** it delegates to the protected skill rather than constructing an `isomer-cli project topic-git ...` command
+- **AND** the protected skill uses Isomer CLI only for read-only context queries before direct Git execution

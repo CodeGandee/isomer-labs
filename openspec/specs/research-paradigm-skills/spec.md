@@ -60,6 +60,7 @@ The packaged research-paradigm surface SHALL organize each production extension 
 - **WHEN** DeepSci or Kaoju pack contents are inspected
 - **THEN** they do not embed core operator or service bundles
 - **AND** cross-pack routes use protected logical dependencies
+
 ### Requirement: Generic Research Vocabulary
 The generationed skillset SHALL distinguish research-method semantics from Isomer platform implementation terms.
 
@@ -170,6 +171,7 @@ Research-paradigm packs SHALL use welcome for newcomer-oriented use-case selecti
 #### Scenario: No extraneous active documentation is added
 - **WHEN** a skill folder's active runtime surface is inspected
 - **THEN** it contains only files that directly support skill use, such as `SKILL.md`, `agents/openai.yaml`, `references/`, `assets/`, `scripts/`, and explicitly bounded non-active traceability directories
+
 ### Requirement: Imsight Workflow Entrypoints
 Each production DeepSci `isomer-deepsci-*-production DeepSci` skill SHALL use a concise Imsight-compatible skill entrypoint structure while preserving trigger behavior and research guardrails.
 
@@ -323,6 +325,7 @@ The implementation SHALL include repository-runnable validation that covers exte
 #### Scenario: Repository command runs harness
 - **WHEN** `pixi run validate-skills` executes
 - **THEN** it covers the complete public and protected research-paradigm inventory
+
 ### Requirement: Isomer Project Operator and Topic Service Skills
 The repository SHALL include provider-neutral skill instructions for Project Operator Sessions, Operator Agents, and Topic Service Agents to perform Topic Team Specialization and instantiate topic teams from Domain Agent Team Templates.
 
@@ -977,6 +980,16 @@ The production Kaoju family SHALL include an independent public welcome and exec
 - **THEN** its public entrypoint owns public commands and its protected members own stage-specific behavior and resources
 - **AND** no old pipeline facade or top-level protected member remains
 
+#### Scenario: Paper-search provider material remains protected
+- **WHEN** the protected `paper-search` member is inspected
+- **THEN** its top-level guidance owns provider-neutral paper-search actions while its bundle-local references own S2 endpoint and execution details
+- **AND** public Kaoju commands, core schema, and generic provider contracts do not expose the S2 API catalog
+
+#### Scenario: Paper-search preserves the agent and data-service boundary
+- **WHEN** the protected `paper-search` member executes and records a provider-backed action
+- **THEN** its selected approach directs the agent to an available external provider-native or general-purpose CLI or bounded HTTPS tool and normalizes the returned provider output
+- **AND** `isomer-cli ext research literature` receives only the normalized observation for local validation, recording, indexing, and query
+
 #### Scenario: Kaoju template roles remain explicit
 - **WHEN** public manager, paper drafting, TeX composition, PDF build, or protected write guidance is inspected
 - **THEN** it distinguishes named content templates from named LaTeX templates, including their independent `main` defaults and semantic ids
@@ -990,11 +1003,12 @@ The production Kaoju family SHALL include an independent public welcome and exec
 #### Scenario: Kaoju skills use canonical Isomer language
 - **WHEN** public and protected Kaoju guidance is inspected
 - **THEN** it retains canonical Isomer domain terms and provider boundaries
+
 ### Requirement: Research-Paradigm Validation Supports Kaoju
 Research-paradigm validation SHALL enforce Kaoju welcome, entrypoint, and protected-member roles without weakening existing Kaoju-specific rules.
 
 #### Scenario: Valid Kaoju pair passes
-- **WHEN** the Kaoju pack has canonical public metadata, complete welcome command coverage, a valid execution entrypoint, and thirteen valid protected members
+- **WHEN** the Kaoju pack has canonical public metadata, complete welcome command coverage, a valid execution entrypoint, and sixteen valid protected members
 - **THEN** research-paradigm validation accepts the public/protected layout
 
 #### Scenario: Kaoju welcome copies execution procedure
@@ -1006,14 +1020,24 @@ Research-paradigm validation SHALL enforce Kaoju welcome, entrypoint, and protec
 - **WHEN** a protected member is missing, crosses a resource boundary, has a stale direct invocation, or violates identity mapping
 - **THEN** validation reports its logical id, parent pack, file, and rule
 
+#### Scenario: Paper-search top-level leaks provider API
+- **WHEN** `isomer-kaoju-paper-search/SKILL-MAIN.md` contains an endpoint inventory, base-URL catalog, credential value, or external checkout dependency
+- **THEN** validation reports the provider-boundary or resource-boundary violation
+- **AND** it requires action-oriented top-level guidance and bundle-local provider references
+
+#### Scenario: Paper-search routes provider execution through Isomer CLI
+- **WHEN** active paper-search guidance tells the agent to invoke an `isomer-cli` provider search, resolution, recommendation, citation-fetch, or reference-fetch command
+- **THEN** validation reports an execution-boundary violation
+- **AND** it directs provider execution to a bundle-local external-tool approach and reserves `ext research literature` for local data operations
+
 #### Scenario: Shared checks preserve family rules
 - **WHEN** common pack validation succeeds
 - **THEN** trial versus reproduction, evidence, binding, artifact identity, survey-process, content-template, LaTeX-template, composition, build-entrypoint, drift, and historical-record checks still run
 
 #### Scenario: Validator tests cover Kaoju active and invalid zones
 - **WHEN** unit tests exercise family-aware research-paradigm validation
-- **THEN** they include valid Kaoju fixtures and failures for missing inventory, wrong namespace, manifest mismatch, broken direct references, stale domain terms, hard-coded provider or local paths, procedural-command drift, binding drift, directory scanning, canonical-format violations, external wiki routing, direct environment mutation, Isomer-owned repository acquisition, and pre-verification registration
-- **AND** they retain regression fixtures for valid and invalid DeepSci material
+- **THEN** they include valid Kaoju fixtures and failures for missing inventory, wrong namespace, manifest mismatch, broken direct references, stale domain terms, hard-coded provider or local paths, paper-search action or provider-resource drift, procedural-command drift, binding drift, directory scanning, canonical-format violations, external wiki routing, direct environment mutation, Isomer-owned repository acquisition, and pre-verification registration
+
 ### Requirement: Production Kaoju Skills Use Artifact Binding Authority
 Production Kaoju skills SHALL route accepted durable outputs through registered semantic ids and the versioned machine-readable Kaoju binding registry.
 
@@ -1395,7 +1419,6 @@ The write skill SHALL distinguish paper-specific TeX repair from stocked LaTeX-t
 - **WHEN** the user explicitly asks to update the stocked LaTeX template from assessed edits
 - **THEN** the skill routes through named LaTeX-template export or update with the current state token
 - **AND** later paper composition must explicitly consume the new stock state
-
 
 ### Requirement: Production Research Skills Preserve Reconciled Invocation Context
 Production research-paradigm skills SHALL consume the reconciled task target from context preflight and SHALL not replace a failed typed operation with an unrequested filesystem fallback.

@@ -3,7 +3,6 @@
 ## Purpose
 TBD - created by archiving change rewrite-docs-comprehensive-system-guide. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: Documentation Information Architecture
 The documentation SHALL include welcome-first onboarding paths for core Isomer, DeepSci, and Kaoju alongside informed-user entrypoint and CLI references.
 
@@ -37,6 +36,7 @@ The documentation SHALL include welcome-first onboarding paths for core Isomer, 
 #### Scenario: System skill install path is documented
 - **WHEN** docs show how to install Isomer system skills for an agent
 - **THEN** they recommend `npx skills add` examples and distinguish core skills from DeepSci extension skills
+
 ### Requirement: System Design Documentation
 The system SHALL document the current Isomer Labs architecture using canonical domain language and explicit state ownership boundaries.
 
@@ -123,6 +123,7 @@ The documentation SHALL show newcomer workflows that begin with welcome and info
 - **WHEN** a user or agent needs a Canonical External Repository
 - **THEN** the docs show how to query or choose a non-mutating target, run user-selected or task-appropriate repository commands outside `isomer-cli`, verify source identity, register the existing path, and record applicable provenance
 - **AND** failure examples do not create a successful binding or imply that Isomer cleans partial filesystem content
+
 ### Requirement: Assumptions and Non-goals Documentation
 The system SHALL document current assumptions, side-effect boundaries, security posture, adapter boundaries, and non-goals so readers do not infer unsupported guarantees.
 
@@ -192,6 +193,7 @@ Documentation validation SHALL verify public welcome names, entrypoint names, ro
 - **WHEN** docs validation scans active documentation, tutorials, and system-skill explanations
 - **THEN** it reports `project repos acquire`, `repository_acquisition`, the removed repository service, fixed Isomer-owned clone behavior, registration before verification, and claims that Isomer cleans partial external acquisitions
 - **AND** it accepts direct repository commands only when nearby guidance identifies them as user-controlled or agent-controlled external operations followed by non-executing Isomer registration
+
 ### Requirement: Semantic Workspace Path Documentation
 The documentation SHALL explain that semantic surface labels are the workspace path contract and default directories are one layout profile.
 
@@ -407,3 +409,51 @@ The documentation system SHALL update canonical Isomer domain language so Topic 
 - **WHEN** documentation, schemas, CLI help, or skill prose describes manually controlled workers
 - **THEN** it uses Topic Actor Workspace for their managed cwd surface
 - **AND** it does not describe Topic Actor Workspaces as Agent Workspaces, Agent Instance ids, or Agent Team Instance membership
+
+### Requirement: Documentation Explains Independent Topic Git Layers
+The documentation SHALL explain in-workspace local tracking and remote publication as independent disabled-by-default capabilities.
+
+#### Scenario: Publication terminology preserves workspace taxonomy
+- **WHEN** documentation contrasts canonical source material with publication material
+- **THEN** it defines Source Topic Workspace as a contextual role of the canonical Topic Workspace
+- **AND** it defines Topic Publication Copy as a derived projection rather than a managed workspace type, canonical source, or Publication Workspace
+
+#### Scenario: Topic Workspace documentation presents four combinations
+- **WHEN** a reader opens Topic Workspace Git documentation
+- **THEN** it explains that neither layer, local only, publication only, or both may be enabled
+- **AND** it states that neither layer requires, triggers, disables, or mutates the other
+
+#### Scenario: Local tracking documentation states its boundary
+- **WHEN** documentation explains local tracking
+- **THEN** it states that the Source Topic Workspace root repository is local-only, excludes existing nested Git workspaces, and never performs remote operations through Topic Git local operations
+
+#### Scenario: Publication documentation states its boundary
+- **WHEN** documentation explains remote publication
+- **THEN** it states that publication reads the current source filesystem, uses an ignored Topic Publication Copy, never copies source Git metadata or history, and does not require local commits
+
+#### Scenario: Query and execution boundary is explained
+- **WHEN** documentation explains how Topic Git operations run
+- **THEN** it states that Isomer CLI supplies only read-only selected-context and semantic-path information
+- **AND** it states that the operator agent invokes Git directly with validated paths rather than through an Isomer CLI Topic Git command family or another Git wrapper
+
+### Requirement: Documentation Explains Topic Publication Copies
+The documentation SHALL describe Topic Publication Copy placement, sanitization, submodule layout, same-remote branch mapping, reconstruction, comparison, and push ordering.
+
+#### Scenario: Default temporary path is explained
+- **WHEN** a reader asks where publication work is stored
+- **THEN** documentation explains effective Project-root `tmp/` and `temp/` ignore inspection, the default `topic-workspace-publish/<topic-id>/` subdirectory, and managed `tmp/` creation when no ignored candidate exists
+
+#### Scenario: Privacy projection is explained
+- **WHEN** documentation explains what enters publication history
+- **THEN** it defines `track`, `template`, `exclude`, `component`, and `block`
+- **AND** it states that placeholder generation and masking happen only in the Topic Publication Copy
+
+#### Scenario: Same-remote submodules are explained
+- **WHEN** documentation explains published nested workspaces
+- **THEN** it maps Topic Main, Topic Actor, and Agent components to their deterministic branches in the same user-provided remote
+- **AND** it states that `topic-workspace/main` pins exact component commits as submodules
+
+#### Scenario: Synchronization comparison is explained
+- **WHEN** documentation explains publish sync
+- **THEN** it describes comparison among source content, expected sanitized output, last projection manifest, current publication copy, and fetched remote state
+- **AND** it explains conflict, deletion, missing-copy reconstruction, component-first push, partial failure, and superproject-last behavior
