@@ -3297,7 +3297,12 @@ class IsomerCliTests(unittest.TestCase):
             [(public["name"], public["role"]) for public in data["extensions"][0]["public_skills"]],
         )
         kaoju_members = {item["logical_id"]: item for item in data["extensions"][1]["protected_members"]}
-        self.assertEqual(15, len(kaoju_members))
+        self.assertEqual(16, len(kaoju_members))
+        self.assertEqual("paper-search", kaoju_members["isomer-kaoju-paper-search"]["member_name"])
+        self.assertEqual(
+            "isomer-ext-kaoju-entrypoint->paper-search",
+            kaoju_members["isomer-kaoju-paper-search"]["invocation_designator"],
+        )
         self.assertEqual("trial", kaoju_members["isomer-kaoju-trial"]["member_name"])
         self.assertEqual(
             "isomer-ext-kaoju-entrypoint->trial",
@@ -3506,7 +3511,7 @@ class IsomerCliTests(unittest.TestCase):
         status, output = self.run_cli(["project", "skill-callbacks", "insertion-points", "--all-catalog-extensions", "--json"], cwd=root)
         data = json.loads(output)
         self.assertEqual(0, status, output)
-        self.assertEqual(74, len(data["insertion_points"]))
+        self.assertEqual(76, len(data["insertion_points"]))
         catalog_skills = {item["target_skill"] for item in data["insertion_points"]}
         self.assertIn("isomer-kaoju-trial", catalog_skills)
         self.assertIn("isomer-kaoju-export", catalog_skills)

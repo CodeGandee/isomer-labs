@@ -16,7 +16,7 @@ skill_invocation_notation: >
 ## Workflow
 
 1. **Frame the intake**. Accept the base survey refs, nominated items, intended priority, and update boundary; use clarification-first when disposition rules are unclear.
-2. **Resolve every item**. Use `isomer-ext-kaoju-entrypoint->discover` to assign a stable intake id, attempt Source Identity resolution, detect duplicates, and retain one terminal disposition per item.
+2. **Resolve every item**. Use `isomer-ext-kaoju-entrypoint->discover` to assign a stable intake id, detect duplicates, and retain one terminal disposition per item. For paper identity or metadata retrieval, discover invokes `isomer-ext-kaoju-entrypoint->paper-search` and applies Source Identity and disposition judgment to its normalized provider output.
 3. **Acquire and examine**. Use `isomer-ext-kaoju-entrypoint->acquire` and `isomer-ext-kaoju-entrypoint->examine` as needed to create a Source Digest or Source Access Blocker for each nomination.
 4. **Propose a delta**. Map useful evidence to catalog, summary, Claim-Evidence Ledger, chronology, taxonomy, limitations, artifact links, or reading path changes.
 5. **Audit**. Use `isomer-ext-kaoju-entrypoint->audit` against the base refs, all intake dispositions, and the Curated Source Intake Delta.

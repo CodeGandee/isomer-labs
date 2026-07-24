@@ -52,11 +52,13 @@ Use `--extension deepsci` when the agent should run DeepSci. This installs core 
 isomer-cli system-skills install --target codex --scope user --extension deepsci
 ```
 
-Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. This installs core plus the complete Kaoju pack: the public `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint` siblings and their 13 protected members.
+Use `--extension kaoju` when the agent should survey literature and codebases or perform first-hand method trials and comparisons. This installs core plus the complete Kaoju pack: the public `isomer-ext-kaoju-welcome` and `isomer-ext-kaoju-entrypoint` siblings and their 16 protected members.
 
 ```bash
 isomer-cli system-skills install --target codex --scope user --extension kaoju
 ```
+
+Kaoju keeps its public survey commands unchanged. When a survey needs paper lookup, `discover` plans coverage and selection while the protected `paper-search` member invokes the bound provider through the agent's external tools and records one normalized provider-output observation. Semantic Scholar is one supported approach. The local `isomer-cli ext research literature` commands never contact that provider; they only validate, store, index, and query observations already produced by the agent.
 
 Refresh the coding-agent host or start a new session after installation. Start with the public welcome skill when you need orientation, then invoke the corresponding public entrypoint for concrete work:
 

@@ -176,6 +176,7 @@ EXPECTED_KAOJU_SKILLS = frozenset(
         "isomer-kaoju-examine",
         "isomer-kaoju-explore",
         "isomer-kaoju-frame",
+        "isomer-kaoju-paper-search",
         "isomer-kaoju-reproduce",
         "isomer-kaoju-shared",
         "isomer-kaoju-synthesize",
@@ -2548,8 +2549,8 @@ def validate_kaoju_package_contract(
     contract_path = kaoju_root / "isomer-ext-kaoju-entrypoint" / "SKILL.md"
     skills = tuple(str(value) for value in contract.get("skills", []) if isinstance(value, str))
     intents = tuple(str(value) for value in contract.get("survey_intents", []) if isinstance(value, str))
-    if len(skills) != 16:
-        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare sixteen skills, found {len(skills)}")
+    if len(skills) != 17:
+        add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare seventeen skills, found {len(skills)}")
     if len(intents) != 11:
         add(diagnostics, repo_root, contract_path, 1, "RPS026", f"Kaoju contract must declare eleven survey intents, found {len(intents)}")
 
@@ -2682,6 +2683,11 @@ def validate_kaoju_active_guidance(
         if re.search(r"(?:survey-process\.v2|bindings\.v2(?:\.schema)?|artifact-semantics\.v1(?:\.schema)?)\.json", line):
             add(diagnostics, repo_root, document.path, line_number, "RPS029", "active Kaoju guidance names an extension-owned resource file directly")
         for label, pattern in KAOJU_FORBIDDEN_ACTIVE_PATTERNS:
+            if (
+                label == "provider-specific runtime binding"
+                and "/isomer-kaoju-paper-search/references/approaches/" in f"/{document.rel_target}"
+            ):
+                continue
             if pattern.search(line) and not is_rejection_line(line):
                 add(diagnostics, repo_root, document.path, line_number, "RPS020", f"active Kaoju guidance contains {label}")
 
@@ -3049,6 +3055,141 @@ def validate_kaoju_architecture_guidance(kaoju_root: Path, repo_root: Path, diag
                 add(diagnostics, repo_root, path, line_number, "RPS027", "active Kaoju guidance must not invoke the external imsight-llm-wiki skill")
 
 
+def validate_kaoju_paper_search_bundle(
+    kaoju_root: Path,
+    repo_root: Path,
+    diagnostics: list[Diagnostic],
+) -> None:
+    """Keep provider mechanics local to approach resources and lock the normalized contract."""
+
+    bundle = research_family_skill_dir(kaoju_root, "isomer-kaoju-paper-search")
+    if not bundle.exists():
+        return
+    main = bundle / SYSTEM_SKILL_PROTECTED_ENTRYPOINT_FILENAME
+    actions = (
+        "resolve-paper",
+        "search-papers",
+        "find-citing-papers",
+        "explore-cited-papers",
+        "trace-citation-neighborhood",
+        "find-related-papers",
+    )
+    if main.is_file():
+        main_text = main.read_text(encoding="utf-8")
+        forbidden_main_patterns = (
+            ("endpoint inventory", re.compile(r"(?i)\b(?:GET|POST)\s+/(?:graph|recommendations|paper)|/(?:paper|recommendations)/(?:search|batch|citations|references)")),
+            ("provider base URL", re.compile(r"https?://|api\.semanticscholar\.org", re.I)),
+            ("credential value", re.compile(r"(?i)(?:S2_API_KEY\s*=\s*[A-Za-z0-9._~+/-]{8,}|Bearer\s+[A-Za-z0-9._~+/-]{8,})")),
+            ("external checkout path", re.compile(r"(?i)(?:/home/|/data/|~/|extern/(?:orphan|tracked)|houmao-agents|imsight-paper-search)")),
+        )
+        for line_number, line in enumerate(main_text.splitlines(), start=1):
+            for label, pattern in forbidden_main_patterns:
+                if pattern.search(line) and not is_rejection_line(line):
+                    add(
+                        diagnostics,
+                        repo_root,
+                        main,
+                        line_number,
+                        "RPS031",
+                        f"paper-search top-level guidance contains {label}; keep provider mechanics in a bundle-local approach reference",
+                    )
+        for action in actions:
+            if action not in main_text or f"commands/{action}.md" not in main_text:
+                add(
+                    diagnostics,
+                    repo_root,
+                    main,
+                    1,
+                    "RPS031",
+                    f"paper-search top-level action table must link '{action}'",
+                )
+            command = bundle / "commands" / f"{action}.md"
+            if not command.is_file():
+                add(diagnostics, repo_root, command, 1, "RPS031", f"paper-search action page '{action}' is missing")
+
+    required_resources = {
+        "references/provider-selection.md": (
+            "Literature Provider Binding",
+            "explicitly requests",
+            "Missing or Incompatible Provider",
+            "Gate",
+            "future approach",
+        ),
+        "references/result-contract.md": (
+            "isomer-literature-provider-observation.v1",
+            "Deterministic Paper Identity",
+            "Citation Direction",
+            "pagination",
+            "filtering",
+            "null",
+            "partial",
+            "redacted attachment",
+            "Evidence Boundary",
+        ),
+        "references/execution-and-errors.md": (
+            "relative dates",
+            "page bound",
+            "Cycle",
+            "Retry",
+            "successful page",
+            "direct-HTTPS",
+            "credential",
+        ),
+        "references/approaches/s2.md": (
+            *actions,
+            "Paper detail",
+            "Paper batch",
+            "citations",
+            "references",
+            "recommendations",
+            "Supported Paper Identifiers",
+            "Minimal Field Projection",
+            "offset pagination",
+            "opaque token",
+            "null",
+            "filtering.location",
+            "general-purpose CLI",
+            "direct-HTTPS",
+            "S2_API_KEY",
+            "redacted attachments",
+            "isomer-literature-provider-observation.v1",
+        ),
+    }
+    for relative, terms in required_resources.items():
+        path = bundle / relative
+        if not path.is_file():
+            add(diagnostics, repo_root, path, 1, "RPS031", f"required paper-search resource '{relative}' is missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in terms:
+            if term.casefold() not in text.casefold():
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    1,
+                    "RPS031",
+                    f"paper-search resource '{relative}' is missing required guidance '{term}'",
+                )
+
+    provider_action_re = re.compile(
+        r"(?ix)"
+        r"(?:\bisomer-cli\b(?:\s+--[a-z0-9-]+)*\s+(?:search|search-papers|resolve-paper|recommend|find-citing-papers|explore-cited-papers|fetch-citations?|fetch-references?)\b)"
+        r"|(?:\bisomer-cli\b[^\n`]{0,80}\bext\s+research\s+literature\s+(?:search|resolve|recommend|find-citing-papers|explore-cited-papers|fetch-citations?|fetch-references?)\b)"
+    )
+    for path in sorted(bundle.rglob("*.md")):
+        for line_number, line in enumerate(read_lines(path), start=1):
+            if provider_action_re.search(line) and not is_rejection_line(line):
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "RPS031",
+                    "paper-search guidance must keep provider execution outside isomer-cli",
+                )
+
+
 def validate_global_isomer_cli_invocation(target: Path, repo_root: Path, diagnostics: list[Diagnostic]) -> None:
     for path in sorted(candidate for candidate in target.rglob("*") if candidate.is_file() and candidate.suffix in ACTIVE_REF_SUFFIXES):
         for line_number, line in enumerate(read_lines(path), start=1):
@@ -3251,6 +3392,7 @@ def validate_skillset(target: Path, repo_root: Path | None = None) -> list[Diagn
         validate_kaoju_shared_references(kaoju_root, repo_root, diagnostics)
         validate_kaoju_artifact_bindings(kaoju_root, repo_root, diagnostics, family_by_key["kaoju"])
         validate_kaoju_architecture_guidance(kaoju_root, repo_root, diagnostics)
+        validate_kaoju_paper_search_bundle(kaoju_root, repo_root, diagnostics)
         validate_kaoju_resource_and_shared_routing(kaoju_root, repo_root, diagnostics)
     validate_prerequisite_recovery_guidance(target, repo_root, diagnostics)
     validate_context_preflight_guidance(target, repo_root, diagnostics)

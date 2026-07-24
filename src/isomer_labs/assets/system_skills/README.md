@@ -8,7 +8,7 @@ Official non-development Isomer system skills live in this package resource tree
 | --- | --- | --- | --- |
 | Core | `operator/isomer-op-welcome/` | `operator/isomer-op-entrypoint/` | 20 members below entrypoint `subskills/` |
 | DeepSci | `research-paradigm/deepsci/isomer-ext-deepsci-welcome/` | `research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/` | 21 members below entrypoint `subskills/` |
-| Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-welcome/` | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 13 members below entrypoint `subskills/` |
+| Kaoju | `research-paradigm/kaoju/isomer-ext-kaoju-welcome/` | `research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/` | 16 members below entrypoint `subskills/` |
 
 All six welcome and entrypoint siblings are public host-discoverable skills. Use `$<pack>-welcome` for newcomer orientation and typical usage patterns. Use `$<pack>-entrypoint use <subcommand> to <task>` or a task-only entrypoint invocation for concrete work. Selecting either public name installs, upgrades, or removes the complete two-public-role pack. Protected members keep stable logical ids for callbacks, bindings, provenance, compatibility, and private projection, but they are not independent public install units.
 

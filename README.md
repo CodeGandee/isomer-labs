@@ -116,6 +116,8 @@ Install Kaoju when a project needs evidence-led literature and codebase surveys,
 isomer-cli system-skills install --target codex --extension kaoju
 ```
 
+The Kaoju pack contains 16 protected members, including `paper-search`. Paper-search performs bounded provider retrieval through agent-available external tools and records one provider-neutral observation per logical action. Discovery keeps search strategy, candidate selection, and Reading List ownership. `isomer-cli ext research literature` provides local-only observation recording, derived queries, and explicit index rebuild or validation; it never proxies a literature provider.
+
 Inspect or remove Isomer-owned projections with:
 
 ```bash

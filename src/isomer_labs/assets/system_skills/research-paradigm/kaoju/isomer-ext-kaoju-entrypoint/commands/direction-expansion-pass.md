@@ -17,7 +17,7 @@ skill_invocation_notation: >
 
 1. **Frame the direction**. Accept seed Source Identities, the survey topic, relation criteria, time boundary, desired frontier, and base catalog ref.
 2. **Inspect seeds**. Use `isomer-ext-kaoju-entrypoint->examine` when their citations, terminology, claimed lineage, or implementation relationships are not already accepted evidence.
-3. **Expand routes**. Use `isomer-ext-kaoju-entrypoint->discover` for backward, neighboring, forward, and post-seed discovery, recording parent seed or query, route, relevance rationale, `latest_after`, and `searched_through`.
+3. **Expand routes**. Use `isomer-ext-kaoju-entrypoint->discover` to define bounded backward, neighboring, forward, and post-seed strategy. Discover invokes `isomer-ext-kaoju-entrypoint->paper-search` for target resolution, citation traversal, and adjacent-paper retrieval, then records parent seed or query, route, relevance rationale, `latest_after`, `searched_through`, and candidate disposition through its existing outputs.
 4. **Acquire and examine selected candidates**. Reach the accepted depth with `isomer-ext-kaoju-entrypoint->acquire` and `isomer-ext-kaoju-entrypoint->examine`.
 5. **Propose a catalog delta**. Preserve important additions, exclusions, duplicates, blockers, chronology effects, and the remaining frontier.
 6. **Audit**. Use `isomer-ext-kaoju-entrypoint->audit` to check seed identity, route provenance, coverage, and claim traceability.

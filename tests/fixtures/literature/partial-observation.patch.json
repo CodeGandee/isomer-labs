@@ -1,0 +1,22 @@
+{
+  "observation_id": "literature-observation-partial",
+  "completeness": {
+    "status": "partial",
+    "requested_records": 10,
+    "returned_records": 2,
+    "coverage_notes": "One successful page was preserved after a retryable later-page failure."
+  },
+  "partial_failures": [
+    {
+      "stage": "pagination",
+      "message": "The second page was throttled after bounded retries.",
+      "retryable": true,
+      "page_ref": "page:2",
+      "seed_key": "doi:10.1000/alpha"
+    }
+  ],
+  "continuation": {
+    "status": "blocked",
+    "opaque_ref": "provider-continuation:page-2"
+  }
+}

@@ -23,6 +23,18 @@ MINDSET_RECORD_SCHEMA_RESOURCE = "assets/research_record_formats/schemas/mindset
 MINDSET_RECORD_TEMPLATE_RESOURCE = "assets/research_record_formats/templates/markdown/mindset-record.v1.md.j2"
 MINDSET_RECORD_SCHEMA_REF = "isomer:research/record-format/schema/mindset-record/v1"
 MINDSET_RECORD_TEMPLATE_REF = "isomer:research/record-format/template/markdown/mindset-record/v1"
+LITERATURE_OBSERVATION_PROFILE_RESOURCE = (
+    "assets/research_record_formats/profiles/literature-provider-observation.v1.json"
+)
+LITERATURE_OBSERVATION_SCHEMA_RESOURCE = (
+    "assets/research_record_formats/schemas/literature-provider-observation.v1.schema.json"
+)
+LITERATURE_OBSERVATION_PROFILE_REF = (
+    "isomer:research/record-format/profile/literature/provider-output/provider-observation/v1"
+)
+LITERATURE_OBSERVATION_SCHEMA_REF = (
+    "isomer:research/record-format/schema/literature-provider-observation/v1"
+)
 SUPPORTED_CATALOG_VERSION = "isomer-research-record-format-catalog.v1"
 SUPPORTED_PROFILE_VERSIONS = ("v1", "v2")
 SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -77,6 +89,13 @@ class ResearchRecordFormatProvider:
         object.__setattr__(self, "_profiles", _load_catalogs(self.catalog_resources))
 
     def resolve_profile(self, ref: str) -> ArtifactFormatResolution | None:
+        if ref == LITERATURE_OBSERVATION_PROFILE_REF:
+            return _resolution(
+                ref,
+                "profile",
+                _resource_text(LITERATURE_OBSERVATION_PROFILE_RESOURCE),
+                media_type="application/json",
+            )
         parsed = parse_research_profile_ref(ref)
         if parsed is None:
             return None
@@ -110,6 +129,13 @@ class ResearchRecordFormatProvider:
         return _resolution(ref, "profile", json.dumps(profile, indent=2, sort_keys=True))
 
     def resolve_schema(self, ref: str) -> ArtifactFormatResolution | None:
+        if ref == LITERATURE_OBSERVATION_SCHEMA_REF:
+            return _resolution(
+                ref,
+                "schema",
+                _resource_text(LITERATURE_OBSERVATION_SCHEMA_RESOURCE),
+                media_type="application/schema+json",
+            )
         if ref == MINDSET_RECORD_SCHEMA_REF:
             return _resolution(ref, "schema", _resource_text(MINDSET_RECORD_SCHEMA_RESOURCE), media_type="application/schema+json")
         if ref != SCHEMA_REF:
@@ -126,7 +152,7 @@ class ResearchRecordFormatProvider:
     def profile_refs(self) -> tuple[str, ...]:
         """Return catalog refs in deterministic order."""
 
-        return tuple(sorted(self._profiles))
+        return tuple(sorted((*self._profiles, LITERATURE_OBSERVATION_PROFILE_REF)))
 
 
 def register_research_record_format_provider(

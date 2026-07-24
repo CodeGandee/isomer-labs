@@ -16,7 +16,7 @@ skill_invocation_notation: >
 ## Workflow
 
 1. **Frame**. Use `isomer-ext-kaoju-entrypoint->workspace` and `isomer-ext-kaoju-entrypoint->frame` to accept a Survey Contract with field boundary, five source classes, coverage date, depth, outputs, resources, and stop conditions.
-2. **Discover**. Use `isomer-ext-kaoju-entrypoint->discover` for bounded queries, version families, query provenance, inclusion decisions, and type-aware links across papers, technical reports, source repositories, datasets, and models.
+2. **Discover**. Use `isomer-ext-kaoju-entrypoint->discover` for strategy, version families, query provenance, inclusion decisions, and type-aware links across papers, technical reports, source repositories, datasets, and models. Discover invokes `isomer-ext-kaoju-entrypoint->paper-search` for bounded paper lookup and citation retrieval and retains durable discovery ownership.
 3. **Acquire selectively**. Use `isomer-ext-kaoju-entrypoint->acquire` only for materials needed to reach the accepted inspection depth.
 4. **Examine**. Use `isomer-ext-kaoju-entrypoint->examine` to create Source Digests and Claim-Evidence Ledger entries at exact locators.
 5. **Audit**. Use `isomer-ext-kaoju-entrypoint->audit` to check coverage, identity, provenance, depth, and claim traceability.

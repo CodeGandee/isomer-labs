@@ -1,0 +1,21 @@
+{
+  "observation_id": "literature-observation-unresolved",
+  "unresolved_records": [
+    {
+      "provider_record_ref": "batch-position:2",
+      "reason": "The provider could not resolve the requested identifier."
+    }
+  ],
+  "null_records": [
+    {
+      "position": 2,
+      "reason": "The provider returned null at the corresponding batch position."
+    }
+  ],
+  "completeness": {
+    "status": "partial",
+    "requested_records": 3,
+    "returned_records": 2,
+    "coverage_notes": "One requested identifier remained unresolved and its null position was preserved."
+  }
+}

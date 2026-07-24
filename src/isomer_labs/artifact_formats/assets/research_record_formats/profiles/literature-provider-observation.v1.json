@@ -1,0 +1,42 @@
+{
+  "schema_ref": "isomer:research/record-format/schema/literature-provider-observation/v1",
+  "templates": {},
+  "media_type": "application/json",
+  "schema_version": "isomer-literature-provider-observation.v1",
+  "compatibility_version": "v1",
+  "status": "active",
+  "validation_hints": {
+    "required_paths": [
+      "observation_id",
+      "action",
+      "research_purpose",
+      "evidence_use_intent",
+      "observation_time",
+      "provider_binding_ref",
+      "provider",
+      "access_method",
+      "request",
+      "bounds",
+      "pagination",
+      "filtering",
+      "completeness",
+      "continuation",
+      "provenance_refs"
+    ]
+  },
+  "renderer_hints": {},
+  "metadata": {
+    "provider": "research",
+    "artifact_family": "literature",
+    "artifact_type": "provider-output",
+    "artifact_class": "provider-output",
+    "compatible_record_kinds": ["artifact"],
+    "relationship_paths": ["citation_edges", "source_refs", "provenance_refs"],
+    "file_paths": ["raw_attachments"],
+    "facet_paths": {
+      "provider": ["provider.name"],
+      "action": ["action"],
+      "status": ["completeness.status"]
+    }
+  }
+}

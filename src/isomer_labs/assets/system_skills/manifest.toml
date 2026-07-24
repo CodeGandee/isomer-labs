@@ -38,7 +38,7 @@ entry_skill = "isomer-ext-kaoju-entrypoint"
 always_available = false
 minimum_compatible_skill_version = "0.3.0"
 public_skills = ["isomer-ext-kaoju-welcome", "isomer-ext-kaoju-entrypoint"]
-protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-explore", "isomer-kaoju-frame", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-topic-creator", "isomer-kaoju-write"]
+protected_members = ["isomer-kaoju-acquire", "isomer-kaoju-audit", "isomer-kaoju-compare", "isomer-kaoju-discover", "isomer-kaoju-examine", "isomer-kaoju-export", "isomer-kaoju-explore", "isomer-kaoju-frame", "isomer-kaoju-paper-search", "isomer-kaoju-reproduce", "isomer-kaoju-shared", "isomer-kaoju-synthesize", "isomer-kaoju-trial", "isomer-kaoju-workspace-mgr", "isomer-kaoju-topic-creator", "isomer-kaoju-write"]
 
 [[public_skills]]
 name = "isomer-op-welcome"
@@ -558,7 +558,7 @@ area = "research"
 member_name = "acquire"
 source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-acquire"
 invocation_designator = "isomer-ext-kaoju-entrypoint->acquire"
-dependencies = ["isomer-kaoju-shared"]
+dependencies = ["isomer-kaoju-shared", "isomer-kaoju-paper-search"]
 legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
@@ -591,7 +591,7 @@ area = "research"
 member_name = "discover"
 source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-discover"
 invocation_designator = "isomer-ext-kaoju-entrypoint->discover"
-dependencies = ["isomer-kaoju-shared"]
+dependencies = ["isomer-kaoju-shared", "isomer-kaoju-paper-search"]
 legacy_aliases = []
 callback_insertion_points = ["begin", "end"]
 
@@ -635,6 +635,17 @@ area = "research"
 member_name = "frame"
 source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-frame"
 invocation_designator = "isomer-ext-kaoju-entrypoint->frame"
+dependencies = ["isomer-kaoju-shared"]
+legacy_aliases = []
+callback_insertion_points = ["begin", "end"]
+
+[[capabilities]]
+logical_id = "isomer-kaoju-paper-search"
+pack_id = "kaoju"
+area = "research"
+member_name = "paper-search"
+source_path = "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/subskills/isomer-kaoju-paper-search"
+invocation_designator = "isomer-ext-kaoju-entrypoint->paper-search"
 dependencies = ["isomer-kaoju-shared"]
 legacy_aliases = []
 callback_insertion_points = ["begin", "end"]

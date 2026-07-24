@@ -1,0 +1,15 @@
+{
+  "observation_id": "literature-observation-missing-field",
+  "missing_fields": [
+    {
+      "paper_key": "doi:10.1000/alpha",
+      "fields": ["publication_date"],
+      "reason": "The provider returned only a publication year for this result."
+    },
+    {
+      "paper_key": "arxiv:2401.01234",
+      "fields": ["venue"],
+      "reason": "The provider returned no venue."
+    }
+  ]
+}

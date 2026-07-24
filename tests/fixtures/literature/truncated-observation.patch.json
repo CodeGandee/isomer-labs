@@ -1,0 +1,21 @@
+{
+  "observation_id": "literature-observation-truncated",
+  "pagination": {
+    "pages_requested": 2,
+    "pages_received": 1,
+    "records_reported": 100,
+    "continuation_token": "opaque-next-page",
+    "has_more": true,
+    "complete": false
+  },
+  "completeness": {
+    "status": "truncated",
+    "requested_records": 100,
+    "returned_records": 2,
+    "coverage_notes": "The applied page bound stopped retrieval before the provider result set ended."
+  },
+  "continuation": {
+    "status": "available",
+    "opaque_ref": "provider-continuation:opaque-next-page"
+  }
+}

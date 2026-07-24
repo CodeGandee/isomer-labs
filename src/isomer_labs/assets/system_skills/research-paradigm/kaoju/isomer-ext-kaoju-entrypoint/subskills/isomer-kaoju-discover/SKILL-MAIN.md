@@ -31,9 +31,9 @@ Use for broad landscape discovery, priority handling of user-nominated sources, 
 
 1. **Accept the contract**. Require a Survey Contract, seeds or curated items, desired source classes, coverage bounds, output purpose, and any actor-supplied Reading List count request.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-discover --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
-3. **Plan bounded routes**. Choose landscape queries, curated identity resolution, or backward, neighboring, forward, and post-seed expansion routes.
+3. **Plan bounded routes**. Own landscape strategy, terminology variants, source-class coverage, seed selection, and backward, neighboring, forward, and post-seed expansion plans. Route paper identity lookup, paper queries, citation retrieval, citation-neighborhood traversal, and adjacent-paper retrieval through `isomer-ext-kaoju-entrypoint->paper-search` with purpose, evidence-use intent, expected normalized fields, direction, filters, and bounds.
 4. **Resolve a Reading List target when requested**. With no count, use three priority and three secondary works. For category counts, accept non-negative integers and default an omitted category to three. For one positive total `N`, use `(N + 1) // 2` priority and `N // 2` secondary. Ask for clarification before discovery when total and category modes are mixed, a count is invalid, or the effective target is empty.
-5. **Search five source classes**. Search papers, technical reports, source repositories, datasets, and models while treating papers and reports as primary related works.
+5. **Search five source classes**. Search papers, technical reports, source repositories, datasets, and models while treating papers and reports as primary related works. Invoke `paper-search` for paper-specific retrieval and consume its normalized provider-output observation; retain non-paper retrieval with the applicable owner.
 6. **Normalize identities**. Group supported version families, record immutable material identities when available, and retain ambiguous relationships.
 7. **Decide inclusion**. Record query or parent seed, route, relevance rationale, decision, reason, `latest_after`, `searched_through`, and achieved depth for every candidate.
 8. **Compose a direction reading list when requested**. Keep exactly one direction scope per list. Reach the effective priority and secondary targets across five source classes, anchored by papers or technical reports. Include stable links, source type, one-line relevance, summary, planned depth, query provenance, version family, disposition, priority, and blocker recovery. Record `target_counts` with its `default`, `user-total`, or `user-categories` basis and record `achieved_counts`; a `user-total` target also records `requested_total`. A shortage against the effective target is a preserved warning, not a blocker.
@@ -64,7 +64,7 @@ Resolve each produced semantic id with `isomer-cli --print-json ext kaoju bindin
 
 ## Reference Routing
 
-Use `isomer-ext-kaoju-entrypoint->shared` for source identity, evidence, lineage, and terminal contracts. Send selected materials to `isomer-ext-kaoju-entrypoint->acquire` when access or checkout is required, and to `isomer-ext-kaoju-entrypoint->examine` for claim-bearing inspection.
+Use `isomer-ext-kaoju-entrypoint->shared` for source identity, evidence, lineage, and terminal contracts. Use `isomer-ext-kaoju-entrypoint->paper-search` for bounded paper retrieval while this skill retains strategy, cross-source coverage, candidate disposition, version families, Reading List composition, and sole ownership of Discovery Ledger and existing discovery deltas. Send selected materials to `isomer-ext-kaoju-entrypoint->acquire` when access or checkout is required, and to `isomer-ext-kaoju-entrypoint->examine` for claim-bearing inspection.
 
 ## Foundational Principle
 

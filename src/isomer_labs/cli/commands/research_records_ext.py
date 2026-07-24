@@ -9,6 +9,7 @@ from typing import Any
 
 import click
 
+from isomer_labs.cli.commands.literature_ext import register_literature_commands
 from isomer_labs.cli.commands.research_ideas_ext import register_research_idea_commands
 from isomer_labs.cli.commands.research_operation_sets_ext import register_research_operation_set_commands
 from isomer_labs.cli.commands.research_templates_ext import register_research_templates_commands
@@ -75,6 +76,7 @@ def register_research_record_ext_commands(app: click.Group) -> None:
     )
     register_research_templates_commands(research_group)
     register_research_operation_set_commands(research_group, with_context=_with_context)
+    register_literature_commands(research_group, with_context=_with_context)
 
     @records_group.command(name="create", help="Create a topic-scoped research record.")
     @_common_options

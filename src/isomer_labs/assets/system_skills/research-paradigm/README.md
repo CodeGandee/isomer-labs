@@ -5,9 +5,9 @@ This subtree contains two optional public extension packs:
 | Paradigm | Public Pack Path | Protected Inventory |
 | --- | --- | --- |
 | DeepSci | `deepsci/isomer-ext-deepsci-entrypoint/` | 21 `isomer-deepsci-*` logical capabilities below `subskills/` |
-| Kaoju | `kaoju/isomer-ext-kaoju-entrypoint/` | 13 `isomer-kaoju-*` logical capabilities below `subskills/` |
+| Kaoju | `kaoju/isomer-ext-kaoju-entrypoint/` | 16 `isomer-kaoju-*` logical capabilities below `subskills/` |
 
-DeepSci develops or evaluates a research route around a hypothesis and comparator. Kaoju maps and verifies existing literature, code, datasets, and models, including governed first-hand trials when a survey question requires them. A task may hand accepted evidence between paradigms, but each retains its own process and evidence contract.
+DeepSci develops or evaluates a research route around a hypothesis and comparator. Kaoju maps and verifies existing literature, code, datasets, and models, including governed first-hand trials when a survey question requires them. Its protected paper-search member owns agent-direct provider retrieval and normalized provider-output observations, while discover retains survey strategy and selection. A task may hand accepted evidence between paradigms, but each retains its own process and evidence contract.
 
 Users invoke only the public entrypoints:
 

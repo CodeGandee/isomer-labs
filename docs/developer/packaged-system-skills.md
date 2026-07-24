@@ -6,7 +6,7 @@ Isomer distributes three atomic system-skill packs. Each pack projects a public 
 | --- | --- | --- | --- |
 | Core | `isomer-op-welcome` | `isomer-op-entrypoint` | 20 protected operator, service, shared-support, and research-recording capabilities |
 | DeepSci | `isomer-ext-deepsci-welcome` | `isomer-ext-deepsci-entrypoint` | 21 protected hypothesis-driven research capabilities |
-| Kaoju | `isomer-ext-kaoju-welcome` | `isomer-ext-kaoju-entrypoint` | 13 protected evidence-led survey capabilities |
+| Kaoju | `isomer-ext-kaoju-welcome` | `isomer-ext-kaoju-entrypoint` | 16 protected evidence-led survey capabilities |
 
 Newcomers invoke a welcome to learn typical usage patterns, routing cues, prerequisites, mutation posture, and exact public commands. Concrete work uses `$<entrypoint> use <subcommand> to <task>` or a task-only entrypoint request. Empty, help, and retained orientation requests at an entrypoint delegate read-only output to its welcome sibling.
 
@@ -77,7 +77,7 @@ The nested source path is package layout, not provider-neutral identity. Binding
 
 ## Protected Capability Map
 
-The manifest is authoritative. This table documents all 56 current protected mappings. Public welcomes do not appear here because they are independent public roles.
+The manifest is authoritative. This table documents all 57 current protected mappings. Public welcomes do not appear here because they are independent public roles.
 
 | Pack | Protected Logical ID | Member | Invocation Designator |
 | --- | --- | --- | --- |
@@ -128,12 +128,15 @@ The manifest is authoritative. This table documents all 56 current protected map
 | `kaoju` | `isomer-kaoju-discover` | `discover` | `isomer-ext-kaoju-entrypoint->discover` |
 | `kaoju` | `isomer-kaoju-examine` | `examine` | `isomer-ext-kaoju-entrypoint->examine` |
 | `kaoju` | `isomer-kaoju-export` | `export` | `isomer-ext-kaoju-entrypoint->export` |
+| `kaoju` | `isomer-kaoju-explore` | `explore` | `isomer-ext-kaoju-entrypoint->explore` |
 | `kaoju` | `isomer-kaoju-frame` | `frame` | `isomer-ext-kaoju-entrypoint->frame` |
+| `kaoju` | `isomer-kaoju-paper-search` | `paper-search` | `isomer-ext-kaoju-entrypoint->paper-search` |
 | `kaoju` | `isomer-kaoju-reproduce` | `reproduce` | `isomer-ext-kaoju-entrypoint->reproduce` |
 | `kaoju` | `isomer-kaoju-shared` | `shared` | `isomer-ext-kaoju-entrypoint->shared` |
 | `kaoju` | `isomer-kaoju-synthesize` | `synthesize` | `isomer-ext-kaoju-entrypoint->synthesize` |
 | `kaoju` | `isomer-kaoju-trial` | `trial` | `isomer-ext-kaoju-entrypoint->trial` |
 | `kaoju` | `isomer-kaoju-workspace-mgr` | `workspace` | `isomer-ext-kaoju-entrypoint->workspace` |
+| `kaoju` | `isomer-kaoju-topic-creator` | `topic-creator` | `isomer-ext-kaoju-entrypoint->topic-creator` |
 | `kaoju` | `isomer-kaoju-write` | `write` | `isomer-ext-kaoju-entrypoint->write` |
 
 ## Invocation Grammar

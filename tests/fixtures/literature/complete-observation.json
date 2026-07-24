@@ -1,0 +1,149 @@
+{
+  "schema_version": "isomer-literature-provider-observation.v1",
+  "title": "Complete Semantic Scholar citation observation",
+  "summary": "A bounded provider observation with two normalized papers and one provider-reported citation edge.",
+  "artifact_family": "literature",
+  "artifact_type": "provider-output",
+  "observation_id": "literature-observation-complete",
+  "action": "find-citing-papers",
+  "research_purpose": "Find papers that cite the target paper.",
+  "evidence_use_intent": "Support discovery triage; provider metadata is not accepted claim evidence.",
+  "observation_time": "2026-07-23T08:00:00Z",
+  "provider_binding_ref": "binding:literature-provider/default",
+  "provider": {
+    "name": "semantic-scholar",
+    "approach_ref": "isomer-kaoju-paper-search/references/approaches/s2.md"
+  },
+  "access_method": "direct-https",
+  "producer": "isomer-kaoju-paper-search",
+  "actor_ref": "topic-actor:survey-researcher",
+  "source_refs": ["request:alpha-citations"],
+  "request": {
+    "query": null,
+    "target": "doi:10.1000/alpha",
+    "seeds": ["doi:10.1000/alpha"],
+    "negative_seeds": [],
+    "direction": "forward",
+    "filters": {
+      "publication_date_from": "2020-01-01",
+      "publication_date_to": "2026-07-23",
+      "publication_year_from": 2020,
+      "publication_year_to": 2026,
+      "open_access": null,
+      "venues": [],
+      "fields_of_study": ["Computer Science"]
+    }
+  },
+  "bounds": {
+    "requested": {
+      "result_limit": 10,
+      "page_limit": 2,
+      "depth_limit": 1,
+      "per_seed_limit": 10
+    },
+    "applied": {
+      "result_limit": 10,
+      "page_limit": 1,
+      "depth_limit": 1,
+      "per_seed_limit": 10
+    }
+  },
+  "papers": [
+    {
+      "paper_key": "doi:10.1000/alpha",
+      "doi": "10.1000/alpha",
+      "arxiv_id": null,
+      "provider_qualified_id": {
+        "provider": "semantic-scholar",
+        "id": "S2-ALPHA"
+      },
+      "title": "Alpha Systems",
+      "authors": [
+        {
+          "name": "Ada Example",
+          "provider_qualified_id": {
+            "provider": "semantic-scholar",
+            "id": "AUTHOR-1"
+          },
+          "orcid": null
+        }
+      ],
+      "venue": "Example Conference",
+      "publication_date": "2021-05-02",
+      "publication_year": 2021,
+      "locator": "https://doi.org/10.1000/alpha",
+      "parent_seed_keys": [],
+      "source_query": null,
+      "route_direction": "seed"
+    },
+    {
+      "paper_key": "arxiv:2401.01234",
+      "doi": null,
+      "arxiv_id": "2401.01234v2",
+      "provider_qualified_id": {
+        "provider": "semantic-scholar",
+        "id": "S2-BETA"
+      },
+      "title": "Beta Systems",
+      "authors": [
+        {
+          "name": "Ben Example",
+          "provider_qualified_id": null,
+          "orcid": null
+        }
+      ],
+      "venue": null,
+      "publication_date": "2024-01-03",
+      "publication_year": 2024,
+      "locator": "https://arxiv.org/abs/2401.01234",
+      "parent_seed_keys": ["doi:10.1000/alpha"],
+      "source_query": null,
+      "route_direction": "forward"
+    }
+  ],
+  "citation_edges": [
+    {
+      "citing_paper_key": "arxiv:2401.01234",
+      "cited_paper_key": "doi:10.1000/alpha",
+      "route_direction": "forward",
+      "parent_seed_key": "doi:10.1000/alpha",
+      "source_observation_ref": "literature-observation-complete",
+      "provider_reported": true
+    }
+  ],
+  "pagination": {
+    "pages_requested": 2,
+    "pages_received": 1,
+    "records_reported": 2,
+    "continuation_token": null,
+    "has_more": false,
+    "complete": true
+  },
+  "filtering": {
+    "provider_applied": ["fields_of_study"],
+    "locally_applied": ["publication_date_from", "publication_date_to"],
+    "unresolved": []
+  },
+  "completeness": {
+    "status": "complete",
+    "requested_records": 10,
+    "returned_records": 2,
+    "coverage_notes": "The provider reported no continuation page."
+  },
+  "limitations": ["Citation metadata is provider-reported and has not been checked against full text."],
+  "missing_fields": [
+    {
+      "paper_key": "arxiv:2401.01234",
+      "fields": ["venue"],
+      "reason": "The provider returned no venue."
+    }
+  ],
+  "unresolved_records": [],
+  "null_records": [],
+  "partial_failures": [],
+  "continuation": {
+    "status": "exhausted",
+    "opaque_ref": null
+  },
+  "provenance_refs": ["provider-observation:semantic-scholar:alpha-citations"]
+}

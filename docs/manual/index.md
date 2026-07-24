@@ -10,6 +10,7 @@ The manual is the operator reference for Isomer Labs. It defines the domain lang
 - [Topic Workspace Git](topic-workspace-git.md)
 - [Workspace Runtime](workspace-runtime.md)
 - [Research Records](research-records.md)
+- [Literature Observations and Local Queries](literature-observations.md)
 - [Operation Set Acceptance](operation-set-acceptance.md)
 - [Research Idea Portfolio](research-idea-portfolio.md)
 - [Project Web GUI](project-web.md)

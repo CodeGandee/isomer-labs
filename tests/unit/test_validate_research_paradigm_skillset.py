@@ -678,6 +678,48 @@ class ResearchParadigmValidatorTests(unittest.TestCase):
 
         self.assertTrue({"RPS004", "RPS020"} <= codes(diagnostics), messages(diagnostics))
 
+    def test_kaoju_paper_search_top_level_rejects_provider_mechanics_credentials_and_checkouts(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        skill = kaoju / "isomer-kaoju-paper-search" / "SKILL-MAIN.md"
+        skill.write_text(
+            skill.read_text(encoding="utf-8")
+            + "\nGET /graph/v1/paper/search at https://api.semanticscholar.org with S2_API_KEY=forbidden-secret from /data/external/imsight-paper-search.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        paper_diagnostics = [item for item in diagnostics if item.code == "RPS031"]
+        self.assertGreaterEqual(len(paper_diagnostics), 4, messages(diagnostics))
+        rendered = "\n".join(item.render() for item in paper_diagnostics)
+        self.assertIn("endpoint inventory", rendered)
+        self.assertIn("provider base URL", rendered)
+        self.assertIn("credential value", rendered)
+        self.assertIn("external checkout path", rendered)
+
+    def test_kaoju_paper_search_requires_s2_contract_coverage_and_external_execution(self) -> None:
+        root, target = self.make_valid_skillset()
+        kaoju = self.add_valid_kaoju(target)
+        approach = kaoju / "isomer-kaoju-paper-search" / "references" / "approaches" / "s2.md"
+        approach.write_text(
+            approach.read_text(encoding="utf-8").replace("offset pagination", "page-number traversal")
+            + "\nRun `isomer-cli search semantic-scholar papers` for provider retrieval.\n",
+            encoding="utf-8",
+        )
+
+        diagnostics = validator.validate_skillset(target, root)
+
+        paper_diagnostics = [item for item in diagnostics if item.code == "RPS031"]
+        self.assertTrue(
+            any("offset pagination" in item.message for item in paper_diagnostics),
+            messages(diagnostics),
+        )
+        self.assertTrue(
+            any("outside isomer-cli" in item.message for item in paper_diagnostics),
+            messages(diagnostics),
+        )
+
     def test_kaoju_command_surface_drift_is_rejected(self) -> None:
         root, target = self.make_valid_skillset()
         kaoju = self.add_valid_kaoju(target)

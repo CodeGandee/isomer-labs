@@ -23,6 +23,11 @@
       "invocation_designator": "isomer-ext-kaoju-entrypoint->frame"
     },
     {
+      "logical_id": "isomer-kaoju-paper-search",
+      "member_name": "paper-search",
+      "invocation_designator": "isomer-ext-kaoju-entrypoint->paper-search"
+    },
+    {
       "logical_id": "isomer-kaoju-discover",
       "member_name": "discover",
       "invocation_designator": "isomer-ext-kaoju-entrypoint->discover"
@@ -84,6 +89,7 @@
     "isomer-kaoju-workspace-mgr",
     "isomer-kaoju-topic-creator",
     "isomer-kaoju-frame",
+    "isomer-kaoju-paper-search",
     "isomer-kaoju-discover",
     "isomer-kaoju-acquire",
     "isomer-kaoju-examine",

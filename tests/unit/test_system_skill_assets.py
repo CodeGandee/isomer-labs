@@ -56,8 +56,8 @@ class SystemSkillAssetTests(unittest.TestCase):
             paths,
         )
         capabilities = iter_system_skill_capabilities()
-        self.assertEqual((20, 21, 15), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
-        self.assertEqual(56, len(capabilities))
+        self.assertEqual((20, 21, 16), tuple(len(iter_system_skill_capabilities(group)) for group in ("core", "deepsci", "kaoju")))
+        self.assertEqual(57, len(capabilities))
         for skill_path in paths:
             self.assertTrue(resolve_system_skill(skill_path).joinpath("SKILL.md").is_file(), skill_path)
         for capability in capabilities:
@@ -100,7 +100,8 @@ class SystemSkillAssetTests(unittest.TestCase):
             extensions[0].skills,
         )
         self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in extensions[0].public_skills))
-        self.assertEqual(15, len(extensions[1].protected_members))
+        self.assertEqual(16, len(extensions[1].protected_members))
+        self.assertIn("isomer-kaoju-paper-search", extensions[1].protected_members)
         self.assertIn("isomer-kaoju-synthesize", extensions[1].protected_members)
         self.assertEqual(("isomer-kaoju-pipeline",), extensions[1].legacy_aliases)
 
@@ -160,7 +161,7 @@ class SystemSkillAssetTests(unittest.TestCase):
     def test_manifest_declares_callback_insertion_points(self) -> None:
         self.assertEqual(("begin", "end"), callback_insertion_point_stage_names())
         points = iter_system_skill_callback_insertion_points(include_core=True, include_all_extensions=True)
-        self.assertEqual(74, len(points))
+        self.assertEqual(76, len(points))
         self.assertEqual(("isomer-ext-deepsci-entrypoint", "begin"), (points[0].target_skill, points[0].stage))
         self.assertEqual(
             ("isomer-kaoju-write", "end"),
@@ -296,7 +297,21 @@ class SystemSkillAssetTests(unittest.TestCase):
             self.assertEqual(("core", "kaoju"), result.groups)
             kaoju = target / "isomer-ext-kaoju-entrypoint"
             subskills = kaoju / "subskills"
-            self.assertEqual(15, len(tuple(path for path in subskills.glob("isomer-kaoju-*") if path.is_dir())))
+            self.assertEqual(16, len(tuple(path for path in subskills.glob("isomer-kaoju-*") if path.is_dir())))
+            paper_search = subskills / "isomer-kaoju-paper-search"
+            self.assertTrue((paper_search / "SKILL-MAIN.md").is_file())
+            self.assertEqual(
+                {
+                    "resolve-paper.md",
+                    "search-papers.md",
+                    "find-citing-papers.md",
+                    "explore-cited-papers.md",
+                    "trace-citation-neighborhood.md",
+                    "find-related-papers.md",
+                },
+                {path.name for path in (paper_search / "commands").glob("*.md")},
+            )
+            self.assertTrue((paper_search / "references" / "approaches" / "s2.md").is_file())
             self.assertTrue((kaoju / "commands" / "landscape-pass.md").is_file())
             shared = subskills / "isomer-kaoju-shared"
             self.assertTrue((shared / "references" / "evidence-contract.md").is_file())
@@ -361,7 +376,7 @@ class SystemSkillAssetTests(unittest.TestCase):
         provenance = tuple(root.rglob("SKILL-SOURCE.md"))
 
         self.assertEqual(public_entrypoints, observed_public)
-        self.assertEqual(56, len(protected))
+        self.assertEqual(57, len(protected))
         self.assertTrue(all("subskills" in path.relative_to(root).parts for path in protected))
         self.assertEqual(19, len(provenance))
         self.assertTrue(all("org" in path.relative_to(root).parts for path in provenance))

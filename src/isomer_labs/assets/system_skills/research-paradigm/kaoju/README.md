@@ -11,7 +11,9 @@ Kaoju (考据) is Isomer Labs' evidence-led survey extension. It treats papers a
 | `isomer-ext-kaoju-entrypoint->shared` | Define Artifact, evidence, identity, lineage, Gate, Service Request, and terminal contracts. |
 | `isomer-ext-kaoju-entrypoint->workspace` | Validate Topic Workspace, binding registry, state DB, scoped current state, and reset readiness. |
 | `isomer-ext-kaoju-entrypoint->frame` | Propose and confirm survey directions and freeze the distinct Survey Contract. |
+| `isomer-ext-kaoju-entrypoint->paper-search` | Execute one bounded provider-neutral paper retrieval action through an agent-selected external approach and record one normalized provider-output observation. |
 | `isomer-ext-kaoju-entrypoint->discover` | Build direction-scoped, version-aware reading lists and discovery provenance. |
+| `isomer-ext-kaoju-entrypoint->explore` | Run bounded read-only evidence-led exploration before a durable survey procedure is selected. |
 | `isomer-ext-kaoju-entrypoint->acquire` | Resolve materials and source relationships, orchestrate external repository acquisition, verify immutable identity, then register and record accepted evidence. |
 | `isomer-ext-kaoju-entrypoint->examine` | Inspect papers and code at exact locators while separating source statements from interpretation. |
 | `isomer-ext-kaoju-entrypoint->reproduce` | Handle only genuine reproduction claims under the stronger fidelity contract. |
@@ -31,6 +33,8 @@ Retained compatibility procedures are `landscape-pass`, `curated-intake-pass`, `
 ## Durable State and CLI Boundaries
 
 The extension-owned resources queried by `isomer-cli ext kaoju process show`, `ext kaoju bindings list`, and `ext kaoju bindings describe KAOJU:WHAT` are the process, semantic, and binding authorities. Skills discover ordinary durable state through typed query surfaces and persist ordinary bindings through typed `put` or `revise`. Mutable named templates use only `ext kaoju paper template`. File content remains authoritative, while the Topic Workspace state DB owns semantic discovery, scope, current-state resolution, lineage, and stable refs. Producers must not infer managed subpaths, read package files directly, scan directories as a fallback, edit SQL, or mutate managed content directly.
+
+Paper retrieval has a separate execution and ownership boundary. `paper-search` invokes a bound external provider tool directly and maps the result into one `isomer-literature-provider-observation.v1` Artifact. Semantic Scholar is one bundle-local approach. `discover` retains strategy, candidate disposition, version-family, Discovery Ledger, and Reading List ownership; `acquire` and `examine` retain material and source-evidence ownership. `isomer-cli ext research literature` only validates, records, indexes, and queries local normalized data and never invokes a provider.
 
 Kaoju topic creation keeps packaged 8/6/8 mindset defaults inside the protected topic-creator bundle and copies or specializes them into `topic.intent.kaoju_mindsets` only after one concrete `topic.intent.overview` exists. These directly editable JSON files are Mindset Sources, a derived-intent question list with `additional_notes`, not Artifacts or Workflows. An applicable paper or source-code examination records one immutable Run mindset resolution before focused work. A present valid Source becomes a Run-scoped `KAOJU:MINDSET-RECORD` that preserves exact questions, notes, survey context, answers, evidence, collector posture, and unresolved state after later Source edits. A missing deterministic Source becomes Run database disposition `skipped_source_missing`; no placeholder Record is created, and the workflow proceeds without mindset reflection. Installation, read-only routes, and concrete research actions never create missing Sources implicitly; use explicit Kaoju `create-topic` when those files are wanted.
 
@@ -81,4 +85,4 @@ Legacy `KAOJU:SURVEY-MANUSCRIPT`, `KAOJU:WRITING-TEMPLATE`, and historical `KAOJ
 
 ## Installation
 
-Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 15 protected members. Installation does not enumerate Research Topics or initialize Mindset Sources. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.
+Install the optional extension with `isomer-cli system-skills install --target <target> --extension kaoju`. The selector installs the public core pack and the complete Kaoju public pack with all 16 protected members. Installation does not enumerate Research Topics or initialize Mindset Sources. DeepSci stays absent unless selected separately or all extensions are requested. Refresh the agent host or start a new session before claiming current-session availability.

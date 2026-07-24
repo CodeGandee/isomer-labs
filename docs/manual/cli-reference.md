@@ -45,7 +45,7 @@ The `system-skills` namespace discovers and installs packaged Isomer public skil
 - `system-skills upgrade`
 - `system-skills uninstall`
 
-The three atomic installation units are core, DeepSci, and Kaoju. Each projects a public welcome and execution entrypoint pair: `isomer-op-welcome` with `isomer-op-entrypoint`, `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`. Core owns 20 protected members, DeepSci owns 21, and Kaoju owns 15. `system-skills list` and extension discovery distinguish ordered public roles, entrypoint commands, protected logical ids, scoped members, aliases, dependencies, and compatibility metadata. Protected members are parent-routed nested bundles rather than ordinary top-level install units.
+The three atomic installation units are core, DeepSci, and Kaoju. Each projects a public welcome and execution entrypoint pair: `isomer-op-welcome` with `isomer-op-entrypoint`, `isomer-ext-deepsci-welcome` with `isomer-ext-deepsci-entrypoint`, and `isomer-ext-kaoju-welcome` with `isomer-ext-kaoju-entrypoint`. Core owns 20 protected members, DeepSci owns 21, and Kaoju owns 16. `system-skills list` and extension discovery distinguish ordered public roles, entrypoint commands, protected logical ids, scoped members, aliases, dependencies, and compatibility metadata. Protected members are parent-routed nested bundles rather than ordinary top-level install units.
 
 Topic Workspace root tracking and sanitized remote publication use `$isomer-op-entrypoint use topic-git to <task>`. They are skill workflows, not an Isomer CLI mutation family. The workflow uses `isomer-cli --print-json` only for selected-context and semantic-path queries, then runs Git directly with validated `git -C` paths. See [Topic Workspace Git](topic-workspace-git.md).
 
@@ -117,6 +117,13 @@ The top-level `ext` namespace contains native runtime and compatibility commands
 - `ext research operation-sets inspect`
 - `ext research operation-sets accept`
 - `ext research operation-sets verify`
+- `ext research literature record`
+- `ext research literature observations list`
+- `ext research literature observations show`
+- `ext research literature papers query`
+- `ext research literature citations query`
+- `ext research literature index rebuild`
+- `ext research literature index validate`
 - `ext research records index cleanup`
 - `ext research records index rebuild`
 - `ext research records index validate`

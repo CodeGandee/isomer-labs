@@ -1,0 +1,434 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isomer:research/record-format/schema/literature-provider-observation/v1",
+  "title": "Provider-neutral literature provider observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "title",
+    "summary",
+    "artifact_family",
+    "artifact_type",
+    "observation_id",
+    "action",
+    "research_purpose",
+    "evidence_use_intent",
+    "observation_time",
+    "provider_binding_ref",
+    "provider",
+    "access_method",
+    "producer",
+    "actor_ref",
+    "source_refs",
+    "request",
+    "bounds",
+    "papers",
+    "citation_edges",
+    "pagination",
+    "filtering",
+    "completeness",
+    "limitations",
+    "missing_fields",
+    "unresolved_records",
+    "null_records",
+    "partial_failures",
+    "continuation",
+    "provenance_refs"
+  ],
+  "properties": {
+    "schema_version": {"const": "isomer-literature-provider-observation.v1"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 300},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "artifact_family": {"const": "literature"},
+    "artifact_type": {"const": "provider-output"},
+    "observation_id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$"},
+    "action": {
+      "enum": [
+        "resolve-paper",
+        "search-papers",
+        "find-citing-papers",
+        "explore-cited-papers",
+        "trace-citation-neighborhood",
+        "find-related-papers"
+      ]
+    },
+    "research_purpose": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "evidence_use_intent": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "observation_time": {"type": "string", "format": "date-time"},
+    "provider_binding_ref": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@+~-]{0,299}$"},
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,79}$"},
+        "approach_ref": {"type": ["string", "null"], "maxLength": 300}
+      }
+    },
+    "access_method": {
+      "enum": ["provider-native-cli", "general-purpose-cli", "direct-https", "manual", "other"]
+    },
+    "producer": {"type": "string", "minLength": 1, "maxLength": 200},
+    "actor_ref": {"type": "string", "minLength": 1, "maxLength": 300},
+    "source_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    },
+    "request": {"$ref": "#/$defs/request"},
+    "bounds": {"$ref": "#/$defs/bounds"},
+    "papers": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/paper"}
+    },
+    "citation_edges": {
+      "type": "array",
+      "maxItems": 50000,
+      "items": {"$ref": "#/$defs/citationEdge"}
+    },
+    "pagination": {"$ref": "#/$defs/pagination"},
+    "filtering": {"$ref": "#/$defs/filtering"},
+    "completeness": {"$ref": "#/$defs/completeness"},
+    "limitations": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2000}
+    },
+    "missing_fields": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/missingField"}
+    },
+    "unresolved_records": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/unresolvedRecord"}
+    },
+    "null_records": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/nullRecord"}
+    },
+    "partial_failures": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {"$ref": "#/$defs/partialFailure"}
+    },
+    "continuation": {"$ref": "#/$defs/continuation"},
+    "provenance_refs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    },
+    "raw_attachments": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/rawAttachment"}
+    }
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"], "maxLength": 2000},
+    "paperKey": {
+      "type": "string",
+      "pattern": "^(doi:[^\\s]+|arxiv:[^\\s]+|provider:[a-z0-9][a-z0-9._-]*:[^\\s]+|title-sha256:[a-f0-9]{64})$",
+      "maxLength": 500
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query", "target", "seeds", "negative_seeds", "direction", "filters"],
+      "properties": {
+        "query": {"$ref": "#/$defs/nullableString"},
+        "target": {"$ref": "#/$defs/nullableString"},
+        "seeds": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/paperKey"}
+        },
+        "negative_seeds": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/paperKey"}
+        },
+        "direction": {"enum": ["forward", "backward", "bidirectional", "non-citation"]},
+        "filters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "publication_date_from": {"type": ["string", "null"], "format": "date"},
+            "publication_date_to": {"type": ["string", "null"], "format": "date"},
+            "publication_year_from": {"type": ["integer", "null"], "minimum": 1000, "maximum": 3000},
+            "publication_year_to": {"type": ["integer", "null"], "minimum": 1000, "maximum": 3000},
+            "open_access": {"type": ["boolean", "null"]},
+            "venues": {
+              "type": "array",
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1, "maxLength": 300}
+            },
+            "fields_of_study": {
+              "type": "array",
+              "maxItems": 128,
+              "uniqueItems": true,
+              "items": {"type": "string", "minLength": 1, "maxLength": 300}
+            }
+          }
+        }
+      },
+      "anyOf": [
+        {"properties": {"query": {"type": "string", "minLength": 1}}},
+        {"properties": {"target": {"type": "string", "minLength": 1}}},
+        {"properties": {"seeds": {"minItems": 1}}}
+      ]
+    },
+    "boundValues": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result_limit", "page_limit", "depth_limit", "per_seed_limit"],
+      "properties": {
+        "result_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 100000},
+        "page_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 10000},
+        "depth_limit": {"type": ["integer", "null"], "minimum": 0, "maximum": 20},
+        "per_seed_limit": {"type": ["integer", "null"], "minimum": 1, "maximum": 100000}
+      }
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "applied"],
+      "properties": {
+        "requested": {"$ref": "#/$defs/boundValues"},
+        "applied": {"$ref": "#/$defs/boundValues"}
+      }
+    },
+    "providerQualifiedId": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "id"],
+      "properties": {
+        "provider": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,79}$"},
+        "id": {"type": "string", "minLength": 1, "maxLength": 500}
+      }
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 500},
+        "provider_qualified_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/providerQualifiedId"},
+            {"type": "null"}
+          ]
+        },
+        "orcid": {"type": ["string", "null"], "maxLength": 100}
+      }
+    },
+    "paper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paper_key",
+        "doi",
+        "arxiv_id",
+        "provider_qualified_id",
+        "title",
+        "authors",
+        "venue",
+        "publication_date",
+        "publication_year",
+        "locator",
+        "parent_seed_keys",
+        "source_query",
+        "route_direction"
+      ],
+      "properties": {
+        "paper_key": {"$ref": "#/$defs/paperKey"},
+        "doi": {"type": ["string", "null"], "maxLength": 500},
+        "arxiv_id": {"type": ["string", "null"], "maxLength": 200},
+        "provider_qualified_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/providerQualifiedId"},
+            {"type": "null"}
+          ]
+        },
+        "title": {"type": ["string", "null"], "maxLength": 2000},
+        "authors": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {"$ref": "#/$defs/author"}
+        },
+        "venue": {"type": ["string", "null"], "maxLength": 1000},
+        "publication_date": {"type": ["string", "null"], "format": "date"},
+        "publication_year": {"type": ["integer", "null"], "minimum": 1000, "maximum": 3000},
+        "locator": {"type": ["string", "null"], "maxLength": 2000},
+        "parent_seed_keys": {
+          "type": "array",
+          "maxItems": 1000,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/paperKey"}
+        },
+        "source_query": {"type": ["string", "null"], "maxLength": 2000},
+        "route_direction": {"enum": ["forward", "backward", "bidirectional", "non-citation", "seed", "resolved"]}
+      },
+      "anyOf": [
+        {"properties": {"doi": {"type": "string", "minLength": 1}}},
+        {"properties": {"arxiv_id": {"type": "string", "minLength": 1}}},
+        {"properties": {"provider_qualified_id": {"type": "object"}}},
+        {"properties": {"title": {"type": "string", "minLength": 1}}}
+      ]
+    },
+    "citationEdge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "citing_paper_key",
+        "cited_paper_key",
+        "route_direction",
+        "parent_seed_key",
+        "source_observation_ref",
+        "provider_reported"
+      ],
+      "properties": {
+        "citing_paper_key": {"$ref": "#/$defs/paperKey"},
+        "cited_paper_key": {"$ref": "#/$defs/paperKey"},
+        "route_direction": {"enum": ["forward", "backward"]},
+        "parent_seed_key": {
+          "oneOf": [
+            {"$ref": "#/$defs/paperKey"},
+            {"type": "null"}
+          ]
+        },
+        "source_observation_ref": {"type": "string", "minLength": 1, "maxLength": 200},
+        "provider_reported": {"const": true}
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pages_requested", "pages_received", "records_reported", "continuation_token", "has_more", "complete"],
+      "properties": {
+        "pages_requested": {"type": "integer", "minimum": 0},
+        "pages_received": {"type": "integer", "minimum": 0},
+        "records_reported": {"type": ["integer", "null"], "minimum": 0},
+        "continuation_token": {"type": ["string", "null"], "maxLength": 2000},
+        "has_more": {"type": "boolean"},
+        "complete": {"type": "boolean"}
+      }
+    },
+    "filtering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_applied", "locally_applied", "unresolved"],
+      "properties": {
+        "provider_applied": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "locally_applied": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "unresolved": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "requested_records", "returned_records", "coverage_notes"],
+      "properties": {
+        "status": {"enum": ["complete", "truncated", "partial", "blocked"]},
+        "requested_records": {"type": ["integer", "null"], "minimum": 0},
+        "returned_records": {"type": "integer", "minimum": 0},
+        "coverage_notes": {"type": "string", "minLength": 1, "maxLength": 4000}
+      }
+    },
+    "missingField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paper_key", "fields", "reason"],
+      "properties": {
+        "paper_key": {
+          "oneOf": [
+            {"$ref": "#/$defs/paperKey"},
+            {"type": "null"}
+          ]
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}
+        },
+        "reason": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "unresolvedRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider_record_ref", "reason"],
+      "properties": {
+        "provider_record_ref": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "nullRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "reason"],
+      "properties": {
+        "position": {"type": "integer", "minimum": 0},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 2000}
+      }
+    },
+    "partialFailure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "message", "retryable", "page_ref", "seed_key"],
+      "properties": {
+        "stage": {"type": "string", "minLength": 1, "maxLength": 200},
+        "message": {"type": "string", "minLength": 1, "maxLength": 2000},
+        "retryable": {"type": "boolean"},
+        "page_ref": {"type": ["string", "null"], "maxLength": 500},
+        "seed_key": {
+          "oneOf": [
+            {"$ref": "#/$defs/paperKey"},
+            {"type": "null"}
+          ]
+        }
+      }
+    },
+    "continuation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "opaque_ref"],
+      "properties": {
+        "status": {"enum": ["none", "available", "exhausted", "blocked"]},
+        "opaque_ref": {"type": ["string", "null"], "maxLength": 2000}
+      }
+    },
+    "rawAttachment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "file_role", "media_type", "sha256", "redaction_posture", "provenance_refs"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "^[^?#]+$"},
+        "file_role": {"const": "raw-provider-response"},
+        "media_type": {"type": "string", "pattern": "^[a-z0-9.+-]+/[a-z0-9.+-]+$"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "redaction_posture": {"const": "redacted"},
+        "provenance_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "maxLength": 500}
+        }
+      }
+    }
+  }
+}

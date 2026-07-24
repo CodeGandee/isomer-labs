@@ -552,7 +552,7 @@ git -C <copy> push publication --delete topic-workspace/main
         expected_packs = {
             "operator/isomer-op-entrypoint/SKILL.md": (20, ("project", "topic-create", "topic-manage", "topic-git")),
             "research-paradigm/deepsci/isomer-ext-deepsci-entrypoint/SKILL.md": (21, ("scout", "baseline", "idea", "paper-plot", "figure-polish")),
-            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (15, ("topic-creator", "trial", "reproduce", "audit", "synthesize")),
+            "research-paradigm/kaoju/isomer-ext-kaoju-entrypoint/SKILL.md": (16, ("topic-creator", "paper-search", "trial", "reproduce", "audit", "synthesize")),
         }
         routing_by_pack: dict[str, dict[str, str]] = {}
         for relative_path, (expected_count, representative_members) in expected_packs.items():

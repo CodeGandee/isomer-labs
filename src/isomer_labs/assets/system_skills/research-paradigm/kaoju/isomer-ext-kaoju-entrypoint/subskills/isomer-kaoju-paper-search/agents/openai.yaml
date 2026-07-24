@@ -1,0 +1,7 @@
+metadata:
+  version: "0.5.0"
+
+interface:
+  display_name: "isomer-kaoju-paper-search"
+  short_description: "Run bounded provider-neutral paper retrieval."
+  default_prompt: "Use $isomer-ext-kaoju-entrypoint use paper-search to perform this isomer-kaoju-paper-search task."

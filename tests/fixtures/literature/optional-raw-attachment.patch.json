@@ -1,0 +1,13 @@
+{
+  "observation_id": "literature-observation-raw-attachment",
+  "raw_attachments": [
+    {
+      "path": "raw-provider-response.redacted.json",
+      "file_role": "raw-provider-response",
+      "media_type": "application/json",
+      "sha256": "521698977b2f7e2267123b90139adf240a31a7ad2f15699e826c34bb5d0e9f77",
+      "redaction_posture": "redacted",
+      "provenance_refs": ["provider-response:semantic-scholar:redacted"]
+    }
+  ]
+}

@@ -32,8 +32,8 @@ class SystemSkillCatalogTests(unittest.TestCase):
         catalog = system_skill_catalog()
 
         self.assertEqual("isomer-skillset-manifest.v4", catalog.schema_version)
-        self.assertEqual((20, 21, 15), tuple(len(pack.protected_members) for pack in catalog.packs))
-        self.assertEqual(56, len(catalog.capabilities))
+        self.assertEqual((20, 21, 16), tuple(len(pack.protected_members) for pack in catalog.packs))
+        self.assertEqual(57, len(catalog.capabilities))
         for pack in catalog.packs:
             self.assertEqual(("welcome", "entrypoint"), tuple(public.role for public in pack.public_skills))
             self.assertEqual(pack.entry_skill, pack.entrypoint.name)
@@ -118,6 +118,47 @@ class SystemSkillCatalogTests(unittest.TestCase):
                             resolved.is_relative_to(bundle.resolve()),
                             f"{page.relative_to(bundle)} escapes its private projection through {destination}",
                         )
+
+    def test_paper_search_private_projection_contains_direct_resources_without_siblings(self) -> None:
+        capability = lookup_system_skill_capability("isomer-kaoju-paper-search")
+        self.assertEqual("paper-search", capability.member_name)
+        self.assertEqual(("isomer-kaoju-shared",), capability.dependencies)
+        self.assertEqual(("begin", "end"), capability.callback_insertion_points)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp)
+            result = materialize_system_skill_private_projection(
+                target,
+                ("isomer-kaoju-paper-search",),
+            )
+            self.assertEqual(
+                {
+                    "isomer-research-idea-recording",
+                    "isomer-research-operation-set-recording",
+                    "isomer-kaoju-shared",
+                    "isomer-kaoju-paper-search",
+                },
+                {item.logical_id for item in result.projections},
+            )
+            paper_search = target / "isomer-kaoju-paper-search"
+            self.assertEqual(
+                {
+                    "resolve-paper.md",
+                    "search-papers.md",
+                    "find-citing-papers.md",
+                    "explore-cited-papers.md",
+                    "trace-citation-neighborhood.md",
+                    "find-related-papers.md",
+                },
+                {path.name for path in (paper_search / "commands").glob("*.md")},
+            )
+            self.assertEqual(
+                {"provider-selection.md", "result-contract.md", "execution-and-errors.md"},
+                {path.name for path in (paper_search / "references").glob("*.md")},
+            )
+            self.assertTrue((paper_search / "references" / "approaches" / "s2.md").is_file())
+            self.assertFalse((target / "isomer-kaoju-discover").exists())
+            self.assertFalse((target / "isomer-ext-kaoju-entrypoint").exists())
 
     def test_binding_projection_resolves_logical_ids_without_persisting_pack_layout(self) -> None:
         projections = resolve_system_skill_binding_projection(("isomer-kaoju-trial",))

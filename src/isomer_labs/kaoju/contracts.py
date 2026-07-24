@@ -136,8 +136,8 @@ def load_contract() -> KaojuContract:
         if invocation_designator != f"{entry_skill}->{member_name}":
             raise ValueError(f"Kaoju protected member {logical_id!r} has a noncanonical invocation designator.")
         protected_members.append(KaojuProtectedMember(logical_id, member_name, invocation_designator))
-    if len(protected_members) != 15:
-        raise ValueError(f"Kaoju contract must declare fifteen protected members, found {len(protected_members)}.")
+    if len(protected_members) != 16:
+        raise ValueError(f"Kaoju contract must declare sixteen protected members, found {len(protected_members)}.")
     if len({item.logical_id for item in protected_members}) != len(protected_members):
         raise ValueError("Kaoju protected member logical ids must be unique.")
     if len({item.member_name for item in protected_members}) != len(protected_members):
@@ -147,8 +147,8 @@ def load_contract() -> KaojuContract:
     intents = _unique_strings(raw["survey_intents"], "survey_intents")
     compatibility = _unique_strings(raw["compatibility_procedures"], "compatibility_procedures")
     exploration = _unique_strings(raw["exploration_procedures"], "exploration_procedures")
-    if len(skills) != 16:
-        raise ValueError(f"Kaoju contract must declare sixteen skills, found {len(skills)}.")
+    if len(skills) != 17:
+        raise ValueError(f"Kaoju contract must declare seventeen skills, found {len(skills)}.")
     if len(intents) != 11:
         raise ValueError(f"Kaoju contract must declare eleven survey intents, found {len(intents)}.")
     mindset_config = raw.get("mindsets")
