@@ -39,8 +39,8 @@ Use when the user asks how to do something in Kaoju, is unsure which command fit
    - `help` when the user wants to see available exploration modes.
 4. **Run the interactive planning discussion**. Follow the selected subcommand page. Maintain an in-memory coverage map of intent, scope, evidence strategy, output form, risks, and candidate commands. Ask up to five clarification questions, one material choice at a time. Do not write files, artifacts, Runs, Gates, or Service Requests during exploration.
 5. **Shape the agreed plan**. When the discussion reaches consensus, produce a plan summary containing the selected command or procedure, scope, evidence strategy, output form, risks, and the exact public invocation.
-6. **Ask for explicit consent**. Present the plan summary and recommended invocation. If the user does not confirm, stop and return the plan as a paused recommendation.
-7. **Hand off to the selected command**. On confirmation, load the selected command page and execute it with the pinned topic and any resolved context. Do not merge this planning exchange into the target procedure's Run.
+6. **Resolve plan review**. Human review is the default: present the plan summary and recommended invocation, and return a paused recommendation when the user does not confirm. If the current prompt explicitly delegates plan review and automatic handoff for the named target, review and revise the plan against resolved context and continue without another user turn. Do not infer delegation from silence, ordinary continuation, or generic run-to.
+7. **Hand off to the selected command**. After human confirmation or valid prompt-delegated agent review, load the selected command page and execute it with the pinned topic and any resolved context. Report review mode, prompt basis, rationale, selected invocation, and limitations; do not merge this planning exchange into the target procedure's Run.
 8. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-explore --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 
 Callback resolution returns a compact `callbacks` array. Process entries in returned order and read each absolute `instruction_path` as supplemental material according to `source_type`. For `skill_dir`, read the reported `SKILL.md` and any directly required relative resources; do not treat the directory as an installed system skill or execute its scripts solely because resolution returned it. During ordinary execution, do not request `--explain` or depend on registry, priority, scope, status, Toolbox registration, or gating fields. Use `--explain`, `list`, `show`, or `validate` only to diagnose or manage callback resolution. Preserve higher-priority instructions, the current user request, owning-skill and shared research rules, evidence discipline, required Gates, validation, and recording obligations; report any material conflict.
@@ -69,19 +69,19 @@ Use `isomer-ext-kaoju-entrypoint->shared` for common evidence semantics, source 
 
 Return one of the following:
 
-- A confirmed public invocation for the next Kaoju command or procedure, with pinned topic and any resolved context.
+- A human-confirmed or prompt-delegated agent-reviewed public invocation for the next Kaoju command or procedure, with pinned topic, review posture, and resolved context.
 - A paused recommendation if the user does not consent, including the plan summary and the exact invocation to use when ready.
 - A blocker if context is unresolved, workspace readiness is missing, or a required planning question remains open.
 
 ## Gates, Blockers, and Resume
 
-The consent step is mandatory. Context conflicts, missing workspace readiness, or an unresolved planning question pause at the explore subcommand. Resume by re-invoking `explore` with the same context; no durable Run is created for the planning phase.
+Plan review is mandatory and defaults to human confirmation. Explicit target-scoped prompt delegation permits agent review and handoff. Context conflicts, missing workspace readiness, or an unresolved planning question pause at the explore subcommand even under agent review. Resume by re-invoking `explore` with the same context; no durable Run is created for the planning phase.
 
 ## Guardrails
 
 - DO NOT create files, artifacts, Runs, Gates, or Service Requests during exploration.
 - DO NOT perform discovery, acquisition, examination, execution, audit, synthesis, writing, or export inside the explore subskill.
-- DO NOT infer user consent from silence or an ordinary continuation request.
+- DO NOT infer agent-review delegation from silence, an ordinary continuation request, or generic run-to authorization.
 - DO NOT merge the planning exchange into the target procedure's Run.
 - DO NOT treat the in-memory plan as a durable artifact.
 

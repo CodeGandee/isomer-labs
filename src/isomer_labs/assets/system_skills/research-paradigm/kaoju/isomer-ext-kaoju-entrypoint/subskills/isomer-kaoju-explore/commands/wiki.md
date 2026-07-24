@@ -6,7 +6,7 @@
 2. **Confirm prerequisites**. Accepted audit and synthesis, or a specific subset of records to export.
 3. **Discuss output form and audience**.
 4. **Map to a Kaoju command**. Usually `export-survey-wiki`. Produce the exact public invocation.
-5. **Ask for explicit consent** before handing off.
+5. **Resolve plan review**. Ask for explicit human consent by default, or use explicit target-scoped prompt delegation to review and hand off without another user turn. Unresolved export scope or public network exposure still pauses.
 
 If the task does not map cleanly to these steps, use the native planning tool to identify the minimum exportable state.
 

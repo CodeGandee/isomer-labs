@@ -16,8 +16,8 @@ skill_invocation_notation: >
 ## Workflow
 
 1. **Draft comparison intent**. Use `isomer-ext-kaoju-entrypoint->frame` and `isomer-ext-kaoju-entrypoint->compare` to record candidate identities, desired conclusions, prior-evidence reuse, data, environment, reproduction or reimplementation routes, metrics, fairness, resources, Gates, and unresolved decisions.
-2. **Present the checkpoint**. Show the Comparison Intent Document and ask: “Do you want to clarify for more detail, or proceed?” Wait for the Proceed Decision.
-3. **Check readiness after approval**. Use `isomer-ext-kaoju-entrypoint->workspace`; query registered datasets first, validate reusable Runs, and identify candidate blockers.
+2. **Present the checkpoint**. Show the Comparison Intent Document and require a Proceed Decision. Human review is the default and asks: “Do you want to clarify for more detail, or proceed?” Under explicit target-scoped prompt delegation, the agent may inspect, revise, reject, or accept the intent within the accepted boundary and issue the Proceed Decision without another user turn. Record review mode, prompt basis, reviewing actor, rationale, affected refs, and resume posture through existing supported provenance. Material ambiguity, scope expansion, and protected authorization boundaries still pause for the actor.
+3. **Check readiness after the Proceed Decision**. Use `isomer-ext-kaoju-entrypoint->workspace`; query registered datasets first, validate reusable Runs, and identify candidate blockers.
 4. **Acquire, examine, and prepare**. Use `isomer-ext-kaoju-entrypoint->acquire`, `isomer-ext-kaoju-entrypoint->examine`, and `isomer-ext-kaoju-entrypoint->reproduce` only as required by the accepted intent.
 5. **Run the comparison**. Use `isomer-ext-kaoju-entrypoint->compare` under the frozen Comparison Contract and retain raw outputs, adaptations, quality checks, and uncertainty evidence.
 6. **Audit**. Use `isomer-ext-kaoju-entrypoint->audit` to check metric traceability, candidate eligibility, fairness, variability, failures, and `not-comparable` decisions.
@@ -44,10 +44,11 @@ Require candidate identities, user comparison intent, target task and data, metr
 
 ## Stop Conditions
 
-No candidate preparation or research Run starts before the Proceed Decision. Stop when the accepted candidates have eligible results or explicit blockers under the resource boundary; do not hide missing candidates or normalize away task semantics.
+No candidate preparation or research Run starts before the Proceed Decision, whether it comes from default human review or valid prompt-delegated agent review. Stop when the accepted candidates have eligible results or explicit blockers under the resource boundary; do not hide missing candidates or normalize away task semantics.
 
 ## Guardrails
 
-- DO NOT treat the plan as internal scratch work instead of a user-reviewed survey Artifact.
+- DO NOT treat the plan as internal scratch work instead of a reviewed survey Artifact.
+- DO NOT infer agent review from silence, generic continuation, or run-to authorization alone.
 - DO NOT reuse old Runs without contract compatibility checks.
 - DO NOT report only successful candidates.

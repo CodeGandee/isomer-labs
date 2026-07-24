@@ -19,6 +19,15 @@ PACKAGED_TEMPLATE_RESOURCE = (
     "isomer-kaoju-write/assets/defaults/templates"
 )
 PACKAGED_TEMPLATE_MANIFEST = "manifest.json"
+PACKAGED_IEEE_LATEX_MEMBERS = frozenset(
+    {
+        "IEEEtran.cls",
+        "bare_jrnl_new_sample4.tex",
+        "fig1.png",
+        "metadata.json",
+        "template.tex",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -108,6 +117,33 @@ def load_packaged_template(kind: str | TemplateKindSpec) -> PackagedTemplate:
             "packaged_template_path_invalid",
             f"Kaoju packaged {selected_kind.kind}/main escapes its protected resource root.",
         ) from exc
+    if selected_kind.kind == "latex":
+        observed_members = frozenset(
+            path.relative_to(template_root).as_posix()
+            for path in template_root.rglob("*")
+            if path.is_file()
+        )
+        if observed_members != PACKAGED_IEEE_LATEX_MEMBERS:
+            missing = sorted(PACKAGED_IEEE_LATEX_MEMBERS - observed_members)
+            unexpected = sorted(observed_members - PACKAGED_IEEE_LATEX_MEMBERS)
+            raise KaojuServiceError(
+                "packaged_template_inventory_invalid",
+                "Kaoju packaged latex/main must contain the complete checked IEEE Transactions tree. "
+                f"Missing: {missing or 'none'}; unexpected: {unexpected or 'none'}.",
+            )
+        metadata_path = template_root / "metadata.json"
+        try:
+            tree_metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise KaojuServiceError(
+                "packaged_template_metadata_invalid",
+                f"Kaoju packaged latex/main source metadata is missing or unreadable: {exc}",
+            ) from exc
+        if tree_metadata != authored:
+            raise KaojuServiceError(
+                "packaged_template_metadata_invalid",
+                "Kaoju packaged latex/main source metadata must match its manifest-authored metadata.",
+            )
     observed_digest = template_tree_digest(template_root)
     if observed_digest != recorded_digest:
         raise KaojuServiceError(

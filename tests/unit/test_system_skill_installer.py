@@ -216,7 +216,20 @@ class SystemSkillInstallerTests(unittest.TestCase):
         )
         self.assertTrue((template_defaults / "manifest.json").is_file())
         self.assertTrue((template_defaults / "content/main/paper.myst.md").is_file())
-        self.assertTrue((template_defaults / "latex/main/main.tex").is_file())
+        self.assertEqual(
+            {
+                "IEEEtran.cls",
+                "bare_jrnl_new_sample4.tex",
+                "fig1.png",
+                "metadata.json",
+                "template.tex",
+            },
+            {
+                path.name
+                for path in (template_defaults / "latex/main").iterdir()
+                if path.is_file()
+            },
+        )
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())

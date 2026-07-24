@@ -1,6 +1,6 @@
 # Trial Contract
 
-A trial plan names the immutable repository commit, associated paper and source digest, resolved Pixi environment and lock identity, dataset or path input, durable wrapper, upstream command or adaptation, evaluator, metrics, resource bound, attempt bound, fidelity target, expected outputs, and human Gate.
+A trial plan names the immutable repository commit, associated paper and source digest, resolved Pixi environment and lock identity, dataset or path input, durable wrapper, upstream command or adaptation, evaluator, metrics, resource bound, attempt bound, fidelity target, expected outputs, and resolved review and execution-authorization posture. Human review is the default. Valid prompt-delegated agent review records the prompt basis, reviewing actor, rationale, affected refs, accepted pins, and resume posture through existing supported provenance.
 
 Path data records its external or managed locator without copying or deleting externally owned data. Random data is a `KAOJU:GENERATED-DATASET` with explicit generator, seed, shape, distribution, checks, and `purpose: capability-probe`.
 

@@ -194,6 +194,73 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("Create no synthetic aggregate Artifact", creator)
         self.assertIn("DO NOT overwrite an edited or stale export", creator)
 
+    def test_review_mode_contract_defaults_to_human_and_bounds_prompt_delegation(self) -> None:
+        interaction = (
+            SUBSKILLS / "isomer-kaoju-shared/references/interaction-and-gates.md"
+        ).read_text(encoding="utf-8")
+        prerequisite = (
+            SUBSKILLS / "isomer-kaoju-shared/references/prerequisite-recovery.md"
+        ).read_text(encoding="utf-8")
+        readme = (KAOJU_ROOT / "README.md").read_text(encoding="utf-8")
+        combined = "\n".join((interaction, prerequisite, readme))
+
+        self.assertIn("Human review is the default", interaction)
+        for checkpoint in (
+            "explore plan handoff",
+            "Direction Set selection and acceptance",
+            "Reading List refinement and acceptance",
+            "Comparison Intent review and Proceed Decision",
+            "bounded trial-plan review and execution authorization",
+            "paper structure and draft review",
+            "bounded local paper-build authorization",
+        ):
+            self.assertIn(checkpoint, interaction)
+        self.assertIn("explicitly and unambiguously delegates", interaction)
+        self.assertIn("Ambiguous delegation retains human review", interaction)
+        self.assertIn("The delegation expires when the target completes", interaction)
+        self.assertIn("It never means automatic acceptance", interaction)
+        self.assertIn("lacks required evidence", interaction)
+        self.assertIn("reviewing actor, rationale, affected refs", interaction)
+        self.assertIn("Run-to authorization alone does not delegate review", interaction)
+        self.assertIn("It does not by itself delegate review", prerequisite)
+        self.assertIn("not global, session-wide", prerequisite)
+        self.assertIn("Silence, ordinary continuation, or generic run-to authorization does not delegate review", readme)
+
+        for protected in (
+            "credentials",
+            "restricted data",
+            "material license",
+            "destructive or irreversible",
+            "unexpected cost or resource",
+            "public exposure",
+            "publication acceptance",
+            "publication",
+            "submission",
+        ):
+            self.assertIn(protected, combined)
+
+    def test_focused_review_checkpoints_support_recorded_agent_review_without_weakening_gates(self) -> None:
+        focused_paths = {
+            "directions": SUBSKILLS / "isomer-kaoju-frame/SKILL-MAIN.md",
+            "reading_list": SUBSKILLS / "isomer-kaoju-discover/SKILL-MAIN.md",
+            "comparison": SUBSKILLS / "isomer-kaoju-compare/SKILL-MAIN.md",
+            "trial": SUBSKILLS / "isomer-kaoju-trial/SKILL-MAIN.md",
+            "paper": SUBSKILLS / "isomer-kaoju-write/SKILL-MAIN.md",
+        }
+        texts = {name: path.read_text(encoding="utf-8") for name, path in focused_paths.items()}
+        for name, text in texts.items():
+            with self.subTest(owner=name):
+                self.assertIn("Human review is the default", text)
+                self.assertIn("prompt delegation", text)
+
+        self.assertIn("Proceed Decision without another user turn", texts["comparison"])
+        self.assertIn("A Proceed Decision is required", texts["comparison"])
+        self.assertIn("accepted source, environment, data, wrapper, evaluator, metric, resource, and fidelity pins", texts["trial"])
+        self.assertIn("protected authorization boundaries", texts["trial"])
+        self.assertIn("paper structure and draft review", (KAOJU_ROOT / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("bounded local build", texts["paper"])
+        self.assertIn("Publication acceptance, publication, and submission remain protected actor Gates", texts["paper"])
+
 
 if __name__ == "__main__":
     unittest.main()

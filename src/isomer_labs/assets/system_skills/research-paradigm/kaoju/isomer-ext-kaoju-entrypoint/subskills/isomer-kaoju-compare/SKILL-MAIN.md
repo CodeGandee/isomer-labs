@@ -25,14 +25,14 @@ Portfolio reminder: compared works, methods, matrix rows, dimensions, metrics, a
 
 ## When to Use
 
-Use for theory comparison of selected works, preparation of an actual-run comparison plan, or execution of an accepted empirical comparison. Do not use for a broad survey, a single-method trial, ranking based only on reported headline numbers, or candidate preparation before user approval.
+Use for theory comparison of selected works, preparation of an actual-run comparison plan, or execution of an accepted empirical comparison. Do not use for a broad survey, a single-method trial, ranking based only on reported headline numbers, or candidate preparation before a valid Proceed Decision.
 
 ## Workflow
 
 1. **Select comparison mode**. Require named candidate Source Identities, target question, accepted source evidence, and either theory intent or empirical intent.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-compare --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Derive the comparison contract**. Define domain-relevant dimensions or metrics, rationale, applicability, evaluator semantics, fairness rules, exclusions, and desired evidence depth; perform bounded reference discovery when the domain basis is unclear.
-4. **Apply the intent checkpoint for empirical mode**. Present candidate readiness, prior-evidence reuse, acquisition, environment, reproduce or reimplement routes, datasets, metrics, resources, Gates, and unresolved choices; wait for a Proceed Decision.
+4. **Apply the intent checkpoint for empirical mode**. Present candidate readiness, prior-evidence reuse, acquisition, environment, reproduce or reimplement routes, datasets, metrics, resources, Gates, and unresolved choices. A Proceed Decision is required. Human review is the default; under explicit target-scoped prompt delegation, the agent may inspect, revise, reject, or accept the Comparison Intent within its accepted boundary and issue the Proceed Decision without another user turn. Record the review mode, prompt basis, reviewing actor, rationale, affected refs, and resume posture through existing supported provenance. Material ambiguity, scope expansion, or a protected authorization boundary still pauses for the actor.
 5. **Build theory evidence or prepare eligible candidates**. In theory mode, inspect exact source locators; in empirical mode, query registered datasets first and route governed preparation.
 6. **Execute empirical mode**. Run eligible candidates under the accepted Comparison Contract and retain Run, raw-output, environment, input, evaluator, adaptation, and quality-check refs.
 7. **Assemble the matrix**. Report source cells or measurements, variability or uncertainty, contradictions, missing states, and `not-comparable` where normalization changes task or quality semantics.
@@ -51,7 +51,7 @@ Each dimension has a definition, relevance rationale, applicability rule, and so
 
 ### Empirical Intent Mode
 
-The Comparison Intent Document records what the user wants, candidate identity and readiness, existing reproduced evidence, required source, model and data acquisition, environment and reimplementation needs, metrics, evaluator, fairness, repetitions, uncertainty, resources, Gates, and unresolved decisions. Ask: “Do you want to clarify for more detail, or proceed?”
+The Comparison Intent Document records what the user wants, candidate identity and readiness, existing reproduced evidence, required source, model and data acquisition, environment and reimplementation needs, metrics, evaluator, fairness, repetitions, uncertainty, resources, Gates, and unresolved decisions. Under default human review, ask: “Do you want to clarify for more detail, or proceed?” Under valid target-scoped prompt delegation, let the reviewing agent answer that checkpoint within the delegated boundary and record its decision provenance.
 
 ## Artifact Operations
 
@@ -80,6 +80,7 @@ A complete-looking matrix is weaker than an honest sparse one if its cells hide 
 ## Red Flags
 
 - Empirical work begins before a Proceed Decision.
+- Agent review supplies a Proceed Decision without explicit target-scoped prompt delegation or extends beyond the delegated boundary.
 - Theory cells receive `compared` verification depth.
 - A single number has no variability statement or reason it is unavailable.
 

@@ -8,7 +8,7 @@ MyST is canonical and complete: it holds every claim, citation, table, and secti
 
 ## Initialization and Fill
 
-- Scaffold from the adopted LaTeX template tree; record the content-template identity and source checksum separately from presentation state.
+- Scaffold from the adopted LaTeX template tree; record the content-template identity and source checksum separately from presentation state. When topic-owned LaTeX `main` is absent, the installed fallback is the complete IEEE Transactions two-column tree with a local `IEEEtran.cls`, not a host-resolved class or a reference into `tmp/`.
 - Resolve an explicit LaTeX template or LaTeX `main`; snapshot its exact multi-file tree, stable ref, name, state token, digest, authored metadata, entrypoint, composition contract, build profile, provenance, and license posture. Adoption packs the real venue tree; a hand-written shim that only names or checksums an external official template is rejected.
 - Fingerprint LaTeX state, composition contract, converter identity, required directives, tables, citations, floats, raw blocks, and build profile. Do not include the content-template digest in the presentation fingerprint.
 - The initializer extracts MyST frontmatter (title, authors, date) and the abstract into the fill manifest (`.isomer-kaoju-tex-fill.json`), marks table and directive locations, collects citation-map entries, and returns each composition obligation as pending. It does not pretend conversion succeeded.
@@ -21,7 +21,9 @@ MyST is canonical and complete: it holds every claim, citation, table, and secti
 - Route the exact command through the `document_build` Research Operation Extension Point and Execution Adapter Command Request.
 - Verify that the TeX draft pins the supplied or implied snapshot ref and digest before execution, then compile its declared entrypoint with the registered build profile.
 - Record the engine, exact entrypoint, logs, warnings, outputs, terminal status, and any concrete unavailable-tool or compile-failure reason.
-- Post-authorization repair is limited to the paper-specific TeX draft. Canonical content, dependencies, build profile, or interpretation changes require a revised plan and human Gate. Named LaTeX stock changes require an explicit user-authorized template update.
+- Build authorization defaults to human review. Explicit target-scoped prompt delegation may authorize and review a bounded local build inside the accepted paper, template snapshot, dependency, build-profile, toolchain, and resource pins. Record review mode, prompt basis, reviewing actor, rationale, affected refs, and resume posture through existing supported provenance.
+- Post-authorization repair is limited to the paper-specific TeX draft. Canonical content, dependencies, build profile, or interpretation changes require a revised plan and fresh review authorization. Prompt-delegated agent review may authorize only revisions inside the explicit target and accepted build pins. Named LaTeX stock changes require an explicit user-authorized template update.
+- Publication acceptance, publication, and submission remain protected actor Gates.
 - Never use browser print-to-PDF or a Markdown-to-PDF conversion as a substitute for the MyST-to-TeX build graph.
 
 ## Run and Output Records

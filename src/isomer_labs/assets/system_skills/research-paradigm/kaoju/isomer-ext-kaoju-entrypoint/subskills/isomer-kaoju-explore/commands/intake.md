@@ -6,7 +6,7 @@
 2. **Choose an intake path**. Map to single-item intake, batch intake, or source-code ingestion.
 3. **Discuss verification depth and downstream use** (examine, audit, compare, or trial).
 4. **Map to a Kaoju command**. Usually `ingest-reading-item`, `ingest-source-code`, `curated-intake-pass`, or `audit-survey-pass`. Produce the exact public invocation.
-5. **Ask for explicit consent** before handing off.
+5. **Resolve plan review**. Ask for explicit human consent by default, or use explicit target-scoped prompt delegation to review and hand off without another user turn. Unresolved identity or protected access authorization still pauses.
 
 If the task does not map cleanly to these steps, use the native planning tool to sequence intake and verification.
 

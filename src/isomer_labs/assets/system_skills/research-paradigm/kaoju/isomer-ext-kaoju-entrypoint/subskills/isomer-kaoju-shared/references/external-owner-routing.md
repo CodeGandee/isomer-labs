@@ -17,6 +17,6 @@ Kaoju decides what survey evidence is needed and consumes returned refs. It does
 
 State the requested operation, immutable inputs, destination purpose, resource boundary, Gate refs, and expected returned refs. On return, validate identity and status before using the result as evidence.
 
-During authorized run-to traversal, the prompt-level controller may invoke multiple owners in dependency order, but each owner retains its mutation authority and returns a separate Run, terminal report, checkpoint, and provenance. Refresh state between handoffs and stop at every human Gate or nondelegable external side effect.
+During authorized run-to traversal, the prompt-level controller may invoke multiple owners in dependency order, but each owner retains its mutation authority and returns a separate Run, terminal report, checkpoint, and provenance. Refresh state between handoffs. An owner may complete an eligible review checkpoint under explicit target-scoped agent-review delegation, but it stops for undelegated review, every nondelegable Gate, and every unauthorized external side effect.
 
 A known available owner route yields `paused` prerequisite recovery when run-to is not authorized. Owner absence, rejected authorization, access failure, or insufficient resources that require an unavailable external state change yield `blocked`. Record the attempted route and resume condition rather than teaching a bypass.

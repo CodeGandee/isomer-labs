@@ -16,7 +16,7 @@ skill_invocation_notation: >
 ## Workflow
 
 1. Resolve the canonical repository commit, associated paper, accepted Source Digest, task-critical path, dependency hints, data posture, and existing Pixi environment candidates.
-2. Use `isomer-ext-kaoju-entrypoint->trial` to record `KAOJU:ENV-PREP-PLAN` with flexible compatible constraints, risks, authorization, expected smoke outputs, and environment scope.
+2. Use `isomer-ext-kaoju-entrypoint->trial` to record `KAOJU:ENV-PREP-PLAN` with flexible compatible constraints, risks, authorization, expected smoke outputs, and environment scope. Resolve review posture before dependency mutation: human review is the default, while explicit target-scoped prompt delegation may authorize bounded preparation inside the named environment and dependency constraints. Record review mode, prompt basis, reviewing actor, rationale, affected refs, and resume posture through existing supported provenance.
 3. Open and synchronously dispatch a Service Request. Apply the Pixi preference order: reuse a satisfying environment; add flexible compatible constraints to an existing environment while preferring `default`; or create a dedicated environment.
 4. Record exact resolved package versions and lock identity in `KAOJU:PIXI-ENV-REF`, while preserving flexible intent constraints and before-and-after Gate state in `KAOJU:ENV-GATE-REVISION`.
 5. Create a durable file-backed `KAOJU:SMOKE-RUN-SCRIPT` under the Artifact owner surface. A Run-tied staged copy may execute, but neither source-tree nor Local Tmp Surface copies become canonical.
@@ -30,4 +30,4 @@ Research owner: `isomer-ext-kaoju-entrypoint->trial`; operational owner: the env
 
 ## Gates, Blockers, and Resume
 
-Dependency mutation follows the plan authorization and Gate. Unsatisfiable constraints, lock failure, unavailable toolchain, smoke failure, or material repair pauses at plan, dispatch, resolve, smoke, or repair.
+Dependency mutation follows resolved plan review and authorization. A material repair inside valid prompt delegation and the accepted environment, dependency, resource, and smoke-test pins may receive fresh agent review; an out-of-bound repair pauses for the actor. Credentials, material license terms, destructive or irreversible action, and unexpected resource or cost remain protected Gates. Unsatisfiable constraints, lock failure, unavailable toolchain, smoke failure, or unresolved material repair pauses at plan, dispatch, resolve, smoke, or repair.

@@ -20,8 +20,8 @@ skill_invocation_notation: >
 3. Use `isomer-ext-kaoju-entrypoint->discover` to plan search strategy across papers, technical reports, repositories, datasets, and models while treating papers and reports as primary works. For paper identity, query, citation, or adjacent-paper retrieval, discover invokes `isomer-ext-kaoju-entrypoint->paper-search` with purpose, evidence-use intent, normalized fields, direction, filters, and bounds, then records query or seed, provider or access method, route, searched-through date, identity resolution, version family, disposition, and coverage limits in the Discovery Ledger.
 4. Reach the effective priority and secondary targets. Preserve inaccessible or unresolved targets as blockers; use bounded backfill without hiding shortages.
 5. Deduplicate versions by work family while retaining exact version identities and relationships.
-6. Present the list for inspection and refinement. Report the effective and achieved category counts. A short list may be approved with a non-blocking shortage warning against the effective target.
-7. Persist `KAOJU:READING-LIST` as a scoped current-state Artifact with `target_counts` and `achieved_counts`, then checkpoint the Run. Record the target basis as `default`, `user-total`, or `user-categories`, and record `requested_total` for `user-total`.
+6. Resolve Reading List review. Present the list for inspection and refinement under default human review. Under explicit target-scoped prompt delegation, the agent may inspect, revise, reject, or accept the list without another user turn. Report the effective and achieved category counts. A short list may be approved with a non-blocking shortage warning against the effective target.
+7. After human approval or valid prompt-delegated agent review, persist `KAOJU:READING-LIST` as a scoped current-state Artifact with `target_counts`, `achieved_counts`, review mode, prompt basis, reviewing actor, and rationale through existing supported provenance, then checkpoint the Run. Record the target basis as `default`, `user-total`, or `user-categories`, and record `requested_total` for `user-total`.
 
 If the user's task does not map cleanly to these steps, use your native planning tool to build a step-by-step plan from this command, its required inputs, and the user's request, then execute the plan.
 
@@ -31,4 +31,4 @@ Owner: `isomer-ext-kaoju-entrypoint->discover`. Inputs: accepted `KAOJU:DIRECTIO
 
 ## Gates, Blockers, and Resume
 
-Human approval is required. Provider failure, source-access limits, unresolved identity, or binding failure records blockers. Resume at discovery, backfill, refine, or approve without discarding prior query provenance.
+Reading List review is required and defaults to human approval. Explicit target-scoped prompt delegation permits recorded agent review without another user turn. Provider failure, source-access limits, unresolved identity, or binding failure records blockers. Resume at discovery, backfill, refine, or approve without discarding prior query provenance.

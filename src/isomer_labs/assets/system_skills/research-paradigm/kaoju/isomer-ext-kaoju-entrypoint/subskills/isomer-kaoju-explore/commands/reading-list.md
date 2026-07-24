@@ -6,7 +6,7 @@
 2. **Propose a discovery strategy**. Choose between broad discovery, curated intake, or direction expansion.
 3. **Estimate the candidate list size and selection criteria** with the user.
 4. **Map to a Kaoju command**. Usually `build-reading-list`, `curated-intake-pass`, or `direction-expansion-pass`. Produce the exact public invocation.
-5. **Ask for explicit consent** before handing off.
+5. **Resolve plan review**. Ask for explicit human consent by default, or use explicit target-scoped prompt delegation to review and hand off without another user turn. A missing seed or query basis still pauses.
 
 If the task does not map cleanly to these steps, use the native planning tool to compare discovery strategies.
 

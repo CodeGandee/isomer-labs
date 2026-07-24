@@ -16,7 +16,13 @@ from isomer_labs.kaoju.artifacts import KaojuServiceError
 from isomer_labs.kaoju.content import DIRECTORY_MANIFEST_NAME
 from isomer_labs.kaoju.derived_intent import apply_derived_intent
 from isomer_labs.kaoju.paper import KaojuPaperService, _compose_latex_tree
-from isomer_labs.kaoju.template_support import _replace_directory
+from isomer_labs.kaoju.template_defaults import load_packaged_template
+from isomer_labs.kaoju.template_support import (
+    TEX_DRAFT_MANIFEST_NAME,
+    TEX_FILL_MANIFEST_NAME,
+    TEX_SNAPSHOT_MANIFEST_NAME,
+    _replace_directory,
+)
 from isomer_labs.models import SelectionRequest
 from isomer_labs.project import discover_project
 from isomer_labs.project.context import resolve_effective_topic_context
@@ -752,6 +758,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         status, exported = self.template("export", "--kind", "latex", "--actor", "agent:test")
         self.assertEqual(0, status, exported)
+        self.assertEqual("topic-stock", exported["selection_source"])
         target = self.root / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main"
         self.assertEqual(str(target), exported["target"])
         export_metadata = json.loads((target / ".isomer-template-export.json").read_text(encoding="utf-8"))
@@ -1402,6 +1409,36 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual("artifact-paper-template-myst-main", promoted["stable_ref"])
         self.assertIsInstance(promoted["state_token"], str)
 
+        status, latex_exported = self.template(
+            "export",
+            "--kind",
+            "latex",
+            "--actor",
+            "agent:test",
+        )
+        self.assertEqual(0, status, latex_exported)
+        self.assertEqual("packaged-default", latex_exported["selection_source"])
+        latex_target = Path(str(latex_exported["target"]))
+        self.assertEqual(
+            {
+                "IEEEtran.cls",
+                "bare_jrnl_new_sample4.tex",
+                "fig1.png",
+                "metadata.json",
+                "template.tex",
+            },
+            {
+                path.name
+                for path in latex_target.iterdir()
+                if path.is_file()
+                and path.name != ".isomer-template-export.json"
+            },
+        )
+        self.assertEqual(
+            load_packaged_template("latex").root.joinpath("IEEEtran.cls").read_bytes(),
+            latex_target.joinpath("IEEEtran.cls").read_bytes(),
+        )
+
     def test_default_fallback_is_strict_for_explicit_or_invalid_topic_state(self) -> None:
         status, explicit_missing = self.template(
             "export",
@@ -1471,6 +1508,25 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         )
         self.assertTrue(all(role["created"] for role in initialized["roles"]))
         self.assertTrue(all(role["exported"] for role in initialized["roles"]))
+        latex_path = (
+            self.root
+            / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main"
+        )
+        self.assertEqual(
+            {
+                "IEEEtran.cls",
+                "bare_jrnl_new_sample4.tex",
+                "fig1.png",
+                "metadata.json",
+                "template.tex",
+            },
+            {
+                path.name
+                for path in latex_path.iterdir()
+                if path.is_file()
+                and path.name != ".isomer-template-export.json"
+            },
+        )
 
         content_path = (
             self.root
@@ -1483,6 +1539,15 @@ class KaojuNamedTemplateTests(unittest.TestCase):
             + "\n## User Adjustment\n\nPreserve this edit.\n",
         )
         before = content_path.read_bytes()
+        latex_entrypoint = latex_path / "template.tex"
+        _write(
+            latex_entrypoint,
+            latex_entrypoint.read_text(encoding="utf-8").replace(
+                "\\title{A Sample Article",
+                "\\title{A Topic-Adjusted Article",
+            ),
+        )
+        latex_before = latex_entrypoint.read_bytes()
         status, replay = self.template(
             "ensure-defaults",
             "--actor",
@@ -1497,7 +1562,132 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual("edited", roles["content"]["export_posture"])
         self.assertFalse(roles["content"]["exported"])
         self.assertEqual(before, content_path.read_bytes())
-        self.assertEqual("unchanged", roles["latex"]["export_posture"])
+        self.assertEqual("edited", roles["latex"]["export_posture"])
+        self.assertFalse(roles["latex"]["exported"])
+        self.assertEqual(latex_before, latex_entrypoint.read_bytes())
+
+    def test_packaged_ieee_fallback_initializes_and_reuses_full_paper_snapshot(self) -> None:
+        draft_path = self.root / "prepared/ieee-paper.myst.md"
+        _write(
+            draft_path,
+            """
+            ---
+            title: IEEE Fallback Survey
+            authors:
+              - Test Author
+            ---
+
+            # Abstract
+
+            This survey compares reliable systems.
+
+            # Introduction
+
+            Introduce the survey.
+
+            # Background
+
+            Define the background.
+
+            # Related Work
+
+            Compare related work.
+
+            # Method Comparison
+
+            Compare the methods.
+
+            # Discussion
+
+            Discuss the evidence.
+
+            # Conclusion
+
+            State the bounded conclusion.
+
+            # References
+
+            No citations are required for this fixture.
+            """,
+        )
+        draft_ref = "artifact-paper-draft-myst-ieee-fallback"
+        created = self.create_generic_record(
+            draft_ref,
+            "KAOJU:PAPER-DRAFT-MYST",
+            body_file=draft_path,
+            scope_key="ieee-fallback",
+        )
+        self.assertTrue(created["ok"], created)
+
+        paper_service = KaojuPaperService(
+            self.context(),
+            env={},
+            cwd=self.root,
+        )
+        initialized = paper_service.init_tex(
+            draft_ref=draft_ref,
+            paper_line="ieee-fallback",
+        )
+        self.assertEqual("packaged-default", initialized["latex_template"]["selection_source"])
+        self.assertEqual("template.tex", initialized["entrypoint"])
+        self.assertEqual("marker", initialized["composition_mode"])
+
+        store, diagnostics = open_workspace_runtime(
+            self.context(),
+            env={},
+            read_only=True,
+        )
+        self.assertEqual([], diagnostics)
+        assert store is not None
+        try:
+            template_record = store.get_lifecycle_record(str(initialized["template_ref"]))
+            draft_record = store.get_lifecycle_record(str(initialized["draft_ref"]))
+        finally:
+            store.close()
+        self.assertIsNotNone(template_record)
+        self.assertIsNotNone(draft_record)
+        assert template_record is not None
+        assert draft_record is not None
+        self.assertIsNotNone(template_record.content_path)
+        self.assertIsNotNone(draft_record.content_path)
+        template_root = Path(str(template_record.content_path)).parent
+        draft_root = Path(str(draft_record.content_path)).parent
+        required_members = {
+            "IEEEtran.cls",
+            "bare_jrnl_new_sample4.tex",
+            "fig1.png",
+            "metadata.json",
+            "template.tex",
+        }
+        self.assertTrue(required_members.issubset({path.name for path in template_root.iterdir()}))
+        self.assertTrue(required_members.issubset({path.name for path in draft_root.iterdir()}))
+        self.assertTrue((template_root / TEX_SNAPSHOT_MANIFEST_NAME).is_file())
+        self.assertTrue((draft_root / TEX_DRAFT_MANIFEST_NAME).is_file())
+        self.assertTrue((draft_root / TEX_FILL_MANIFEST_NAME).is_file())
+        packaged_class = load_packaged_template("latex").root / "IEEEtran.cls"
+        self.assertEqual(
+            packaged_class.read_bytes(),
+            (template_root / "IEEEtran.cls").read_bytes(),
+        )
+        self.assertEqual(
+            packaged_class.read_bytes(),
+            (draft_root / "IEEEtran.cls").read_bytes(),
+        )
+        self.assertNotIn(
+            "% ISOMER_BODY",
+            (draft_root / "template.tex").read_text(encoding="utf-8"),
+        )
+
+        reused = paper_service.init_tex(
+            draft_ref=draft_ref,
+            paper_line="ieee-fallback",
+        )
+        self.assertTrue(reused["template_reused"])
+        self.assertEqual(initialized["template_ref"], reused["template_ref"])
+        self.assertEqual(
+            packaged_class.read_bytes(),
+            (template_root / "IEEEtran.cls").read_bytes(),
+        )
 
     def test_derived_apply_promotes_edits_and_preserves_future_only_boundary(self) -> None:
         status, exported = self.template(
@@ -1509,12 +1699,12 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         )
         self.assertEqual(0, status, exported)
         target = Path(str(exported["target"]))
-        main = target / "main.tex"
+        main = target / "template.tex"
         _write(
             main,
             main.read_text(encoding="utf-8").replace(
-                "\\usepackage{booktabs}",
-                "\\usepackage{booktabs}\n\\usepackage{microtype}",
+                "\\usepackage{cite}",
+                "\\usepackage{cite}\n\\usepackage{microtype}",
             ),
         )
         result = apply_derived_intent(

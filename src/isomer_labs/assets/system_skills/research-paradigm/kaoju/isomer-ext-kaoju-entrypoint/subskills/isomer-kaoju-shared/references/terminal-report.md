@@ -12,9 +12,9 @@ Every bounded procedure or stage records:
 | `procedure` | Active procedure and stage range completed. |
 | `accepted_inputs` | Durable refs and identity checks. |
 | `accepted_outputs` | Artifact, Evidence Item, Run, Finding, Decision Record, and Provenance Record refs. |
-| `stage_outcomes` | Completed, skipped with reason, failed, or blocked for each planned stage. |
+| `stage_outcomes` | Completed, skipped with reason, failed, or blocked for each planned stage; include human or agent-delegated review mode, prompt basis, reviewing actor, rationale, and affected refs when a review checkpoint occurs. |
 | `evidence_summary` | Achieved depth, verdicts, fidelity, input basis, contradictions, and limitations. |
-| `resources_and_gates` | Material resource use and Gate decisions. |
+| `resources_and_gates` | Material resource use, review posture, and Gate decisions without conflating agent review with protected human authorization. |
 | `blockers` | Unresolved conditions and affected outputs. |
 | `resume_point` | Accepted refs, starting stage, required decision or state change; omit only for complete work with no continuation. |
 

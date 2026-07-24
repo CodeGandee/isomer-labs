@@ -18,6 +18,7 @@ The paper contract fixes the publication boundary and paper line before drafting
 
 - MyST remains canonical. Markdown, TeX, PDF, and bundles are derived.
 - The contract cannot strengthen verdicts, hide limitations, or add unsupported claims.
-- A material content, dependency, build-profile, evaluator, or interpretation change requires a revised plan and Gate.
+- A material content, dependency, build-profile, evaluator, or interpretation change requires a revised plan and fresh review authorization. Prompt-delegated agent review may authorize only changes inside the explicit target and accepted paper or build pins.
 - Paper-specific TeX repair does not mutate named LaTeX stock; promotion requires an explicit role-qualified update.
 - Historical TeX remains readable but never auto-promotes into canonical MyST.
+- Publication acceptance, publication, and submission remain protected actor Gates.

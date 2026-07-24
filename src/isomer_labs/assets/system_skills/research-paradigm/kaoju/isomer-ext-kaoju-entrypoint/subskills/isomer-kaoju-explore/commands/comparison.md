@@ -6,7 +6,7 @@
 2. **Decide evidence needs**. Source-only examination, actual-run metrics, or both?
 3. **Identify required audits and Gates** before empirical work.
 4. **Map to a Kaoju command**. Usually `theory-comparison-pass`, `comparative-pass`, or `compare`. Produce the exact public invocation.
-5. **Ask for explicit consent** before handing off.
+5. **Resolve plan review**. Ask for explicit human consent by default, or use explicit target-scoped prompt delegation to review and hand off without another user turn. Unresolved candidates, metrics, or protected resource decisions still pause.
 
 If the task does not map cleanly to these steps, use the native planning tool to design a comparison contract.
 
