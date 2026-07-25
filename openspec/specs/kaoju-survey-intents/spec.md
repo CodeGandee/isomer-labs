@@ -4,17 +4,22 @@
 TBD - created by syncing change revise-kaoju-survey-process. Update Purpose after archive.
 ## Requirements
 ### Requirement: Kaoju Proposes and Records Survey Directions
-The system SHALL derive candidate survey directions from the active Research Topic, SHALL return the final human-reviewed directions as one current `KAOJU:DIRECTION-SET` record distinct from `KAOJU:SURVEY-CONTRACT`, and SHALL project every durable proposal concept into the canonical Research Idea portfolio as part of the accepted write.
+The system SHALL derive candidate survey directions from the active Research Topic, SHALL return the final directions reviewed under the resolved human or prompt-delegated agent review mode as one current `KAOJU:DIRECTION-SET` record distinct from `KAOJU:SURVEY-CONTRACT`, and SHALL project every durable proposal concept into the canonical Research Idea portfolio as part of the accepted write.
 
 #### Scenario: Agent proposes bounded directions
 - **WHEN** the actor asks for useful next survey directions from a Research Topic
 - **THEN** the frame skill proposes three distinct directions by default and explains their relationship to the topic
 - **AND** each direction contains a stable direction id, stable canonical idea identity for new writes, title, scoped question, boundary, expected source classes, coverage date, expected evidence depth, and deliverables
 
-#### Scenario: Human controls the selected set
-- **WHEN** the actor reviews proposed directions
+#### Scenario: Human controls the selected set by default
+- **WHEN** the actor reviews proposed directions and the prompt has not delegated direction review
 - **THEN** the system permits multi-selection, non-selection without closure, explicit deferral, explicit closure, revision, and actor-authored custom directions
 - **AND** it does not create the accepted Direction Set or promised canonical Research Idea effects until the actor confirms the authored option outcomes
+
+#### Scenario: Prompt delegates direction review
+- **WHEN** the current prompt explicitly delegates selection and acceptance of the proposed directions for the named target
+- **THEN** the frame skill may revise proposals, choose one or more options, leave options open, defer or close options with justified reasons, and accept the resulting set without another user turn
+- **AND** it records agent-review provenance, prompt basis, option outcomes, rationale, actor, and every required canonical Research Idea effect
 
 #### Scenario: Current host affects empirical feasibility
 - **WHEN** one or more proposed directions depend on empirical work whose feasibility varies with the current host hardware or environment
@@ -22,7 +27,7 @@ The system SHALL derive candidate survey directions from the active Research Top
 - **AND** it does not exclude or rank other directions solely because of the current host
 
 #### Scenario: Direction set becomes discovery input
-- **WHEN** the actor accepts one or more directions
+- **WHEN** the actor or explicitly delegated agent review accepts one or more directions
 - **THEN** the system creates or revises the current `KAOJU:DIRECTION-SET` with selection provenance, a distinct stable entry for each direction, and the accepted canonical Research Idea refs
 - **AND** downstream reading-list discovery consumes selected direction and idea refs rather than inferring directions from the Survey Contract, rendered output, or chat history
 
@@ -32,13 +37,13 @@ The system SHALL derive candidate survey directions from the active Research Top
 - **AND** the accepted result returns those canonical refs for terminal verification and Project Web indexing
 
 #### Scenario: Non-selected direction remains available
-- **WHEN** a direction participates in the confirmed decision but the actor neither selects, defers, nor closes it
+- **WHEN** a direction participates in the confirmed decision but the reviewing actor neither selects, defers, nor closes it
 - **THEN** its decision option outcome records that it was not selected by this decision while its canonical decision state remains `open`
 - **AND** the system does not treat non-selection as rejection, deferral, closure, archival, or evidence refutation
 
 #### Scenario: Direction is explicitly deferred or closed
-- **WHEN** the actor explicitly defers or closes a proposed direction
-- **THEN** the accepted Direction Set records its authored outcome, rationale, actor, and applicable reason code and commits the corresponding canonical decision-state transition
+- **WHEN** the reviewing actor explicitly defers or closes a proposed direction
+- **THEN** the accepted Direction Set records its outcome, rationale, actor, and applicable reason code and commits the corresponding canonical decision-state transition
 - **AND** a closed direction has the required closure reason and remains queryable for GUI review and later reopening
 
 #### Scenario: Direction revision preserves or changes concept identity
@@ -119,7 +124,7 @@ Reading-list construction SHALL search across papers, technical reports, source-
 - **AND** user nomination does not grant automatic inclusion, correctness, or evidentiary authority
 
 ### Requirement: Actors Can Inspect, Refine, and Approve Reading Lists
-The system SHALL expose reading-list inspection and revision before the list becomes accepted input to deep ingestion.
+The system SHALL expose reading-list inspection and revision before the list becomes accepted input to deep ingestion and SHALL resolve acceptance through human review by default or explicit prompt-delegated agent review.
 
 #### Scenario: Actor inspects a reading list
 - **WHEN** the actor asks to inspect a direction's reading list
@@ -130,8 +135,18 @@ The system SHALL expose reading-list inspection and revision before the list bec
 - **THEN** the system creates a reading-list revision with lineage to the prior list
 - **AND** prior accepted or rejected entries retain their dispositions and rationale
 
-#### Scenario: Actor approves ingestion input
-- **WHEN** the actor approves the reading list
+#### Scenario: Human review remains the default
+- **WHEN** a Reading List is ready and the current prompt has not delegated its review
+- **THEN** the system presents it for actor approval
+- **AND** it does not make selected item refs eligible for `ingest-reading-item` before approval
+
+#### Scenario: Prompt delegates reading-list review
+- **WHEN** the current prompt explicitly delegates refinement and acceptance of the Reading List for the named direction or target
+- **THEN** the discover skill may inspect, revise, accept a justified shortage, and approve the list without another user turn
+- **AND** it records agent-review provenance, prompt basis, rationale, target and achieved counts, warnings, and accepted item refs
+
+#### Scenario: Reviewing actor approves ingestion input
+- **WHEN** the human actor or explicitly delegated agent review approves the Reading List
 - **THEN** the system records acceptance metadata and makes its selected item refs eligible for `ingest-reading-item`
 - **AND** unapproved list drafts are not treated as accepted synthesis evidence
 
@@ -246,4 +261,3 @@ Kaoju downstream work SHALL update a direction-linked canonical Research Idea on
 - **WHEN** Kaoju records a reading-list item, Source Identity, repository, dataset, model, comparison candidate, Research Claim, audit repair route, paper structure, section, or output Artifact
 - **THEN** it preserves that object's existing canonical type and relationship to the applicable direction
 - **AND** it does not create a Research Idea unless the actor or accepted profile explicitly promotes a distinct durable concept
-

@@ -233,6 +233,34 @@ The system SHALL compile an inspected TeX draft through the `document_build` Res
 - **THEN** the build remains non-accepted and returns the TeX repair route
 - **AND** a later attempt creates a distinct build Run and compile log
 
+### Requirement: Paper Review Defaults to Human and Supports Prompt Delegation
+The Kaoju write workflow SHALL use human review by default for paper structure, draft acceptance, and bounded local build authorization and SHALL permit agent review only when the current prompt explicitly delegates the applicable review for a named paper target.
+
+#### Scenario: Human paper review remains the default
+- **WHEN** a paper structure, canonical MyST draft, or local PDF build plan is ready and the current prompt has not delegated its review
+- **THEN** the write workflow presents the applicable structure, draft, or build plan for human revision or authorization
+- **AND** it pauses before acceptance or build execution
+
+#### Scenario: Prompt delegates structure and draft review
+- **WHEN** the current prompt explicitly asks the agent to review and accept the paper structure and draft for a named paper target
+- **THEN** the write skill may select and revise the adaptive structure, draft from accepted evidence, validate the canonical MyST, and accept the validated revision without another user turn
+- **AND** it records the agent-review posture, prompt basis, structure rationale, revision rationale, evidence refs, validation result, and accepted paper refs
+
+#### Scenario: Prompt delegates a bounded local PDF build
+- **WHEN** the current prompt explicitly delegates local build-plan review and execution within the accepted template, toolchain, dependencies, resource boundary, and paper meaning
+- **THEN** the write skill may authorize and execute the local build without another user turn after all TeX obligations and validation prerequisites pass
+- **AND** it records the agent-review posture, build authorization basis, exact build Run, compile log, resource use, and validation result
+
+#### Scenario: Material paper repair exceeds delegation
+- **WHEN** a proposed repair changes canonical content meaning, evidence interpretation, dependencies, build profile, toolchain policy, or resources beyond the prompt-delegated boundary
+- **THEN** the workflow pauses for a revised plan and the applicable authorization
+- **AND** it does not apply the repair under prior agent review
+
+#### Scenario: Publication checkpoint is reached
+- **WHEN** a locally built paper reaches publication acceptance, external publication, or submission
+- **THEN** generic paper-review delegation does not satisfy the configured publication Gate
+- **AND** the workflow follows the existing publication authorization and provenance contract
+
 ### Requirement: Publication-Facing Paper Output Uses a Human Gate
 The system SHALL apply the configured publication Gate policy before marking a paper PDF or publication bundle as accepted publication-facing output.
 
@@ -465,12 +493,12 @@ The system SHALL adopt a LaTeX venue template by packing the complete actor-sele
 - **AND** missing venue constructs are reported before the template can be selected for composition
 
 ### Requirement: Kaoju Ships Checked Packaged Writing-Template Defaults
-Kaoju SHALL package immutable role-local `content/main` and `latex/main` template trees that pass the same applicable integrity and authored-metadata validation as topic-owned named stock.
+Kaoju SHALL package immutable role-local `content/main` and `latex/main` template trees that pass the same applicable integrity and authored-metadata validation as topic-owned named stock, and the packaged `latex/main` SHALL contain the complete IEEE Transactions two-column tree adopted from the Predictive Memory Survey.
 
 #### Scenario: Packaged defaults are validated
 - **WHEN** package resources or the Kaoju contract are validated
 - **THEN** validation checks exactly one content `main` tree and one LaTeX `main` tree for safe paths, reserved-file exclusion, deterministic digest, resource version, and role-specific metadata
-- **AND** the LaTeX tree also passes entrypoint, composition-contract, and build-profile validation
+- **AND** the LaTeX tree also passes entrypoint, composition-contract, build-profile, venue-provenance, license-posture, and required-tree-member validation
 
 #### Scenario: Packaged content default is inspected
 - **WHEN** an actor or service inspects the packaged content default
@@ -479,8 +507,13 @@ Kaoju SHALL package immutable role-local `content/main` and `latex/main` templat
 
 #### Scenario: Packaged LaTeX default is inspected
 - **WHEN** an actor or service inspects the packaged LaTeX default
-- **THEN** it finds a neutral article-style presentation tree with an explicit composition contract
-- **AND** the package does not claim compatibility with an unselected venue
+- **THEN** it finds the marker-based IEEE Transactions journal entrypoint derived from `bare_jrnl_new_sample4.tex` with `\documentclass[lettersize,journal]{IEEEtran}`
+- **AND** authored metadata identifies the IEEE Transactions venue, checked composition contract, build profile, source archive provenance, and LPPL 1.3 posture
+
+#### Scenario: Packaged IEEE style tree is consumed
+- **WHEN** topic initialization, default export, or paper-local TeX initialization copies packaged `latex/main`
+- **THEN** the copied managed tree includes the entrypoint, local `IEEEtran.cls`, retained upstream sample, referenced sample asset, and source metadata with their checked bytes
+- **AND** selection and composition do not read the source ZIP, `tmp/`, another Topic Workspace, or a host-installed IEEE class in place of the vendored tree
 
 #### Scenario: Packaged default is invalid
 - **WHEN** a packaged default is missing, unsafe, digest-inconsistent, or invalid for its selected role
