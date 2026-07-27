@@ -14,26 +14,41 @@ from urllib.parse import urlsplit, urlunsplit
 from isomer_labs.core.path_utils import canonicalize, is_within
 from isomer_labs.topic_git.models import (
     ComponentBinding,
+    ComponentKind,
     ComponentSelection,
     PrivacyDisposition,
     PublicationBinding,
     PublicationContentClass,
     PublicationSelectionSettings,
+    PublicationSnapshotMode,
     PublicationState,
     ReferenceRepositoryBinding,
     RemoteVisibility,
 )
-from isomer_labs.topic_git.projection import ProjectionFinding, classify_projection_file
+from isomer_labs.topic_git.projection import (
+    ProjectionEntry,
+    ProjectionFinding,
+    classify_projection_file,
+)
 
 
 PROJECT_IGNORE_BEGIN = "# BEGIN ISOMER TOPIC GIT PUBLICATION"
 PROJECT_IGNORE_END = "# END ISOMER TOPIC GIT PUBLICATION"
 PROJECT_PUBLICATION_IGNORE_RULE = "/tmp/topic-workspace-publish/"
+PUBLICATION_COPY_EXCLUDE_RULE = "/.isomer/"
+CANONICAL_PUBLICATION_BRANCH = "main"
+LEGACY_PUBLICATION_BRANCHES = (
+    "topic-workspace/main",
+    "topic-owner/main",
+)
 _REMOTE_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 _SCP_REMOTE_RE = re.compile(
     r"^(?P<user>[A-Za-z0-9._-]+)@(?P<host>[A-Za-z0-9.-]+):(?P<path>[A-Za-z0-9._~/-]+)$"
 )
-_BRANCH_RE = re.compile(r"^(?:topic-owner/main|topic-workspace/main|per-topic-actor/[^/]+/main|per-agent/[^/]+/main)$")
+_COMPONENT_BRANCH_RE = re.compile(
+    r"^components/(?:topic-main|topic-actors/[A-Za-z0-9._-]+|agents/[A-Za-z0-9._-]+)$"
+)
+_COMPONENT_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 _EXACT_GIT_COMMIT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _GITHUB_SCP_RE = re.compile(
     r"^git@github\.com:(?P<owner>[A-Za-z0-9_.-]+)/(?P<repo>[A-Za-z0-9_.-]+?)(?:\.git)?$"
@@ -106,6 +121,57 @@ class DestructiveChangePlan:
             "replacements": [replacement.to_json() for replacement in self.replacements],
             "push_order": list(self.push_order),
             "approved_branches": list(self.approved_branches),
+        }
+
+
+@dataclass(frozen=True)
+class SnapshotReplacementPlan:
+    plan_id: str
+    binding_id: str
+    observed_refs: tuple[tuple[str, str], ...]
+    expected_refs: tuple[tuple[str, str], ...]
+    observed_tags: tuple[tuple[str, str], ...]
+    expected_tags: tuple[tuple[str, str], ...]
+    observed_remote_head: str | None
+    push_order: tuple[str, ...]
+
+    @property
+    def ref_deletions(self) -> tuple[str, ...]:
+        expected = {name for name, _ in self.expected_refs}
+        return tuple(name for name, _ in self.observed_refs if name not in expected)
+
+    @property
+    def tag_deletions(self) -> tuple[str, ...]:
+        expected = {name for name, _ in self.expected_tags}
+        return tuple(name for name, _ in self.observed_tags if name not in expected)
+
+    @property
+    def provider_default_branch_action_required(self) -> bool:
+        return self.observed_remote_head != CANONICAL_PUBLICATION_BRANCH
+
+    @property
+    def remote_head_ref_deletion(self) -> str | None:
+        if self.observed_remote_head in self.ref_deletions:
+            return self.observed_remote_head
+        return None
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "plan_id": self.plan_id,
+            "binding_id": self.binding_id,
+            "snapshot_mode": PublicationSnapshotMode.EXCLUSIVE_SNAPSHOT.value,
+            "canonical_branch": CANONICAL_PUBLICATION_BRANCH,
+            "observed_remote_refs": dict(self.observed_refs),
+            "expected_remote_refs": dict(self.expected_refs),
+            "observed_remote_tags": dict(self.observed_tags),
+            "expected_remote_tags": dict(self.expected_tags),
+            "observed_remote_head": self.observed_remote_head,
+            "expected_remote_head": CANONICAL_PUBLICATION_BRANCH,
+            "provider_default_branch_action_required": self.provider_default_branch_action_required,
+            "remote_head_ref_deletion": self.remote_head_ref_deletion,
+            "ref_deletions": list(self.ref_deletions),
+            "tag_deletions": list(self.tag_deletions),
+            "push_order": list(self.push_order),
         }
 
 
@@ -270,6 +336,15 @@ def update_project_publication_ignore(existing: str) -> str:
     return "\n".join(rendered).rstrip() + "\n"
 
 
+def update_publication_copy_exclude(existing: str) -> str:
+    """Keep copy-local Topic Git support out of the publication index."""
+
+    lines = existing.splitlines()
+    if PUBLICATION_COPY_EXCLUDE_RULE not in lines:
+        lines.append(PUBLICATION_COPY_EXCLUDE_RULE)
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def classify_publication_path(
     relative_path: str,
     content: bytes,
@@ -315,7 +390,100 @@ def select_publication_components(
             selected.append(component)
         else:
             selected.append(replace(component, selection=ComponentSelection.SELECTED))
-    return tuple(selected)
+    return normalize_publication_components(selected)
+
+
+def publication_component_branch(kind: ComponentKind, name: str) -> str:
+    """Return the deterministic current-snapshot branch for a topic-owned component."""
+
+    if kind is ComponentKind.TOPIC_MAIN:
+        return "components/topic-main"
+    normalized = name.strip()
+    if (
+        _COMPONENT_NAME_RE.fullmatch(normalized) is None
+        or normalized in {".", ".."}
+        or normalized.startswith(".")
+    ):
+        raise ValueError(f"Component name is unsafe for publication: {name!r}")
+    namespace = "topic-actors" if kind is ComponentKind.TOPIC_ACTOR else "agents"
+    return f"components/{namespace}/{normalized}"
+
+
+def normalize_publication_components(
+    components: Iterable[ComponentBinding],
+) -> tuple[ComponentBinding, ...]:
+    """Assign deterministic branches and Topic Main anchors without source branch identity."""
+
+    component_list = tuple(components)
+    topic_main = tuple(
+        component for component in component_list if component.kind is ComponentKind.TOPIC_MAIN
+    )
+    if len(topic_main) > 1:
+        raise ValueError("Publication component topology contains multiple Topic Main components.")
+    main_id = topic_main[0].component_id if topic_main else None
+    normalized: list[ComponentBinding] = []
+    for component in component_list:
+        anchor = None
+        if component.kind in {ComponentKind.TOPIC_ACTOR, ComponentKind.AGENT}:
+            if main_id is None and component.selection is ComponentSelection.SELECTED:
+                raise ValueError("Selected actor or agent snapshot requires a selected Topic Main anchor.")
+            anchor = main_id
+        normalized.append(
+            replace(
+                component,
+                branch=publication_component_branch(component.kind, component.name),
+                git_anchor_component_id=anchor,
+            )
+        )
+    return tuple(normalized)
+
+
+def validate_publication_component_topology(
+    components: Iterable[ComponentBinding],
+) -> tuple[str, ...]:
+    """Validate deterministic branches, unique paths, and actor/agent anchor relationships."""
+
+    component_list = tuple(components)
+    diagnostics: list[str] = []
+    selected = tuple(
+        component
+        for component in component_list
+        if component.selection is ComponentSelection.SELECTED
+    )
+    main = tuple(component for component in selected if component.kind is ComponentKind.TOPIC_MAIN)
+    if len(main) != 1 and any(
+        component.kind in {ComponentKind.TOPIC_ACTOR, ComponentKind.AGENT}
+        for component in selected
+    ):
+        diagnostics.append("Selected actor or agent snapshots require exactly one selected Topic Main component.")
+    main_id = main[0].component_id if len(main) == 1 else None
+    paths: set[str] = set()
+    branches: set[str] = set()
+    for component in selected:
+        try:
+            expected_branch = publication_component_branch(component.kind, component.name)
+            path = _publication_relative_path(component.relative_path)
+        except ValueError as error:
+            diagnostics.append(str(error))
+            continue
+        if component.branch != expected_branch:
+            diagnostics.append(
+                f"component branch is not deterministic for {component.component_id}: {component.branch}"
+            )
+        if component.kind in {ComponentKind.TOPIC_ACTOR, ComponentKind.AGENT}:
+            if component.git_anchor_component_id != main_id:
+                diagnostics.append(
+                    f"component does not record its Topic Main anchor: {component.component_id}"
+                )
+        elif component.git_anchor_component_id is not None:
+            diagnostics.append("Topic Main component must not declare a Git anchor component.")
+        if path in paths:
+            diagnostics.append(f"duplicate topic-owned component path: {path}")
+        if component.branch in branches:
+            diagnostics.append(f"duplicate topic-owned component branch: {component.branch}")
+        paths.add(path)
+        branches.add(component.branch)
+    return tuple(diagnostics)
 
 
 def select_reference_repositories(
@@ -414,11 +582,15 @@ def render_publication_gitmodules(
     remote_diagnostics = validate_remote_locator(publication_remote)
     if remote_diagnostics:
         raise ValueError("; ".join(remote_diagnostics))
+    component_list = tuple(components)
+    topology_diagnostics = validate_publication_component_topology(component_list)
+    if topology_diagnostics:
+        raise ValueError("; ".join(topology_diagnostics))
     rows: list[tuple[str, str, str, str | None]] = []
-    for component in components:
+    for component in component_list:
         if component.selection is not ComponentSelection.SELECTED:
             continue
-        if _BRANCH_RE.fullmatch(component.branch) is None:
+        if _COMPONENT_BRANCH_RE.fullmatch(component.branch) is None:
             raise ValueError(f"Component branch is outside the publication namespace: {component.branch}")
         rows.append(
             (
@@ -476,6 +648,11 @@ def publication_plan_fingerprint(
     reference_repositories: Iterable[ReferenceRepositoryBinding] = (),
     generated_output_fingerprints: Mapping[str, str] | None = None,
     reproduction_limitations: Iterable[str] = (),
+    projection_entries: Iterable[ProjectionEntry] = (),
+    remote_tags: Mapping[str, str | None] | None = None,
+    remote_head: str | None = None,
+    expected_remote_refs: Mapping[str, str | None] | None = None,
+    expected_remote_tags: Mapping[str, str | None] | None = None,
 ) -> str:
     """Bind approval to source, output, copy, binding, topology, and remote refs."""
 
@@ -491,8 +668,22 @@ def publication_plan_fingerprint(
             for reference in sorted(reference_repositories, key=lambda item: item.reference_id)
         ],
         "generated_output": sorted((generated_output_fingerprints or {}).items()),
+        "projection_entries": [
+            entry.to_json()
+            for entry in sorted(
+                projection_entries,
+                key=lambda item: (
+                    item.output_relative_path or "",
+                    item.source_relative_path or "",
+                ),
+            )
+        ],
         "reproduction_limitations": sorted(reproduction_limitations),
         "remote_refs": sorted(remote_refs.items()),
+        "remote_tags": sorted((remote_tags or {}).items()),
+        "remote_head": remote_head,
+        "expected_remote_refs": sorted((expected_remote_refs or {}).items()),
+        "expected_remote_tags": sorted((expected_remote_tags or {}).items()),
     }
     return hashlib.sha256(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()).hexdigest()
 
@@ -522,61 +713,6 @@ def _publication_relative_path(value: str) -> str:
     ):
         raise ValueError("Publication submodule path must be a non-root relative path.")
     return normalized
-
-
-def classify_remote_branch(
-    *,
-    branch: str,
-    local_commit: str | None,
-    remote_commit: str | None,
-    remote_is_ancestor: bool | None,
-) -> BranchCompatibility:
-    """Classify caller-supplied fetch and ancestry evidence."""
-
-    if _BRANCH_RE.fullmatch(branch) is None:
-        return BranchCompatibility(
-            branch,
-            BranchCompatibilityState.BLOCKED,
-            local_commit,
-            remote_commit,
-            "branch is outside the deterministic publication namespace",
-        )
-    if local_commit is None:
-        return BranchCompatibility(
-            branch,
-            BranchCompatibilityState.BLOCKED,
-            local_commit,
-            remote_commit,
-            "local replacement commit is unavailable",
-        )
-    if remote_commit is None:
-        return BranchCompatibility(branch, BranchCompatibilityState.ABSENT, local_commit, None, "remote ref is absent")
-    if remote_commit == local_commit or remote_is_ancestor is True:
-        return BranchCompatibility(
-            branch,
-            BranchCompatibilityState.COMPATIBLE,
-            local_commit,
-            remote_commit,
-            "normal explicit-ref push is compatible",
-        )
-    return BranchCompatibility(
-        branch,
-        BranchCompatibilityState.INCOMPATIBLE,
-        local_commit,
-        remote_commit,
-        "remote ref requires a separately approved branch replacement",
-    )
-
-
-def component_push_order(components: Iterable[ComponentBinding]) -> tuple[str, ...]:
-    branches = sorted(
-        {
-            component.branch
-            for component in components
-            if component.selection is ComponentSelection.SELECTED
-        }
-    )
-    return (*branches, "topic-workspace/main")
 
 
 def validate_force_replacements(

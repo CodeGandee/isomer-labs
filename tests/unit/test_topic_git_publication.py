@@ -11,7 +11,11 @@ from isomer_labs.topic_git import (
     ComponentSelection,
     DestructiveBranchReplacement,
     DestructiveChangePlan,
+    PrivacyDisposition,
+    ProjectionEntry,
+    ProjectionEntryOrigin,
     PublicationBinding,
+    PublicationSnapshotMode,
     PublicationSelectionSettings,
     PublicationState,
     ReferenceRepositoryBinding,
@@ -21,17 +25,29 @@ from isomer_labs.topic_git import (
     classify_remote_branch,
     component_push_order,
     derive_publication_status,
-    publication_plan_fingerprint,
+    legacy_publication_refs,
+    normalize_publication_components,
     normalize_github_repository_locator,
+    plan_snapshot_replacement,
+    publication_component_branch,
+    publication_plan_fingerprint,
     redact_remote_locator,
     render_publication_gitmodules,
+    remote_head_action_required,
     select_publication_components,
     select_reference_repositories,
+    update_publication_copy_exclude,
     update_project_publication_ignore,
+    validate_exclusive_snapshot_authority,
     validate_force_replacements,
+    validate_generated_publication_paths,
+    validate_latest_paper_mapping,
+    validate_publication_component_topology,
     validate_publication_destination,
     validate_reference_repository,
     validate_remote_locator,
+    validate_snapshot_replacement,
+    validate_staged_publication_topology,
 )
 
 
@@ -146,6 +162,8 @@ class TopicGitPublicationTests(unittest.TestCase):
         self.assertEqual(ComponentSelection.EXCLUDED, by_id["actor:reviewer"].selection)
         self.assertEqual(ComponentSelection.SELECTED, by_id["agent:coder"].selection)
         self.assertEqual(ComponentSelection.UNAVAILABLE, by_id["agent:future"].selection)
+        self.assertEqual("components/topic-main", by_id["main"].branch)
+        self.assertEqual("main", by_id["agent:coder"].git_anchor_component_id)
 
     def test_registered_github_references_are_selected_normalized_and_rendered_upstream(self) -> None:
         reference = self._reference("powerinfer", "git@github.com:SJTU-IPADS/PowerInfer.git")
@@ -161,11 +179,13 @@ class TopicGitPublicationTests(unittest.TestCase):
         self.assertEqual((), validate_reference_repository(reference))
         rendered = render_publication_gitmodules(
             publication_remote="https://github.com/CodeGandee/pwinfer-analysis.git",
-            components=(self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),),
+            components=normalize_publication_components(
+                (self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),)
+            ),
             references=(reference,),
         )
         self.assertIn('url = "https://github.com/SJTU-IPADS/PowerInfer.git"', rendered)
-        self.assertIn('branch = "topic-owner/main"', rendered)
+        self.assertIn('branch = "components/topic-main"', rendered)
         reference_section = rendered.split('[submodule "reference:powerinfer"]', maxsplit=1)[1].split(
             "[submodule",
             maxsplit=1,
@@ -188,22 +208,29 @@ class TopicGitPublicationTests(unittest.TestCase):
             RemoteVisibility.PRIVATE,
             "2026-07-23T00:00:00Z",
         )
-        main = self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main")
+        main = normalize_publication_components(
+            (self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),)
+        )[0]
         first = publication_plan_fingerprint(
             source_fingerprints={"README.md": "a" * 64},
             expected_output_fingerprints={"README.md": "a" * 64},
             copy_fingerprints={},
             binding=binding,
             components=(main,),
-            remote_refs={"topic-owner/main": None},
+            remote_refs={"components/topic-main": None},
         )
         second = publication_plan_fingerprint(
             source_fingerprints={"README.md": "a" * 64},
             expected_output_fingerprints={"README.md": "a" * 64},
             copy_fingerprints={},
             binding=binding,
-            components=(main, self._component("agent:coder", ComponentKind.AGENT, "per-agent/coder/main")),
-            remote_refs={"topic-owner/main": None, "per-agent/coder/main": None},
+            components=normalize_publication_components(
+                (
+                    main,
+                    self._component("agent:coder", ComponentKind.AGENT, "per-agent/coder/main"),
+                )
+            ),
+            remote_refs={"components/topic-main": None, "components/agents/coder": None},
         )
         self.assertNotEqual(first, second)
 
@@ -244,19 +271,19 @@ class TopicGitPublicationTests(unittest.TestCase):
 
     def test_remote_branch_compatibility_and_component_first_order(self) -> None:
         absent = classify_remote_branch(
-            branch="topic-owner/main",
+            branch="components/topic-main",
             local_commit="a" * 40,
             remote_commit=None,
             remote_is_ancestor=None,
         )
         compatible = classify_remote_branch(
-            branch="topic-owner/main",
+            branch="components/topic-main",
             local_commit="b" * 40,
-            remote_commit="a" * 40,
+            remote_commit="b" * 40,
             remote_is_ancestor=True,
         )
         incompatible = classify_remote_branch(
-            branch="topic-owner/main",
+            branch="components/topic-main",
             local_commit="b" * 40,
             remote_commit="c" * 40,
             remote_is_ancestor=False,
@@ -265,12 +292,14 @@ class TopicGitPublicationTests(unittest.TestCase):
         self.assertEqual(BranchCompatibilityState.COMPATIBLE, compatible.state)
         self.assertEqual(BranchCompatibilityState.INCOMPATIBLE, incompatible.state)
         order = component_push_order(
-            (
-                self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),
-                self._component("agent:coder", ComponentKind.AGENT, "per-agent/coder/main"),
+            normalize_publication_components(
+                (
+                    self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),
+                    self._component("agent:coder", ComponentKind.AGENT, "per-agent/coder/main"),
+                )
             )
         )
-        self.assertEqual("topic-workspace/main", order[-1])
+        self.assertEqual("main", order[-1])
 
     def test_force_replacement_requires_exact_fresh_branch_scoped_approval(self) -> None:
         replacement = DestructiveBranchReplacement(
@@ -350,10 +379,199 @@ class TopicGitPublicationTests(unittest.TestCase):
             ),
         )
 
+    def test_component_branches_and_topic_main_anchors_are_deterministic(self) -> None:
+        components = normalize_publication_components(
+            (
+                self._component("main", ComponentKind.TOPIC_MAIN, "source/main"),
+                self._component("actor:operator", ComponentKind.TOPIC_ACTOR, "source/actor"),
+                self._component("agent:coder", ComponentKind.AGENT, "source/agent"),
+            )
+        )
+        by_id = {component.component_id: component for component in components}
+        self.assertEqual("components/topic-main", by_id["main"].branch)
+        self.assertEqual("components/topic-actors/operator", by_id["actor:operator"].branch)
+        self.assertEqual("components/agents/coder", by_id["agent:coder"].branch)
+        self.assertEqual("main", by_id["actor:operator"].git_anchor_component_id)
+        self.assertEqual("main", by_id["agent:coder"].git_anchor_component_id)
+        self.assertEqual((), validate_publication_component_topology(components))
+        self.assertEqual(
+            "components/topic-actors/operator",
+            publication_component_branch(ComponentKind.TOPIC_ACTOR, "operator"),
+        )
+
+    def test_exclusive_snapshot_authority_binds_remote_topic_workspace_and_mode(self) -> None:
+        binding = self._exclusive_binding()
+        self.assertEqual(
+            (),
+            validate_exclusive_snapshot_authority(
+                binding,
+                remote_url=binding.remote_url,
+                research_topic_id=binding.research_topic_id,
+                topic_workspace_id=binding.topic_workspace_id,
+            ),
+        )
+        changed = validate_exclusive_snapshot_authority(
+            binding,
+            remote_url="https://example.test/other.git",
+            research_topic_id=binding.research_topic_id,
+            topic_workspace_id=binding.topic_workspace_id,
+        )
+        self.assertTrue(any("remote identity changed" in diagnostic for diagnostic in changed))
+        self.assertNotIn("password", binding.to_json())
+        self.assertEqual(64, len(str(binding.to_json()["authority_fingerprint"])))
+
+    def test_snapshot_plan_replaces_complete_refs_and_tags_and_detects_staleness(self) -> None:
+        binding = self._exclusive_binding()
+        observed_refs = {
+            "main": "a" * 40,
+            "topic-workspace/main": "b" * 40,
+            "manual": "c" * 40,
+        }
+        expected_refs = {
+            "components/topic-main": "d" * 40,
+            "components/agents/coder": "e" * 40,
+            "main": "f" * 40,
+        }
+        plan = plan_snapshot_replacement(
+            plan_id="snapshot",
+            binding=binding,
+            observed_refs=observed_refs,
+            expected_refs=expected_refs,
+            observed_tags={"old": "1" * 40},
+            expected_tags={},
+            observed_remote_head="topic-workspace/main",
+            push_order=("components/agents/coder", "components/topic-main", "main"),
+        )
+        self.assertEqual(("manual", "topic-workspace/main"), plan.ref_deletions)
+        self.assertEqual(("old",), plan.tag_deletions)
+        self.assertTrue(remote_head_action_required(plan.observed_remote_head))
+        self.assertTrue(plan.provider_default_branch_action_required)
+        self.assertEqual("topic-workspace/main", plan.remote_head_ref_deletion)
+        self.assertEqual(
+            "topic-workspace/main",
+            plan.to_json()["remote_head_ref_deletion"],
+        )
+        self.assertEqual(
+            (),
+            validate_snapshot_replacement(
+                plan,
+                binding=binding,
+                current_refs=observed_refs,
+                current_tags={"old": "1" * 40},
+                current_remote_head="topic-workspace/main",
+                requested_refs=expected_refs,
+                requested_tags={},
+            ),
+        )
+        stale = validate_snapshot_replacement(
+            plan,
+            binding=binding,
+            current_refs={**observed_refs, "manual": "9" * 40},
+            current_tags={"old": "1" * 40},
+            current_remote_head="main",
+            requested_refs=expected_refs,
+            requested_tags={},
+        )
+        self.assertTrue(any("stale" in diagnostic for diagnostic in stale))
+        self.assertTrue(any("remote HEAD changed" in diagnostic for diagnostic in stale))
+        self.assertEqual(
+            ("manual", "topic-workspace/main"),
+            legacy_publication_refs(observed_refs, expected_refs=expected_refs),
+        )
+
+    def test_generated_paths_latest_paper_and_copy_exclude_are_validated(self) -> None:
+        self.assertEqual(
+            (),
+            validate_generated_publication_paths(
+                source_paths=("pixi.toml", "README.md"),
+                generated_paths=(
+                    "README.md",
+                    ".gitmodules",
+                    ".isomer-publication/research-record-index.json",
+                ),
+            ),
+        )
+        self.assertTrue(
+            validate_generated_publication_paths(
+                source_paths=(".isomer-publication/private.json",),
+                generated_paths=(".isomer-publication/research-record-index.json",),
+            )
+        )
+        approved_paper = "records/artifacts/paper/pwinfer-analysis.pdf"
+        self.assertEqual(
+            (),
+            validate_latest_paper_mapping(
+                approved_paper,
+                approved_artifact_paths=(approved_paper,),
+            ),
+        )
+        self.assertTrue(
+            validate_latest_paper_mapping(
+                "paper/latest.pdf",
+                approved_artifact_paths=(approved_paper,),
+            )
+        )
+        self.assertEqual("/cache/\n/.isomer/\n", update_publication_copy_exclude("/cache/\n"))
+
+    def test_complete_staged_topology_requires_exact_gitlinks_and_no_flattening(self) -> None:
+        components = normalize_publication_components(
+            (
+                self._component("main", ComponentKind.TOPIC_MAIN, "source/main"),
+                self._component("agent:coder", ComponentKind.AGENT, "source/agent"),
+            )
+        )
+        entries = (
+            ProjectionEntry(
+                "pixi.toml",
+                "pixi.toml",
+                PrivacyDisposition.TRACK,
+                "a" * 64,
+            ),
+            ProjectionEntry(
+                None,
+                ".isomer-publication/topic-workspace-projection.json",
+                PrivacyDisposition.TRACK,
+                None,
+                origin=ProjectionEntryOrigin.GENERATED,
+            ),
+        )
+        actual = {
+            "pixi.toml": "100644",
+            ".isomer-publication/topic-workspace-projection.json": "100644",
+            "repos/topic-main": "160000",
+            "agents/coder": "160000",
+        }
+        self.assertEqual(
+            (),
+            validate_staged_publication_topology(
+                actual,
+                entries=entries,
+                components=components,
+                generated_paths=(".isomer-publication/topic-workspace-projection.json",),
+            ),
+        )
+        flattened = dict(actual)
+        flattened["agents/coder/source.py"] = "100644"
+        self.assertTrue(
+            any(
+                "flattened" in diagnostic
+                for diagnostic in validate_staged_publication_topology(
+                    flattened,
+                    entries=entries,
+                    components=components,
+                    generated_paths=(".isomer-publication/topic-workspace-projection.json",),
+                )
+            )
+        )
     @staticmethod
     def _component(component_id: str, kind: ComponentKind, branch: str) -> ComponentBinding:
         name = component_id.rsplit(":", 1)[-1]
-        relative_path = "repos/topic-main" if kind is ComponentKind.TOPIC_MAIN else f"{kind.value}s/{name}"
+        if kind is ComponentKind.TOPIC_MAIN:
+            relative_path = "repos/topic-main"
+        elif kind is ComponentKind.TOPIC_ACTOR:
+            relative_path = f"actors/{name}"
+        else:
+            relative_path = f"agents/{name}"
         return ComponentBinding(
             component_id=component_id,
             kind=kind,
@@ -373,6 +591,20 @@ class TopicGitPublicationTests(unittest.TestCase):
             commit_sha="a" * 40,
             visibility=RemoteVisibility.PUBLIC,
             license_status="Apache-2.0",
+        )
+
+    @staticmethod
+    def _exclusive_binding() -> PublicationBinding:
+        return PublicationBinding(
+            binding_id="binding",
+            research_topic_id="topic",
+            topic_workspace_id="workspace",
+            copy_path="tmp/topic-workspace-publish/topic",
+            remote_name="origin",
+            remote_url="https://example.test/topic.git",
+            visibility=RemoteVisibility.PRIVATE,
+            created_at="2026-07-27T00:00:00Z",
+            snapshot_mode=PublicationSnapshotMode.EXCLUSIVE_SNAPSHOT,
         )
 
 

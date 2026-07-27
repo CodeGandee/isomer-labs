@@ -7,6 +7,10 @@ import unittest
 
 from isomer_labs.topic_git import (
     PrivacyDisposition,
+    ProjectionEntryOrigin,
+    PUBLICATION_PROJECTION_MANIFEST_PATH,
+    PUBLICATION_RESEARCH_RECORD_INDEX_PATH,
+    PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH,
     PublicationContentClass,
     PublicationSelectionSettings,
     ProjectionEntry,
@@ -24,6 +28,7 @@ from isomer_labs.topic_git import (
     render_structured_template,
     render_topic_workspace_version,
     sanitize_individual_identity,
+    validate_projection_entries,
 )
 from isomer_labs.topic_git.projection import classify_projection_file
 
@@ -177,6 +182,142 @@ class TopicGitProjectionTests(unittest.TestCase):
             self.assertEqual(rendered, (copy / "config.json").read_text(encoding="utf-8"))
             self.assertIsNotNone(entries[0].output_fingerprint)
 
+    def test_projection_entry_origins_are_explicit_and_legacy_entries_remain_readable(self) -> None:
+        generated = ProjectionEntry(
+            source_relative_path=None,
+            output_relative_path=PUBLICATION_PROJECTION_MANIFEST_PATH,
+            disposition=PrivacyDisposition.TRACK,
+            source_fingerprint=None,
+            origin=ProjectionEntryOrigin.GENERATED,
+        )
+        self.assertNotIn("source_relative_path", generated.to_json())
+        self.assertEqual("generated", generated.to_json()["origin"])
+
+        legacy = ProjectionEntry.from_json(
+            {
+                "source_relative_path": "pixi.toml",
+                "output_relative_path": "pixi.toml",
+                "disposition": "track",
+                "source_fingerprint": "a" * 64,
+            }
+        )
+        self.assertEqual(ProjectionEntryOrigin.SOURCE, legacy.origin)
+        self.assertEqual("pixi.toml", legacy.output_relative_path)
+
+        manifest = ProjectionManifest.from_json(
+            {
+                "schema_version": "isomer-topic-git-projection-manifest.v1",
+                "binding_id": "binding",
+                "plan_id": "plan",
+                "created_at": "2026-07-27T00:00:00Z",
+                "entries": [legacy.to_json()],
+                "components": [],
+            }
+        )
+        self.assertEqual(ProjectionEntryOrigin.SOURCE, manifest.entries[0].origin)
+
+    def test_projection_validation_enforces_path_identity_and_reserved_overlay(self) -> None:
+        findings = validate_projection_entries(
+            (
+                ProjectionEntry(
+                    "pixi.toml",
+                    "environment/pixi.toml",
+                    PrivacyDisposition.TRACK,
+                    "a" * 64,
+                ),
+                ProjectionEntry(
+                    "runtime/state.sqlite",
+                    "runtime/state.sqlite",
+                    PrivacyDisposition.EXCLUDE,
+                    None,
+                ),
+                ProjectionEntry(
+                    ".isomer-publication/user.json",
+                    ".isomer-publication/user.json",
+                    PrivacyDisposition.TRACK,
+                    "b" * 64,
+                ),
+                ProjectionEntry(
+                    None,
+                    "generated/control.json",
+                    PrivacyDisposition.TRACK,
+                    None,
+                    origin=ProjectionEntryOrigin.GENERATED,
+                ),
+            )
+        )
+        self.assertEqual(
+            {"path-preservation", "pathless-disposition", "reserved-source-path", "generated-path"},
+            {finding.code for finding in findings},
+        )
+
+    def test_path_preserving_materialization_keeps_root_files_and_reserved_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "topic"
+            copy = root / "copy"
+            (source / "records").mkdir(parents=True)
+            source_files = {
+                "pixi.toml": "[workspace]\n",
+                "pixi.lock": "version = 6\n",
+                "topic-workspace.toml": 'schema_version = "v1"\n',
+                ".gitignore": ".pixi/\n",
+                ".gitattributes": "*.pdf binary\n",
+                "records/readiness.md": "ready\n",
+            }
+            for relative, content in source_files.items():
+                path = source / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content, encoding="utf-8")
+            source_entries = tuple(
+                ProjectionEntry(
+                    relative,
+                    relative,
+                    PrivacyDisposition.TRACK,
+                    fingerprint_bytes(content.encode()),
+                )
+                for relative, content in source_files.items()
+            )
+            generated_entries = (
+                ProjectionEntry(
+                    None,
+                    PUBLICATION_RESEARCH_RECORD_INDEX_PATH,
+                    PrivacyDisposition.TRACK,
+                    None,
+                    origin=ProjectionEntryOrigin.GENERATED,
+                ),
+                ProjectionEntry(
+                    None,
+                    PUBLICATION_PROJECTION_MANIFEST_PATH,
+                    PrivacyDisposition.TRACK,
+                    None,
+                    origin=ProjectionEntryOrigin.GENERATED,
+                ),
+                ProjectionEntry(
+                    None,
+                    PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH,
+                    PrivacyDisposition.TRACK,
+                    None,
+                    origin=ProjectionEntryOrigin.GENERATED,
+                ),
+            )
+            generated_outputs = {
+                PUBLICATION_RESEARCH_RECORD_INDEX_PATH: b"{}\n",
+                PUBLICATION_PROJECTION_MANIFEST_PATH: b"{}\n",
+                PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH: b'schema_version = "v1"\n',
+            }
+            materialize_projection(
+                source,
+                copy,
+                (*source_entries, *generated_entries),
+                generated_outputs=generated_outputs,
+            )
+            for relative, content in source_files.items():
+                self.assertEqual(content, (copy / relative).read_text(encoding="utf-8"))
+                self.assertFalse((copy / "environment" / relative).exists())
+            for relative in generated_outputs:
+                self.assertTrue((copy / relative).is_file())
+
     def test_copier_never_materializes_excluded_git_or_runtime_entries(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -250,15 +391,30 @@ class TopicGitProjectionTests(unittest.TestCase):
     def test_publication_readme_and_research_index_are_deterministic_and_path_safe(self) -> None:
         readme = render_publication_readme(
             research_topic_id="pwinfer-analysis",
-            latest_paper_path="paper/latest.pdf",
+            latest_paper_path="records/artifacts/paper/pwinfer-analysis.pdf",
             intent_paths=("intent/src/topic-overview.md",),
             environment_paths=("pixi.lock", "pixi.toml"),
             reproduction_limitations=("Private reference requires organization access.",),
         )
-        self.assertIn("Latest paper: [PDF](paper/latest.pdf)", readme)
-        self.assertIn("research-record-index.json", readme)
+        self.assertIn(
+            "Latest paper: [PDF](records/artifacts/paper/pwinfer-analysis.pdf)",
+            readme,
+        )
+        self.assertIn(PUBLICATION_RESEARCH_RECORD_INDEX_PATH, readme)
         no_paper = render_publication_readme(research_topic_id="pwinfer-analysis")
         self.assertIn("Latest paper: not yet available.", no_paper)
+        composed = render_publication_readme(
+            research_topic_id="pwinfer-analysis",
+            source_readme="# Existing Topic\n\nSource-authored introduction.\n",
+        )
+        self.assertTrue(composed.startswith("# Existing Topic\n\nSource-authored introduction."))
+        self.assertEqual(
+            composed,
+            render_publication_readme(
+                research_topic_id="pwinfer-analysis",
+                source_readme=composed,
+            ),
+        )
 
         rendered_index = render_research_record_index(
             (

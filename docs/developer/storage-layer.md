@@ -140,7 +140,7 @@ Use `$isomer-op-entrypoint use topic-git to <task>` for optional Source Topic Wo
 
 Topic Publication Copies belong under effectively ignored Project-root temporary storage, normally `tmp/topic-workspace-publish/<topic-id>/`. They stay outside the Source Topic Workspace, Project Config Directory, generated content root, Houmao state, canonical repositories, and worker workspaces. The copy is disposable projection state, not durable source authority.
 
-Tracked publication files contain sanitized outputs, a Publication Projection Manifest, `topic-workspace-version.toml`, and exact submodule gitlinks. Copy-local `.isomer/topic-git/` support is never eligible for publication commits. See [Topic Workspace Git](../manual/topic-workspace-git.md) for privacy dispositions, same-remote branches, reconstruction, conflict rules, and component-first push ordering.
+Tracked publication files preserve retained Topic Workspace-relative paths, contain a generated `.isomer-publication/` metadata overlay, and pin exact component and upstream-reference submodule gitlinks. Copy-local `.isomer/topic-git/` support is never eligible for publication commits. See [Topic Workspace Git](../manual/topic-workspace-git.md) for privacy dispositions, same-remote component branches, copy recovery, current-state remote replacement, conflict rules, and component-first push ordering.
 
 ## Put Adapter Material
 

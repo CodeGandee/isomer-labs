@@ -47,7 +47,7 @@ A credential-safe association among one Research Topic, its canonical Topic Work
 _Avoid_: credential record, provider account, source remote, Workspace Runtime row
 
 **Publication Projection Manifest**:
-A tracked sanitized manifest inside the Topic Publication Copy that records relative source-to-output mappings, privacy dispositions, transformations, output fingerprints, selected component branches, and exact sanitized component commits for one approved projection. It omits absolute source paths, credentials, sensitive content, excluded content, source remote configuration, and source Git ancestry. It supports conflict detection and reconstruction but does not make the Topic Publication Copy canonical.
+A tracked sanitized manifest inside `.isomer-publication/` in the Topic Publication Copy that records source-identical relative mappings, generated-entry origins, privacy dispositions, transformations, output fingerprints, selected component branches, Topic Main anchor relationships, and exact sanitized component commits for one approved projection. It omits absolute source paths, credentials, sensitive content, excluded content, source remote configuration, and source Git ancestry. It supports conflict detection and disposable publication-copy recovery, but it neither makes the Topic Publication Copy canonical nor restores an operational Topic Workspace.
 _Avoid_: source inventory dump, private diff, source Git manifest, canonical workspace manifest
 
 **Topic Actor Workspace**:

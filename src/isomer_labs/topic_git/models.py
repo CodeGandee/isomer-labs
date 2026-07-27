@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+import hashlib
 from importlib.resources import files
 import json
 from pathlib import Path
@@ -60,6 +61,11 @@ class PrivacyDisposition(StrEnum):
     BLOCK = "block"
 
 
+class ProjectionEntryOrigin(StrEnum):
+    SOURCE = "source"
+    GENERATED = "generated"
+
+
 class PublicationContentClass(StrEnum):
     INTENT = "intent"
     ENVIRONMENT = "environment"
@@ -77,6 +83,10 @@ class RemoteVisibility(StrEnum):
     RESTRICTED = "restricted"
     PUBLIC = "public"
     UNKNOWN = "unknown"
+
+
+class PublicationSnapshotMode(StrEnum):
+    EXCLUSIVE_SNAPSHOT = "exclusive_snapshot"
 
 
 class ComponentKind(StrEnum):
@@ -99,6 +109,20 @@ class BranchOutcomeStatus(StrEnum):
     FAILED = "failed"
     BLOCKED = "blocked"
     SKIPPED = "skipped"
+    DELETED = "deleted"
+
+
+class PublicationRefKind(StrEnum):
+    BRANCH = "branch"
+    TAG = "tag"
+    REMOTE_HEAD = "remote-head"
+
+
+class PublicationRefOperation(StrEnum):
+    UPDATE = "update"
+    DELETE = "delete"
+    OBSERVE = "observe"
+    PROVIDER_ACTION = "provider-action"
 
 
 class SupportFileKind(StrEnum):
@@ -132,6 +156,7 @@ class ComponentBinding:
     selection: ComponentSelection
     commit_sha: str | None = None
     reason: str | None = None
+    git_anchor_component_id: str | None = None
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -146,7 +171,29 @@ class ComponentBinding:
             data["commit_sha"] = self.commit_sha
         if self.reason is not None:
             data["reason"] = self.reason
+        if self.git_anchor_component_id is not None:
+            data["git_anchor_component_id"] = self.git_anchor_component_id
         return data
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> ComponentBinding:
+        """Load current or legacy component metadata."""
+
+        return cls(
+            component_id=str(payload["component_id"]),
+            kind=ComponentKind(str(payload["kind"])),
+            name=str(payload["name"]),
+            relative_path=str(payload["relative_path"]),
+            branch=str(payload["branch"]),
+            selection=ComponentSelection(str(payload["selection"])),
+            commit_sha=str(payload["commit_sha"]) if payload.get("commit_sha") is not None else None,
+            reason=str(payload["reason"]) if payload.get("reason") is not None else None,
+            git_anchor_component_id=(
+                str(payload["git_anchor_component_id"])
+                if payload.get("git_anchor_component_id") is not None
+                else None
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -176,6 +223,26 @@ class ReferenceRepositoryBinding:
         if self.access_limitation is not None:
             data["access_limitation"] = self.access_limitation
         return data
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> ReferenceRepositoryBinding:
+        """Load a reference binding from tracked projection metadata."""
+
+        return cls(
+            reference_id=str(payload["reference_id"]),
+            semantic_label=str(payload["semantic_label"]),
+            relative_path=str(payload["relative_path"]),
+            remote_url=str(payload["remote_url"]),
+            commit_sha=str(payload["commit_sha"]),
+            visibility=RemoteVisibility(str(payload["visibility"])),
+            selection=ComponentSelection(str(payload.get("selection", ComponentSelection.SELECTED.value))),
+            license_status=str(payload["license_status"]) if payload.get("license_status") is not None else None,
+            access_limitation=(
+                str(payload["access_limitation"])
+                if payload.get("access_limitation") is not None
+                else None
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -253,6 +320,60 @@ class BranchOutcome:
 
 
 @dataclass(frozen=True)
+class PublicationRefOutcome:
+    ref: str
+    kind: PublicationRefKind
+    operation: PublicationRefOperation
+    status: BranchOutcomeStatus
+    observed_commit: str | None = None
+    expected_commit: str | None = None
+    resulting_commit: str | None = None
+    diagnostic: str | None = None
+    safe_resume: bool = True
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "ref": self.ref,
+            "kind": self.kind.value,
+            "operation": self.operation.value,
+            "status": self.status.value,
+            "safe_resume": self.safe_resume,
+        }
+        for key, value in (
+            ("observed_commit", self.observed_commit),
+            ("expected_commit", self.expected_commit),
+            ("resulting_commit", self.resulting_commit),
+            ("diagnostic", self.diagnostic),
+        ):
+            if value is not None:
+                data[key] = value
+        return data
+
+
+@dataclass(frozen=True)
+class PublicationSnapshotOutcome:
+    binding_id: str
+    plan_id: str
+    ref_outcomes: tuple[PublicationRefOutcome, ...]
+    resume_at: str | None
+    updated_at: str
+    observed_remote_head: str | None = None
+    provider_default_branch_action_required: bool = False
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "schema_version": "isomer-topic-git-publication-outcomes.v2",
+            "binding_id": self.binding_id,
+            "plan_id": self.plan_id,
+            "ref_outcomes": [outcome.to_json() for outcome in self.ref_outcomes],
+            "resume_at": self.resume_at,
+            "observed_remote_head": self.observed_remote_head,
+            "provider_default_branch_action_required": self.provider_default_branch_action_required,
+            "updated_at": self.updated_at,
+        }
+
+
+@dataclass(frozen=True)
 class PublicationBinding:
     binding_id: str
     research_topic_id: str
@@ -262,9 +383,11 @@ class PublicationBinding:
     remote_url: str
     visibility: RemoteVisibility
     created_at: str
+    snapshot_mode: PublicationSnapshotMode | None = None
+    canonical_branch: str = "main"
 
     def to_json(self) -> dict[str, object]:
-        return {
+        data: dict[str, object] = {
             "schema_version": "isomer-topic-git-publication-binding.v1",
             "binding_id": self.binding_id,
             "research_topic_id": self.research_topic_id,
@@ -274,7 +397,42 @@ class PublicationBinding:
             "remote_url": self.remote_url,
             "visibility": self.visibility.value,
             "created_at": self.created_at,
+            "canonical_branch": self.canonical_branch,
         }
+        if self.snapshot_mode is not None:
+            data["snapshot_mode"] = self.snapshot_mode.value
+            data["authority_fingerprint"] = self.authority_fingerprint()
+        return data
+
+    def authority_fingerprint(self) -> str:
+        """Bind exclusive authority to remote, topic, workspace, mode, and canonical branch."""
+
+        payload = (
+            self.remote_url.strip(),
+            self.research_topic_id,
+            self.topic_workspace_id,
+            self.snapshot_mode.value if self.snapshot_mode is not None else None,
+            self.canonical_branch,
+        )
+        return hashlib.sha256(json.dumps(payload, separators=(",", ":")).encode()).hexdigest()
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> PublicationBinding:
+        """Load current bindings while accepting pre-snapshot legacy bindings."""
+
+        snapshot_mode = payload.get("snapshot_mode")
+        return cls(
+            binding_id=str(payload["binding_id"]),
+            research_topic_id=str(payload["research_topic_id"]),
+            topic_workspace_id=str(payload["topic_workspace_id"]),
+            copy_path=str(payload["copy_path"]),
+            remote_name=str(payload["remote_name"]),
+            remote_url=str(payload["remote_url"]),
+            visibility=RemoteVisibility(str(payload["visibility"])),
+            created_at=str(payload["created_at"]),
+            snapshot_mode=PublicationSnapshotMode(str(snapshot_mode)) if snapshot_mode is not None else None,
+            canonical_branch=str(payload.get("canonical_branch", "main")),
+        )
 
 
 @dataclass(frozen=True)

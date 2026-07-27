@@ -130,16 +130,37 @@ class TopicGitSkillContractTests(unittest.TestCase):
             "durable research lineage",
             "downloaded material bytes",
             "raw experiment-output bytes",
-            "research-record-index.json",
-            "Latest paper: [PDF](paper/latest.pdf)",
+            ".isomer-publication/research-record-index.json",
+            "path-preserved latest-paper",
             "public or private GitHub",
             "organization or source provenance",
             "Isomer Publication",
+            "exclusive_snapshot",
+            "components/topic-main",
+            "components/topic-actors/<sanitized-name>",
+            "components/agents/<sanitized-name>",
+            "canonical `main`",
+            "operational Topic Workspace",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, all_text)
         self.assertNotIn("canonical external repositories, credentials, and unapproved records", all_text)
         self.assertNotIn("Use one credential-safe remote for every `.gitmodules` entry", all_text)
+        self.assertNotIn("Latest paper: [PDF](paper/latest.pdf)", all_text)
+
+    def test_publication_guidance_preserves_paths_and_complete_snapshot_state(self) -> None:
+        all_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(SKILL_ROOT.rglob("*.md")))
+        for required in (
+            "output path must equal its Source Topic Workspace-relative path",
+            "root `.gitmodules`",
+            ".isomer-publication/topic-workspace-projection.json",
+            "complete remote branch and tag inventory",
+            "remote HEAD",
+            "delete each exact planned obsolete branch or tag",
+            "ordinary same-remote component submodules",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, all_text)
 
 
 if __name__ == "__main__":

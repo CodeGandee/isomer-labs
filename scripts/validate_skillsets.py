@@ -5490,7 +5490,14 @@ def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
                     "SKL011",
                     "Topic Git command uses broad or deleting remote mutation",
                 )
-            if re.search(r"\bpush\b[^#\n]*\s:[^/\s][^\s]*$", stripped):
+            deletes_remote_ref = re.search(r"\bpush\b[^#\n]*\s:[^/\s][^\s]*$", stripped)
+            allowed_snapshot_deletion = path.name == "sync.md" and stripped.endswith(
+                (
+                    "push publication :refs/heads/<planned-obsolete-branch>",
+                    "push publication :refs/tags/<planned-obsolete-tag>",
+                )
+            )
+            if deletes_remote_ref and not allowed_snapshot_deletion:
                 add(
                     diagnostics,
                     repo_root,
@@ -5499,9 +5506,12 @@ def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
                     "SKL011",
                     "Topic Git command deletes a remote ref",
                 )
-            if "push --force " in stripped and (
-                path.name != "sync.md"
-                or "<replacement-commit>:refs/heads/<approved-component-branch>" not in stripped
+            allowed_force_suffixes = (
+                "push --force publication <replacement-commit>:refs/heads/<planned-component-branch>",
+                "push --force publication <superproject-commit>:refs/heads/main",
+            )
+            if "push --force " in stripped and not (
+                path.name == "sync.md" and stripped.endswith(allowed_force_suffixes)
             ):
                 add(
                     diagnostics,

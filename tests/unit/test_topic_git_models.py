@@ -10,6 +10,11 @@ from isomer_labs.topic_git import (
     LocalTrackingState,
     PrivacyDisposition,
     PublicationBinding,
+    PublicationRefKind,
+    PublicationRefOperation,
+    PublicationRefOutcome,
+    PublicationSnapshotMode,
+    PublicationSnapshotOutcome,
     PublicationState,
     RemoteVisibility,
     SupportFileKind,
@@ -204,6 +209,22 @@ class TopicGitModelTests(unittest.TestCase):
         self.assertEqual("restricted", binding.to_json()["visibility"])
         self.assertNotIn("credentials", binding.to_json())
 
+        exclusive = PublicationBinding(
+            binding_id="binding-a",
+            research_topic_id="topic-a",
+            topic_workspace_id="workspace-a",
+            copy_path="tmp/topic-workspace-publish/topic-a",
+            remote_name="origin",
+            remote_url="ssh://git@example.test/topic.git",
+            visibility=RemoteVisibility.RESTRICTED,
+            created_at="2026-07-23T00:00:00Z",
+            snapshot_mode=PublicationSnapshotMode.EXCLUSIVE_SNAPSHOT,
+        )
+        restored = PublicationBinding.from_json(exclusive.to_json())
+        self.assertEqual(PublicationSnapshotMode.EXCLUSIVE_SNAPSHOT, restored.snapshot_mode)
+        self.assertEqual("main", restored.canonical_branch)
+        self.assertEqual(exclusive.authority_fingerprint(), restored.authority_fingerprint())
+
     def test_branch_outcomes_capture_partial_failure_and_safe_resume(self) -> None:
         pushed = BranchOutcome(
             branch="topic-owner/main",
@@ -221,6 +242,43 @@ class TopicGitModelTests(unittest.TestCase):
         self.assertEqual("pushed", pushed.to_json()["status"])
         self.assertTrue(failed.to_json()["safe_resume"])
         self.assertNotIn("topic-workspace/main", pushed.branch)
+
+        snapshot = PublicationSnapshotOutcome(
+            binding_id="binding",
+            plan_id="plan",
+            ref_outcomes=(
+                PublicationRefOutcome(
+                    ref="refs/heads/main",
+                    kind=PublicationRefKind.BRANCH,
+                    operation=PublicationRefOperation.UPDATE,
+                    status=BranchOutcomeStatus.PUSHED,
+                    resulting_commit="d" * 40,
+                ),
+                PublicationRefOutcome(
+                    ref="refs/heads/topic-workspace/main",
+                    kind=PublicationRefKind.BRANCH,
+                    operation=PublicationRefOperation.DELETE,
+                    status=BranchOutcomeStatus.DELETED,
+                ),
+                PublicationRefOutcome(
+                    ref="HEAD",
+                    kind=PublicationRefKind.REMOTE_HEAD,
+                    operation=PublicationRefOperation.OBSERVE,
+                    status=BranchOutcomeStatus.BLOCKED,
+                    diagnostic="provider default branch still selects a legacy ref",
+                ),
+            ),
+            resume_at="provider-default-branch",
+            observed_remote_head="topic-workspace/main",
+            provider_default_branch_action_required=True,
+            updated_at="2026-07-27T00:00:00Z",
+        )
+        payload = snapshot.to_json()
+        self.assertEqual(
+            (),
+            validate_support_payload(SupportFileKind.PUBLICATION_OUTCOMES, payload),
+        )
+        self.assertEqual("provider-default-branch", payload["resume_at"])
 
     @staticmethod
     def _binding_payload() -> dict[str, object]:

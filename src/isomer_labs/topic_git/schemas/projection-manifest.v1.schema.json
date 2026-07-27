@@ -4,11 +4,16 @@
   "additionalProperties": false,
   "required": ["schema_version", "binding_id", "plan_id", "created_at", "entries", "components"],
   "properties": {
-    "schema_version": {"const": "isomer-topic-git-projection-manifest.v1"},
+    "schema_version": {"enum": ["isomer-topic-git-projection-manifest.v1", "isomer-topic-git-projection-manifest.v2"]},
     "binding_id": {"type": "string", "minLength": 1},
     "plan_id": {"type": "string", "minLength": 1},
     "created_at": {"type": "string", "minLength": 1},
     "entries": {"type": "array", "items": {"type": "object"}},
-    "components": {"type": "array", "items": {"type": "object"}}
+    "components": {"type": "array", "items": {"type": "object"}},
+    "selection": {"type": "object"},
+    "reference_repositories": {"type": "array", "items": {"type": "object"}},
+    "research_index_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "readme_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reproduction_limitations": {"type": "array", "items": {"type": "string"}}
   }
 }

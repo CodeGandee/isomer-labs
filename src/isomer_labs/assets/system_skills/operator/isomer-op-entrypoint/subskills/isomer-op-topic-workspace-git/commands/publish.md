@@ -31,6 +31,6 @@ Select exactly one publication child operation:
 | `isomer-op-entrypoint->topic-git->publish()->status()` | Inspect binding, copy, projection, conflicts, and last outcomes. | [publish/status.md](publish/status.md) |
 | `isomer-op-entrypoint->topic-git->publish()->init()` | Validate the remote and destination, create copy-local preparation, and avoid push. | [publish/init.md](publish/init.md) |
 | `isomer-op-entrypoint->topic-git->publish()->plan()` | Inventory, classify, sanitize, compare, and bind approval to exact state. | [publish/plan.md](publish/plan.md) |
-| `isomer-op-entrypoint->topic-git->publish()->sync()` | Reconstruct if needed, fetch, resolve safe changes, commit, and push components before the superproject. | [publish/sync.md](publish/sync.md) |
+| `isomer-op-entrypoint->topic-git->publish()->sync()` | Recover the copy if needed, regenerate the snapshot, and replace the planned remote refs and tags with components before canonical `main`. | [publish/sync.md](publish/sync.md) |
 
-With no selected child or unambiguous task, return this table. Publication is available after Topic Workspace registration, does not require Workspace Runtime or local root tracking, always generates publication-only navigation, and never stages or commits the Source Topic Workspace root repository.
+With no selected child or unambiguous task, return this table. Publication is available after Topic Workspace registration, does not require Workspace Runtime or local root tracking, preserves every retained Source Topic Workspace-relative path, always generates publication-only navigation, and never stages or commits the Source Topic Workspace root repository.

@@ -12,6 +12,8 @@ Assign every considered path exactly one disposition:
 | `component` | Represent a sanitized topic-owned component or exact upstream reference as a submodule. |
 | `block` | Stop until size, format, credential, private-key, signed-URL, license, or ambiguity risk is resolved. |
 
+For every source-backed `track`, `template`, and `component` entry, the output path must equal its Source Topic Workspace-relative path. Excluded and blocked entries have no output path. Generated entries have no source path and may use only root `README.md`, root `.gitmodules`, or the `.isomer-publication/` overlay.
+
 ## Publication Defaults
 
 | Semantic Class | Default |
@@ -39,6 +41,8 @@ Default exclusions remain:
 - downloaded material bytes and raw experiment-output bytes without their explicit current-plan setting;
 - unregistered staging, scratch, and unsupported content that is not a typed durable record or approved publication input.
 
+Preserve a sanitizable source `.gitignore` at root. Keep copy-local `.isomer/` support state untracked with the Topic Publication Copy repository's `.git/info/exclude`; do not replace the source ignore policy with a generated publication ignore file.
+
 ## Individual Identity and Provenance
 
 | Content | Handling |
@@ -64,12 +68,13 @@ Always generate these files only in the Topic Publication Copy:
 
 | Output | Required Content |
 | --- | --- |
-| `README.md` | Research Topic, reproduction entry points, limitations, and `Latest paper: [PDF](paper/latest.pdf)` or `Latest paper: not yet available.` |
-| `research-record-index.json` | Stable record refs, semantic ids, revision state, fingerprints, and relationships without runtime-only state |
-| Projection manifest | Semantic classes, raw-byte settings, relative mappings, dispositions, transformations, component and reference identities, fingerprints, and limitations |
-| `topic-workspace-version.toml` | Exact sanitized topic-owned branches and commits |
+| `README.md` | Sanitizable source README content plus one versioned generated navigation block with Research Topic, evidence entry points, limitations, and a path-preserved latest-paper link or recorded absence |
+| `.gitmodules` | Same-remote topic-owned component branches and upstream third-party references at their resolved Topic Workspace-relative paths |
+| `.isomer-publication/research-record-index.json` | Stable record refs, semantic ids, revision state, fingerprints, and relationships without runtime-only state |
+| `.isomer-publication/topic-workspace-projection.json` | Semantic classes, raw-byte settings, relative identity mappings, dispositions, transformations, component and reference identities, fingerprints, and limitations |
+| `.isomer-publication/topic-workspace-version.toml` | Canonical `main`, exact sanitized `components/...` branches and commits, Topic Main anchor relationships, and exact upstream reference commits |
 
-Resolve the latest paper from one unambiguous typed `KAOJU:PAPER-PDF` and its accepted build and validation lineage. Never use filename order or modification time.
+Resolve the latest paper from one unambiguous typed `KAOJU:PAPER-PDF` and its accepted build and validation lineage. Keep it at its retained Artifact path and link that path from README. Never use filename order or modification time, and never create a relocated latest-paper alias.
 
 Tracked projection metadata includes:
 
@@ -79,6 +84,8 @@ Tracked projection metadata includes:
 - normalized GitHub reference locators, exact commits, visibility, license, and access limitations.
 
 It omits absolute source paths, incidental source remotes, credentials, individual identity values, sensitive excerpts, private diffs, excluded content, and source Git configuration.
+
+Reject a source path below `.isomer-publication/`, a source root `.gitmodules`, a generated path that shadows source content, a synthetic content-class directory, and component content flattened into the superproject. Git omits empty directories unless an approved tracked placeholder already exists.
 
 Four-way comparison rules:
 

@@ -22,7 +22,7 @@ Own two independent, disabled-by-default Git layers:
 | Layer | Input | Result | Remote Posture |
 | --- | --- | --- | --- |
 | Local tracking | Canonical Topic Workspace root | Local root repository and exact commits that preserve nested repository topology | Never contacts a remote |
-| Remote publication | Current Topic Workspace filesystem and registered source identities | Reproduction-complete sanitized projection with fresh topic-owned histories and exact upstream references | Pushes only through an approved publication plan |
+| Remote publication | Current Topic Workspace filesystem and registered source identities | Inspectable sanitized evidence and artifact snapshot with fresh topic-owned histories and exact upstream references | Replaces the approved publication remote snapshot only through a current plan |
 
 Key terms:
 
@@ -35,7 +35,7 @@ Key terms:
 | --- | --- |
 | Vague Topic Workspace tracking or versioning | Overall `status` |
 | Local root history, ignore policy, planning, initialization, or exact commit | `local()` |
-| Sanitized publication preparation, privacy planning, reconstruction, or remote synchronization | `publish()` |
+| Sanitized publication preparation, privacy planning, copy recovery, or remote synchronization | `publish()` |
 
 Ordinary Topic Workspace storage, actor, team, environment, reset, and diagnostic work remains with Topic Manager.
 
@@ -49,7 +49,7 @@ Ordinary Topic Workspace storage, actor, team, environment, reset, and diagnosti
 4. **Plan before mutation**. Record exact paths, identities, fingerprints, blockers, and approvals:
    - Local mutation requires valid Workspace Runtime.
    - Publication may begin after Topic Workspace registration and keeps pre-runtime support in the ignored copy.
-   - Publication selects intent, environment declarations, durable research lineage, topic-owned components, and registered GitHub references by default.
+   - Publication preserves retained Source Topic Workspace-relative paths while selecting intent, environment declarations, durable research lineage, topic-owned components, and registered GitHub references by default.
    - Downloaded material bytes and raw experiment-output bytes remain excluded until the current plan explicitly selects them.
 5. **Revalidate and execute directly**. Recompute applicable assumptions and run path-scoped `git -C <validated-path> ...`.
 6. **Verify and persist**. Check the exact repository or projection state, write only schema-valid support files, and report local and publication outcomes separately.
@@ -75,7 +75,7 @@ If the task does not map cleanly to these operations, use the native planning to
 | [references/context-queries.md](references/context-queries.md) | Read-only Isomer context and topology queries, pinning, and rejection rules. |
 | [references/direct-git-safety.md](references/direct-git-safety.md) | Direct path-scoped Git, exact staging, ref safety, and forbidden operations. |
 | [references/local-safety.md](references/local-safety.md) | Local runtime prerequisite, ancestor evidence, root repository, nested exclusions, and local support state. |
-| [references/publication-safety.md](references/publication-safety.md) | Destination, topic-owned and upstream-reference submodules, fetch-first synchronization, reconstruction, and push order. |
+| [references/publication-safety.md](references/publication-safety.md) | Destination, topic-owned and upstream-reference submodules, exclusive snapshot replacement, copy recovery, and push order. |
 | [references/privacy-projection.md](references/privacy-projection.md) | Semantic defaults, raw-byte selection, individual-identity sanitization, navigation, manifests, rescanning, and conflicts. |
 | [references/persistence.md](references/persistence.md) | Layer-specific schemas, copy-local state, runtime promotion, outcomes, and forbidden content. |
 
@@ -95,8 +95,8 @@ Lead with the selected Research Topic, operation, and outcome.
 | Operation | Report |
 | --- | --- |
 | Status | Local state (`disabled`, `enabled`, or `invalid`), publication state (`disabled`, `prepared`, `synchronized`, `stale`, `copy-missing`, or `blocked`), blockers, and next actions |
-| Plan | Exact semantic scope, raw-byte settings, repository identities, reproduction limitations, approvals, conflicts, and blockers without sensitive excerpts |
-| Mutation | Changed paths, README and research-index state, commits or refs, branch outcomes, verification, and safe next action |
+| Plan | Exact semantic scope, source-to-output path identity, raw-byte settings, repository identities, reproduction limitations, complete remote refs and tags, approvals, conflicts, and blockers without sensitive excerpts |
+| Mutation | Changed paths, README and research-index state, commits or refs, ref and remote-HEAD outcomes, verification, and safe next action |
 
 ### Complete Output
 
@@ -104,8 +104,8 @@ Include:
 
 - resolved context, sources, paths, and repository identities;
 - dispositions, fingerprints, direct commands, and index verification;
-- binding, visibility, component and reference selection, raw-byte settings, identity substitutions, reproduction limitations, conflicts, and remote compatibility;
-- destructive-plan evidence, branch outcomes, support files, and resume state.
+- binding, visibility, exclusive-snapshot authority, component and reference selection, raw-byte settings, identity substitutions, reproduction limitations, conflicts, and complete remote inventory;
+- snapshot-replacement evidence, ref and tag outcomes, remote-HEAD diagnostics, support files, and resume state.
 
 ## Guardrails
 
@@ -114,12 +114,13 @@ Include:
 - DO NOT hide Git in a Python service, script, sanitization helper, projection helper, or command runner.
 - DO NOT preload the unselected layer's mutation procedure.
 - DO NOT rely on ambient cwd. Every repository command uses the validated Source Topic Workspace, Topic Publication Copy, or sanitized component repository path.
-- DO NOT broaden exact staging, pull, merge, rebase, reset, clean, rewrite source history, delete a remote branch, or repair unexpected state implicitly.
+- DO NOT broaden exact staging, pull, merge, rebase, reset, clean, rewrite source history, delete an unplanned remote ref or tag, or repair unexpected state implicitly.
 - DO NOT initialize Workspace Runtime, edit `state.sqlite`, or store credentials, secrets, sensitive excerpts, raw private diffs, source Git configuration, or credential-bearing URLs.
 - DO NOT remove a credential-free GitHub owner or repository name as personal information; preserve it as organization or source provenance.
 - DO NOT publish downloaded material bytes or raw experiment-output bytes without an explicit current-plan selection.
 - DO NOT make local tracking and publication prerequisites, triggers, or authorities for each other.
 - DO NOT call a Topic Publication Copy a workspace or use it as canonical research state.
+- DO NOT describe a Topic Publication Copy as an operational backup or promise automatic Topic Workspace restoration; working reconstruction is manual.
 
 ## Chat Response
 

@@ -313,12 +313,13 @@ isomer-cli --print-json project runtime inspect --topic <topic>
 Recovery:
 
 - For `stale`, create a new publication plan after inspecting changed source content, expected outputs, current copy content, component topology, binding identity, and fetched refs.
-- For `copy-missing`, reconstruct from the runtime binding or resupply the credential-safe remote. An unpushed pre-runtime copy has no durable plan and must be prepared again.
+- For `copy-missing`, recover disposable projection state from the runtime binding or resupply the credential-safe remote. An unpushed pre-runtime copy has no durable plan and must be prepared again. This does not reconstruct an operational Topic Workspace.
 - For privacy or destination conflicts, resolve the exact blocked disposition or unsafe path without changing source files.
-- For incompatible remote refs, review a fresh branch-specific destructive plan. Any remote ref change invalidates previous force approval.
-- For partial push, resume from the recorded branch outcome. Components push before `topic-workspace/main`, so the previous superproject remains authoritative until the final push succeeds.
+- For a stale remote snapshot, review a fresh complete branch, tag, and remote-HEAD inventory. Matching one-time `exclusive_snapshot` authority permits exact planned force replacements and deletions; any observed remote change invalidates the current plan.
+- For partial push, resume from the recorded ref outcome. Components push before canonical `main`; obsolete refs and tags are removed only as exact planned operations.
+- For remote HEAD that does not select `main`, use a separately approved provider-supported default-branch action.
 
-Topic Git never repairs these states by pulling, merging, rebasing, resetting, cleaning, deleting remote branches, broad staging, or changing Source Topic Workspace Git state during publication.
+Topic Git never repairs these states by pulling, merging, rebasing, resetting, cleaning, deleting unplanned remote refs or tags, broad staging, or changing Source Topic Workspace Git state during publication.
 
 ## Diagnostic Checklist
 

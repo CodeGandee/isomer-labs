@@ -8,6 +8,11 @@ import re
 from typing import Iterable
 
 from isomer_labs.topic_git.models import ResearchRecordIndexEntry
+from isomer_labs.topic_git.projection import (
+    PUBLICATION_PROJECTION_MANIFEST_PATH,
+    PUBLICATION_RESEARCH_RECORD_INDEX_PATH,
+    PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH,
+)
 
 
 _PRIVATE_KEY_RE = re.compile(rb"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")
@@ -26,6 +31,8 @@ _GITHUB_REPOSITORY_RE = re.compile(
 _PERSONAL_GITHUB_SSH_RE = re.compile(
     rb"(?i)(?:ssh://(?!git@)[a-z0-9._-]+@github\.com/|(?!git@)[a-z0-9._-]+@github\.com:)"
 )
+PUBLICATION_NAVIGATION_BEGIN = "<!-- BEGIN ISOMER PUBLICATION NAVIGATION v1 -->"
+PUBLICATION_NAVIGATION_END = "<!-- END ISOMER PUBLICATION NAVIGATION v1 -->"
 
 
 @dataclass(frozen=True)
@@ -100,42 +107,58 @@ def render_publication_readme(
     latest_paper_path: str | None = None,
     intent_paths: Iterable[str] = (),
     environment_paths: Iterable[str] = (),
-    research_index_path: str = "research-record-index.json",
+    component_paths: Iterable[str] = (),
+    research_index_path: str = PUBLICATION_RESEARCH_RECORD_INDEX_PATH,
+    projection_manifest_path: str = PUBLICATION_PROJECTION_MANIFEST_PATH,
+    version_manifest_path: str = PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH,
     reproduction_limitations: Iterable[str] = (),
+    source_readme: str | None = None,
 ) -> str:
-    """Render deterministic publication-only navigation."""
+    """Render or compose deterministic publication-only navigation."""
 
     heading = title.strip() if title and title.strip() else research_topic_id
     _assert_generated_text_safe(heading)
     index_path = _relative_path(research_index_path)
+    projection_path = _relative_path(projection_manifest_path)
+    version_path = _relative_path(version_manifest_path)
     paper_line = "Latest paper: not yet available."
     if latest_paper_path is not None:
         paper_path = _relative_path(latest_paper_path)
         paper_line = f"Latest paper: [PDF]({paper_path})"
     lines = [
-        f"# {heading}",
+        PUBLICATION_NAVIGATION_BEGIN,
+        "## Publication Snapshot",
         "",
         f"Research topic: `{research_topic_id}`",
         "",
         paper_line,
         "",
-        "## Reproduction",
+        "### Published Research Material",
         "",
         f"- Research record index: [{index_path}]({index_path})",
+        f"- Projection manifest: [{projection_path}]({projection_path})",
+        f"- Version manifest: [{version_path}]({version_path})",
     ]
     normalized_intent = tuple(sorted({_relative_path(path) for path in intent_paths}))
     normalized_environment = tuple(sorted({_relative_path(path) for path in environment_paths}))
+    normalized_components = tuple(sorted({_relative_path(path) for path in component_paths}))
     if normalized_intent:
         lines.append("- Intent: " + ", ".join(f"[{path}]({path})" for path in normalized_intent))
     if normalized_environment:
         lines.append("- Environment: " + ", ".join(f"[{path}]({path})" for path in normalized_environment))
+    if normalized_components:
+        lines.append("- Topic-owned snapshots: " + ", ".join(f"[{path}]({path})" for path in normalized_components))
     limitations = tuple(sorted({item.strip() for item in reproduction_limitations if item.strip()}))
     if limitations:
-        lines.extend(("", "## Reproduction Limitations", ""))
+        lines.extend(("", "### Publication Limitations", ""))
         for limitation in limitations:
             _assert_generated_text_safe(limitation)
             lines.append(f"- {limitation}")
-    return "\n".join(lines) + "\n"
+    lines.append(PUBLICATION_NAVIGATION_END)
+    navigation = "\n".join(lines)
+    if source_readme is None:
+        return f"# {heading}\n\n{navigation}\n"
+    return _replace_publication_navigation(source_readme, navigation)
 
 
 def render_research_record_index(
@@ -187,6 +210,19 @@ def _assert_generated_text_safe(value: str) -> None:
         or _PERSONAL_GITHUB_SSH_RE.search(encoded)
     ):
         raise ValueError("Generated publication text contains credential-like material.")
+
+
+def _replace_publication_navigation(source_readme: str, navigation: str) -> str:
+    starts = source_readme.count(PUBLICATION_NAVIGATION_BEGIN)
+    ends = source_readme.count(PUBLICATION_NAVIGATION_END)
+    if starts != ends or starts > 1:
+        raise ValueError("Source README contains malformed Isomer publication navigation markers.")
+    rendered = source_readme
+    if starts == 1:
+        before, remainder = source_readme.split(PUBLICATION_NAVIGATION_BEGIN, maxsplit=1)
+        _, after = remainder.split(PUBLICATION_NAVIGATION_END, maxsplit=1)
+        rendered = before.rstrip() + after.lstrip("\n")
+    return rendered.rstrip() + "\n\n" + navigation + "\n"
 
 
 def _looks_like_absolute_local_path(value: str) -> bool:

@@ -4,14 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
-import json
 import os
 from pathlib import Path, PurePosixPath
 import re
-from typing import Iterable, Mapping, cast
-
-import tomlkit
-import yaml  # type: ignore[import-untyped]
+from typing import Iterable, Mapping
 
 from isomer_labs.core.path_utils import canonicalize, is_within
 from isomer_labs.topic_git.models import (
@@ -20,11 +16,17 @@ from isomer_labs.topic_git.models import (
     PublicationConflict,
     PublicationContentClass,
     PublicationSelectionSettings,
+    ProjectionEntryOrigin,
     ReferenceRepositoryBinding,
 )
 
 
 MAX_DEFAULT_PUBLICATION_BYTES = 10 * 1024 * 1024
+PUBLICATION_METADATA_ROOT = ".isomer-publication"
+PUBLICATION_RESEARCH_RECORD_INDEX_PATH = f"{PUBLICATION_METADATA_ROOT}/research-record-index.json"
+PUBLICATION_PROJECTION_MANIFEST_PATH = f"{PUBLICATION_METADATA_ROOT}/topic-workspace-projection.json"
+PUBLICATION_TOPIC_WORKSPACE_VERSION_PATH = f"{PUBLICATION_METADATA_ROOT}/topic-workspace-version.toml"
+PUBLICATION_ROOT_GENERATED_PATHS = frozenset({"README.md", ".gitmodules"})
 _ARCHIVE_SUFFIXES = {
     ".7z",
     ".bz2",
@@ -53,7 +55,6 @@ _CREDENTIAL_RE = re.compile(
 )
 _CREDENTIAL_URL_RE = re.compile(rb"(?i)https?://[^/\s@]+@")
 _SIGNED_URL_RE = re.compile(rb"(?i)https?://[^\s?]+\?[^\s]*(?:signature|sig|token|x-amz-credential)=")
-_SECRET_FIELD_RE = re.compile(r"(?i)(?:api[_-]?key|client[_-]?secret|password|private[_-]?key|access[_-]?token)")
 
 
 @dataclass(frozen=True)
@@ -66,7 +67,7 @@ class ProjectionFinding:
 
 @dataclass(frozen=True)
 class ProjectionEntry:
-    source_relative_path: str
+    source_relative_path: str | None
     output_relative_path: str | None
     disposition: PrivacyDisposition
     source_fingerprint: str | None
@@ -76,14 +77,16 @@ class ProjectionEntry:
     component_id: str | None = None
     content_class: PublicationContentClass = PublicationContentClass.OTHER
     media_type: str | None = None
+    origin: ProjectionEntryOrigin = ProjectionEntryOrigin.SOURCE
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
-            "source_relative_path": self.source_relative_path,
+            "origin": self.origin.value,
             "disposition": self.disposition.value,
             "content_class": self.content_class.value,
         }
         for key, value in (
+            ("source_relative_path", self.source_relative_path),
             ("output_relative_path", self.output_relative_path),
             ("source_fingerprint", self.source_fingerprint),
             ("output_fingerprint", self.output_fingerprint),
@@ -95,6 +98,51 @@ class ProjectionEntry:
             if value is not None:
                 data[key] = value
         return data
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> ProjectionEntry:
+        """Load current entries and infer source origin for legacy manifests."""
+
+        origin = ProjectionEntryOrigin(str(payload.get("origin", ProjectionEntryOrigin.SOURCE.value)))
+        return cls(
+            source_relative_path=(
+                str(payload["source_relative_path"])
+                if payload.get("source_relative_path") is not None
+                else None
+            ),
+            output_relative_path=(
+                str(payload["output_relative_path"])
+                if payload.get("output_relative_path") is not None
+                else None
+            ),
+            disposition=PrivacyDisposition(str(payload["disposition"])),
+            source_fingerprint=(
+                str(payload["source_fingerprint"])
+                if payload.get("source_fingerprint") is not None
+                else None
+            ),
+            output_fingerprint=(
+                str(payload["output_fingerprint"])
+                if payload.get("output_fingerprint") is not None
+                else None
+            ),
+            transformation=(
+                str(payload["transformation"])
+                if payload.get("transformation") is not None
+                else None
+            ),
+            reason=str(payload["reason"]) if payload.get("reason") is not None else None,
+            component_id=(
+                str(payload["component_id"])
+                if payload.get("component_id") is not None
+                else None
+            ),
+            content_class=PublicationContentClass(
+                str(payload.get("content_class", PublicationContentClass.OTHER.value))
+            ),
+            media_type=str(payload["media_type"]) if payload.get("media_type") is not None else None,
+            origin=origin,
+        )
 
 
 @dataclass(frozen=True)
@@ -130,6 +178,66 @@ class ProjectionManifest:
         if self.readme_fingerprint is not None:
             data["readme_fingerprint"] = self.readme_fingerprint
         return data
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> ProjectionManifest:
+        """Load v1 or v2 projection metadata without inventing generated origins."""
+
+        raw_selection = payload.get("selection")
+        selection_payload = raw_selection if isinstance(raw_selection, Mapping) else {}
+        raw_entries = payload.get("entries")
+        raw_components = payload.get("components")
+        raw_references = payload.get("reference_repositories")
+        raw_limitations = payload.get("reproduction_limitations")
+        return cls(
+            binding_id=str(payload["binding_id"]),
+            plan_id=str(payload["plan_id"]),
+            created_at=str(payload["created_at"]),
+            entries=tuple(
+                ProjectionEntry.from_json(entry)
+                for entry in raw_entries
+                if isinstance(entry, Mapping)
+            )
+            if isinstance(raw_entries, list)
+            else (),
+            components=tuple(
+                ComponentBinding.from_json(component)
+                for component in raw_components
+                if isinstance(component, Mapping)
+            )
+            if isinstance(raw_components, list)
+            else (),
+            selection=PublicationSelectionSettings(
+                include_raw_material_bytes=bool(
+                    selection_payload.get("include_raw_material_bytes", False)
+                ),
+                include_raw_experiment_output_bytes=bool(
+                    selection_payload.get("include_raw_experiment_output_bytes", False)
+                ),
+            ),
+            reference_repositories=tuple(
+                ReferenceRepositoryBinding.from_json(reference)
+                for reference in raw_references
+                if isinstance(reference, Mapping)
+            )
+            if isinstance(raw_references, list)
+            else (),
+            research_index_fingerprint=(
+                str(payload["research_index_fingerprint"])
+                if payload.get("research_index_fingerprint") is not None
+                else None
+            ),
+            readme_fingerprint=(
+                str(payload["readme_fingerprint"])
+                if payload.get("readme_fingerprint") is not None
+                else None
+            ),
+            reproduction_limitations=tuple(
+                str(item) for item in raw_limitations
+            )
+            if isinstance(raw_limitations, list)
+            else (),
+        )
 
 
 @dataclass(frozen=True)
@@ -440,7 +548,7 @@ def inventory_projection_sources(
             entries.append(
                 ProjectionEntry(
                     source_relative_path=relative,
-                    output_relative_path=relative if disposition in {PrivacyDisposition.TRACK, PrivacyDisposition.BLOCK} else None,
+                        output_relative_path=relative if disposition is PrivacyDisposition.TRACK else None,
                     disposition=disposition,
                     source_fingerprint=fingerprint_bytes(content),
                     reason=path_findings[0].message if path_findings else None,
@@ -448,219 +556,115 @@ def inventory_projection_sources(
                     media_type=approved_media_type,
                 )
             )
-    return tuple(sorted(entries, key=lambda item: item.source_relative_path)), tuple(findings)
+    return tuple(sorted(entries, key=lambda item: item.source_relative_path or "")), tuple(findings)
 
 
-def render_structured_template(content: str, *, format_name: str) -> str:
-    """Replace sensitive structured values with descriptive placeholders."""
+def validate_projection_entries(entries: Iterable[ProjectionEntry]) -> tuple[ProjectionFinding, ...]:
+    """Validate origin, path identity, reserved output paths, and collisions."""
 
-    normalized = format_name.lower().lstrip(".")
-    if normalized == "json":
-        value = json.loads(content)
-        rendered = _template_value(value)
-        return json.dumps(rendered, indent=2, sort_keys=True) + "\n"
-    if normalized in {"toml", "tml"}:
-        value = tomlkit.parse(content).unwrap()
-        rendered = _template_value(value)
-        return tomlkit.dumps(cast(Mapping[str, object], rendered))
-    if normalized in {"yaml", "yml"}:
-        value = yaml.safe_load(content)
-        rendered = _template_value(value)
-        return yaml.safe_dump(rendered, sort_keys=True)
-    raise ValueError(f"Unsupported structured template format: {format_name}")
-
-
-def materialize_projection(
-    source_topic_workspace: Path,
-    publication_copy: Path,
-    entries: Iterable[ProjectionEntry],
-    *,
-    template_outputs: Mapping[str, bytes] | None = None,
-) -> tuple[ProjectionEntry, ...]:
-    """Copy only approved files into the publication copy and preserve source bytes."""
-
-    source_root = canonicalize(source_topic_workspace)
-    copy_root = canonicalize(publication_copy)
-    templates = dict(template_outputs or {})
-    materialized: list[ProjectionEntry] = []
-    source_before: dict[str, str] = {}
-
+    findings: list[ProjectionFinding] = []
+    output_owners: dict[str, str] = {}
     for entry in entries:
-        if entry.disposition in {PrivacyDisposition.EXCLUDE, PrivacyDisposition.COMPONENT}:
-            materialized.append(entry)
+        label = entry.source_relative_path or entry.output_relative_path or "<missing>"
+        source: str | None = None
+        output: str | None = None
+        try:
+            if entry.source_relative_path is not None:
+                source = _relative_path(entry.source_relative_path)
+            if entry.output_relative_path is not None:
+                output = _relative_path(entry.output_relative_path)
+        except ValueError as error:
+            findings.append(ProjectionFinding("path", "error", label, str(error)))
             continue
-        if entry.disposition is PrivacyDisposition.BLOCK:
-            raise ValueError(f"Blocked projection entry cannot be materialized: {entry.source_relative_path}")
-        if entry.output_relative_path is None:
-            raise ValueError(f"Projection entry has no output path: {entry.source_relative_path}")
-        source_path = canonicalize(source_root / entry.source_relative_path)
-        destination = canonicalize(copy_root / entry.output_relative_path)
-        if not is_within(source_path, source_root) or not is_within(destination, copy_root):
-            raise ValueError("Projection paths must remain inside their approved roots.")
-        if ".git" in PurePosixPath(entry.source_relative_path).parts:
-            raise ValueError("Projection cannot copy Git control paths.")
-        source_content = source_path.read_bytes()
-        source_before[entry.source_relative_path] = fingerprint_bytes(source_content)
-        if entry.disposition is PrivacyDisposition.TEMPLATE:
-            try:
-                output = templates[entry.source_relative_path]
-            except KeyError as error:
-                raise ValueError(f"Missing approved template output: {entry.source_relative_path}") from error
-        else:
-            output = source_content
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(output)
-        materialized.append(
-            ProjectionEntry(
-                source_relative_path=entry.source_relative_path,
-                output_relative_path=entry.output_relative_path,
-                disposition=entry.disposition,
-                source_fingerprint=fingerprint_bytes(source_content),
-                output_fingerprint=fingerprint_bytes(output),
-                transformation=entry.transformation,
-                reason=entry.reason,
-                component_id=entry.component_id,
-                content_class=entry.content_class,
-                media_type=entry.media_type,
-            )
-        )
 
-    for relative, before in source_before.items():
-        if fingerprint_file(source_root / relative) != before:
-            raise RuntimeError(f"Source changed during publication materialization: {relative}")
-    blockers = rescan_projection(copy_root, materialized)
-    if blockers:
-        raise ValueError("Materialized projection failed privacy rescan: " + "; ".join(item.message for item in blockers))
-    return tuple(materialized)
-
-
-def rescan_projection(
-    publication_copy: Path,
-    entries: Iterable[ProjectionEntry],
-) -> tuple[ProjectionFinding, ...]:
-    """Scan every ordinary file eligible for a publication commit."""
-
-    copy_root = canonicalize(publication_copy)
-    blockers: list[ProjectionFinding] = []
-    for entry in entries:
-        if entry.disposition not in {PrivacyDisposition.TRACK, PrivacyDisposition.TEMPLATE}:
-            continue
-        if entry.output_relative_path is None:
-            continue
-        output = canonicalize(copy_root / entry.output_relative_path)
-        if not is_within(output, copy_root):
-            blockers.append(
-                ProjectionFinding("path", "error", entry.source_relative_path, "Projection output escapes the publication copy.")
-            )
-            continue
-        disposition, findings = classify_projection_file(
-            entry.output_relative_path,
-            output.read_bytes(),
-            content_class=entry.content_class,
-            selection=PublicationSelectionSettings(
-                include_raw_material_bytes=entry.content_class is PublicationContentClass.RAW_MATERIAL,
-                include_raw_experiment_output_bytes=(
-                    entry.content_class is PublicationContentClass.RAW_EXPERIMENT_OUTPUT
-                ),
-            ),
-            approved_media_type=entry.media_type,
-        )
-        if disposition is PrivacyDisposition.BLOCK:
-            blockers.extend(findings)
-    return tuple(blockers)
-
-
-def compare_projection(
-    *,
-    expected: Mapping[str, str],
-    prior_generated: Mapping[str, str],
-    current_copy: Mapping[str, str],
-    approved_conflicts: Iterable[str] = (),
-) -> ProjectionComparison:
-    """Compare expected, prior, and current output fingerprints without mutating files."""
-
-    approved = {_relative_path(path) for path in approved_conflicts}
-    updates: list[str] = []
-    removals: list[str] = []
-    unchanged: list[str] = []
-    conflicts: list[PublicationConflict] = []
-    for path in sorted(set(expected) | set(prior_generated) | set(current_copy)):
-        expected_value = expected.get(path)
-        prior_value = prior_generated.get(path)
-        current_value = current_copy.get(path)
-        if expected_value == current_value:
-            unchanged.append(path)
-            continue
-        if expected_value is None:
-            if current_value is None:
-                unchanged.append(path)
-            elif current_value == prior_value or path in approved:
-                removals.append(path)
-            else:
-                conflicts.append(
-                    PublicationConflict(
-                        relative_path=path,
-                        reason="source removed but destination changed",
-                        prior_output_fingerprint=prior_value,
-                        current_output_fingerprint=current_value,
+        if entry.origin is ProjectionEntryOrigin.SOURCE:
+            if source is None:
+                findings.append(
+                    ProjectionFinding("source-origin", "error", label, "Source-backed entry has no source path.")
+                )
+                continue
+            if source == PUBLICATION_METADATA_ROOT or source.startswith(f"{PUBLICATION_METADATA_ROOT}/"):
+                findings.append(
+                    ProjectionFinding(
+                        "reserved-source-path",
+                        "error",
+                        source,
+                        "Source content collides with the reserved publication metadata overlay.",
                     )
                 )
-            continue
-        if current_value is None or current_value == prior_value or path in approved:
-            updates.append(path)
-            continue
-        conflicts.append(
-            PublicationConflict(
-                relative_path=path,
-                reason="source and destination both changed",
-                source_fingerprint=expected_value,
-                prior_output_fingerprint=prior_value,
-                current_output_fingerprint=current_value,
-            )
-        )
-    return ProjectionComparison(tuple(updates), tuple(removals), tuple(unchanged), tuple(conflicts))
+            if source == ".gitmodules":
+                findings.append(
+                    ProjectionFinding(
+                        "generated-root-collision",
+                        "error",
+                        source,
+                        "Source .gitmodules conflicts with generated publication topology.",
+                    )
+                )
+            if entry.disposition in {
+                PrivacyDisposition.TRACK,
+                PrivacyDisposition.TEMPLATE,
+                PrivacyDisposition.COMPONENT,
+            } and output != source:
+                findings.append(
+                    ProjectionFinding(
+                        "path-preservation",
+                        "error",
+                        source,
+                        "Source-backed output path must equal its Topic Workspace-relative source path.",
+                    )
+                )
+            if entry.disposition in {PrivacyDisposition.EXCLUDE, PrivacyDisposition.BLOCK} and output is not None:
+                findings.append(
+                    ProjectionFinding(
+                        "pathless-disposition",
+                        "error",
+                        source,
+                        "Excluded and blocked source entries must not claim an output path.",
+                    )
+                )
+        else:
+            if source is not None:
+                findings.append(
+                    ProjectionFinding(
+                        "generated-origin",
+                        "error",
+                        source,
+                        "Generated publication entry must not claim a Source Topic Workspace path.",
+                    )
+                )
+            if output is None or not _is_approved_generated_path(output):
+                findings.append(
+                    ProjectionFinding(
+                        "generated-path",
+                        "error",
+                        label,
+                        "Generated publication entry uses a path outside the reserved publication overlay.",
+                    )
+                )
+            if entry.disposition not in {PrivacyDisposition.TRACK, PrivacyDisposition.TEMPLATE}:
+                findings.append(
+                    ProjectionFinding(
+                        "generated-disposition",
+                        "error",
+                        label,
+                        "Generated publication entries must use track or template disposition.",
+                    )
+                )
 
-
-def render_projection_manifest(manifest: ProjectionManifest) -> str:
-    return json.dumps(manifest.to_json(), indent=2, sort_keys=True) + "\n"
-
-
-def render_topic_workspace_version(
-    *,
-    binding_id: str,
-    plan_id: str,
-    created_at: str,
-    branch_commits: Mapping[str, str],
-) -> str:
-    """Render sanitized branch-to-commit publication metadata."""
-
-    lines = [
-        'schema_version = "isomer-topic-workspace-version.v1"',
-        f"binding_id = {json.dumps(binding_id)}",
-        f"plan_id = {json.dumps(plan_id)}",
-        f"created_at = {json.dumps(created_at)}",
-    ]
-    for branch, commit in sorted(branch_commits.items()):
-        lines.extend(
-            (
-                "",
-                "[[branches]]",
-                f"name = {json.dumps(branch)}",
-                f"commit_sha = {json.dumps(commit)}",
-            )
-        )
-    return "\n".join(lines) + "\n"
-
-
-def _template_value(value: object, key: str | None = None) -> object:
-    if key is not None and _SECRET_FIELD_RE.fullmatch(key):
-        placeholder = re.sub(r"[^A-Za-z0-9]+", "_", key).strip("_").upper()
-        return f"${{{placeholder}}}"
-    if isinstance(value, Mapping):
-        return {str(child_key): _template_value(child, str(child_key)) for child_key, child in value.items()}
-    if isinstance(value, list):
-        return [_template_value(child) for child in value]
-    return value
+        if output is not None:
+            owner = source or f"generated:{output}"
+            prior = output_owners.setdefault(output, owner)
+            if prior != owner:
+                findings.append(
+                    ProjectionFinding(
+                        "output-collision",
+                        "error",
+                        output,
+                        f"Publication output is claimed by both {prior!r} and {owner!r}.",
+                    )
+                )
+    return tuple(findings)
 
 
 def infer_publication_content_class(semantic_label: str) -> PublicationContentClass:
@@ -744,6 +748,13 @@ def _relative_path(value: str) -> str:
     if normalized in {"", ".", ".."} or normalized.startswith("../") or normalized.startswith("/"):
         raise ValueError(f"Projection path must be a non-root relative path: {value!r}")
     return normalized
+
+
+def _is_approved_generated_path(path: str) -> bool:
+    return (
+        path in PUBLICATION_ROOT_GENERATED_PATHS
+        or path.startswith(f"{PUBLICATION_METADATA_ROOT}/")
+    )
 
 
 def _relative_to(path: Path, root: Path) -> str:

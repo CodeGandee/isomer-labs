@@ -13,11 +13,12 @@ git -C <validated-resolved-repository> <subcommand> <exact-options-and-arguments
 | Pre-mutation check | Revalidate repository top level, Git directory, HEAD, index, relevant content, plan fingerprint, binding, components, and fetched refs |
 | Staging | Use exact paths with `git -C <repository> add -- <paths>` |
 | Index verification | Inspect the complete staged set with `git -C <repository> diff --cached --name-only -z` |
-| Fetch or push | Use explicit branch and ref arguments |
+| Fetch or push | Use explicit branch, tag, and ref arguments from the complete current plan |
 | Normal push | Use `git -C <publication-repository> push publication <commit>:refs/heads/<branch>` |
-| Forced replacement | Require a fresh destructive plan with fetched commit, replacement commit, displaced commits, push order, warnings, and separate branch-scoped approval |
+| Exclusive snapshot replacement | Require matching one-time `exclusive_snapshot` authority plus a fresh complete remote inventory, expected ref and tag set, exact updates and deletions, push order, warnings, and current mutation approval |
+| Remote HEAD | Observe separately; require an explicit provider-supported action because a Git ref push does not change the hosted default branch |
 
-A stale plan or an index path outside the approved set blocks mutation. Any fetched-ref change stales prior force approval.
+A stale plan, an incomplete remote inventory, or an index path outside the approved set blocks mutation. Any observed ref, tag, or remote-HEAD change stales the current snapshot plan.
 
 Non-Git helpers may inventory paths, classify privacy, render placeholders, compute fingerprints, compare projections, validate schemas, and write approved support files.
 
@@ -26,9 +27,10 @@ Report a blocker and leave user state unchanged when a prohibition applies.
 ## Guardrails
 
 - DO NOT rely on ambient cwd or broad staging.
-- DO NOT pull, auto-merge, rebase, reset, clean, or delete a remote branch.
+- DO NOT pull, auto-merge, rebase, reset, or clean.
 - DO NOT rewrite Source Topic Workspace or nested source history.
-- DO NOT push every ref, mirror a repository, or force an unlisted branch.
+- DO NOT push every ref, mirror a repository, force an unlisted ref, or delete an unplanned ref or tag.
 - DO NOT run a provider repository-creation flow.
+- DO NOT treat remote HEAD as a normal pushed branch or change it without a separate explicit provider action.
 - DO NOT unstage or discard user content implicitly.
 - DO NOT let a non-Git helper execute Git, accept arbitrary commands, or act as a hidden Git wrapper.
