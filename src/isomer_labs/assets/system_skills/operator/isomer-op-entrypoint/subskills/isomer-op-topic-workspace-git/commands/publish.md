@@ -18,6 +18,7 @@ skill_invocation_notation: >
 1. Infer one exact publication child from the user's task.
 2. Load the selected child page plus the read-only context, direct Git, publication, privacy, and persistence references.
 3. Execute only that child and keep the Source Topic Workspace root repository unchanged.
+4. Apply reproduction-first defaults: publish sanitizable intent, environment declarations, durable research lineage, topic-owned components, and registered GitHub references; require explicit current-plan settings for downloaded material bytes and raw experiment-output bytes.
 
 If the request does not map cleanly to one child, use the native planning tool to identify whether status, init, plan, or sync is the smallest safe publication operation, then execute it or return the missing decision.
 
@@ -27,9 +28,9 @@ Select exactly one publication child operation:
 
 | Child | Use For | Page |
 | --- | --- | --- |
-| `isomer-op-entrypoint->topic-git->publish()->status()` | Inspect binding, copy, projection, conflicts, and last outcomes. | [commands/publish/status.md](commands/publish/status.md) |
-| `isomer-op-entrypoint->topic-git->publish()->init()` | Validate the remote and destination, create copy-local preparation, and avoid push. | [commands/publish/init.md](commands/publish/init.md) |
-| `isomer-op-entrypoint->topic-git->publish()->plan()` | Inventory, classify, sanitize, compare, and bind approval to exact state. | [commands/publish/plan.md](commands/publish/plan.md) |
-| `isomer-op-entrypoint->topic-git->publish()->sync()` | Reconstruct if needed, fetch, resolve safe changes, commit, and push components before the superproject. | [commands/publish/sync.md](commands/publish/sync.md) |
+| `isomer-op-entrypoint->topic-git->publish()->status()` | Inspect binding, copy, projection, conflicts, and last outcomes. | [publish/status.md](publish/status.md) |
+| `isomer-op-entrypoint->topic-git->publish()->init()` | Validate the remote and destination, create copy-local preparation, and avoid push. | [publish/init.md](publish/init.md) |
+| `isomer-op-entrypoint->topic-git->publish()->plan()` | Inventory, classify, sanitize, compare, and bind approval to exact state. | [publish/plan.md](publish/plan.md) |
+| `isomer-op-entrypoint->topic-git->publish()->sync()` | Reconstruct if needed, fetch, resolve safe changes, commit, and push components before the superproject. | [publish/sync.md](publish/sync.md) |
 
-With no selected child or unambiguous task, return this table. Publication is available after Topic Workspace registration, does not require Workspace Runtime or local root tracking, and never stages or commits the Source Topic Workspace root repository.
+With no selected child or unambiguous task, return this table. Publication is available after Topic Workspace registration, does not require Workspace Runtime or local root tracking, always generates publication-only navigation, and never stages or commits the Source Topic Workspace root repository.

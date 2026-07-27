@@ -60,6 +60,18 @@ class PrivacyDisposition(StrEnum):
     BLOCK = "block"
 
 
+class PublicationContentClass(StrEnum):
+    INTENT = "intent"
+    ENVIRONMENT = "environment"
+    RESEARCH_RECORD = "research-record"
+    TOPIC_COMPONENT = "topic-component"
+    REFERENCE_REPOSITORY = "reference-repository"
+    RAW_MATERIAL = "raw-material"
+    RAW_EXPERIMENT_OUTPUT = "raw-experiment-output"
+    PRIVATE_RUNTIME = "private-runtime"
+    OTHER = "other"
+
+
 class RemoteVisibility(StrEnum):
     PRIVATE = "private"
     RESTRICTED = "restricted"
@@ -99,6 +111,18 @@ class SupportFileKind(StrEnum):
 
 
 @dataclass(frozen=True)
+class PublicationSelectionSettings:
+    include_raw_material_bytes: bool = False
+    include_raw_experiment_output_bytes: bool = False
+
+    def to_json(self) -> dict[str, object]:
+        return {
+            "include_raw_material_bytes": self.include_raw_material_bytes,
+            "include_raw_experiment_output_bytes": self.include_raw_experiment_output_bytes,
+        }
+
+
+@dataclass(frozen=True)
 class ComponentBinding:
     component_id: str
     kind: ComponentKind
@@ -122,6 +146,57 @@ class ComponentBinding:
             data["commit_sha"] = self.commit_sha
         if self.reason is not None:
             data["reason"] = self.reason
+        return data
+
+
+@dataclass(frozen=True)
+class ReferenceRepositoryBinding:
+    reference_id: str
+    semantic_label: str
+    relative_path: str
+    remote_url: str
+    commit_sha: str
+    visibility: RemoteVisibility
+    selection: ComponentSelection = ComponentSelection.SELECTED
+    license_status: str | None = None
+    access_limitation: str | None = None
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "reference_id": self.reference_id,
+            "semantic_label": self.semantic_label,
+            "relative_path": self.relative_path,
+            "remote_url": self.remote_url,
+            "commit_sha": self.commit_sha,
+            "visibility": self.visibility.value,
+            "selection": self.selection.value,
+        }
+        if self.license_status is not None:
+            data["license_status"] = self.license_status
+        if self.access_limitation is not None:
+            data["access_limitation"] = self.access_limitation
+        return data
+
+
+@dataclass(frozen=True)
+class ResearchRecordIndexEntry:
+    record_ref: str
+    semantic_id: str
+    state: str
+    fingerprint: str
+    revision: str | None = None
+    relationships: tuple[str, ...] = ()
+
+    def to_json(self) -> dict[str, object]:
+        data: dict[str, object] = {
+            "record_ref": self.record_ref,
+            "semantic_id": self.semantic_id,
+            "state": self.state,
+            "fingerprint": self.fingerprint,
+            "relationships": list(self.relationships),
+        }
+        if self.revision is not None:
+            data["revision"] = self.revision
         return data
 
 

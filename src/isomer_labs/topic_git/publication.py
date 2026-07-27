@@ -6,7 +6,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 from typing import Iterable, Mapping
 from urllib.parse import urlsplit, urlunsplit
@@ -17,7 +17,11 @@ from isomer_labs.topic_git.models import (
     ComponentSelection,
     PrivacyDisposition,
     PublicationBinding,
+    PublicationContentClass,
+    PublicationSelectionSettings,
     PublicationState,
+    ReferenceRepositoryBinding,
+    RemoteVisibility,
 )
 from isomer_labs.topic_git.projection import ProjectionFinding, classify_projection_file
 
@@ -30,6 +34,10 @@ _SCP_REMOTE_RE = re.compile(
     r"^(?P<user>[A-Za-z0-9._-]+)@(?P<host>[A-Za-z0-9.-]+):(?P<path>[A-Za-z0-9._~/-]+)$"
 )
 _BRANCH_RE = re.compile(r"^(?:topic-owner/main|topic-workspace/main|per-topic-actor/[^/]+/main|per-agent/[^/]+/main)$")
+_EXACT_GIT_COMMIT_RE = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+_GITHUB_SCP_RE = re.compile(
+    r"^git@github\.com:(?P<owner>[A-Za-z0-9_.-]+)/(?P<repo>[A-Za-z0-9_.-]+?)(?:\.git)?$"
+)
 
 
 class BranchCompatibilityState(StrEnum):
@@ -268,12 +276,18 @@ def classify_publication_path(
     *,
     max_bytes: int,
     approved_license: bool = True,
+    content_class: PublicationContentClass = PublicationContentClass.OTHER,
+    selection: PublicationSelectionSettings = PublicationSelectionSettings(),
+    approved_media_type: str | None = None,
 ) -> tuple[PrivacyDisposition, tuple[ProjectionFinding, ...]]:
     return classify_projection_file(
         relative_path,
         content,
         max_bytes=max_bytes,
         approved_license=approved_license,
+        content_class=content_class,
+        selection=selection,
+        approved_media_type=approved_media_type,
     )
 
 
@@ -304,6 +318,152 @@ def select_publication_components(
     return tuple(selected)
 
 
+def select_reference_repositories(
+    references: Iterable[ReferenceRepositoryBinding],
+    *,
+    explicit_exclusions: Iterable[str] = (),
+) -> tuple[ReferenceRepositoryBinding, ...]:
+    """Select every registered GitHub reference unless explicitly excluded."""
+
+    exclusions = set(explicit_exclusions)
+    return tuple(
+        replace(
+            reference,
+            selection=(
+                ComponentSelection.EXCLUDED
+                if reference.reference_id in exclusions
+                else reference.selection
+                if reference.selection in {ComponentSelection.UNAVAILABLE, ComponentSelection.BLOCKED}
+                else ComponentSelection.SELECTED
+            ),
+        )
+        for reference in references
+    )
+
+
+def normalize_github_repository_locator(locator: str) -> str:
+    """Return a normalized credential-free GitHub repository locator."""
+
+    value = locator.strip()
+    scp_match = _GITHUB_SCP_RE.fullmatch(value)
+    if scp_match is not None:
+        return _canonical_github_locator(scp_match.group("owner"), scp_match.group("repo"))
+    parsed = urlsplit(value)
+    if parsed.scheme == "https" and parsed.hostname == "github.com":
+        if (
+            parsed.username is not None
+            or parsed.password is not None
+            or parsed.port is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("GitHub repository locator must not contain authentication, ports, queries, or fragments.")
+        parts = tuple(part for part in parsed.path.split("/") if part)
+        if len(parts) != 2:
+            raise ValueError("GitHub repository locator must identify exactly one owner and repository.")
+        return _canonical_github_locator(parts[0], parts[1])
+    if parsed.scheme == "ssh" and parsed.hostname == "github.com":
+        if (
+            parsed.username != "git"
+            or parsed.password is not None
+            or parsed.port is not None
+            or parsed.query
+            or parsed.fragment
+        ):
+            raise ValueError("GitHub SSH locator must use the credential-free git service identity.")
+        parts = tuple(part for part in parsed.path.split("/") if part)
+        if len(parts) != 2:
+            raise ValueError("GitHub repository locator must identify exactly one owner and repository.")
+        return _canonical_github_locator(parts[0], parts[1])
+    raise ValueError("Reference repository must use a credential-free github.com HTTPS, SSH, or scp-style locator.")
+
+
+def validate_reference_repository(reference: ReferenceRepositoryBinding) -> tuple[str, ...]:
+    """Validate one selected upstream GitHub reference without contacting it."""
+
+    if reference.selection is not ComponentSelection.SELECTED:
+        return ()
+    diagnostics: list[str] = []
+    if not reference.semantic_label.startswith("topic.repos.") or reference.semantic_label == "topic.repos.main":
+        diagnostics.append("Reference repository semantic label must be a non-main topic.repos.* label.")
+    try:
+        _publication_relative_path(reference.relative_path)
+    except ValueError as error:
+        diagnostics.append(str(error))
+    try:
+        normalize_github_repository_locator(reference.remote_url)
+    except ValueError as error:
+        diagnostics.append(str(error))
+    if _EXACT_GIT_COMMIT_RE.fullmatch(reference.commit_sha) is None:
+        diagnostics.append("Reference repository commit must be an exact 40- or 64-character lowercase Git object id.")
+    if reference.visibility is RemoteVisibility.UNKNOWN:
+        diagnostics.append("Reference repository visibility is unknown.")
+    if not reference.license_status or not reference.license_status.strip():
+        diagnostics.append("Reference repository license posture is missing.")
+    return tuple(diagnostics)
+
+
+def render_publication_gitmodules(
+    *,
+    publication_remote: str,
+    components: Iterable[ComponentBinding],
+    references: Iterable[ReferenceRepositoryBinding] = (),
+) -> str:
+    """Render topic-owned same-remote and upstream-reference submodule configuration."""
+
+    remote_diagnostics = validate_remote_locator(publication_remote)
+    if remote_diagnostics:
+        raise ValueError("; ".join(remote_diagnostics))
+    rows: list[tuple[str, str, str, str | None]] = []
+    for component in components:
+        if component.selection is not ComponentSelection.SELECTED:
+            continue
+        if _BRANCH_RE.fullmatch(component.branch) is None:
+            raise ValueError(f"Component branch is outside the publication namespace: {component.branch}")
+        rows.append(
+            (
+                f"component:{component.component_id}",
+                _publication_relative_path(component.relative_path),
+                publication_remote.strip(),
+                component.branch,
+            )
+        )
+    for reference in references:
+        if reference.selection is not ComponentSelection.SELECTED:
+            continue
+        diagnostics = validate_reference_repository(reference)
+        if diagnostics:
+            raise ValueError("; ".join(diagnostics))
+        rows.append(
+            (
+                f"reference:{reference.reference_id}",
+                _publication_relative_path(reference.relative_path),
+                normalize_github_repository_locator(reference.remote_url),
+                None,
+            )
+        )
+    names = [row[0] for row in rows]
+    paths = [row[1] for row in rows]
+    if len(names) != len(set(names)):
+        raise ValueError("Publication submodule names must be unique.")
+    if len(paths) != len(set(paths)):
+        raise ValueError("Publication submodule paths must be unique.")
+    lines: list[str] = []
+    for name, path, remote, branch in sorted(rows, key=lambda row: row[1]):
+        if lines:
+            lines.append("")
+        lines.extend(
+            (
+                f'[submodule {json.dumps(name)}]',
+                f"\tpath = {json.dumps(path)}",
+                f"\turl = {json.dumps(remote)}",
+            )
+        )
+        if branch is not None:
+            lines.append(f"\tbranch = {json.dumps(branch)}")
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
 def publication_plan_fingerprint(
     *,
     source_fingerprints: Mapping[str, str],
@@ -312,6 +472,10 @@ def publication_plan_fingerprint(
     binding: PublicationBinding,
     components: Iterable[ComponentBinding],
     remote_refs: Mapping[str, str | None],
+    selection: PublicationSelectionSettings = PublicationSelectionSettings(),
+    reference_repositories: Iterable[ReferenceRepositoryBinding] = (),
+    generated_output_fingerprints: Mapping[str, str] | None = None,
+    reproduction_limitations: Iterable[str] = (),
 ) -> str:
     """Bind approval to source, output, copy, binding, topology, and remote refs."""
 
@@ -321,9 +485,43 @@ def publication_plan_fingerprint(
         "copy": sorted(copy_fingerprints.items()),
         "binding": binding.to_json(),
         "components": [component.to_json() for component in sorted(components, key=lambda item: item.component_id)],
+        "selection": selection.to_json(),
+        "reference_repositories": [
+            reference.to_json()
+            for reference in sorted(reference_repositories, key=lambda item: item.reference_id)
+        ],
+        "generated_output": sorted((generated_output_fingerprints or {}).items()),
+        "reproduction_limitations": sorted(reproduction_limitations),
         "remote_refs": sorted(remote_refs.items()),
     }
     return hashlib.sha256(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()).hexdigest()
+
+
+def _canonical_github_locator(owner: str, repository: str) -> str:
+    normalized_repository = repository.removesuffix(".git")
+    if (
+        re.fullmatch(r"[A-Za-z0-9_.-]+", owner) is None
+        or re.fullmatch(r"[A-Za-z0-9_.-]+", normalized_repository) is None
+        or normalized_repository in {"", ".", ".."}
+        or owner in {".", ".."}
+    ):
+        raise ValueError("GitHub repository owner or name is invalid.")
+    return f"https://github.com/{owner}/{normalized_repository}.git"
+
+
+def _publication_relative_path(value: str) -> str:
+    path = PurePosixPath(value.replace("\\", "/"))
+    normalized = path.as_posix()
+    if (
+        normalized in {"", ".", ".."}
+        or normalized.startswith("../")
+        or normalized.startswith("/")
+        or any(part in {".", ".."} for part in path.parts)
+        or "\n" in normalized
+        or "\r" in normalized
+    ):
+        raise ValueError("Publication submodule path must be a non-root relative path.")
+    return normalized
 
 
 def classify_remote_branch(

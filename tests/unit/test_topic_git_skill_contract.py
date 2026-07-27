@@ -124,6 +124,23 @@ class TopicGitSkillContractTests(unittest.TestCase):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, text)
 
+    def test_publication_guidance_is_reproduction_first_and_identity_safe(self) -> None:
+        all_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(SKILL_ROOT.rglob("*.md")))
+        for required in (
+            "durable research lineage",
+            "downloaded material bytes",
+            "raw experiment-output bytes",
+            "research-record-index.json",
+            "Latest paper: [PDF](paper/latest.pdf)",
+            "public or private GitHub",
+            "organization or source provenance",
+            "Isomer Publication",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, all_text)
+        self.assertNotIn("canonical external repositories, credentials, and unapproved records", all_text)
+        self.assertNotIn("Use one credential-safe remote for every `.gitmodules` entry", all_text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,6 +22,10 @@ git -C <source-topic-workspace> ls-files --stage
 
 7. Write current local support state below `<topic.runtime>/topic-git/` and report the exact changed block.
 
-Do not untrack a path, rewrite history, or inspect publication state.
-
 If the request does not map cleanly to these steps, use the native planning tool to isolate the managed ignore mutation and stop until its exact current plan and approval are known.
+
+## Guardrails
+
+- DO NOT untrack a path.
+- DO NOT rewrite history.
+- DO NOT inspect publication state.

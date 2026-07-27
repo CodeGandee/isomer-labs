@@ -1,5 +1,5 @@
 metadata:
-  version: "0.6.0"
+  version: "0.6.1"
 
 interface:
   display_name: "isomer-op-welcome"

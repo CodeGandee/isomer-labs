@@ -27,10 +27,10 @@ Select exactly one local child operation:
 
 | Child | Use For | Page |
 | --- | --- | --- |
-| `isomer-op-entrypoint->topic-git->local()->status()` | Inspect root repository, nested exclusions, and blockers. | [commands/local/status.md](commands/local/status.md) |
-| `isomer-op-entrypoint->topic-git->local()->init()` | Initialize or safely reuse the root repository after ancestor proof and approval. | [commands/local/init.md](commands/local/init.md) |
-| `isomer-op-entrypoint->topic-git->local()->plan()` | Classify root-owned whole files and create an exact commit plan. | [commands/local/plan.md](commands/local/plan.md) |
-| `isomer-op-entrypoint->topic-git->local()->ignore()` | Update only the approved managed root ignore block. | [commands/local/ignore.md](commands/local/ignore.md) |
-| `isomer-op-entrypoint->topic-git->local()->commit()` | Stage exact approved paths, verify the index, and create one local commit. | [commands/local/commit.md](commands/local/commit.md) |
+| `isomer-op-entrypoint->topic-git->local()->status()` | Inspect root repository, nested exclusions, and blockers. | [local/status.md](local/status.md) |
+| `isomer-op-entrypoint->topic-git->local()->init()` | Initialize or safely reuse the root repository after ancestor proof and approval. | [local/init.md](local/init.md) |
+| `isomer-op-entrypoint->topic-git->local()->plan()` | Classify root-owned whole files and create an exact commit plan. | [local/plan.md](local/plan.md) |
+| `isomer-op-entrypoint->topic-git->local()->ignore()` | Update only the approved managed root ignore block. | [local/ignore.md](local/ignore.md) |
+| `isomer-op-entrypoint->topic-git->local()->commit()` | Stage exact approved paths, verify the index, and create one local commit. | [local/commit.md](local/commit.md) |
 
 With no selected child or unambiguous task, return this table. Local operations never load publication state as a prerequisite and never contact a remote.

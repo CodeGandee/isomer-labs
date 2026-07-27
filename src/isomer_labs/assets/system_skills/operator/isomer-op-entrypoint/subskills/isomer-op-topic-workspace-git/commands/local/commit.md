@@ -22,6 +22,9 @@ git -C <source-topic-workspace> status --porcelain=v2 --untracked-files=all
 
 5. Persist the resulting local state and report the commit SHA, exact committed paths, remaining worktree state, and warnings.
 
-Do not discover, configure, fetch, pull, or push a remote. Do not inspect or mutate publication state.
-
 If the request does not map cleanly to these steps, use the native planning tool to isolate one exact local commit and stop until the current plan, index scope, warnings, and message are resolved.
+
+## Guardrails
+
+- DO NOT discover, configure, fetch, pull, or push a remote.
+- DO NOT inspect or mutate publication state.

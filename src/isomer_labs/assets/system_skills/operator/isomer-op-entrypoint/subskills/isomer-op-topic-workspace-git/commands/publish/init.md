@@ -12,17 +12,28 @@ git -C <project-git-top-level> check-ignore -v --no-index -- <project-relative-t
 3. Reuse a safe existing binding, otherwise prefer ignored `tmp/`, then ignored `temp/`, then a declared ignored candidate. If none qualifies, present the exact managed Project `.gitignore` block and `tmp/` creation for approval.
 4. Validate that the destination remains inside the Project and outside the Source Topic Workspace, Project Config Directory, generated content root, Houmao state, and every canonical repository or worker workspace.
 5. Create the approved ignored Topic Publication Copy and its `.isomer/topic-git/` support root. Record the schema-valid binding there when Workspace Runtime is missing, or below `<topic.runtime>/topic-git/` when valid runtime exists.
-6. Inventory available Isomer-resolved components, prepare the first privacy plan, and optionally initialize fresh local sanitized repositories:
+6. Inventory available Isomer-resolved Topic Main, Topic Actor, Agent, intent, environment, records, and non-main `topic.repos.*` surfaces. Prepare the first privacy plan with raw-material and raw experiment-output bytes disabled unless the user explicitly selects either class.
+7. Optionally initialize fresh local sanitized repositories with neutral publication authorship. Never reuse a local researcher's Git author or email:
 
 ```bash
 git -C <sanitized-component-root> init
 git -C <sanitized-component-root> switch -c <deterministic-component-branch>
+git -C <sanitized-component-root> config user.name "Isomer Publication"
+git -C <sanitized-component-root> config user.email "isomer-publication@invalid"
 git -C <topic-publication-copy> init
 git -C <topic-publication-copy> switch -c topic-workspace/main
+git -C <topic-publication-copy> config user.name "Isomer Publication"
+git -C <topic-publication-copy> config user.email "isomer-publication@invalid"
 ```
 
-7. Verify support-root exclusion, repository identities, branches, and absence of source Git metadata. Report unavailable later-stage components.
+8. Verify support-root exclusion, repository identities, branches, and absence of source Git metadata. Preserve credential-free public or private GitHub organization/repository identities, keep authentication external, and report access limitations and unavailable later-stage components.
 
-Do not push any ref. Do not initialize the Source Topic Workspace, Workspace Runtime, Topic Main, Topic Actor Workspace, or Agent Workspace. A task-only “publish now” request may continue to plan and sync only after the privacy and remote mutation gates in those operations.
+A task-only “publish now” request may continue to plan and sync only after the privacy and remote mutation gates in those operations.
 
 If the request does not map cleanly to these steps, use the native planning tool to isolate destination and binding preparation, then stop before mutation until visibility, remote, path, or approval ambiguity is resolved.
+
+## Guardrails
+
+- DO NOT push any ref.
+- DO NOT initialize the Source Topic Workspace or Workspace Runtime.
+- DO NOT initialize Topic Main, a Topic Actor Workspace, or an Agent Workspace.

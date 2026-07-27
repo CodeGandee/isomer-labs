@@ -1,9 +1,9 @@
 metadata:
-  version: "0.6.0"
+  version: "0.6.1"
 
 interface:
   display_name: "isomer-op-topic-workspace-git"
-  short_description: "Manage independent local Topic Workspace history and sanitized remote publication."
-  default_prompt: "Use $isomer-op-entrypoint use topic-git to inspect or manage Topic Workspace Git."
+  short_description: "Manage Topic Git and reproducible sanitized publication."
+  default_prompt: "Use $isomer-op-entrypoint use topic-git to manage local Git or sanitized reproducible publication."
 policy:
   allow_implicit_invocation: false

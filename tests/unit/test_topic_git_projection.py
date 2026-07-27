@@ -7,15 +7,23 @@ import unittest
 
 from isomer_labs.topic_git import (
     PrivacyDisposition,
+    PublicationContentClass,
+    PublicationSelectionSettings,
     ProjectionEntry,
     ProjectionManifest,
+    ReferenceRepositoryBinding,
+    RemoteVisibility,
+    ResearchRecordIndexEntry,
     compare_projection,
     fingerprint_bytes,
     inventory_projection_sources,
     materialize_projection,
+    render_publication_readme,
     render_projection_manifest,
+    render_research_record_index,
     render_structured_template,
     render_topic_workspace_version,
+    sanitize_individual_identity,
 )
 from isomer_labs.topic_git.projection import classify_projection_file
 
@@ -44,6 +52,39 @@ class TopicGitProjectionTests(unittest.TestCase):
                 disposition, _ = classify_projection_file(path, b"content")
                 self.assertEqual(PrivacyDisposition.EXCLUDE, disposition)
 
+    def test_semantic_raw_byte_settings_and_typed_paper_pdf(self) -> None:
+        raw_default, findings = classify_projection_file(
+            "materials/paper.pdf",
+            b"%PDF-1.7\n",
+            content_class=PublicationContentClass.RAW_MATERIAL,
+        )
+        self.assertEqual(PrivacyDisposition.EXCLUDE, raw_default)
+        self.assertEqual("raw-material-opt-in", findings[0].code)
+
+        raw_selected, _ = classify_projection_file(
+            "records/profiler.ncu-rep",
+            b"normalized output\n",
+            content_class=PublicationContentClass.RAW_EXPERIMENT_OUTPUT,
+            selection=PublicationSelectionSettings(include_raw_experiment_output_bytes=True),
+        )
+        self.assertEqual(PrivacyDisposition.TRACK, raw_selected)
+
+        paper, _ = classify_projection_file(
+            "records/paper.pdf",
+            b"%PDF-1.7\n",
+            content_class=PublicationContentClass.RESEARCH_RECORD,
+            approved_media_type="application/pdf",
+        )
+        self.assertEqual(PrivacyDisposition.TRACK, paper)
+        invalid_paper, invalid_findings = classify_projection_file(
+            "records/paper.pdf",
+            b"not a pdf",
+            content_class=PublicationContentClass.RESEARCH_RECORD,
+            approved_media_type="application/pdf",
+        )
+        self.assertEqual(PrivacyDisposition.BLOCK, invalid_paper)
+        self.assertEqual("pdf-signature", invalid_findings[0].code)
+
     def test_inventory_uses_explicit_semantic_roots_and_selects_components(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary) / "topic"
@@ -69,6 +110,42 @@ class TopicGitProjectionTests(unittest.TestCase):
             self.assertEqual(PrivacyDisposition.EXCLUDE, by_path["runtime/state.sqlite"].disposition)
             self.assertEqual(PrivacyDisposition.COMPONENT, by_path["repos/topic-main"].disposition)
             self.assertNotIn("repos/topic-main/source.py", by_path)
+
+    def test_inventory_prefers_specific_semantic_classes_and_keeps_raw_bytes_opt_in(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary) / "topic"
+            intent = source / "intent"
+            records = source / "records"
+            raw = source / "materials"
+            reference = source / "repos" / "extern" / "powerinfer"
+            for directory in (intent, records, raw, reference):
+                directory.mkdir(parents=True)
+            (intent / "overview.md").write_text("questions\n", encoding="utf-8")
+            (records / "decision.json").write_text('{"decision": "Q4 is P0"}\n', encoding="utf-8")
+            (raw / "paper.txt").write_text("downloaded bytes\n", encoding="utf-8")
+            (reference / "source.py").write_text("upstream\n", encoding="utf-8")
+            entries, _ = inventory_projection_sources(
+                source,
+                semantic_roots={
+                    "topic-root": source,
+                    "topic.intent.overview": intent / "overview.md",
+                    "topic.records.artifacts": records,
+                    "custom.raw-materials": raw,
+                    "topic.repos.sources.powerinfer": reference,
+                },
+                reference_roots={"powerinfer": reference},
+                semantic_classes={"custom.raw-materials": PublicationContentClass.RAW_MATERIAL},
+            )
+            by_path = {entry.source_relative_path: entry for entry in entries}
+            self.assertEqual(PublicationContentClass.INTENT, by_path["intent/overview.md"].content_class)
+            self.assertEqual(PublicationContentClass.RESEARCH_RECORD, by_path["records/decision.json"].content_class)
+            self.assertEqual(PrivacyDisposition.EXCLUDE, by_path["materials/paper.txt"].disposition)
+            self.assertEqual(PrivacyDisposition.COMPONENT, by_path["repos/extern/powerinfer"].disposition)
+            self.assertEqual(
+                PublicationContentClass.REFERENCE_REPOSITORY,
+                by_path["repos/extern/powerinfer"].content_class,
+            )
+            self.assertNotIn("repos/extern/powerinfer/source.py", by_path)
 
     def test_structured_placeholder_and_materialization_preserve_source(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -155,7 +232,80 @@ class TopicGitProjectionTests(unittest.TestCase):
             {conflict.relative_path for conflict in comparison.conflicts},
         )
 
+    def test_individual_identity_sanitization_preserves_github_repository_identity(self) -> None:
+        result = sanitize_individual_identity(
+            "alice used /home/alice on lab-node at 10.0.0.8; source https://github.com/alice/PowerInfer.git",
+            local_usernames=("alice",),
+            local_home_paths=("/home/alice",),
+            local_hostnames=("lab-node",),
+            local_ip_addresses=("10.0.0.8",),
+        )
+        self.assertNotIn("/home/alice", result.content)
+        self.assertNotIn("lab-node", result.content)
+        self.assertIn("${RESEARCHER_USER}", result.content)
+        self.assertIn("https://github.com/alice/PowerInfer.git", result.content)
+        with self.assertRaisesRegex(ValueError, "Credential-like"):
+            sanitize_individual_identity("https://alice:secret@github.com/org/private.git")
+
+    def test_publication_readme_and_research_index_are_deterministic_and_path_safe(self) -> None:
+        readme = render_publication_readme(
+            research_topic_id="pwinfer-analysis",
+            latest_paper_path="paper/latest.pdf",
+            intent_paths=("intent/src/topic-overview.md",),
+            environment_paths=("pixi.lock", "pixi.toml"),
+            reproduction_limitations=("Private reference requires organization access.",),
+        )
+        self.assertIn("Latest paper: [PDF](paper/latest.pdf)", readme)
+        self.assertIn("research-record-index.json", readme)
+        no_paper = render_publication_readme(research_topic_id="pwinfer-analysis")
+        self.assertIn("Latest paper: not yet available.", no_paper)
+
+        rendered_index = render_research_record_index(
+            (
+                ResearchRecordIndexEntry(
+                    "artifact:direction:2",
+                    "KAOJU:DIRECTION-SET",
+                    "accepted",
+                    "b" * 64,
+                    revision="2",
+                ),
+                ResearchRecordIndexEntry(
+                    "artifact:direction:1",
+                    "KAOJU:DIRECTION-SET",
+                    "superseded",
+                    "a" * 64,
+                    revision="1",
+                    relationships=("artifact:direction:2",),
+                ),
+            ),
+            created_at="2026-07-27T00:00:00Z",
+        )
+        payload = json.loads(rendered_index)
+        self.assertEqual("isomer-topic-git-research-record-index.v1", payload["schema_version"])
+        self.assertEqual("artifact:direction:1", payload["records"][0]["record_ref"])
+        with self.assertRaisesRegex(ValueError, "absolute local paths"):
+            render_research_record_index(
+                (
+                    ResearchRecordIndexEntry(
+                        "/home/alice/private.json",
+                        "KAOJU:DIRECTION-SET",
+                        "accepted",
+                        "a" * 64,
+                    ),
+                ),
+                created_at="2026-07-27T00:00:00Z",
+            )
+
     def test_sanitized_manifests_contain_no_absolute_source_paths_or_sensitive_content(self) -> None:
+        reference = ReferenceRepositoryBinding(
+            reference_id="powerinfer",
+            semantic_label="topic.repos.sources.powerinfer",
+            relative_path="repos/extern/sources/powerinfer",
+            remote_url="https://github.com/SJTU-IPADS/PowerInfer.git",
+            commit_sha="c" * 40,
+            visibility=RemoteVisibility.PUBLIC,
+            license_status="Apache-2.0",
+        )
         manifest = ProjectionManifest(
             binding_id="binding",
             plan_id="plan",
@@ -170,12 +320,19 @@ class TopicGitProjectionTests(unittest.TestCase):
                 ),
             ),
             components=(),
+            selection=PublicationSelectionSettings(),
+            reference_repositories=(reference,),
+            research_index_fingerprint="c" * 64,
+            readme_fingerprint="d" * 64,
+            reproduction_limitations=("Private comparison source requires access.",),
         )
         rendered = render_projection_manifest(manifest)
         payload = json.loads(rendered)
-        self.assertEqual("isomer-topic-git-projection-manifest.v1", payload["schema_version"])
+        self.assertEqual("isomer-topic-git-projection-manifest.v2", payload["schema_version"])
+        self.assertFalse(payload["selection"]["include_raw_material_bytes"])
+        self.assertEqual("c" * 40, payload["reference_repositories"][0]["commit_sha"])
+        self.assertIn("https://github.com/SJTU-IPADS/PowerInfer.git", rendered)
         self.assertNotIn("/project/", rendered)
-        self.assertNotIn("remote_url", rendered)
         version = render_topic_workspace_version(
             binding_id="binding",
             plan_id="plan",

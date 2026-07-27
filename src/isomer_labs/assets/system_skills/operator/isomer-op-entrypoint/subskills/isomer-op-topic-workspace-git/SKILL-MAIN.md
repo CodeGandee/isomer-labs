@@ -1,6 +1,6 @@
 ---
 name: isomer-op-topic-workspace-git
-description: Use when an operator asks to inspect, plan, initialize, ignore, or commit local Source Topic Workspace root history, or prepare, plan, reconstruct, or synchronize a sanitized Topic Publication Copy.
+description: Use when managing local Topic Workspace Git or publishing a reproducible, identity-sanitized Topic Publication Copy.
 skill_invocation_notation: >
   Top-level skill entrypoints use SKILL.md. Parent-scoped subskill entrypoints use
   SKILL-MAIN.md and are loaded explicitly through their parent; nested SKILL.md is
@@ -17,24 +17,48 @@ skill_invocation_notation: >
 
 ## Overview
 
-Own optional Topic Workspace root tracking and sanitized remote publication as two disabled-by-default layers. Source Topic Workspace means the canonical Topic Workspace in its source role. Topic Publication Copy means an ignored disposable projection outside that workspace, not a fourth workspace type or canonical source.
+Own two independent, disabled-by-default Git layers:
 
-The local layer creates and commits only a root repository in the Source Topic Workspace. It preserves Topic Main, Topic Actor Workspace, Agent Workspace, and canonical external repository topology and never contacts a remote. The publication layer reads current filesystem content, creates fresh sanitized histories in the Topic Publication Copy, and can synchronize those histories without requiring local tracking or local commits.
+| Layer | Input | Result | Remote Posture |
+| --- | --- | --- | --- |
+| Local tracking | Canonical Topic Workspace root | Local root repository and exact commits that preserve nested repository topology | Never contacts a remote |
+| Remote publication | Current Topic Workspace filesystem and registered source identities | Reproduction-complete sanitized projection with fresh topic-owned histories and exact upstream references | Pushes only through an approved publication plan |
+
+Key terms:
+
+- **Source Topic Workspace**: the canonical Topic Workspace acting as the source for tracking or publication.
+- **Topic Publication Copy**: an ignored projection outside the Source Topic Workspace; it is neither canonical state nor another workspace type.
 
 ## When to Use
 
-Use this protected owner for explicit local root-history, root-ignore, exact local commit, sanitized publication-copy, privacy-plan, reconstruction, or remote synchronization requests. Use overall status for a vague tracking or versioning request. Ordinary Topic Workspace storage, actor, team, environment, reset, and diagnostic work remains with Topic Manager.
+| Request | Route |
+| --- | --- |
+| Vague Topic Workspace tracking or versioning | Overall `status` |
+| Local root history, ignore policy, planning, initialization, or exact commit | `local()` |
+| Sanitized publication preparation, privacy planning, reconstruction, or remote synchronization | `publish()` |
+
+Ordinary Topic Workspace storage, actor, team, environment, reset, and diagnostic work remains with Topic Manager.
 
 ## Workflow
 
-1. **Select one operation**. Use overall `status`, one `local` child operation, or one `publish` child operation. A vague request to track or version a Topic Workspace starts with overall status and explains both choices before mutation.
-2. **Resolve selected context read-only**. Follow [references/context-queries.md](references/context-queries.md). Pin one Project, Research Topic, and Source Topic Workspace through explicit JSON queries. Load current Topic Actor, Agent, semantic-path, and Workspace Runtime evidence only when the selected operation needs it.
-3. **Load only required contracts**. Every operation loads [references/direct-git-safety.md](references/direct-git-safety.md) plus its layer safety page. Publication planning or synchronization also loads privacy and persistence safety. Do not preload the other layer's mutation procedure.
-4. **Plan before mutation**. Record exact paths, repository identities, fingerprints, blockers, and approvals. Local mutations require valid Workspace Runtime. Publication may begin after Topic Workspace registration and keeps pre-runtime state in the ignored copy-local support root.
-5. **Revalidate and execute directly**. Recompute every applicable assumption. Run Git as the installed executable with `git -C <validated-resolved-path> ...`; never route Git through Isomer CLI or a non-Git helper.
-6. **Verify boundaries and persist outcomes**. Inspect exact index, worktree, generated projection, component commits, fetched refs, and branch outcomes. Write only schema-validated Topic Git support files. Report the local and publication states separately.
+1. **Select one operation** from the **Subcommands** table. Start a vague tracking or versioning request with overall `status()`.
+2. **Resolve context read-only** with [context-queries.md](references/context-queries.md). Pin one Project, Research Topic, and Source Topic Workspace.
+3. **Load the operation contracts** from **Shared References**:
+   - Every operation loads direct Git safety and the selected layer's safety page.
+   - Publication planning and synchronization also load privacy and persistence safety.
+4. **Plan before mutation**. Record exact paths, identities, fingerprints, blockers, and approvals:
+   - Local mutation requires valid Workspace Runtime.
+   - Publication may begin after Topic Workspace registration and keeps pre-runtime support in the ignored copy.
+   - Publication selects intent, environment declarations, durable research lineage, topic-owned components, and registered GitHub references by default.
+   - Downloaded material bytes and raw experiment-output bytes remain excluded until the current plan explicitly selects them.
+5. **Revalidate and execute directly**. Recompute applicable assumptions and run path-scoped `git -C <validated-path> ...`.
+6. **Verify and persist**. Check the exact repository or projection state, write only schema-valid support files, and report local and publication outcomes separately.
 
-If the task does not map cleanly to these operations, use the native planning tool to build a layer-scoped read-only plan. Stop before mutation when the intended layer, selected topic, privacy disposition, visibility, destination, remote mutation, conflict resolution, or branch replacement is ambiguous.
+If the task does not map cleanly to these operations, use the native planning tool to build a layer-scoped read-only plan. Stop before mutation when any of these is ambiguous:
+
+- intended layer or selected topic;
+- privacy disposition, visibility, or destination;
+- remote mutation, conflict resolution, or branch replacement.
 
 ## Subcommands
 
@@ -51,33 +75,52 @@ If the task does not map cleanly to these operations, use the native planning to
 | [references/context-queries.md](references/context-queries.md) | Read-only Isomer context and topology queries, pinning, and rejection rules. |
 | [references/direct-git-safety.md](references/direct-git-safety.md) | Direct path-scoped Git, exact staging, ref safety, and forbidden operations. |
 | [references/local-safety.md](references/local-safety.md) | Local runtime prerequisite, ancestor evidence, root repository, nested exclusions, and local support state. |
-| [references/publication-safety.md](references/publication-safety.md) | Destination, remote, same-remote branch layout, fetch-first synchronization, reconstruction, and push order. |
-| [references/privacy-projection.md](references/privacy-projection.md) | Inventory, dispositions, sanitization, rescanning, manifests, and conflicts. |
+| [references/publication-safety.md](references/publication-safety.md) | Destination, topic-owned and upstream-reference submodules, fetch-first synchronization, reconstruction, and push order. |
+| [references/privacy-projection.md](references/privacy-projection.md) | Semantic defaults, raw-byte selection, individual-identity sanitization, navigation, manifests, rescanning, and conflicts. |
 | [references/persistence.md](references/persistence.md) | Layer-specific schemas, copy-local state, runtime promotion, outcomes, and forbidden content. |
 
 ## Output Contract
 
 Default to **Essential Output** in chat. Use **Complete Output** when the user asks for complete, verbose, audit, debug, full handoff, or full output. Present either depth in natural-language Markdown. If the user explicitly requests JSON or another machine-readable format, serialize the applicable information in that format.
 
+| Depth | Use When |
+| --- | --- |
+| **Essential Output** | Default |
+| **Complete Output** | User requests complete, verbose, audit, debug, or full handoff output |
+
 ### Essential Output
 
-Lead with the selected Research Topic, operation, and outcome. For status, report local tracking as `disabled`, `enabled`, or `invalid` and publication as `disabled`, `prepared`, `synchronized`, `stale`, `copy-missing`, or `blocked`, with separate blockers and next actions. For plans, summarize exact scope, approvals, and blockers without sensitive excerpts. For mutation, summarize changed paths, commits or refs, branch outcomes, verification, and safe next action.
+Lead with the selected Research Topic, operation, and outcome.
+
+| Operation | Report |
+| --- | --- |
+| Status | Local state (`disabled`, `enabled`, or `invalid`), publication state (`disabled`, `prepared`, `synchronized`, `stale`, `copy-missing`, or `blocked`), blockers, and next actions |
+| Plan | Exact semantic scope, raw-byte settings, repository identities, reproduction limitations, approvals, conflicts, and blockers without sensitive excerpts |
+| Mutation | Changed paths, README and research-index state, commits or refs, branch outcomes, verification, and safe next action |
 
 ### Complete Output
 
-Include resolved context and sources, all exact paths and repository identities, dispositions, fingerprints, direct commands, index verification, binding and visibility posture, component selection, conflicts, remote compatibility, destructive-plan evidence, per-branch outcomes, support files, and resume state.
+Include:
+
+- resolved context, sources, paths, and repository identities;
+- dispositions, fingerprints, direct commands, and index verification;
+- binding, visibility, component and reference selection, raw-byte settings, identity substitutions, reproduction limitations, conflicts, and remote compatibility;
+- destructive-plan evidence, branch outcomes, support files, and resume state.
 
 ## Guardrails
 
 - DO NOT scan sibling Topic Workspaces, guess a path, replace an unresolved selected topic with a directory, or accept a context conflict.
 - DO NOT add a Topic Git mutation family to Isomer CLI. Use Isomer CLI only for explicit read-only JSON information queries.
 - DO NOT hide Git in a Python service, script, sanitization helper, projection helper, or command runner.
+- DO NOT preload the unselected layer's mutation procedure.
 - DO NOT rely on ambient cwd. Every repository command uses the validated Source Topic Workspace, Topic Publication Copy, or sanitized component repository path.
 - DO NOT broaden exact staging, pull, merge, rebase, reset, clean, rewrite source history, delete a remote branch, or repair unexpected state implicitly.
 - DO NOT initialize Workspace Runtime, edit `state.sqlite`, or store credentials, secrets, sensitive excerpts, raw private diffs, source Git configuration, or credential-bearing URLs.
+- DO NOT remove a credential-free GitHub owner or repository name as personal information; preserve it as organization or source provenance.
+- DO NOT publish downloaded material bytes or raw experiment-output bytes without an explicit current-plan selection.
 - DO NOT make local tracking and publication prerequisites, triggers, or authorities for each other.
 - DO NOT call a Topic Publication Copy a workspace or use it as canonical research state.
 
 ## Chat Response
 
-Present normal chat responses in natural-language Markdown. Lead with the outcome and use headings only when they improve clarity. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.
+Present normal chat responses in natural-language Markdown. Lead with the outcome, use descriptive headings when they improve readability, and use lists only for genuinely distinct items. Treat named output items as information to cover, not as literal response keys. Do not emit `snake_case: value`, pseudo-JSON, pseudo-YAML, or a flat program-style record unless the user explicitly requests machine-readable output. Keep exact schemas in durable artifacts and summarize them naturally in chat.

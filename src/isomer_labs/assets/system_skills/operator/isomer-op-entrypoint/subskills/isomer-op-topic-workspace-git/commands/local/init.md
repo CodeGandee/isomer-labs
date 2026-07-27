@@ -26,6 +26,10 @@ git -C <source-topic-workspace> check-ignore -v --no-index -- <resolved-nested-p
 
 8. Require the returned top level to equal the Source Topic Workspace. Write schema-valid local state below `<topic.runtime>/topic-git/` and report changed paths.
 
-Do not add or inspect a remote, remove ancestor index entries, edit an ancestor ignore file, or initialize nested workspaces.
-
 If the request does not map cleanly to these steps, use the native planning tool to build an exact local-init plan and stop before mutation until the ambiguity or missing approval is resolved.
+
+## Guardrails
+
+- DO NOT add or inspect a remote.
+- DO NOT remove ancestor index entries or edit an ancestor ignore file.
+- DO NOT initialize nested workspaces.

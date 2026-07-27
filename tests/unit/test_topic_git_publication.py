@@ -12,7 +12,9 @@ from isomer_labs.topic_git import (
     DestructiveBranchReplacement,
     DestructiveChangePlan,
     PublicationBinding,
+    PublicationSelectionSettings,
     PublicationState,
+    ReferenceRepositoryBinding,
     RemoteVisibility,
     TemporaryDirectoryEvidence,
     choose_publication_destination,
@@ -20,11 +22,15 @@ from isomer_labs.topic_git import (
     component_push_order,
     derive_publication_status,
     publication_plan_fingerprint,
+    normalize_github_repository_locator,
     redact_remote_locator,
+    render_publication_gitmodules,
     select_publication_components,
+    select_reference_repositories,
     update_project_publication_ignore,
     validate_force_replacements,
     validate_publication_destination,
+    validate_reference_repository,
     validate_remote_locator,
 )
 
@@ -141,6 +147,36 @@ class TopicGitPublicationTests(unittest.TestCase):
         self.assertEqual(ComponentSelection.SELECTED, by_id["agent:coder"].selection)
         self.assertEqual(ComponentSelection.UNAVAILABLE, by_id["agent:future"].selection)
 
+    def test_registered_github_references_are_selected_normalized_and_rendered_upstream(self) -> None:
+        reference = self._reference("powerinfer", "git@github.com:SJTU-IPADS/PowerInfer.git")
+        excluded = self._reference("llama-cpp", "https://github.com/ggerganov/llama.cpp")
+        selected = select_reference_repositories((reference, excluded), explicit_exclusions=("llama-cpp",))
+        by_id = {item.reference_id: item for item in selected}
+        self.assertEqual(ComponentSelection.SELECTED, by_id["powerinfer"].selection)
+        self.assertEqual(ComponentSelection.EXCLUDED, by_id["llama-cpp"].selection)
+        self.assertEqual(
+            "https://github.com/SJTU-IPADS/PowerInfer.git",
+            normalize_github_repository_locator(reference.remote_url),
+        )
+        self.assertEqual((), validate_reference_repository(reference))
+        rendered = render_publication_gitmodules(
+            publication_remote="https://github.com/CodeGandee/pwinfer-analysis.git",
+            components=(self._component("main", ComponentKind.TOPIC_MAIN, "topic-owner/main"),),
+            references=(reference,),
+        )
+        self.assertIn('url = "https://github.com/SJTU-IPADS/PowerInfer.git"', rendered)
+        self.assertIn('branch = "topic-owner/main"', rendered)
+        reference_section = rendered.split('[submodule "reference:powerinfer"]', maxsplit=1)[1].split(
+            "[submodule",
+            maxsplit=1,
+        )[0]
+        self.assertNotIn("branch =", reference_section)
+
+        unsafe = self._reference("private", "https://alice:secret@github.com/org/private.git")
+        self.assertTrue(validate_reference_repository(unsafe))
+        with self.assertRaisesRegex(ValueError, "authentication"):
+            normalize_github_repository_locator(unsafe.remote_url)
+
     def test_new_component_changes_publication_plan_fingerprint(self) -> None:
         binding = PublicationBinding(
             "binding",
@@ -170,6 +206,41 @@ class TopicGitPublicationTests(unittest.TestCase):
             remote_refs={"topic-owner/main": None, "per-agent/coder/main": None},
         )
         self.assertNotEqual(first, second)
+
+    def test_selection_reference_navigation_and_limitations_change_plan_fingerprint(self) -> None:
+        binding = PublicationBinding(
+            "binding",
+            "topic",
+            "workspace",
+            "tmp/topic-workspace-publish/topic",
+            "origin",
+            "https://example.test/topic.git",
+            RemoteVisibility.PRIVATE,
+            "2026-07-23T00:00:00Z",
+        )
+        base = {
+            "source_fingerprints": {},
+            "expected_output_fingerprints": {},
+            "copy_fingerprints": {},
+            "binding": binding,
+            "components": (),
+            "remote_refs": {},
+        }
+        default = publication_plan_fingerprint(**base)
+        raw = publication_plan_fingerprint(
+            **base,
+            selection=PublicationSelectionSettings(include_raw_material_bytes=True),
+        )
+        reference = publication_plan_fingerprint(
+            **base,
+            reference_repositories=(self._reference("powerinfer", "https://github.com/SJTU-IPADS/PowerInfer"),),
+        )
+        generated = publication_plan_fingerprint(
+            **base,
+            generated_output_fingerprints={"README.md": "a" * 64},
+            reproduction_limitations=("Private source requires organization access.",),
+        )
+        self.assertEqual(4, len({default, raw, reference, generated}))
 
     def test_remote_branch_compatibility_and_component_first_order(self) -> None:
         absent = classify_remote_branch(
@@ -290,6 +361,18 @@ class TopicGitPublicationTests(unittest.TestCase):
             relative_path=relative_path,
             branch=branch,
             selection=ComponentSelection.SELECTED,
+        )
+
+    @staticmethod
+    def _reference(reference_id: str, remote_url: str) -> ReferenceRepositoryBinding:
+        return ReferenceRepositoryBinding(
+            reference_id=reference_id,
+            semantic_label=f"topic.repos.sources.{reference_id}",
+            relative_path=f"repos/extern/sources/{reference_id}",
+            remote_url=remote_url,
+            commit_sha="a" * 40,
+            visibility=RemoteVisibility.PUBLIC,
+            license_status="Apache-2.0",
         )
 
 
