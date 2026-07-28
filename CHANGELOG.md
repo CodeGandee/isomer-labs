@@ -6,6 +6,31 @@ This changelog follows the GitHub release-note convention of keeping the newest 
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-28
+
+This release adds centralized Kaoju paper retrieval, complete topic-derived intent initialization, task-selected mindset question sets, and reproducible Topic Workspace publication with history-preserving synchronization.
+
+### Added
+
+- Added the protected Kaoju paper-search owner for paper identity lookup, topic search, related-paper search, citation traversal, and bounded citation-neighborhood exploration. The bundled Semantic Scholar approach feeds provider-neutral literature observations and rebuildable local paper and citation indexes without routing provider requests through `isomer-cli`.
+- Extended Kaoju `create-topic` to initialize topic-owned Mindset Sources and content and LaTeX template stock from validated packaged defaults. Repeated initialization preserves valid topic state, while explicit compatibility diagnostics cover legacy template roots.
+- Added Mindset Source v2 with reusable questions, many-to-many named question sets, set-level triggering conditions, and one required `default` set. Each applicable Run selects one best-matching set and records the immutable selection, while valid v1 Sources remain supported as implicit defaults.
+- Added reproducible Topic Workspace publication that includes sanitized intent, environment declarations, durable research-record lineage, component snapshots, external repository identities, a portable record index, and the latest validated paper by default while keeping raw payload bytes opt-in.
+
+### Changed
+
+- Allowed explicitly delegated agent review for bounded Kaoju direction, reading-list, comparison, trial-plan, paper, and local-build checkpoints while preserving human review by default and retaining nondelegable safety, publication, credential, privacy, and resource-expansion Gates.
+- Changed the packaged Kaoju LaTeX `main` default to the pinned ACM `acmart` 2.19 source tree with a neutral two-column `sigconf,nonacm` entrypoint. Existing topic-owned templates and historical paper snapshots remain unchanged.
+- Changed Topic Workspace publication to preserve retained source-relative paths, use canonical remote `main` for the sanitized superproject, mount selected Topic Main, Topic Actor, Agent, and registered repository snapshots at their original paths, and confine publication metadata to `.isomer-publication/`.
+- Changed publication synchronization to classify refs as no-op, initial creation, compatible fast-forward, or force-replacement fallback. Compatible updates now create one sanitized delta commit and use an exact normal push; approved structural incompatibility uses branch-scoped force-with-lease.
+- Made missing disposable publication copies recoverable from compatible remote state, while destination-only edits, concurrent changes, and stale plans block mutation instead of triggering force replacement.
+
+### Breaking
+
+- Remote Topic Workspace publication now uses `main` as the only canonical sanitized superproject branch and removes the legacy `topic-workspace/main` and source-style publication branches. Existing dedicated publication remotes require the documented topology migration.
+- Renamed the built-in writing-template exchange directory from `intent/derived/writing-template` to `intent/derived/writing-templates`. Existing explicit semantic-path bindings remain authoritative; unbound legacy directories require compatibility inspection and explicit migration.
+- Stopped lazily recreating missing Kaoju Mindset Sources during ordinary Runs. A missing Source now records a durable skipped posture and allows work to continue; explicit Kaoju topic creation or repair remains responsible for generating Sources.
+
 ## [0.5.0] - 2026-07-23
 
 This release compacts packaged system skills into three public packs with protected subskills, and adds operator context self-location, Kaoju Mindsets and explore planning, Operation Set acceptance, Topic Workspace Git management, and agent-fill TeX composition.
@@ -230,7 +255,8 @@ Initial tagged release of Isomer Labs.
 - Removed generated Isomer project state and vendored skill creator material.
 - Excluded local heavy folders from VS Code and updated local package lock metadata.
 
-[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/CodeGandee/isomer-labs/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/CodeGandee/isomer-labs/compare/v0.5.0...v0.6.1
 [0.5.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/CodeGandee/isomer-labs/compare/v0.2.3...v0.3.0
