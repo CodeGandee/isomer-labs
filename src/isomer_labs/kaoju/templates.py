@@ -1,5 +1,4 @@
 """Mutable named Kaoju paper templates and non-canonical working copies."""
-
 from __future__ import annotations
 
 import builtins
@@ -137,6 +136,7 @@ class KaojuTemplateService(KaojuTemplateExchangeService):
         expected_state: str,
         source: Path | None = None,
         from_template: str | None = None,
+        authored_metadata: Mapping[str, object] | None = None,
         actor: str,
         source_refs: Sequence[str] = (),
         change_summary: str | None = None,
@@ -155,7 +155,7 @@ class KaojuTemplateService(KaojuTemplateExchangeService):
                     target,
                     candidate,
                     expected_state=expected_state,
-                    authored_metadata=source_state.authored_metadata,
+                    authored_metadata=authored_metadata if authored_metadata is not None else source_state.authored_metadata,
                     actor=actor,
                     operation="update-from-template",
                     source_refs=_unique_strings((*source_refs, source_state.record.id)),
@@ -182,7 +182,7 @@ class KaojuTemplateService(KaojuTemplateExchangeService):
                     target,
                     candidate,
                     expected_state=expected_state,
-                    authored_metadata=target.authored_metadata,
+                    authored_metadata=authored_metadata if authored_metadata is not None else target.authored_metadata,
                     actor=actor,
                     operation="update-from-export",
                     source_refs=_unique_strings(source_refs),
@@ -192,7 +192,7 @@ class KaojuTemplateService(KaojuTemplateExchangeService):
             target,
             source,
             expected_state=expected_state,
-            authored_metadata=target.authored_metadata,
+            authored_metadata=authored_metadata if authored_metadata is not None else target.authored_metadata,
             actor=actor,
             operation="update",
             source_refs=_unique_strings(source_refs),

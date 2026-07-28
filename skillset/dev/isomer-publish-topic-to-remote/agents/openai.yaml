@@ -1,0 +1,7 @@
+interface:
+  display_name: "Isomer Topic Publication"
+  short_description: "Publish sanitized Topic Workspace snapshots"
+  default_prompt: "Use $isomer-publish-topic-to-remote to publish or synchronize a selected Topic Workspace to its approved remote."
+
+policy:
+  allow_implicit_invocation: false

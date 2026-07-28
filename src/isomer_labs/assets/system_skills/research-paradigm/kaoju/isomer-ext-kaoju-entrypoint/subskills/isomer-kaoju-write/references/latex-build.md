@@ -8,7 +8,7 @@ MyST is canonical and complete: it holds every claim, citation, table, and secti
 
 ## Initialization and Fill
 
-- Scaffold from the adopted LaTeX template tree; record the content-template identity and source checksum separately from presentation state. When topic-owned LaTeX `main` is absent, the installed fallback is the complete IEEE Transactions two-column tree with a local `IEEEtran.cls`, not a host-resolved class or a reference into `tmp/`.
+- Scaffold from the adopted LaTeX template tree; record the content-template identity and source checksum separately from presentation state. When topic-owned LaTeX `main` is absent, the installed fallback is the complete neutral ACM `acmart` two-column source tree with a local class, required `.dtx` sources, upstream sample, bibliography support, license, and provenance, not a host-resolved class or a reference into `tmp/`.
 - Resolve an explicit LaTeX template or LaTeX `main`; snapshot its exact multi-file tree, stable ref, name, state token, digest, authored metadata, entrypoint, composition contract, build profile, provenance, and license posture. Adoption packs the real venue tree; a hand-written shim that only names or checksums an external official template is rejected.
 - Fingerprint LaTeX state, composition contract, converter identity, required directives, tables, citations, floats, raw blocks, and build profile. Do not include the content-template digest in the presentation fingerprint.
 - The initializer extracts MyST frontmatter (title, authors, date) and the abstract into the fill manifest (`.isomer-kaoju-tex-fill.json`), marks table and directive locations, collects citation-map entries, and returns each composition obligation as pending. It does not pretend conversion succeeded.

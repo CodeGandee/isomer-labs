@@ -17,6 +17,10 @@ from isomer_labs.kaoju.template_support import (
 
 
 _VENUE_CONTRACTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "acm-sigconf": (
+        "acmart",
+        ("\\title{", "\\author{", "\\begin{abstract}", "\\keywords{"),
+    ),
     "ieee-transactions": (
         "IEEEtran",
         ("\\title{", "\\author{", "\\begin{abstract}", "\\begin{IEEEkeywords}"),

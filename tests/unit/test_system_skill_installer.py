@@ -216,20 +216,23 @@ class SystemSkillInstallerTests(unittest.TestCase):
         )
         self.assertTrue((template_defaults / "manifest.json").is_file())
         self.assertTrue((template_defaults / "content/main/paper.myst.md").is_file())
-        self.assertEqual(
+        latex_default = template_defaults / "latex/main"
+        latex_members = {
+            path.relative_to(latex_default).as_posix()
+            for path in latex_default.rglob("*")
+            if path.is_file()
+        }
+        self.assertTrue(
             {
-                "IEEEtran.cls",
-                "bare_jrnl_new_sample4.tex",
-                "fig1.png",
-                "metadata.json",
+                "ACM-Reference-Format.bst",
+                "LICENSE",
+                "acmart.cls",
+                "acmart.dtx",
+                "samples/sigconf.tex",
                 "template.tex",
-            },
-            {
-                path.name
-                for path in (template_defaults / "latex/main").iterdir()
-                if path.is_file()
-            },
+            }.issubset(latex_members)
         )
+        self.assertFalse(any(member.casefold().endswith(".pdf") for member in latex_members))
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "source-identity.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-shared" / "references" / "artifact-semantics.md").is_file())
         self.assertTrue((kaoju_root / "subskills" / "isomer-kaoju-frame" / "artifact-bindings.md").is_file())

@@ -19,12 +19,18 @@ PACKAGED_TEMPLATE_RESOURCE = (
     "isomer-kaoju-write/assets/defaults/templates"
 )
 PACKAGED_TEMPLATE_MANIFEST = "manifest.json"
-PACKAGED_IEEE_LATEX_MEMBERS = frozenset(
+PACKAGED_ACM_LATEX_REQUIRED_MEMBERS = frozenset(
     {
-        "IEEEtran.cls",
-        "bare_jrnl_new_sample4.tex",
-        "fig1.png",
+        "ACM-Reference-Format.bst",
+        "LICENSE",
+        "README",
+        "acmart.cls",
+        "acmart.dtx",
+        "acmart.ins",
         "metadata.json",
+        "samples/samples.dtx",
+        "samples/samples.ins",
+        "samples/sigconf.tex",
         "template.tex",
     }
 )
@@ -123,13 +129,18 @@ def load_packaged_template(kind: str | TemplateKindSpec) -> PackagedTemplate:
             for path in template_root.rglob("*")
             if path.is_file()
         )
-        if observed_members != PACKAGED_IEEE_LATEX_MEMBERS:
-            missing = sorted(PACKAGED_IEEE_LATEX_MEMBERS - observed_members)
-            unexpected = sorted(observed_members - PACKAGED_IEEE_LATEX_MEMBERS)
+        missing = sorted(PACKAGED_ACM_LATEX_REQUIRED_MEMBERS - observed_members)
+        forbidden = sorted(
+            member
+            for member in observed_members
+            if member.casefold().endswith(".pdf")
+            or any(part.startswith(".git") for part in Path(member).parts)
+        )
+        if missing or forbidden:
             raise KaojuServiceError(
                 "packaged_template_inventory_invalid",
-                "Kaoju packaged latex/main must contain the complete checked IEEE Transactions tree. "
-                f"Missing: {missing or 'none'}; unexpected: {unexpected or 'none'}.",
+                "Kaoju packaged latex/main must contain the checked ACM source tree without generated PDFs or Git metadata. "
+                f"Missing: {missing or 'none'}; forbidden: {forbidden or 'none'}.",
             )
         metadata_path = template_root / "metadata.json"
         try:

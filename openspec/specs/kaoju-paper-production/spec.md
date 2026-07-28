@@ -493,7 +493,7 @@ The system SHALL adopt a LaTeX venue template by packing the complete actor-sele
 - **AND** missing venue constructs are reported before the template can be selected for composition
 
 ### Requirement: Kaoju Ships Checked Packaged Writing-Template Defaults
-Kaoju SHALL package immutable role-local `content/main` and `latex/main` template trees that pass the same applicable integrity and authored-metadata validation as topic-owned named stock, and the packaged `latex/main` SHALL contain the complete IEEE Transactions two-column tree adopted from the Predictive Memory Survey.
+Kaoju SHALL package immutable role-local `content/main` and `latex/main` template trees that pass the same applicable integrity and authored-metadata validation as topic-owned named stock, and the packaged `latex/main` SHALL contain the pinned ACM `acmart` two-column source tree selected for neutral survey presentation.
 
 #### Scenario: Packaged defaults are validated
 - **WHEN** package resources or the Kaoju contract are validated
@@ -507,18 +507,35 @@ Kaoju SHALL package immutable role-local `content/main` and `latex/main` templat
 
 #### Scenario: Packaged LaTeX default is inspected
 - **WHEN** an actor or service inspects the packaged LaTeX default
-- **THEN** it finds the marker-based IEEE Transactions journal entrypoint derived from `bare_jrnl_new_sample4.tex` with `\documentclass[lettersize,journal]{IEEEtran}`
-- **AND** authored metadata identifies the IEEE Transactions venue, checked composition contract, build profile, source archive provenance, and LPPL 1.3 posture
+- **THEN** it finds a marker-based entrypoint derived from the pinned ACM `sigconf` sample with `\documentclass[sigconf,nonacm]{acmart}`
+- **AND** authored metadata identifies venue `acm-sigconf`, marker composition, the Tectonic build profile, exact archive and commit provenance, and LPPL posture
+- **AND** it omits fabricated ACM rights, DOI, conference, ISBN, CCS, affiliation, and researcher-identity metadata
 
-#### Scenario: Packaged IEEE style tree is consumed
+#### Scenario: Packaged ACM style tree is consumed
 - **WHEN** topic initialization, default export, or paper-local TeX initialization copies packaged `latex/main`
-- **THEN** the copied managed tree includes the entrypoint, local `IEEEtran.cls`, retained upstream sample, referenced sample asset, and source metadata with their checked bytes
-- **AND** selection and composition do not read the source ZIP, `tmp/`, another Topic Workspace, or a host-installed IEEE class in place of the vendored tree
+- **THEN** the copied managed tree includes the marker entrypoint, local `acmart.cls`, required `.dtx` sources, bibliography support, retained upstream `sigconf` sample, source metadata, license, and their checked bytes
+- **AND** it excludes generated documentation PDFs, generated sample PDFs, Git configuration, and Git metadata
+- **AND** selection and composition do not read the source ZIP, `tmp/`, another Topic Workspace, or a host-installed ACM class in place of the vendored tree
+
+#### Scenario: ACM venue stock is validated
+- **WHEN** packaged or topic-owned LaTeX stock declares venue `acm-sigconf`
+- **THEN** venue validation requires document class `acmart` and title, author, abstract, and keywords constructs in the complete entrypoint
+- **AND** a wrong class or missing required construct blocks stock acceptance with a stable diagnostic
+
+#### Scenario: Existing topic stock changes venue
+- **WHEN** an actor updates existing topic-owned LaTeX stock with a replacement tree and replacement authored metadata under the current state token
+- **THEN** the service validates the tree against the replacement metadata
+- **AND** commits both atomically or commits neither
 
 #### Scenario: Packaged default is invalid
 - **WHEN** a packaged default is missing, unsafe, digest-inconsistent, or invalid for its selected role
 - **THEN** topic initialization and fallback for that role block with a stable package-resource diagnostic
 - **AND** the system does not substitute an embedded string, another role, a topic from another workspace, or an unmanaged repository file
+
+#### Scenario: Existing topic stock and paper history remain stable
+- **WHEN** a Kaoju release changes the packaged LaTeX default
+- **THEN** valid existing topic-owned `latex/main` stock, template snapshots, TeX drafts, build runs, and PDFs remain unchanged
+- **AND** adopting the new default into an existing topic requires an explicit state-checked template update and creates new derived paper artifacts
 
 ### Requirement: Kaoju Topic Initialization Ensures Default Writing-Template Stock
 Explicit Kaoju `create-topic` SHALL initialize missing role-local content and LaTeX `main` records from checked packaged defaults and create their non-canonical editable exports after generic topic overview and Workspace Runtime readiness.

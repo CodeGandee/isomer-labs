@@ -904,7 +904,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
                         "build_profile": "pdflatex",
                         "source_provenance": "fixture:wrong-class",
                         "license_posture": "test-only",
-                        "venue": "ieee-transactions",
+                        "venue": "acm-sigconf",
                     },
                 )
             ),
@@ -915,7 +915,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual("latex_template_venue_class_missing", wrong_class_result["error"]["code"])
 
         missing_constructs = self.root / "prepared/latex-missing-constructs"
-        _write(missing_constructs / "paper.tex", "\\documentclass{IEEEtran}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n")
+        _write(missing_constructs / "paper.tex", "\\documentclass[sigconf,nonacm]{acmart}\n\\begin{document}\n% ISOMER_BODY\n\\end{document}\n")
         status, missing_result = self.template(
             "create",
             "--kind",
@@ -934,7 +934,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
                         "build_profile": "pdflatex",
                         "source_provenance": "fixture:missing-constructs",
                         "license_posture": "test-only",
-                        "venue": "ieee-transactions",
+                        "venue": "acm-sigconf",
                     },
                 )
             ),
@@ -975,6 +975,48 @@ class KaojuNamedTemplateTests(unittest.TestCase):
             "agent:test",
         )
         self.assertEqual(0, status, complete_result)
+
+        acm_replacement = self.root / "prepared/latex-acm-replacement"
+        _write(
+            acm_replacement / "paper.tex",
+            "\\documentclass[sigconf,nonacm]{acmart}\n\\begin{document}\n\\title{Fixture}\n\\author{A. Agent}\n\\begin{abstract}Abs.\\end{abstract}\n\\keywords{kw}\n% ISOMER_BODY\n\\end{document}\n",
+        )
+        acm_metadata = latex_metadata(
+            self.root / "prepared/latex-acm-replacement.json",
+            {
+                "composition_mode": "marker",
+                "marker": "% ISOMER_BODY",
+                "build_profile": "tectonic",
+                "source_provenance": "fixture:acm-replacement",
+                "license_posture": "test-only",
+                "venue": "acm-sigconf",
+            },
+        )
+        status, switched_result = self.template(
+            "update",
+            "--kind",
+            "latex",
+            "--name",
+            "complete-venue",
+            "--from",
+            str(acm_replacement),
+            "--metadata-file",
+            str(acm_metadata),
+            "--expected-state",
+            str(complete_result["state_token"]),
+            "--actor",
+            "agent:test",
+            "--change-summary",
+            "Atomically switch the fixture from IEEE to ACM stock.",
+        )
+        self.assertEqual(0, status, switched_result)
+        switched_metadata = switched_result["authored_metadata"]
+        assert isinstance(switched_metadata, dict)
+        switched_extensions = switched_metadata["extensions"]
+        assert isinstance(switched_extensions, dict)
+        switched_latex = switched_extensions["latex"]
+        assert isinstance(switched_latex, dict)
+        self.assertEqual("acm-sigconf", switched_latex["venue"])
 
     def test_migration_wraps_one_current_file_and_preserves_legacy_state(self) -> None:
         source = self.root / "prepared/legacy-template.md"
@@ -1419,24 +1461,24 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertEqual(0, status, latex_exported)
         self.assertEqual("packaged-default", latex_exported["selection_source"])
         latex_target = Path(str(latex_exported["target"]))
-        self.assertEqual(
+        latex_members = {
+            path.relative_to(latex_target).as_posix()
+            for path in latex_target.rglob("*")
+            if path.is_file()
+            and path.name != ".isomer-template-export.json"
+        }
+        self.assertTrue(
             {
-                "IEEEtran.cls",
-                "bare_jrnl_new_sample4.tex",
-                "fig1.png",
-                "metadata.json",
+                "ACM-Reference-Format.bst",
+                "acmart.cls",
+                "acmart.dtx",
+                "samples/sigconf.tex",
                 "template.tex",
-            },
-            {
-                path.name
-                for path in latex_target.iterdir()
-                if path.is_file()
-                and path.name != ".isomer-template-export.json"
-            },
+            }.issubset(latex_members)
         )
         self.assertEqual(
-            load_packaged_template("latex").root.joinpath("IEEEtran.cls").read_bytes(),
-            latex_target.joinpath("IEEEtran.cls").read_bytes(),
+            load_packaged_template("latex").root.joinpath("acmart.cls").read_bytes(),
+            latex_target.joinpath("acmart.cls").read_bytes(),
         )
 
     def test_default_fallback_is_strict_for_explicit_or_invalid_topic_state(self) -> None:
@@ -1512,20 +1554,20 @@ class KaojuNamedTemplateTests(unittest.TestCase):
             self.root
             / "topic-workspaces/alpha/intent/derived/writing-templates/latex/main"
         )
-        self.assertEqual(
+        latex_members = {
+            path.relative_to(latex_path).as_posix()
+            for path in latex_path.rglob("*")
+            if path.is_file()
+            and path.name != ".isomer-template-export.json"
+        }
+        self.assertTrue(
             {
-                "IEEEtran.cls",
-                "bare_jrnl_new_sample4.tex",
-                "fig1.png",
-                "metadata.json",
+                "ACM-Reference-Format.bst",
+                "acmart.cls",
+                "acmart.dtx",
+                "samples/sigconf.tex",
                 "template.tex",
-            },
-            {
-                path.name
-                for path in latex_path.iterdir()
-                if path.is_file()
-                and path.name != ".isomer-template-export.json"
-            },
+            }.issubset(latex_members)
         )
 
         content_path = (
@@ -1543,8 +1585,8 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         _write(
             latex_entrypoint,
             latex_entrypoint.read_text(encoding="utf-8").replace(
-                "\\title{A Sample Article",
-                "\\title{A Topic-Adjusted Article",
+                "\\title{Survey Paper}",
+                "\\title{A Topic-Adjusted Article}",
             ),
         )
         latex_before = latex_entrypoint.read_bytes()
@@ -1566,13 +1608,13 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertFalse(roles["latex"]["exported"])
         self.assertEqual(latex_before, latex_entrypoint.read_bytes())
 
-    def test_packaged_ieee_fallback_initializes_and_reuses_full_paper_snapshot(self) -> None:
-        draft_path = self.root / "prepared/ieee-paper.myst.md"
+    def test_packaged_acm_fallback_initializes_and_reuses_full_paper_snapshot(self) -> None:
+        draft_path = self.root / "prepared/acm-paper.myst.md"
         _write(
             draft_path,
             """
             ---
-            title: IEEE Fallback Survey
+            title: ACM Fallback Survey
             authors:
               - Test Author
             ---
@@ -1610,12 +1652,12 @@ class KaojuNamedTemplateTests(unittest.TestCase):
             No citations are required for this fixture.
             """,
         )
-        draft_ref = "artifact-paper-draft-myst-ieee-fallback"
+        draft_ref = "artifact-paper-draft-myst-acm-fallback"
         created = self.create_generic_record(
             draft_ref,
             "KAOJU:PAPER-DRAFT-MYST",
             body_file=draft_path,
-            scope_key="ieee-fallback",
+            scope_key="acm-fallback",
         )
         self.assertTrue(created["ok"], created)
 
@@ -1626,7 +1668,7 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         )
         initialized = paper_service.init_tex(
             draft_ref=draft_ref,
-            paper_line="ieee-fallback",
+            paper_line="acm-fallback",
         )
         self.assertEqual("packaged-default", initialized["latex_template"]["selection_source"])
         self.assertEqual("template.tex", initialized["entrypoint"])
@@ -1653,9 +1695,10 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         template_root = Path(str(template_record.content_path)).parent
         draft_root = Path(str(draft_record.content_path)).parent
         required_members = {
-            "IEEEtran.cls",
-            "bare_jrnl_new_sample4.tex",
-            "fig1.png",
+            "ACM-Reference-Format.bst",
+            "acmart.cls",
+            "acmart.dtx",
+            "samples",
             "metadata.json",
             "template.tex",
         }
@@ -1664,14 +1707,14 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         self.assertTrue((template_root / TEX_SNAPSHOT_MANIFEST_NAME).is_file())
         self.assertTrue((draft_root / TEX_DRAFT_MANIFEST_NAME).is_file())
         self.assertTrue((draft_root / TEX_FILL_MANIFEST_NAME).is_file())
-        packaged_class = load_packaged_template("latex").root / "IEEEtran.cls"
+        packaged_class = load_packaged_template("latex").root / "acmart.cls"
         self.assertEqual(
             packaged_class.read_bytes(),
-            (template_root / "IEEEtran.cls").read_bytes(),
+            (template_root / "acmart.cls").read_bytes(),
         )
         self.assertEqual(
             packaged_class.read_bytes(),
-            (draft_root / "IEEEtran.cls").read_bytes(),
+            (draft_root / "acmart.cls").read_bytes(),
         )
         self.assertNotIn(
             "% ISOMER_BODY",
@@ -1680,13 +1723,13 @@ class KaojuNamedTemplateTests(unittest.TestCase):
 
         reused = paper_service.init_tex(
             draft_ref=draft_ref,
-            paper_line="ieee-fallback",
+            paper_line="acm-fallback",
         )
         self.assertTrue(reused["template_reused"])
         self.assertEqual(initialized["template_ref"], reused["template_ref"])
         self.assertEqual(
             packaged_class.read_bytes(),
-            (template_root / "IEEEtran.cls").read_bytes(),
+            (template_root / "acmart.cls").read_bytes(),
         )
 
     def test_derived_apply_promotes_edits_and_preserves_future_only_boundary(self) -> None:
@@ -1703,8 +1746,8 @@ class KaojuNamedTemplateTests(unittest.TestCase):
         _write(
             main,
             main.read_text(encoding="utf-8").replace(
-                "\\usepackage{cite}",
-                "\\usepackage{cite}\n\\usepackage{microtype}",
+                "\\usepackage{graphicx}",
+                "\\usepackage{graphicx}\n\\usepackage{microtype}",
             ),
         )
         result = apply_derived_intent(

@@ -54,7 +54,7 @@ skill_invocation_notation: >
    - `list` or `show`: run with `--kind KIND` and report role, name, stable ref, state token, tree digest, authored metadata, status, and default working path.
    - `create`: run `template create --kind KIND --name NAME --from PATH`; omitted names resolve selected-role `main`. A missing target never turns update into create silently.
    - `copy`: run `template create --kind KIND --name NEW --from-template EXISTING`. Source and target remain inside one role.
-   - `update`: run `template update --kind KIND --name NAME --from PATH --expected-state TOKEN`. A recognized edited export may be supplied directly; the service strips only its reserved observation metadata and verifies role, ref, and token.
+   - `update`: run `template update --kind KIND --name NAME --from PATH --expected-state TOKEN`. Pass `--metadata-file FILE` when the replacement tree needs different authored metadata, such as a document-class or venue change; the service validates and commits the tree and metadata atomically. A recognized edited export may be supplied directly; the service strips only its reserved observation metadata and verifies role, ref, and token.
    - `replace`: run `template update --kind KIND --name TARGET --from-template SOURCE --expected-state TOKEN`. It performs no merge and leaves the source unchanged.
    - `merge`: inspect both inputs, construct a new selected-role candidate, and update from that directory. Never request a generic CLI merge.
    - `file put`, `file remove`, or `metadata patch`: use `--kind KIND` only for an explicitly bounded edit with the current token.

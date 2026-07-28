@@ -1,6 +1,6 @@
 {
   "schema_version": "isomer-kaoju-packaged-templates.v1",
-  "resource_version": "0.6.0",
+  "resource_version": "0.6.1",
   "templates": {
     "content": {
       "name": "main",
@@ -14,23 +14,25 @@
     "latex": {
       "name": "main",
       "root": "latex/main",
-      "tree_digest": "sha256:6fcba33cc73a4b7a90953477714200ff375a70ca65d1be197d2bb5c4bda4ce79",
+      "tree_digest": "sha256:57c53638d0606b7845fccb27ceb130cb7f39ec148284698200d59e8f46eebb5d",
       "authored_metadata": {
         "entrypoint": "template.tex",
-        "use_guidance": "Use this IEEE Transactions two-column journal presentation as the default LaTeX stock. Marker composition replaces % ISOMER_BODY with the converted MyST body; fill the title, author, markboth headers, abstract, and keywords from the MyST frontmatter and fill manifest before claiming build readiness.",
+        "use_guidance": "Use this neutral ACM acmart two-column conference presentation as the default LaTeX stock. Marker composition replaces % ISOMER_BODY with the converted MyST body; fill the title, authors, abstract, and keywords from the MyST frontmatter and fill manifest before claiming build readiness. The nonacm option intentionally omits invented publication metadata.",
         "extensions": {
           "latex": {
             "composition_mode": "marker",
             "marker": "% ISOMER_BODY",
             "build_profile": "tectonic",
-            "venue": "ieee-transactions",
+            "venue": "acm-sigconf",
             "source_provenance": {
-              "archive_name": "IEEE-Transactions-LaTeX2e-templates-and-instructions.zip",
-              "archive_sha256": "6c315c3b6729bd7b96a6a0e7d3bb6342023413a4cd4d113fb4a193019af1c603",
-              "prepared_tree_source": "Predictive Memory Survey latex/main",
-              "upstream_entrypoint": "bare_jrnl_new_sample4.tex"
+              "archive_name": "acmart-primary.zip",
+              "archive_sha256": "027fe22f3c15fcd178f9d84d32a7e0a96f68357df1fa6712c808cc078ee6fdd7",
+              "archive_commit": "062edc8119be9067a346ce874281eab48b2c29a4",
+              "upstream_version": "2.19",
+              "prepared_tree_source": "Kaoju packaged ACM source tree",
+              "upstream_entrypoint": "samples/sigconf.tex"
             },
-            "license_posture": "IEEEtran.cls and the upstream sample are distributed under the LaTeX Project Public License 1.3 as declared by the vendored class; retain all contribution notices and credits. The marker skeleton derives from bare_jrnl_new_sample4.tex with the sample body replaced by % ISOMER_BODY."
+            "license_posture": "The pinned acmart 2.19 source is distributed under the LaTeX Project Public License 1.3c or later as declared by acmart.dtx. The packaged tree retains acmart.dtx, samples.dtx, generated upstream sources, LICENSE, and notices; template.tex is a renamed Isomer marker derivative of samples/sigconf.tex. Generated documentation and sample PDFs and Git metadata are excluded."
           }
         }
       }

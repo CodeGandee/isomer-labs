@@ -17,9 +17,9 @@ Route: `isomer-ext-kaoju-entrypoint->manage-paper-template()->update()`. The con
 
 ## Workflow
 
-1. Resolve one role-local target, assessed source directory, and current expected-state token.
-2. Report the target ref, token, digest, source, and assessed change before mutation.
-3. Run `template update --kind KIND --name NAME --from PATH --expected-state TOKEN`.
+1. Resolve one role-local target, assessed source directory, current expected-state token, and replacement authored metadata when the source changes the entrypoint, composition contract, build profile, provenance, license posture, or venue.
+2. Report the target ref, token, digest, source, metadata change, and assessed change before mutation.
+3. Run `template update --kind KIND --name NAME --from PATH --expected-state TOKEN`, adding `--metadata-file FILE` when replacement metadata differs. The service validates and commits the tree and metadata atomically.
 4. On a lost-update conflict, reread state and stop for reconciliation instead of retrying with a stale token.
 
 If the request does not map cleanly to these steps, use the native planning tool to build and execute a bounded plan from the parent manager contract without inventing another command.

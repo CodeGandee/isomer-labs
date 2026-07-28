@@ -230,13 +230,20 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @click.option("--name", default=DEFAULT_TEMPLATE_NAME, show_default=True, help="Target template name.")
     @click.option("--from", "from_path", type=click.Path(path_type=Path, exists=True, file_okay=False), default=None, help="Agent-prepared replacement directory.")
     @click.option("--from-template", default=None, help="Known named template used for exact replacement.")
+    @click.option("--metadata-file", type=click.Path(path_type=Path, exists=True, dir_okay=False), default=None, help="Replacement authored metadata JSON validated atomically with the replacement tree.")
     @click.option("--expected-state", required=True, help="Current opaque target state token.")
     @click.option("--actor", default="agent", show_default=True, help="Actor or agent ref responsible for the mutation.")
     @click.option("--source-ref", "source_refs", multiple=True, help="Stable source ref for audit evidence.")
     @click.option("--change-summary", default=None, help="Agent-authored assessment or change summary.")
     @click.pass_context
     def paper_template_update(ctx: click.Context, **values: Any) -> int:
-        return _with_kaoju_service(ctx, values, lambda context: _template_service(context, values).update(str(values["name"]), source=values.get("from_path"), from_template=values.get("from_template"), expected_state=str(values["expected_state"]), actor=str(values["actor"]), source_refs=list(values["source_refs"]), change_summary=values.get("change_summary")))
+        metadata_file = values.get("metadata_file")
+        metadata = (
+            _json_object_file(metadata_file, label="Template metadata")
+            if metadata_file is not None
+            else None
+        )
+        return _with_kaoju_service(ctx, values, lambda context: _template_service(context, values).update(str(values["name"]), source=values.get("from_path"), from_template=values.get("from_template"), authored_metadata=metadata, expected_state=str(values["expected_state"]), actor=str(values["actor"]), source_refs=list(values["source_refs"]), change_summary=values.get("change_summary")))
 
     @paper_template_group.group(name="file", help="Apply low-level safe file edits to a named template.")
     def paper_template_file_group() -> None:
