@@ -5493,8 +5493,8 @@ def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
             deletes_remote_ref = re.search(r"\bpush\b[^#\n]*\s:[^/\s][^\s]*$", stripped)
             allowed_snapshot_deletion = path.name == "sync.md" and stripped.endswith(
                 (
-                    "push publication :refs/heads/<planned-obsolete-branch>",
-                    "push publication :refs/tags/<planned-obsolete-tag>",
+                    "push --force-with-lease=refs/heads/<planned-obsolete-branch>:<observed-obsolete-branch-commit> publication :refs/heads/<planned-obsolete-branch>",
+                    "push --force-with-lease=refs/tags/<planned-obsolete-tag>:<observed-obsolete-tag-commit> publication :refs/tags/<planned-obsolete-tag>",
                 )
             )
             if deletes_remote_ref and not allowed_snapshot_deletion:
@@ -5506,12 +5506,20 @@ def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
                     "SKL011",
                     "Topic Git command deletes a remote ref",
                 )
-            allowed_force_suffixes = (
-                "push --force publication <replacement-commit>:refs/heads/<planned-component-branch>",
-                "push --force publication <superproject-commit>:refs/heads/main",
+            allowed_force_with_lease_suffixes = (
+                "push --force-with-lease=refs/heads/<planned-component-branch>:<observed-component-commit> publication <replacement-commit>:refs/heads/<planned-component-branch>",
+                "push --force-with-lease=refs/heads/main:<observed-main-commit> publication <replacement-superproject-commit>:refs/heads/main",
+                "push --force-with-lease=refs/heads/<planned-obsolete-branch>:<observed-obsolete-branch-commit> publication :refs/heads/<planned-obsolete-branch>",
+                "push --force-with-lease=refs/tags/<planned-obsolete-tag>:<observed-obsolete-tag-commit> publication :refs/tags/<planned-obsolete-tag>",
             )
-            if "push --force " in stripped and not (
-                path.name == "sync.md" and stripped.endswith(allowed_force_suffixes)
+            bare_force = re.search(r"\bpush\b[^#\n]*\s--force(?:\s|$)", stripped)
+            leased_force = "--force-with-lease" in stripped
+            if bare_force or (
+                leased_force
+                and not (
+                    path.name == "sync.md"
+                    and stripped.endswith(allowed_force_with_lease_suffixes)
+                )
             ):
                 add(
                     diagnostics,
@@ -5520,6 +5528,15 @@ def validate_topic_git_boundary(repo_root: Path) -> list[Diagnostic]:
                     line_number,
                     "SKL011",
                     "Topic Git force push is not the exact approved branch replacement form",
+                )
+            if re.search(r"\bpush\b", stripped) and "*" in stripped:
+                add(
+                    diagnostics,
+                    repo_root,
+                    path,
+                    line_number,
+                    "SKL011",
+                    "Topic Git push uses a wildcard refspec",
                 )
 
     helper_root = repo_root / "src" / "isomer_labs" / "topic_git"

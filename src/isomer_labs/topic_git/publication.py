@@ -12,6 +12,10 @@ from typing import Iterable, Mapping
 from urllib.parse import urlsplit, urlunsplit
 
 from isomer_labs.core.path_utils import canonicalize, is_within
+from isomer_labs.topic_git.history_models import (
+    PublicationHistoryDisposition,
+    PublicationRefUpdate,
+)
 from isomer_labs.topic_git.models import (
     ComponentBinding,
     ComponentKind,
@@ -653,6 +657,8 @@ def publication_plan_fingerprint(
     remote_head: str | None = None,
     expected_remote_refs: Mapping[str, str | None] | None = None,
     expected_remote_tags: Mapping[str, str | None] | None = None,
+    ref_updates: Iterable[PublicationRefUpdate] = (),
+    history_disposition: PublicationHistoryDisposition = PublicationHistoryDisposition.RETAIN,
 ) -> str:
     """Bind approval to source, output, copy, binding, topology, and remote refs."""
 
@@ -684,6 +690,11 @@ def publication_plan_fingerprint(
         "remote_head": remote_head,
         "expected_remote_refs": sorted((expected_remote_refs or {}).items()),
         "expected_remote_tags": sorted((expected_remote_tags or {}).items()),
+        "ref_updates": [
+            update.to_json()
+            for update in sorted(ref_updates, key=lambda item: item.ref)
+        ],
+        "history_disposition": history_disposition.value,
     }
     return hashlib.sha256(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()).hexdigest()
 

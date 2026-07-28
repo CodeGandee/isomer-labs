@@ -28,7 +28,7 @@ The Topic Publication Copy path is `<temporary-root>/topic-workspace-publish/<to
 
 ## Branch Layout
 
-Create fresh sanitized histories for topic-owned content with no source Git ancestry. The publication remote is an `exclusive_snapshot`: its current planned refs and tags represent the current publication, not retained publication history.
+Create initial sanitized histories for topic-owned content with no Source Topic Workspace Git ancestry. A later compatible sanitized publication commit may become the direct parent of the next sanitized delta. The publication remote is an `exclusive_snapshot`: Isomer has authority over the exact planned publication namespace, but compatible sanitized history is retained by default.
 
 | Submodule Kind | Locator | Branch or Commit |
 | --- | --- | --- |
@@ -59,20 +59,22 @@ The default publication includes sanitizable intent, environment declarations, a
 
 ## Synchronization
 
-One approved Publication Binding grants persistent `exclusive_snapshot` authority only while remote identity, Research Topic, Topic Workspace, and snapshot mode still match. Every sync still requires a fresh privacy plan, complete remote branch and tag inventory, stale-state validation, exact expected ref and tag set, and current remote-mutation approval.
+One approved Publication Binding grants persistent `exclusive_snapshot` fallback and deletion authority only while remote identity, Research Topic, Topic Workspace, and snapshot mode still match. Every sync still requires a fresh privacy plan, complete remote branch and tag inventory, stale-state validation, exact expected ref and tag set, one strategy per expected ref, and current remote-mutation approval.
 
 Synchronization order:
 
 1. Observe every remote branch, tag, and remote HEAD without merge, and fingerprint that complete state.
-2. Build and push selected topic-owned `components/...` branches.
+2. Classify each expected branch as `no-op`, `create`, `fast-forward`, or `force-replacement`, then build and push selected topic-owned `components/...` branches through their planned strategies.
 3. Validate upstream reference commits, then update root README, `.gitmodules`, exact gitlinks, path-preserved source files, and the `.isomer-publication/` overlay.
 4. Push canonical `main` last.
 5. If remote HEAD selects an obsolete branch, require and complete a separate provider-supported action that selects `main`.
 6. Delete every planned obsolete branch and tag only after validating the complete expected snapshot and moving remote HEAD away from any branch scheduled for deletion.
-7. Record every ref result, remote-HEAD diagnostic, provider action, and safe resume point.
+7. Verify exact parent relationships and a fresh recursive clone, then record every ref strategy and result, remote-HEAD diagnostic, provider action, and safe resume point.
 
-Exact commit equality is the only reusable-ref match; ancestry does not preserve publication history. The plan may force-replace `main`, `topic-workspace/main`, source-style component branches, prior publication commits, and any other planned publication ref, and may delete obsolete refs and tags. It must never use `--all` or `--mirror`.
+Exact commit equality produces `no-op`. An absent ref produces `create`. A differing ref produces `fast-forward` only when its matching binding, supported tracked manifest, canonical topology, pinned component relationship, current history-retention posture, and freshly fetched ancestry prove that it is a compatible sanitized publication base. Missing or contradictory evidence blocks or selects an explicitly approved `force-replacement` fallback; ordinary source changes do not.
+
+Create and fast-forward strategies use exact normal refspecs. Force replacement uses an exact branch-scoped `--force-with-lease` against the planned observed commit under matching `exclusive_snapshot` authority. A privacy, credential, identity, license, or withdrawal decision that requires prior content to become unreachable also replaces canonical `main` when retained superproject ancestry would still reference that content. Provider object retention may outlive the ref replacement and must be reported. The workflow must never use bare `--force`, `--all`, or `--mirror`.
 
 Remote HEAD is provider state, not ordinary Git branch synchronization. Report when it does not select `main` and require a separate explicit provider-supported action before changing the hosted default branch.
 
-A missing Topic Publication Copy may be recovered as disposable projection state from the validated binding and current remote `main`, then fully reinventoried and regenerated before another push. Publication recovery does not restore Topic Workspace runtime, source worktrees, source Git relationships, or other operational state. If a working Topic Workspace must be reconstructed, the researcher does that manually from the published evidence and artifacts.
+A missing Topic Publication Copy may be recovered as disposable projection state from the validated binding, current remote `main`, and exact pinned component refs, then fully reinventoried and regenerated before another push. Missing local state is not a force-replacement reason. Reuse an existing copy only when it is clean, matches the binding, and is based on the exact observed commit. Preserve dirty, divergent, or invalid copies and block or use a separate disposable recovery repository; never merge, rebase, reset, or clean them. Publication recovery does not restore Topic Workspace runtime, source worktrees, source Git relationships, or other operational state. If a working Topic Workspace must be reconstructed, the researcher does that manually from the published evidence and artifacts.

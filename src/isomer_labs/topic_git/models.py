@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
 from isomer_labs.core.path_utils import canonicalize, is_within
+from isomer_labs.topic_git.history_models import PublicationRefUpdateStrategy
 
 
 TOPIC_GIT_SUPPORT_DIRECTORY = "topic-git"
@@ -330,6 +331,11 @@ class PublicationRefOutcome:
     resulting_commit: str | None = None
     diagnostic: str | None = None
     safe_resume: bool = True
+    strategy: PublicationRefUpdateStrategy | None = None
+    base_commit: str | None = None
+    observed_lease: str | None = None
+    fallback_used: bool = False
+    verified: bool = False
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
@@ -338,8 +344,13 @@ class PublicationRefOutcome:
             "operation": self.operation.value,
             "status": self.status.value,
             "safe_resume": self.safe_resume,
+            "fallback_used": self.fallback_used,
+            "verified": self.verified,
         }
         for key, value in (
+            ("strategy", self.strategy.value if self.strategy is not None else None),
+            ("base_commit", self.base_commit),
+            ("observed_lease", self.observed_lease),
             ("observed_commit", self.observed_commit),
             ("expected_commit", self.expected_commit),
             ("resulting_commit", self.resulting_commit),
@@ -348,6 +359,54 @@ class PublicationRefOutcome:
             if value is not None:
                 data[key] = value
         return data
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> PublicationRefOutcome:
+        strategy = payload.get("strategy")
+        return cls(
+            ref=str(payload["ref"]),
+            kind=PublicationRefKind(str(payload["kind"])),
+            operation=PublicationRefOperation(str(payload["operation"])),
+            status=BranchOutcomeStatus(str(payload["status"])),
+            observed_commit=(
+                str(payload["observed_commit"])
+                if payload.get("observed_commit") is not None
+                else None
+            ),
+            expected_commit=(
+                str(payload["expected_commit"])
+                if payload.get("expected_commit") is not None
+                else None
+            ),
+            resulting_commit=(
+                str(payload["resulting_commit"])
+                if payload.get("resulting_commit") is not None
+                else None
+            ),
+            diagnostic=(
+                str(payload["diagnostic"])
+                if payload.get("diagnostic") is not None
+                else None
+            ),
+            safe_resume=bool(payload.get("safe_resume", True)),
+            strategy=(
+                PublicationRefUpdateStrategy(str(strategy))
+                if strategy is not None
+                else None
+            ),
+            base_commit=(
+                str(payload["base_commit"])
+                if payload.get("base_commit") is not None
+                else None
+            ),
+            observed_lease=(
+                str(payload["observed_lease"])
+                if payload.get("observed_lease") is not None
+                else None
+            ),
+            fallback_used=bool(payload.get("fallback_used", False)),
+            verified=bool(payload.get("verified", False)),
+        )
 
 
 @dataclass(frozen=True)
@@ -362,7 +421,7 @@ class PublicationSnapshotOutcome:
 
     def to_json(self) -> dict[str, object]:
         return {
-            "schema_version": "isomer-topic-git-publication-outcomes.v2",
+            "schema_version": "isomer-topic-git-publication-outcomes.v3",
             "binding_id": self.binding_id,
             "plan_id": self.plan_id,
             "ref_outcomes": [outcome.to_json() for outcome in self.ref_outcomes],
@@ -371,6 +430,37 @@ class PublicationSnapshotOutcome:
             "provider_default_branch_action_required": self.provider_default_branch_action_required,
             "updated_at": self.updated_at,
         }
+
+    @classmethod
+    def from_json(cls, payload: Mapping[str, object]) -> PublicationSnapshotOutcome:
+        raw_outcomes = payload.get("ref_outcomes")
+        return cls(
+            binding_id=str(payload["binding_id"]),
+            plan_id=str(payload["plan_id"]),
+            ref_outcomes=(
+                tuple(
+                    PublicationRefOutcome.from_json(outcome)
+                    for outcome in raw_outcomes
+                    if isinstance(outcome, Mapping)
+                )
+                if isinstance(raw_outcomes, list)
+                else ()
+            ),
+            resume_at=(
+                str(payload["resume_at"])
+                if payload.get("resume_at") is not None
+                else None
+            ),
+            updated_at=str(payload["updated_at"]),
+            observed_remote_head=(
+                str(payload["observed_remote_head"])
+                if payload.get("observed_remote_head") is not None
+                else None
+            ),
+            provider_default_branch_action_required=bool(
+                payload.get("provider_default_branch_action_required", False)
+            ),
+        )
 
 
 @dataclass(frozen=True)
@@ -474,7 +564,7 @@ def copy_support_root(publication_copy: Path) -> Path:
 def validate_support_payload(kind: SupportFileKind, payload: Mapping[str, object]) -> tuple[str, ...]:
     """Validate a support payload and reject credential or private-content fields."""
 
-    schema = _load_schema(kind)
+    schema = _load_schema(kind, payload)
     diagnostics = [
         f"{'/'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
         for error in sorted(Draft202012Validator(schema).iter_errors(dict(payload)), key=str)
@@ -559,15 +649,46 @@ def valid_git_sha(value: str | None) -> bool:
     return value is None or _GIT_SHA_RE.fullmatch(value) is not None
 
 
-def _schema_filename(kind: SupportFileKind) -> str:
+def publication_plan_approval_is_stale(payload: Mapping[str, object]) -> bool:
+    """Return whether stored approval predates history-aware plan semantics."""
+
+    return payload.get("schema_version") != "isomer-topic-git-publication-plan.v2"
+
+
+def _schema_filename(
+    kind: SupportFileKind,
+    payload: Mapping[str, object] | None = None,
+) -> str:
+    schema_version = str((payload or {}).get("schema_version", ""))
+    versioned = {
+        (
+            SupportFileKind.PUBLICATION_PLAN,
+            "isomer-topic-git-publication-plan.v2",
+        ): "publication-plan.v2.schema.json",
+        (
+            SupportFileKind.PROJECTION_MANIFEST,
+            "isomer-topic-git-projection-manifest.v3",
+        ): "projection-manifest.v3.schema.json",
+        (
+            SupportFileKind.PUBLICATION_OUTCOMES,
+            "isomer-topic-git-publication-outcomes.v3",
+        ): "publication-outcomes.v3.schema.json",
+    }
+    selected = versioned.get((kind, schema_version))
+    if selected is not None:
+        return selected
     return f"{kind.value}.v1.schema.json"
 
 
-def _load_schema(kind: SupportFileKind) -> dict[str, object]:
-    schema_path = files("isomer_labs.topic_git.schemas").joinpath(_schema_filename(kind))
+def _load_schema(
+    kind: SupportFileKind,
+    payload: Mapping[str, object] | None = None,
+) -> dict[str, object]:
+    schema_filename = _schema_filename(kind, payload)
+    schema_path = files("isomer_labs.topic_git.schemas").joinpath(schema_filename)
     payload = json.loads(schema_path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
-        raise ValueError(f"Topic Git schema {_schema_filename(kind)} is not an object.")
+        raise ValueError(f"Topic Git schema {schema_filename} is not an object.")
     return payload
 
 

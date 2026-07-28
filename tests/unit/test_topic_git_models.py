@@ -10,9 +10,12 @@ from isomer_labs.topic_git import (
     LocalTrackingState,
     PrivacyDisposition,
     PublicationBinding,
+    PublicationHistoryCompatibility,
     PublicationRefKind,
     PublicationRefOperation,
     PublicationRefOutcome,
+    PublicationRefUpdate,
+    PublicationRefUpdateStrategy,
     PublicationSnapshotMode,
     PublicationSnapshotOutcome,
     PublicationState,
@@ -22,6 +25,7 @@ from isomer_labs.topic_git import (
     copy_support_root,
     load_support_file,
     promote_publication_binding,
+    publication_plan_approval_is_stale,
     runtime_support_root,
     validate_support_payload,
     write_support_file,
@@ -252,7 +256,11 @@ class TopicGitModelTests(unittest.TestCase):
                     kind=PublicationRefKind.BRANCH,
                     operation=PublicationRefOperation.UPDATE,
                     status=BranchOutcomeStatus.PUSHED,
+                    strategy=PublicationRefUpdateStrategy.FAST_FORWARD,
+                    base_commit="c" * 40,
+                    observed_lease="c" * 40,
                     resulting_commit="d" * 40,
+                    verified=True,
                 ),
                 PublicationRefOutcome(
                     ref="refs/heads/topic-workspace/main",
@@ -275,10 +283,91 @@ class TopicGitModelTests(unittest.TestCase):
         )
         payload = snapshot.to_json()
         self.assertEqual(
+            "isomer-topic-git-publication-outcomes.v3",
+            payload["schema_version"],
+        )
+        self.assertEqual(
             (),
             validate_support_payload(SupportFileKind.PUBLICATION_OUTCOMES, payload),
         )
         self.assertEqual("provider-default-branch", payload["resume_at"])
+        restored = PublicationSnapshotOutcome.from_json(payload)
+        self.assertEqual(
+            PublicationRefUpdateStrategy.FAST_FORWARD,
+            restored.ref_outcomes[0].strategy,
+        )
+        self.assertTrue(restored.ref_outcomes[0].verified)
+
+    def test_history_aware_plan_schema_and_legacy_approval_staleness(self) -> None:
+        digest = "a" * 64
+        update = PublicationRefUpdate(
+            ref="main",
+            strategy=PublicationRefUpdateStrategy.CREATE,
+            planned_commit="b" * 40,
+            compatibility=PublicationHistoryCompatibility(
+                compatible=False,
+                evidence=("remote ref is absent",),
+            ),
+        )
+        payload: dict[str, object] = {
+            "schema_version": "isomer-topic-git-publication-plan.v2",
+            "plan_id": "publication-plan-v2",
+            "binding_id": "binding-a",
+            "research_topic_id": "topic-a",
+            "topic_workspace_id": "workspace-a",
+            "copy_path": "tmp/topic-workspace-publish/topic-a",
+            "visibility": "private",
+            "snapshot_mode": "exclusive_snapshot",
+            "canonical_branch": "main",
+            "history_disposition": "retain",
+            "fingerprints": {"plan": digest},
+            "entries": [],
+            "components": [],
+            "references": [],
+            "generated_paths": [],
+            "observed_remote_refs": {},
+            "expected_remote_refs": {"main": "b" * 40},
+            "observed_remote_tags": {},
+            "expected_remote_tags": {},
+            "observed_remote_head": None,
+            "expected_remote_head": "main",
+            "ref_updates": [update.to_json()],
+            "ref_deletions": [],
+            "tag_deletions": [],
+            "conflicts": [],
+            "push_order": ["main"],
+            "blockers": [],
+            "approval": {"privacy": True, "remote_mutation": True},
+        }
+        self.assertEqual(
+            (),
+            validate_support_payload(SupportFileKind.PUBLICATION_PLAN, payload),
+        )
+        self.assertFalse(publication_plan_approval_is_stale(payload))
+        self.assertTrue(
+            publication_plan_approval_is_stale(
+                {"schema_version": "isomer-topic-git-publication-plan.v1"}
+            )
+        )
+
+    def test_stable_projection_manifest_v3_schema_omits_operational_fields(self) -> None:
+        payload = {
+            "schema_version": "isomer-topic-git-projection-manifest.v3",
+            "binding_id": "binding-a",
+            "canonical_branch": "main",
+            "history_format": "sanitized-linear.v1",
+            "entries": [],
+            "components": [],
+            "selection": {},
+            "reference_repositories": [],
+            "reproduction_limitations": [],
+        }
+        self.assertEqual(
+            (),
+            validate_support_payload(SupportFileKind.PROJECTION_MANIFEST, payload),
+        )
+        self.assertNotIn("plan_id", payload)
+        self.assertNotIn("created_at", payload)
 
     @staticmethod
     def _binding_payload() -> dict[str, object]:

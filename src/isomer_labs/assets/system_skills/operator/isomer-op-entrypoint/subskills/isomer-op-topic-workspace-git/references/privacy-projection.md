@@ -21,7 +21,7 @@ For every source-backed `track`, `template`, and `component` entry, the output p
 | Current intent | Track sanitizable source and derived intent |
 | Environment declaration | Track Topic Workspace manifest, Pixi declarations and lock, setup targets, Gate records, exact package versions, hardware models, and sanitized commands |
 | Durable research record | Track every sanitizable typed revision needed for evidence, decision, failure, rejection, supersession, and provenance lineage |
-| Topic Main, Topic Actor, or Agent content | Build a fresh sanitized same-remote component |
+| Topic Main, Topic Actor, or Agent content | Build an initial sanitized root or a compatible sanitized same-remote delta |
 | Registered GitHub reference | Preserve normalized credential-free organization/repository identity and exact commit as an upstream submodule |
 | Raw-material identity | Track locator, immutable version or digest, retrieval observation, access, license, evidence refs, and limitations |
 | Raw experiment result | Track plan, sanitized command, environment identity, normalized result, checksums, verdict, and limitations |
@@ -78,12 +78,12 @@ Resolve the latest paper from one unambiguous typed `KAOJU:PAPER-PDF` and its ac
 
 Tracked projection metadata includes:
 
-- schema, binding and plan ids, and creation time;
+- schema, stable binding identity, canonical branch, and sanitized history format;
 - semantic classes, raw-byte settings, relative mappings, dispositions, transformations, generated-navigation fingerprints, and reproduction limitations;
 - deterministic topic-owned branches and sanitized commits;
 - normalized GitHub reference locators, exact commits, visibility, license, and access limitations.
 
-It omits absolute source paths, incidental source remotes, credentials, individual identity values, sensitive excerpts, private diffs, excluded content, and source Git configuration.
+It omits plan ids, approval timestamps, observed remote state, push attempts, outcomes, absolute source paths, incidental source remotes, credentials, individual identity values, sensitive excerpts, private diffs, excluded content, and source Git configuration.
 
 Reject a source path below `.isomer-publication/`, a source root `.gitmodules`, a generated path that shadows source content, a synthetic content-class directory, and component content flattened into the superproject. Git omits empty directories unless an approved tracked placeholder already exists.
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 from typing import Iterable, Mapping, cast
@@ -153,6 +154,93 @@ def materialize_projection(
     return tuple(materialized)
 
 
+def prune_unapproved_publication_paths(
+    publication_copy: Path,
+    *,
+    approved_paths: Iterable[str],
+    preserved_roots: Iterable[str] = (".git", ".isomer"),
+) -> tuple[str, ...]:
+    """Remove unapproved projected paths while preserving Git and ignored support state."""
+
+    copy_root = canonicalize(publication_copy)
+    approved = {_relative_path(path) for path in approved_paths}
+    preserved = {_relative_path(path) for path in preserved_roots}
+
+    def is_preserved(relative: str) -> bool:
+        return any(
+            relative == root or relative.startswith(f"{root}/")
+            for root in preserved
+        )
+
+    removed: list[str] = []
+    if not copy_root.exists():
+        return ()
+    for directory, directory_names, file_names in os.walk(
+        copy_root,
+        topdown=False,
+        followlinks=False,
+    ):
+        current = Path(directory)
+        for name in file_names:
+            path = current / name
+            relative = path.relative_to(copy_root).as_posix()
+            if relative not in approved and not is_preserved(relative):
+                path.unlink()
+                removed.append(relative)
+        for name in directory_names:
+            path = current / name
+            relative = path.relative_to(copy_root).as_posix()
+            if is_preserved(relative):
+                continue
+            if path.is_symlink():
+                if relative not in approved:
+                    path.unlink()
+                    removed.append(relative)
+                continue
+            if not any(
+                approved_path == relative
+                or approved_path.startswith(f"{relative}/")
+                for approved_path in approved
+            ):
+                try:
+                    path.rmdir()
+                except OSError:
+                    pass
+    return tuple(sorted(removed))
+
+
+def materialize_exact_projection(
+    source_topic_workspace: Path,
+    publication_copy: Path,
+    entries: Iterable[ProjectionEntry],
+    *,
+    template_outputs: Mapping[str, bytes] | None = None,
+    generated_outputs: Mapping[str, bytes] | None = None,
+    preserved_roots: Iterable[str] = (".git", ".isomer"),
+) -> tuple[tuple[ProjectionEntry, ...], tuple[str, ...]]:
+    """Materialize the approved tree and remove stale unapproved projected paths."""
+
+    materialized = materialize_projection(
+        source_topic_workspace,
+        publication_copy,
+        entries,
+        template_outputs=template_outputs,
+        generated_outputs=generated_outputs,
+    )
+    approved = tuple(
+        entry.output_relative_path
+        for entry in materialized
+        if entry.output_relative_path is not None
+        and entry.disposition in {PrivacyDisposition.TRACK, PrivacyDisposition.TEMPLATE}
+    )
+    removed = prune_unapproved_publication_paths(
+        publication_copy,
+        approved_paths=approved,
+        preserved_roots=preserved_roots,
+    )
+    return materialized, removed
+
+
 def rescan_projection(
     publication_copy: Path,
     entries: Iterable[ProjectionEntry],
@@ -265,11 +353,12 @@ def render_topic_workspace_version(
 ) -> str:
     """Render sanitized branch-to-commit publication metadata."""
 
+    del plan_id, created_at
     lines = [
-        'schema_version = "isomer-topic-workspace-version.v1"',
+        'schema_version = "isomer-topic-workspace-version.v2"',
         f"binding_id = {json.dumps(binding_id)}",
-        f"plan_id = {json.dumps(plan_id)}",
-        f"created_at = {json.dumps(created_at)}",
+        'canonical_branch = "main"',
+        'history_format = "sanitized-linear.v1"',
     ]
     for branch, commit in sorted(branch_commits.items()):
         lines.extend(

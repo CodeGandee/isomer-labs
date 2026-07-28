@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plan_id",
+    "binding_id",
+    "research_topic_id",
+    "topic_workspace_id",
+    "copy_path",
+    "visibility",
+    "snapshot_mode",
+    "canonical_branch",
+    "history_disposition",
+    "fingerprints",
+    "entries",
+    "components",
+    "observed_remote_refs",
+    "expected_remote_refs",
+    "observed_remote_tags",
+    "expected_remote_tags",
+    "observed_remote_head",
+    "expected_remote_head",
+    "ref_updates",
+    "ref_deletions",
+    "tag_deletions",
+    "push_order",
+    "blockers",
+    "approval"
+  ],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-publication-plan.v2"},
+    "plan_id": {"type": "string", "minLength": 1},
+    "binding_id": {"type": "string", "minLength": 1},
+    "research_topic_id": {"type": "string", "minLength": 1},
+    "topic_workspace_id": {"type": "string", "minLength": 1},
+    "copy_path": {"type": "string", "minLength": 1},
+    "visibility": {"enum": ["private", "restricted", "public", "unknown"]},
+    "snapshot_mode": {"const": "exclusive_snapshot"},
+    "canonical_branch": {"const": "main"},
+    "history_disposition": {"enum": ["retain", "purge"]},
+    "fingerprints": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+    },
+    "entries": {"type": "array", "items": {"type": "object"}},
+    "components": {"type": "array", "items": {"type": "object"}},
+    "references": {"type": "array", "items": {"type": "object"}},
+    "generated_paths": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "observed_remote_refs": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"}
+    },
+    "expected_remote_refs": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"}
+    },
+    "observed_remote_tags": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"}
+    },
+    "expected_remote_tags": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"}
+    },
+    "observed_remote_head": {"type": ["string", "null"]},
+    "expected_remote_head": {"const": "main"},
+    "ref_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "strategy",
+          "observed_commit",
+          "base_commit",
+          "planned_commit",
+          "compatibility",
+          "fallback_reason"
+        ],
+        "properties": {
+          "ref": {"type": "string", "minLength": 1},
+          "strategy": {"enum": ["no-op", "create", "fast-forward", "force-replacement"]},
+          "observed_commit": {
+            "type": ["string", "null"],
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "base_commit": {
+            "type": ["string", "null"],
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "planned_commit": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "compatibility": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["compatible", "evidence"],
+            "properties": {
+              "compatible": {"type": "boolean"},
+              "evidence": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1}
+              },
+              "reason": {"type": "string", "minLength": 1}
+            }
+          },
+          "fallback_reason": {"type": ["string", "null"], "minLength": 1}
+        }
+      }
+    },
+    "ref_deletions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "tag_deletions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "conflicts": {"type": "array", "items": {"type": "object"}},
+    "push_order": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "blockers": {"type": "array", "items": {"type": "string"}},
+    "approval": {"type": "object"}
+  }
+}

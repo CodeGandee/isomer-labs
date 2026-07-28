@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "binding_id",
+    "plan_id",
+    "ref_outcomes",
+    "observed_remote_head",
+    "provider_default_branch_action_required",
+    "resume_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-publication-outcomes.v3"},
+    "binding_id": {"type": "string", "minLength": 1},
+    "plan_id": {"type": "string", "minLength": 1},
+    "ref_outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "ref",
+          "kind",
+          "operation",
+          "status",
+          "safe_resume",
+          "fallback_used",
+          "verified"
+        ],
+        "properties": {
+          "ref": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["branch", "tag", "remote-head"]},
+          "operation": {"enum": ["update", "delete", "observe", "provider-action"]},
+          "status": {"enum": ["pending", "fetched", "pushed", "failed", "blocked", "skipped", "deleted"]},
+          "strategy": {"enum": ["no-op", "create", "fast-forward", "force-replacement"]},
+          "base_commit": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "observed_lease": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "observed_commit": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "expected_commit": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "resulting_commit": {
+            "type": "string",
+            "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+          },
+          "diagnostic": {"type": "string"},
+          "safe_resume": {"type": "boolean"},
+          "fallback_used": {"type": "boolean"},
+          "verified": {"type": "boolean"}
+        }
+      }
+    },
+    "observed_remote_head": {"type": ["string", "null"]},
+    "provider_default_branch_action_required": {"type": "boolean"},
+    "resume_at": {"type": ["string", "null"]},
+    "updated_at": {"type": "string", "minLength": 1}
+  }
+}

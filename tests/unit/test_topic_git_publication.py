@@ -14,7 +14,13 @@ from isomer_labs.topic_git import (
     PrivacyDisposition,
     ProjectionEntry,
     ProjectionEntryOrigin,
+    ProjectionManifest,
     PublicationBinding,
+    PublicationCopyPreparationAction,
+    PublicationHistoryCompatibility,
+    PublicationHistoryDisposition,
+    PublicationRefUpdate,
+    PublicationRefUpdateStrategy,
     PublicationSnapshotMode,
     PublicationSelectionSettings,
     PublicationState,
@@ -25,12 +31,20 @@ from isomer_labs.topic_git import (
     classify_remote_branch,
     component_push_order,
     derive_publication_status,
+    evaluate_publication_history_compatibility,
+    expected_publication_commit_parents,
+    history_withdrawal_replacement_scope,
     legacy_publication_refs,
     normalize_publication_components,
     normalize_github_repository_locator,
+    next_publication_resume_ref,
+    plan_history_aware_publication,
+    plan_publication_copy_preparation,
     plan_snapshot_replacement,
     publication_component_branch,
+    publication_delete_push_arguments,
     publication_plan_fingerprint,
+    publication_push_arguments,
     redact_remote_locator,
     render_publication_gitmodules,
     remote_head_action_required,
@@ -39,9 +53,12 @@ from isomer_labs.topic_git import (
     update_publication_copy_exclude,
     update_project_publication_ignore,
     validate_exclusive_snapshot_authority,
+    validate_completed_publication,
     validate_force_replacements,
     validate_generated_publication_paths,
     validate_latest_paper_mapping,
+    validate_history_aware_publication,
+    validate_publication_commit_parents,
     validate_publication_component_topology,
     validate_publication_destination,
     validate_reference_repository,
@@ -288,9 +305,23 @@ class TopicGitPublicationTests(unittest.TestCase):
             remote_commit="c" * 40,
             remote_is_ancestor=False,
         )
+        fast_forward = classify_remote_branch(
+            branch="components/topic-main",
+            local_commit="d" * 40,
+            remote_commit="c" * 40,
+            remote_is_ancestor=True,
+        )
+        unknown = classify_remote_branch(
+            branch="components/topic-main",
+            local_commit="d" * 40,
+            remote_commit="c" * 40,
+            remote_is_ancestor=None,
+        )
         self.assertEqual(BranchCompatibilityState.ABSENT, absent.state)
         self.assertEqual(BranchCompatibilityState.COMPATIBLE, compatible.state)
         self.assertEqual(BranchCompatibilityState.INCOMPATIBLE, incompatible.state)
+        self.assertEqual(BranchCompatibilityState.COMPATIBLE, fast_forward.state)
+        self.assertEqual(BranchCompatibilityState.BLOCKED, unknown.state)
         order = component_push_order(
             normalize_publication_components(
                 (
@@ -300,6 +331,303 @@ class TopicGitPublicationTests(unittest.TestCase):
             )
         )
         self.assertEqual("main", order[-1])
+
+    def test_history_compatibility_requires_binding_manifest_topology_and_ancestry(self) -> None:
+        binding = self._exclusive_binding()
+        manifest = ProjectionManifest(
+            binding_id=binding.binding_id,
+            plan_id="legacy-plan",
+            created_at="2026-07-27T00:00:00Z",
+            entries=(),
+            components=(),
+        )
+        compatible = evaluate_publication_history_compatibility(
+            binding=binding,
+            manifest=manifest,
+            branch="main",
+            remote_is_ancestor=True,
+            remote_commit_fetched=True,
+        )
+        self.assertTrue(compatible.compatible)
+        purge = evaluate_publication_history_compatibility(
+            binding=binding,
+            manifest=manifest,
+            branch="main",
+            remote_is_ancestor=True,
+            remote_commit_fetched=True,
+            history_disposition=PublicationHistoryDisposition.PURGE,
+        )
+        self.assertFalse(purge.compatible)
+        mismatched = evaluate_publication_history_compatibility(
+            binding=binding,
+            manifest=ProjectionManifest(
+                binding_id="other-binding",
+                plan_id="legacy-plan",
+                created_at="2026-07-27T00:00:00Z",
+                entries=(),
+                components=(),
+            ),
+            branch="main",
+            remote_is_ancestor=True,
+            remote_commit_fetched=True,
+            topology_diagnostics=("component pin is malformed",),
+        )
+        self.assertFalse(mismatched.compatible)
+        self.assertIn("component pin is malformed", str(mismatched.reason))
+
+    def test_history_aware_plan_selects_all_strategies_and_exact_push_forms(self) -> None:
+        binding = self._exclusive_binding()
+        observed = {
+            "components/topic-main": "a" * 40,
+            "components/topic-actors/reviewer": "b" * 40,
+            "main": "c" * 40,
+            "legacy": "9" * 40,
+        }
+        expected = {
+            "components/agents/coder": "d" * 40,
+            "components/topic-actors/reviewer": "e" * 40,
+            "components/topic-main": "a" * 40,
+            "main": "f" * 40,
+        }
+        compatible = PublicationHistoryCompatibility(
+            compatible=True,
+            evidence=("matching binding", "verified ancestry"),
+        )
+        incompatible = PublicationHistoryCompatibility(
+            compatible=False,
+            evidence=("matching binding",),
+            reason="tracked layout is unsupported",
+        )
+        order = (
+            "components/agents/coder",
+            "components/topic-actors/reviewer",
+            "components/topic-main",
+            "main",
+        )
+        plan = plan_history_aware_publication(
+            plan_id="history-aware",
+            binding=binding,
+            observed_refs=observed,
+            expected_refs=expected,
+            compatibility_by_ref={
+                "components/topic-actors/reviewer": incompatible,
+                "components/topic-main": compatible,
+                "main": compatible,
+            },
+            observed_tags={"old": "8" * 40},
+            expected_tags={},
+            observed_remote_head="main",
+            push_order=order,
+        )
+        strategies = {update.ref: update.strategy for update in plan.ref_updates}
+        self.assertEqual(
+            {
+                "components/agents/coder": PublicationRefUpdateStrategy.CREATE,
+                "components/topic-actors/reviewer": PublicationRefUpdateStrategy.FORCE_REPLACEMENT,
+                "components/topic-main": PublicationRefUpdateStrategy.NO_OP,
+                "main": PublicationRefUpdateStrategy.FAST_FORWARD,
+            },
+            strategies,
+        )
+        self.assertEqual(("legacy",), plan.ref_deletions)
+        self.assertEqual(("old",), plan.tag_deletions)
+        self.assertEqual(
+            (),
+            validate_history_aware_publication(
+                plan,
+                binding=binding,
+                current_refs=observed,
+                current_tags={"old": "8" * 40},
+                current_remote_head="main",
+                requested_refs=expected,
+                requested_tags={},
+            ),
+        )
+        stale = validate_history_aware_publication(
+            plan,
+            binding=binding,
+            current_refs={**observed, "main": "7" * 40},
+            current_tags={"old": "8" * 40},
+            current_remote_head="main",
+            requested_refs=expected,
+            requested_tags={},
+        )
+        self.assertTrue(any("stale" in diagnostic for diagnostic in stale))
+        by_ref = {update.ref: update for update in plan.ref_updates}
+        self.assertEqual(
+            (),
+            publication_push_arguments(
+                by_ref["components/topic-main"],
+                remote_name="publication",
+            ),
+        )
+        normal = publication_push_arguments(by_ref["main"], remote_name="publication")
+        self.assertEqual("push", normal[0])
+        self.assertFalse(any("force" in argument for argument in normal))
+        forced = publication_push_arguments(
+            by_ref["components/topic-actors/reviewer"],
+            remote_name="publication",
+        )
+        self.assertIn(
+            "--force-with-lease=refs/heads/components/topic-actors/reviewer:"
+            + "b" * 40,
+            forced,
+        )
+        self.assertNotIn("--force", forced)
+        deletion = publication_delete_push_arguments(
+            ref="legacy",
+            observed_commit="9" * 40,
+            remote_name="publication",
+        )
+        self.assertIn(
+            "--force-with-lease=refs/heads/legacy:" + "9" * 40,
+            deletion,
+        )
+        self.assertEqual(
+            ("c" * 40,),
+            expected_publication_commit_parents(by_ref["main"]),
+        )
+        self.assertEqual(
+            (),
+            validate_publication_commit_parents(
+                by_ref["main"],
+                actual_parents=("c" * 40,),
+            ),
+        )
+        self.assertEqual(
+            (),
+            expected_publication_commit_parents(
+                by_ref["components/agents/coder"]
+            ),
+        )
+
+        changed_strategy = PublicationRefUpdate(
+            ref="main",
+            strategy=PublicationRefUpdateStrategy.FORCE_REPLACEMENT,
+            observed_commit="c" * 40,
+            planned_commit="f" * 40,
+            compatibility=incompatible,
+            fallback_reason="manual structural fallback",
+        )
+        fingerprint_inputs = {
+            "source_fingerprints": {},
+            "expected_output_fingerprints": {},
+            "copy_fingerprints": {},
+            "binding": binding,
+            "components": (),
+            "remote_refs": observed,
+        }
+        self.assertNotEqual(
+            publication_plan_fingerprint(
+                **fingerprint_inputs,
+                ref_updates=plan.ref_updates,
+            ),
+            publication_plan_fingerprint(
+                **fingerprint_inputs,
+                ref_updates=(changed_strategy,),
+            ),
+        )
+
+    def test_withdrawal_conflict_copy_recovery_resume_and_final_verification(self) -> None:
+        binding = self._exclusive_binding()
+        compatible = PublicationHistoryCompatibility(True, ("verified ancestry",))
+        reviewer = "components/topic-actors/reviewer"
+        observed = {reviewer: "a" * 40, "main": "b" * 40}
+        expected = {reviewer: "c" * 40, "main": "d" * 40}
+        self.assertEqual(
+            (reviewer, "main"),
+            history_withdrawal_replacement_scope((reviewer,)),
+        )
+        plan = plan_history_aware_publication(
+            plan_id="withdraw",
+            binding=binding,
+            observed_refs=observed,
+            expected_refs=expected,
+            compatibility_by_ref={reviewer: compatible, "main": compatible},
+            observed_remote_head="main",
+            push_order=(reviewer, "main"),
+            history_withdrawal_refs=(reviewer,),
+            conflicted_refs=(reviewer,),
+        )
+        self.assertTrue(plan.blockers)
+        self.assertTrue(
+            all(
+                update.strategy is PublicationRefUpdateStrategy.FORCE_REPLACEMENT
+                for update in plan.ref_updates
+            )
+        )
+        self.assertTrue(
+            validate_history_aware_publication(
+                plan,
+                binding=binding,
+                current_refs=observed,
+                current_tags={},
+                current_remote_head="main",
+                requested_refs=expected,
+                requested_tags={},
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            missing = plan_publication_copy_preparation(
+                copy_path=root / "copy",
+                recovery_path=root / "recovery",
+                copy_exists=False,
+                copy_clean=False,
+                binding_matches=True,
+                current_head=None,
+                expected_base="b" * 40,
+                remote_recovery_available=True,
+            )
+            self.assertEqual(PublicationCopyPreparationAction.RECOVER, missing.action)
+            dirty = plan_publication_copy_preparation(
+                copy_path=root / "copy",
+                recovery_path=root / "recovery",
+                copy_exists=True,
+                copy_clean=False,
+                binding_matches=True,
+                current_head="b" * 40,
+                expected_base="b" * 40,
+                remote_recovery_available=True,
+            )
+            self.assertEqual(PublicationCopyPreparationAction.RECOVER, dirty.action)
+            self.assertTrue(dirty.preserves_existing_copy)
+
+        unblocked = plan_history_aware_publication(
+            plan_id="publish",
+            binding=binding,
+            observed_refs=observed,
+            expected_refs=expected,
+            compatibility_by_ref={reviewer: compatible, "main": compatible},
+            observed_remote_head="main",
+            push_order=(reviewer, "main"),
+        )
+        self.assertEqual(
+            reviewer,
+            next_publication_resume_ref(unblocked, current_refs=observed),
+        )
+        self.assertEqual(
+            "main",
+            next_publication_resume_ref(
+                unblocked,
+                current_refs={reviewer: "c" * 40, "main": "b" * 40},
+            ),
+        )
+        self.assertEqual(
+            (),
+            validate_completed_publication(
+                unblocked,
+                actual_refs=expected,
+                actual_tags={},
+                actual_parents={
+                    reviewer: ("a" * 40,),
+                    "main": ("b" * 40,),
+                },
+                publication_copies_clean=True,
+                recursive_clone_succeeded=True,
+            ),
+        )
 
     def test_force_replacement_requires_exact_fresh_branch_scoped_approval(self) -> None:
         replacement = DestructiveBranchReplacement(

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "binding_id",
+    "canonical_branch",
+    "history_format",
+    "entries",
+    "components",
+    "selection",
+    "reference_repositories",
+    "reproduction_limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "isomer-topic-git-projection-manifest.v3"},
+    "binding_id": {"type": "string", "minLength": 1},
+    "canonical_branch": {"const": "main"},
+    "history_format": {"const": "sanitized-linear.v1"},
+    "entries": {"type": "array", "items": {"type": "object"}},
+    "components": {"type": "array", "items": {"type": "object"}},
+    "selection": {"type": "object"},
+    "reference_repositories": {"type": "array", "items": {"type": "object"}},
+    "research_index_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "readme_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reproduction_limitations": {"type": "array", "items": {"type": "string"}}
+  }
+}

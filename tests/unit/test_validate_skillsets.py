@@ -170,6 +170,8 @@ isomer-cli project topic-git init
 
 ```bash
 git -C <copy> push --force publication <commit>:refs/heads/topic-workspace/main
+git -C <copy> push --force-with-lease publication <commit>:refs/heads/main
+git -C <copy> push publication <commit>:refs/heads/components/*
 git -C <copy> push publication --delete topic-workspace/main
 ```
 """,
@@ -179,6 +181,7 @@ git -C <copy> push publication --delete topic-workspace/main
         rendered = messages(validator.validate_topic_git_boundary(root))
 
         self.assertTrue(any("exact approved branch replacement" in message for message in rendered), rendered)
+        self.assertTrue(any("wildcard refspec" in message for message in rendered), rendered)
         self.assertTrue(any("broad or deleting remote mutation" in message for message in rendered), rendered)
 
     def test_public_welcome_validator_accepts_all_current_pack_pairs(self) -> None:

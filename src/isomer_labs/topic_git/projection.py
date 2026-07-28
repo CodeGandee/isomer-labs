@@ -157,13 +157,16 @@ class ProjectionManifest:
     research_index_fingerprint: str | None = None
     readme_fingerprint: str | None = None
     reproduction_limitations: tuple[str, ...] = ()
+    canonical_branch: str = "main"
+    history_format: str = "sanitized-linear.v1"
+    source_schema_version: str = "isomer-topic-git-projection-manifest.v3"
 
     def to_json(self) -> dict[str, object]:
         data: dict[str, object] = {
-            "schema_version": "isomer-topic-git-projection-manifest.v2",
+            "schema_version": "isomer-topic-git-projection-manifest.v3",
             "binding_id": self.binding_id,
-            "plan_id": self.plan_id,
-            "created_at": self.created_at,
+            "canonical_branch": self.canonical_branch,
+            "history_format": self.history_format,
             "entries": [entry.to_json() for entry in self.entries],
             "components": [component.to_json() for component in self.components],
             "selection": self.selection.to_json(),
@@ -191,8 +194,8 @@ class ProjectionManifest:
         raw_limitations = payload.get("reproduction_limitations")
         return cls(
             binding_id=str(payload["binding_id"]),
-            plan_id=str(payload["plan_id"]),
-            created_at=str(payload["created_at"]),
+            plan_id=str(payload.get("plan_id", "")),
+            created_at=str(payload.get("created_at", "")),
             entries=tuple(
                 ProjectionEntry.from_json(entry)
                 for entry in raw_entries
@@ -237,6 +240,14 @@ class ProjectionManifest:
             )
             if isinstance(raw_limitations, list)
             else (),
+            canonical_branch=str(payload.get("canonical_branch", "main")),
+            history_format=str(payload.get("history_format", "legacy-sanitized-root.v1")),
+            source_schema_version=str(
+                payload.get(
+                    "schema_version",
+                    "isomer-topic-git-projection-manifest.v1",
+                )
+            ),
         )
 
 

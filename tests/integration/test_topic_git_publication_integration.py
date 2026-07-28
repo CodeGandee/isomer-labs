@@ -8,6 +8,13 @@ import subprocess
 import tempfile
 import unittest
 
+from isomer_labs.topic_git import (
+    PublicationHistoryCompatibility,
+    PublicationRefUpdate,
+    PublicationRefUpdateStrategy,
+    publication_push_arguments,
+)
+
 
 class TopicGitPublicationIntegrationTests(unittest.TestCase):
     def test_recursive_clone_preserves_paths_and_uses_ordinary_component_submodules(self) -> None:
@@ -157,7 +164,7 @@ class TopicGitPublicationIntegrationTests(unittest.TestCase):
             )
             self._git(publication, "add", "--", *exact_superproject_paths)
             self._git(publication, "commit", "-m", "publish current topic snapshot", "--", *exact_superproject_paths)
-            self._git(publication, "push", "--force", "publication", "HEAD:refs/heads/main")
+            self._git(publication, "push", "publication", "HEAD:refs/heads/main")
 
             clone = root / "clone"
             self._git(
@@ -228,6 +235,89 @@ class TopicGitPublicationIntegrationTests(unittest.TestCase):
                     "components/agents/coder",
                 },
                 remote_branches,
+            )
+
+    def test_incremental_publication_preserves_history_and_leased_fallback_replaces_it(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            remote = root / "publication.git"
+            self._git(root, "init", "--bare", str(remote))
+
+            initial = self._fresh_branch_repo(
+                root / "initial-publication",
+                "main",
+                "README.md",
+                b"sanitized publication v1\n",
+            )
+            self._git(initial, "remote", "add", "publication", str(remote))
+            self._git(initial, "push", "publication", "HEAD:refs/heads/main")
+            initial_commit = self._git(initial, "rev-parse", "HEAD")
+
+            incremental = root / "incremental-publication"
+            self._git(root, "clone", "--branch", "main", str(remote), str(incremental))
+            self._git(incremental, "config", "user.name", "Isomer Publication")
+            self._git(incremental, "config", "user.email", "isomer-publication@invalid")
+            (incremental / "README.md").write_bytes(b"sanitized publication v2\n")
+            self._git(incremental, "add", "--", "README.md")
+            self._git(incremental, "commit", "-m", "publish sanitized delta", "--", "README.md")
+            incremental_commit = self._git(incremental, "rev-parse", "HEAD")
+            self.assertEqual(
+                initial_commit,
+                self._git(incremental, "rev-parse", "HEAD^"),
+            )
+            self._git(
+                incremental,
+                "push",
+                "origin",
+                f"{incremental_commit}:refs/heads/main",
+            )
+            self.assertEqual(
+                incremental_commit,
+                self._git(root, "--git-dir", str(remote), "rev-parse", "refs/heads/main"),
+            )
+
+            replacement = self._fresh_branch_repo(
+                root / "replacement-publication",
+                "main",
+                "README.md",
+                b"sanitized publication after incompatible layout\n",
+            )
+            replacement_commit = self._git(replacement, "rev-parse", "HEAD")
+            self.assertEqual(
+                replacement_commit,
+                self._git(replacement, "rev-list", "--max-parents=0", "HEAD"),
+            )
+            self._git(replacement, "remote", "add", "publication", str(remote))
+            fallback = PublicationRefUpdate(
+                ref="main",
+                strategy=PublicationRefUpdateStrategy.FORCE_REPLACEMENT,
+                observed_commit=incremental_commit,
+                planned_commit=replacement_commit,
+                compatibility=PublicationHistoryCompatibility(
+                    compatible=False,
+                    evidence=("matching binding",),
+                    reason="tracked publication layout is structurally incompatible",
+                ),
+                fallback_reason="tracked publication layout is structurally incompatible",
+            )
+            self._git(
+                replacement,
+                *publication_push_arguments(fallback, remote_name="publication"),
+            )
+            self.assertEqual(
+                replacement_commit,
+                self._git(root, "--git-dir", str(remote), "rev-parse", "refs/heads/main"),
+            )
+            self.assertEqual(
+                replacement_commit,
+                self._git(
+                    root,
+                    "--git-dir",
+                    str(remote),
+                    "rev-list",
+                    "--max-parents=0",
+                    "refs/heads/main",
+                ),
             )
 
     def _write_source_fixture(self, source: Path, component_paths: dict[str, Path]) -> None:

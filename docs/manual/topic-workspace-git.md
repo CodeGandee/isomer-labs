@@ -15,7 +15,7 @@ Use `$isomer-op-entrypoint use topic-git to <task>` for concrete work. A request
 
 Source Topic Workspace is the contextual role of the canonical Topic Workspace when contrasted with published material. It is not another schema type or a fourth workspace.
 
-Topic Publication Copy is an ignored Project-local derived projection used for privacy review, fresh sanitized Git histories, submodule construction, and remote push. It is disposable and recoverable after a successful publication. It is not a Topic Workspace, Topic Actor Workspace, Agent Workspace, canonical source, Workspace Runtime, Artifact authority, research record source, or operational backup.
+Topic Publication Copy is an ignored Project-local derived projection used for privacy review, sanitized Git history construction, submodule construction, and remote push. It is disposable and recoverable after a successful publication. It is not a Topic Workspace, Topic Actor Workspace, Agent Workspace, canonical source, Workspace Runtime, Artifact authority, research record source, or operational backup.
 
 The three-workspace taxonomy remains unchanged:
 
@@ -23,7 +23,7 @@ The three-workspace taxonomy remains unchanged:
 - Topic Actor Workspace is a human-orchestrated topic-local work area.
 - Agent Workspace is a formal Agent Instance work area.
 
-Topic Main remains the canonical development-repository anchor for Topic Actor and Agent worktrees. Local root tracking excludes those nested repositories. Publication creates fresh sanitized histories and never imports their source ancestry.
+Topic Main remains the canonical development-repository anchor for Topic Actor and Agent worktrees. Local root tracking excludes those nested repositories. Initial publication creates sanitized root commits and never imports source ancestry. Later publication may extend only compatible sanitized publication ancestry.
 
 ## Query and Git Boundary
 
@@ -81,7 +81,7 @@ Every considered path receives one disposition:
 | `track` | Copy reviewed current content unchanged. |
 | `template` | Create an approved placeholder-bearing or sanitized output only in the Topic Publication Copy. |
 | `exclude` | Omit private, runtime, disposable, unapproved, or irrelevant material and record why. |
-| `component` | Build a fresh sanitized component repository and represent it as a submodule. |
+| `component` | Build an initial sanitized component root or a compatible sanitized delta and represent it as a submodule. |
 | `block` | Stop until size, format, credential, private-key, signed-URL, license, or ambiguity risk is resolved. |
 
 Structured sensitive values become descriptive placeholders such as `${OPENAI_API_KEY}`. Explicitly targeted sanitized text copies also stay inside the Topic Publication Copy. Unsupported binary and archive masking blocks publication. The workflow preserves every source file and rescans every output before it becomes eligible for a commit.
@@ -90,7 +90,7 @@ Every retained source-backed `track`, `template`, or `component` entry keeps its
 
 The copier never transfers `.git` directories, `.git` worktree files, Git configuration, objects, refs, reflogs, indexes, credential stores, source remotes, or source history. It also excludes Workspace Runtime, `state.sqlite`, local environments, caches, logs, temporary material, local canonical external-repository checkouts, credentials, and unapproved records by default.
 
-Generated publication content is limited to root `README.md`, root `.gitmodules`, and the `.isomer-publication/` overlay. A sanitizable source README is retained and composed with one versioned generated navigation block. The portable research-record index lives at `.isomer-publication/research-record-index.json`, the Publication Projection Manifest at `.isomer-publication/topic-workspace-projection.json`, and the version manifest at `.isomer-publication/topic-workspace-version.toml`. These files omit absolute source paths, credentials, sensitive excerpts, raw private diffs, excluded content, source remote configuration, and source ancestry.
+Generated publication content is limited to root `README.md`, root `.gitmodules`, and the `.isomer-publication/` overlay. A sanitizable source README is retained and composed with one versioned generated navigation block. The portable research-record index lives at `.isomer-publication/research-record-index.json`, the Publication Projection Manifest at `.isomer-publication/topic-workspace-projection.json`, and the version manifest at `.isomer-publication/topic-workspace-version.toml`. These files contain stable binding, projection, topology, component-pin, and reproduction data. Plan ids, approval timestamps, observed remote state, push attempts, and outcomes remain in ignored support storage so unchanged content produces no metadata-only commit. Tracked metadata also omits absolute source paths, credentials, sensitive excerpts, raw private diffs, excluded content, source remote configuration, and source ancestry.
 
 The generated README links the latest eligible paper at its path-preserved Artifact location. Publication never creates `paper/latest.pdf` or another relocated alias. Git does not represent empty directories, so an empty source directory is absent unless it already contains an approved tracked placeholder. Source paths below `.isomer-publication/`, source root `.gitmodules`, generated files that shadow source content, synthetic content-class directories, and component files flattened into the superproject are blockers.
 
@@ -98,7 +98,7 @@ The generated README links the latest eligible paper at its path-preserved Artif
 
 Each plan selects every currently available Topic Main, registered Topic Actor Workspace, and selected-team Agent Workspace resolved through Isomer queries unless the user explicitly excludes it. Newly available topology stales an older plan and requires renewed privacy review.
 
-| Source Component | Fresh Publication Branch |
+| Source Component | Sanitized Publication Branch |
 | --- | --- |
 | Topic Main | `components/topic-main` |
 | Topic Actor `<name>` | `components/topic-actors/<sanitized-name>` |
@@ -119,17 +119,19 @@ flowchart LR
     L[Last Projection Manifest] --> E
     E --> C[Current Publication Copy]
     R[Observed Remote Refs, Tags, and HEAD] --> C
-    C --> P[Approved Snapshot Replacement]
+    C --> P[Approved Per-Ref Strategy]
 ```
 
 An unchanged prior output may be updated. An output whose source disappeared may be deleted only while it still matches the last generated fingerprint. A destination-only edit combined with a source change, or an edited destination whose source disappeared, becomes a conflict. Sync overwrites neither side without an explicit resolution.
 
-A missing Topic Publication Copy reports `copy-missing`. Sync can recover disposable projection state from a runtime binding or a resupplied remote and canonical `main`, then reinventory and regenerate current source content. Losing an unpushed pre-runtime copy loses its local plan and requires preparation again. Publication recovery does not restore Workspace Runtime, source Git ancestry, or Topic Main worktrees; reconstruction of a working Topic Workspace is manual.
+A missing Topic Publication Copy reports `copy-missing`. Sync can recover disposable projection state from a runtime binding or a resupplied remote, canonical `main`, and its exact pinned component refs, then reinventory and regenerate current source content. A retained copy is reusable only when it is clean, matches the binding, and is based on the exact observed commit. Dirty, divergent, or invalid copies remain unchanged; sync blocks or uses a separate disposable recovery repository. Losing an unpushed pre-runtime copy loses its local plan and requires preparation again. Publication recovery does not restore Workspace Runtime, source Git ancestry, or Topic Main worktrees; reconstruction of a working Topic Workspace is manual.
 
-The Publication Binding records one-time `exclusive_snapshot` authority. It remains valid only while the remote identity, Research Topic, Topic Workspace, and snapshot mode match. Each sync still requires a current privacy plan, complete remote branch and tag inventory, observed remote HEAD, exact expected refs and tags, stale-state validation, and current remote-mutation approval.
+The Publication Binding records one-time `exclusive_snapshot` fallback and deletion authority. It remains valid only while the remote identity, Research Topic, Topic Workspace, and snapshot mode match. Each sync still requires a current privacy plan, complete remote branch and tag inventory, observed remote HEAD, exact expected refs and tags, stale-state validation, one persisted strategy per expected ref, and current remote-mutation approval.
 
-Exact commit equality is the only reusable-ref match. The current-state plan may force-replace prior commits and legacy branches such as `topic-workspace/main` and source-style component branches, then delete every planned obsolete branch and tag. Topic Git uses exact refspecs and never uses all-ref or mirror pushes.
+Each expected ref receives one strategy. Exact commit equality is `no-op`; an absent ref is `create`; and a differing compatible sanitized publication is `fast-forward`, with the observed commit as the new commit's only parent. Compatibility requires the matching binding, supported tracked metadata, canonical topology, matching component pins, permitted history retention, and freshly fetched ancestry. Create and fast-forward use exact ordinary refspecs.
 
-Components commit and push first. The superproject then updates `.gitmodules`, gitlinks, path-preserved files, and the `.isomer-publication/` overlay and pushes canonical `main` last. Exact ref outcomes and a safe resume point make partial failure resumable without treating a legacy branch or prior commit as authoritative.
+Unsupported or mismatched history blocks or becomes an explicitly approved `force-replacement` fallback. Force replacement also applies when a privacy, credential, identity, license, or withdrawal decision requires earlier content to become unreachable. If retained superproject ancestry would still reference affected component content, fallback scope includes canonical `main`. Fallback uses exact branch-scoped `--force-with-lease` against the observed commit under `exclusive_snapshot` authority. Missing local state, ordinary source changes, and unresolved destination conflicts never justify force replacement. Provider object retention can outlive a ref replacement and requires separate reporting or provider cleanup when stronger erasure is required.
+
+Components commit and push first. The superproject then updates `.gitmodules`, gitlinks, path-preserved files, and the `.isomer-publication/` overlay and pushes canonical `main` last. The previous `main` remains the authoritative complete publication until the new `main` succeeds. Exact strategy outcomes and a safe resume point make partial failure resumable after a fresh complete inventory recognizes already completed exact results.
 
 Remote HEAD is hosted-provider state, not an ordinary pushed branch. Sync reports when it does not select `main` and requires a separate explicit provider-supported action before changing the default branch. If remote HEAD selects a branch scheduled for deletion, that provider action must succeed before the exact ref deletion.

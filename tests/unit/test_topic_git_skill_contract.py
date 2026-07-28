@@ -116,6 +116,13 @@ class TopicGitSkillContractTests(unittest.TestCase):
                 self.assertNotIn("--all", command)
                 self.assertNotIn("--mirror", command)
                 self.assertNotIn("--delete", command)
+                self.assertNotIn("*", command)
+                self.assertNotIn("push --force ", command)
+                if "--force-with-lease" in command:
+                    self.assertRegex(
+                        command,
+                        r"--force-with-lease=refs/(?:heads|tags)/[^: ]+:<observed-[^>]+>",
+                    )
 
     def test_non_git_helpers_do_not_execute_processes(self) -> None:
         helper_root = REPO_ROOT / "src" / "isomer_labs" / "topic_git"
@@ -136,6 +143,12 @@ class TopicGitSkillContractTests(unittest.TestCase):
             "organization or source provenance",
             "Isomer Publication",
             "exclusive_snapshot",
+            "compatible sanitized publication",
+            "`no-op`",
+            "`create`",
+            "`fast-forward`",
+            "`force-replacement`",
+            "--force-with-lease",
             "components/topic-main",
             "components/topic-actors/<sanitized-name>",
             "components/agents/<sanitized-name>",
@@ -147,6 +160,7 @@ class TopicGitSkillContractTests(unittest.TestCase):
         self.assertNotIn("canonical external repositories, credentials, and unapproved records", all_text)
         self.assertNotIn("Use one credential-safe remote for every `.gitmodules` entry", all_text)
         self.assertNotIn("Latest paper: [PDF](paper/latest.pdf)", all_text)
+        self.assertNotIn("push --force publication", all_text)
 
     def test_publication_guidance_preserves_paths_and_complete_snapshot_state(self) -> None:
         all_text = "\n".join(path.read_text(encoding="utf-8") for path in sorted(SKILL_ROOT.rglob("*.md")))
@@ -158,9 +172,27 @@ class TopicGitSkillContractTests(unittest.TestCase):
             "remote HEAD",
             "delete each exact planned obsolete branch or tag",
             "ordinary same-remote component submodules",
+            "one strategy per expected ref",
+            "Missing local state is not a force-replacement reason",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, all_text)
+
+    def test_publication_push_examples_keep_components_before_main(self) -> None:
+        commands = shell_commands(SKILL_ROOT / "commands" / "publish" / "sync.md")
+        component_pushes = [
+            index
+            for index, command in enumerate(commands)
+            if " push " in command and "refs/heads/<component-branch>" in command
+        ]
+        main_pushes = [
+            index
+            for index, command in enumerate(commands)
+            if " push " in command and "refs/heads/main" in command
+        ]
+        self.assertTrue(component_pushes)
+        self.assertTrue(main_pushes)
+        self.assertLess(max(component_pushes), min(main_pushes))
 
 
 if __name__ == "__main__":

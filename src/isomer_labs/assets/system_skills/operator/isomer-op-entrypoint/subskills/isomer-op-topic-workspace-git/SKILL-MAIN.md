@@ -22,7 +22,7 @@ Own two independent, disabled-by-default Git layers:
 | Layer | Input | Result | Remote Posture |
 | --- | --- | --- | --- |
 | Local tracking | Canonical Topic Workspace root | Local root repository and exact commits that preserve nested repository topology | Never contacts a remote |
-| Remote publication | Current Topic Workspace filesystem and registered source identities | Inspectable sanitized evidence and artifact snapshot with fresh topic-owned histories and exact upstream references | Replaces the approved publication remote snapshot only through a current plan |
+| Remote publication | Current Topic Workspace filesystem and registered source identities | Inspectable sanitized evidence and artifacts with compatible sanitized publication ancestry and exact upstream references | Preserves compatible history through normal pushes and uses exact replacement only as an approved fallback |
 
 Key terms:
 
@@ -50,6 +50,7 @@ Ordinary Topic Workspace storage, actor, team, environment, reset, and diagnosti
    - Local mutation requires valid Workspace Runtime.
    - Publication may begin after Topic Workspace registration and keeps pre-runtime support in the ignored copy.
    - Publication preserves retained Source Topic Workspace-relative paths while selecting intent, environment declarations, durable research lineage, topic-owned components, and registered GitHub references by default.
+   - Publication never imports source Git ancestry. It may extend a compatible prior sanitized publication commit as the direct parent of a sanitized delta.
    - Downloaded material bytes and raw experiment-output bytes remain excluded until the current plan explicitly selects them.
 5. **Revalidate and execute directly**. Recompute applicable assumptions and run path-scoped `git -C <validated-path> ...`.
 6. **Verify and persist**. Check the exact repository or projection state, write only schema-valid support files, and report local and publication outcomes separately.
@@ -75,7 +76,7 @@ If the task does not map cleanly to these operations, use the native planning to
 | [references/context-queries.md](references/context-queries.md) | Read-only Isomer context and topology queries, pinning, and rejection rules. |
 | [references/direct-git-safety.md](references/direct-git-safety.md) | Direct path-scoped Git, exact staging, ref safety, and forbidden operations. |
 | [references/local-safety.md](references/local-safety.md) | Local runtime prerequisite, ancestor evidence, root repository, nested exclusions, and local support state. |
-| [references/publication-safety.md](references/publication-safety.md) | Destination, topic-owned and upstream-reference submodules, exclusive snapshot replacement, copy recovery, and push order. |
+| [references/publication-safety.md](references/publication-safety.md) | Destination, topic-owned and upstream-reference submodules, history-aware synchronization, exclusive-snapshot fallback, copy recovery, and push order. |
 | [references/privacy-projection.md](references/privacy-projection.md) | Semantic defaults, raw-byte selection, individual-identity sanitization, navigation, manifests, rescanning, and conflicts. |
 | [references/persistence.md](references/persistence.md) | Layer-specific schemas, copy-local state, runtime promotion, outcomes, and forbidden content. |
 
@@ -95,8 +96,8 @@ Lead with the selected Research Topic, operation, and outcome.
 | Operation | Report |
 | --- | --- |
 | Status | Local state (`disabled`, `enabled`, or `invalid`), publication state (`disabled`, `prepared`, `synchronized`, `stale`, `copy-missing`, or `blocked`), blockers, and next actions |
-| Plan | Exact semantic scope, source-to-output path identity, raw-byte settings, repository identities, reproduction limitations, complete remote refs and tags, approvals, conflicts, and blockers without sensitive excerpts |
-| Mutation | Changed paths, README and research-index state, commits or refs, ref and remote-HEAD outcomes, verification, and safe next action |
+| Plan | Exact semantic scope, source-to-output path identity, raw-byte settings, repository identities, reproduction limitations, complete remote refs and tags, history posture, per-ref strategies and evidence, approvals, conflicts, and blockers without sensitive excerpts |
+| Mutation | Changed paths, README and research-index state, commits or refs, preserved sanitized ancestry or fallback replacement, ref and remote-HEAD outcomes, verification, and safe next action |
 
 ### Complete Output
 
@@ -104,8 +105,8 @@ Include:
 
 - resolved context, sources, paths, and repository identities;
 - dispositions, fingerprints, direct commands, and index verification;
-- binding, visibility, exclusive-snapshot authority, component and reference selection, raw-byte settings, identity substitutions, reproduction limitations, conflicts, and complete remote inventory;
-- snapshot-replacement evidence, ref and tag outcomes, remote-HEAD diagnostics, support files, and resume state.
+- binding, visibility, exclusive-snapshot fallback authority, component and reference selection, raw-byte settings, identity substitutions, reproduction limitations, conflicts, and complete remote inventory;
+- history-compatibility and fallback evidence, per-ref strategies, ref and tag outcomes, remote-HEAD diagnostics, support files, and resume state.
 
 ## Guardrails
 

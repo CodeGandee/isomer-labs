@@ -21,6 +21,7 @@ from isomer_labs.topic_git import (
     compare_projection,
     fingerprint_bytes,
     inventory_projection_sources,
+    materialize_exact_projection,
     materialize_projection,
     render_publication_readme,
     render_projection_manifest,
@@ -346,6 +347,35 @@ class TopicGitProjectionTests(unittest.TestCase):
             self.assertFalse((copy / ".git" / "config").exists())
             self.assertFalse((copy / "runtime" / "state.sqlite").exists())
 
+    def test_exact_materialization_removes_stale_output_but_preserves_support_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "topic"
+            publication = root / "publication"
+            source.mkdir()
+            publication.mkdir()
+            (source / "README.md").write_text("current\n", encoding="utf-8")
+            (publication / "stale.txt").write_text("stale\n", encoding="utf-8")
+            support = publication / ".isomer" / "topic-git"
+            support.mkdir(parents=True)
+            (support / "outcomes.json").write_text("{}\n", encoding="utf-8")
+            entries, removed = materialize_exact_projection(
+                source,
+                publication,
+                (
+                    ProjectionEntry(
+                        "README.md",
+                        "README.md",
+                        PrivacyDisposition.TRACK,
+                        fingerprint_bytes(b"current\n"),
+                    ),
+                ),
+            )
+            self.assertEqual("README.md", entries[0].output_relative_path)
+            self.assertEqual(("stale.txt",), removed)
+            self.assertFalse((publication / "stale.txt").exists())
+            self.assertTrue((support / "outcomes.json").is_file())
+
     def test_four_way_comparison_handles_updates_deletions_and_conflicts(self) -> None:
         comparison = compare_projection(
             expected={
@@ -484,7 +514,9 @@ class TopicGitProjectionTests(unittest.TestCase):
         )
         rendered = render_projection_manifest(manifest)
         payload = json.loads(rendered)
-        self.assertEqual("isomer-topic-git-projection-manifest.v2", payload["schema_version"])
+        self.assertEqual("isomer-topic-git-projection-manifest.v3", payload["schema_version"])
+        self.assertNotIn("plan_id", payload)
+        self.assertNotIn("created_at", payload)
         self.assertFalse(payload["selection"]["include_raw_material_bytes"])
         self.assertEqual("c" * 40, payload["reference_repositories"][0]["commit_sha"])
         self.assertIn("https://github.com/SJTU-IPADS/PowerInfer.git", rendered)
