@@ -31,14 +31,14 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 
 ## Examination, Comparison, Audit, and Synthesis
 
-- `KAOJU:SOURCE-DIGEST`: inspected source identity, exact locators, statements, interpretations, contradictions, and depth.
+- `KAOJU:SOURCE-DIGEST`: inspected source identity, exact locators, statements, interpretations, contradictions, and depth; lecture-depth digests also carry the selected Run commitment, pedagogical exposition plan, exact equation and display treatment, dedicated-section outline, readiness, and blockers.
 - `KAOJU:CLAIM-EVIDENCE-LEDGER`: current mapping from claim ids to supporting, challenging, provisional, and missing evidence.
 - `KAOJU:THEORY-COMPARISON`: exact-evidence comparison of named works without empirical execution.
 - `KAOJU:COMPARISON-MATRIX`: audited cross-method view with evidence, variability, adaptations, failures, and non-comparability.
 - `KAOJU:COMPARISON-RUN`: immutable first-hand execution evidence for one comparison candidate and attempt.
 - `KAOJU:AUDIT-REPORT`: non-mutating readiness assessment, defects, affected claims, repair routes, and decision.
 - `KAOJU:CLAIM-STATUS-TABLE`: current conclusion status, depth, evidence, contradictions, and limits.
-- `KAOJU:FIELD-SUMMARY`: bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits.
+- `KAOJU:FIELD-SUMMARY`: bounded themes, chronology, taxonomy, representative works, disagreements, gaps, limits, and the deterministic inventory of active, blocked, or explicitly superseded lecture-section commitments.
 - `KAOJU:KAOJU-DOSSIER`: navigable assembly of accepted survey outputs and exact refs.
 
 ## Environment and Trials
@@ -68,7 +68,7 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 - `KAOJU:CITATION-MAP`: citation roles, source refs, locators, claim links, display links, and evidence status.
 - `KAOJU:PAPER-TEMPLATE-EXPORT`: registered non-canonical working-directory observation for a stable named content or LaTeX template.
 - `KAOJU:PAPER-TEMPLATE-MANIFEST`: template kind, export identity, state token, tree digests, path, time, and actor provenance.
-- `KAOJU:PAPER-REVISION-LOG`: append-only canonical paper changes, evidence effects, and actor decisions.
+- `KAOJU:PAPER-REVISION-LOG`: append-only canonical paper changes, evidence effects, actor decisions, and the affected active, blocked, or explicitly superseded lecture Run or Source Digest lineage.
 - `KAOJU:PAPER-TEMPLATE-TEX`: exact paper-line snapshot of one observed named LaTeX stock tree and presentation fingerprint.
 - `KAOJU:PAPER-DRAFT-TEX`: self-contained composition of canonical MyST and one TeX snapshot, with entrypoint, diagnostics, and paper-local repair posture.
 - `KAOJU:PAPER-PDF`: immutable built PDF output.

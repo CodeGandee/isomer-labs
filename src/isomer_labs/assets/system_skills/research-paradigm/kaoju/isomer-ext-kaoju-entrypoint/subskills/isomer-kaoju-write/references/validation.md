@@ -5,6 +5,7 @@ A successful build does not make a paper ready. A bound `KAOJU:PAPER-VALIDATION-
 ## Structural and Textual Checks
 
 - canonical MyST revision, structure, citations, placeholders, display refs, and evidence boundaries
+- accepted lecture commitment basis and inventory, one dedicated named section per active commitment, explicit blocked or superseded posture, frontmatter lecture coverage, equation symbol definitions, display treatment and attribution, Citation Map lineage, limitations, and supported not-applicable components; pass the exact accepted refs through `paper validate --field-summary-ref FIELD-SUMMARY --citation-map-ref CITATION-MAP`
 - separate observed content-template and LaTeX-template identities, exact snapshot digest, composition contract, declared entrypoint, conversion diagnostics, presentation fingerprint, and included-file digests
 - stocked-template drift and paper-local repair drift
 - absence of authored section numbers

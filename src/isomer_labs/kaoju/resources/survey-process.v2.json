@@ -182,6 +182,12 @@
         "depths": ["skim", "triage"]
       },
       {
+        "mindset_key": "paper.lecture",
+        "actions": ["ingest-reading-item", "examine"],
+        "source_kinds": ["paper", "report"],
+        "depths": ["lecture"]
+      },
+      {
         "mindset_key": "source-code.ingest",
         "actions": ["ingest-source-code", "examine"],
         "source_kinds": ["repository", "source-tree"],

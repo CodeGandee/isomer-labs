@@ -1,0 +1,124 @@
+{
+  "schema_version": "isomer-kaoju-mindset-source.v2",
+  "mindset_key": "paper.lecture",
+  "purpose": "Guide a survey-relative lecture-depth paper examination that prepares accepted evidence for a dedicated, self-contained explanation of the paper's method.",
+  "applicability": {
+    "actions": ["ingest-reading-item", "examine"],
+    "source_kinds": ["paper", "report"],
+    "depths": ["lecture"]
+  },
+  "questions": [
+    {
+      "question_id": "survey-section-role",
+      "prompt": "Why does this paper warrant a dedicated detailed section in the active survey, and what role must that section play in the survey's argument?",
+      "additional_notes": "",
+      "answer_expectation": "Define the section role against the pinned Survey Contract and accepted survey structure without treating paper prominence as evidence strength.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite the paper identity, active survey-context refs, and accepted evidence that justifies the dedicated treatment."
+    },
+    {
+      "question_id": "reader-contract",
+      "prompt": "What should the intended reader understand after the section, and which prerequisites must the section introduce?",
+      "additional_notes": "",
+      "answer_expectation": "State a bounded learning outcome and every prerequisite needed for standalone method comprehension.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite source definitions, assumptions, and survey reader or paper-contract context when available."
+    },
+    {
+      "question_id": "problem-setting-and-notation",
+      "prompt": "Which problem setting, assumptions, definitions, and notation must be established before explaining the method?",
+      "additional_notes": "",
+      "answer_expectation": "Build a complete problem and notation inventory without filling unstated definitions from memory.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact sections, definitions, equations, tables, or appendices for every required term and symbol."
+    },
+    {
+      "question_id": "method-intuition",
+      "prompt": "What is the method's central intuition, and why do its major design choices follow from that intuition?",
+      "additional_notes": "",
+      "answer_expectation": "Separate source-stated motivation from the agent's pedagogical interpretation and identify unsupported links.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact motivation, overview, method, ablation, or discussion locators."
+    },
+    {
+      "question_id": "method-walkthrough",
+      "prompt": "What is the method's ordered algorithm, architecture, data flow, or reasoning process at enough detail for standalone comprehension?",
+      "additional_notes": "",
+      "answer_expectation": "Trace inputs, transformations, decisions, and outputs in execution or reasoning order while preserving stated assumptions.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact algorithm, equation, architecture, method-section, appendix, or associated-code locators for each material step."
+    },
+    {
+      "question_id": "worked-trace",
+      "prompt": "Which concrete example, worked derivation, or execution trace best helps a reader follow the method, and what source evidence supports it?",
+      "additional_notes": "",
+      "answer_expectation": "Select or construct only a trace supported by inspected evidence, or mark it not applicable with rationale.",
+      "required_posture": "answer-or-not-applicable",
+      "evidence_expectation": "Cite the source example, derivation, algorithm steps, figure, table, or code path used by the trace."
+    },
+    {
+      "question_id": "equation-teaching-plan",
+      "prompt": "Which equations are essential to understanding the method, what does every symbol mean, and how should each equation be interpreted or derived in the survey?",
+      "additional_notes": "",
+      "answer_expectation": "Identify only essential equations, define every used symbol, and preserve assumptions and qualifications needed for interpretation.",
+      "required_posture": "answer-or-not-applicable",
+      "evidence_expectation": "Cite exact equation, definition, surrounding-text, and appendix locators plus applicable Claim-Evidence Ledger refs."
+    },
+    {
+      "question_id": "display-teaching-plan",
+      "prompt": "Which original figures or tables are essential, what does each show, and should the survey reproduce, adapt, redraw, describe, or omit each one?",
+      "additional_notes": "",
+      "answer_expectation": "Record the teaching role and supported handling posture for each essential display without creating final paper assets.",
+      "required_posture": "answer-or-not-applicable",
+      "evidence_expectation": "Cite exact figure or table locators, captions, surrounding text, underlying values or code when available, and attribution, provenance, license, permission, or blocker evidence."
+    },
+    {
+      "question_id": "evidence-and-results",
+      "prompt": "Which experiments, analyses, or theoretical results establish the method's main claims, and how strong is that evidence?",
+      "additional_notes": "",
+      "answer_expectation": "Calibrate every conclusion to the achieved evidence depth and preserve contradictions and inconclusive results.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite exact result, proof, dataset, metric, baseline, ablation, table, figure, or appendix locators and evidence verdicts."
+    },
+    {
+      "question_id": "comparison-and-positioning",
+      "prompt": "How does the method differ from its closest alternatives along the survey's accepted comparison dimensions?",
+      "additional_notes": "",
+      "answer_expectation": "Compare only dimensions supported by accepted evidence and mark unavailable or non-comparable dimensions explicitly.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite compared work refs, exact paper locators, and accepted comparison or synthesis refs."
+    },
+    {
+      "question_id": "limitations-and-failure-modes",
+      "prompt": "Which assumptions, limitations, failure cases, contradictions, and unresolved details qualify the explanation?",
+      "additional_notes": "",
+      "answer_expectation": "Keep explicit and observed boundaries visible in the proposed explanation without filling gaps from memory.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite limitation statements, contradictory findings, failure examples, omissions, and applicable code or trial evidence."
+    },
+    {
+      "question_id": "section-outline-and-readiness",
+      "prompt": "What is the proposed dedicated-section sequence, and what evidence, explanation, display, permission, or interpretation gaps still block lecture-ready status?",
+      "additional_notes": "",
+      "answer_expectation": "Map an ordered pedagogical outline to accepted evidence and return lecture-ready only when every required job is supported or explicitly not applicable.",
+      "required_posture": "answer-or-unresolved",
+      "evidence_expectation": "Cite every Source Digest finding, ledger entry, survey-context ref, display candidate, and blocker that determines readiness."
+    }
+  ],
+  "question_sets": [
+    {
+      "question_set_id": "default",
+      "triggering_condition": "Use when no specialized question set matches the task and active Run context.",
+      "question_ids": "all"
+    }
+  ],
+  "additional_question_collector": {
+    "question_id": "additional-questions",
+    "prompt": "Did the user explicitly assign any additional questions to this Mindset Record that the fixed Mindset Source questions do not cover?",
+    "additional_notes": "",
+    "answer_expectation": "Register only questions explicitly targeted to the Mindset Record. Save ordinary paper or source-code questions and findings in the applicable reading Artifacts. If no additional questions were explicitly assigned, record none.",
+    "required_posture": "collect-explicit-only",
+    "evidence_expectation": "Record the explicit association basis and cite evidence when the supplemental question is answered.",
+    "repeatable": true
+  }
+}

@@ -173,7 +173,39 @@ class KaojuSkillAssetTests(unittest.TestCase):
         self.assertIn("recorded", combined)
         self.assertIn("skip Record loading", combined)
         self.assertIn("perform no Mindset Record Artifact operation", combined)
+        self.assertIn("paper.lecture", combined)
+        self.assertIn("dedicated detailed survey section", combined)
+        self.assertIn("lecture_exposition", combined)
+        self.assertIn("does not author final paper prose", combined)
         self.assertNotIn("create-missing mode before Run creation", combined)
+
+    def test_synthesis_preserves_deterministic_lecture_commitment_inventory(self) -> None:
+        synthesis = skill_entrypoint(
+            SUBSKILLS / "isomer-kaoju-synthesize"
+        ).read_text(encoding="utf-8")
+        self.assertIn("lecture_commitment_basis", synthesis)
+        self.assertIn("lecture_section_commitments", synthesis)
+        self.assertIn("explicit empty lists", synthesis)
+        self.assertIn("active", synthesis)
+        self.assertIn("blocked", synthesis)
+        self.assertIn("superseded", synthesis)
+        self.assertIn("a later non-lecture Run", synthesis)
+
+    def test_paper_drafting_maps_lecture_commitments_to_dedicated_sections(self) -> None:
+        draft = (ENTRYPOINT / "commands/draft-paper.md").read_text(encoding="utf-8")
+        writer_root = SUBSKILLS / "isomer-kaoju-write"
+        writer = skill_entrypoint(writer_root).read_text(encoding="utf-8")
+        contract = (writer_root / "references/paper-contract.md").read_text(encoding="utf-8")
+        structure = (writer_root / "references/manuscript-structure.md").read_text(encoding="utf-8")
+        combined = "\n".join((draft, writer, contract, structure))
+        self.assertIn("lecture_commitment_basis", combined)
+        self.assertIn("lecture_section_commitments", combined)
+        self.assertIn("dedicated named section", combined)
+        self.assertIn("paper as the primary subject", combined)
+        self.assertIn("shared short related-work paragraph", combined)
+        self.assertIn("lecture_sections", combined)
+        self.assertIn("PAPER-DISPLAY", combined)
+        self.assertIn("handling posture", combined)
 
     def test_topic_initialization_and_derived_apply_guidance_is_complete(self) -> None:
         create_topic = (

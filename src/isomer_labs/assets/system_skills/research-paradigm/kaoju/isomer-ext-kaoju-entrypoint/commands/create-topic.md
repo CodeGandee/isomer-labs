@@ -28,7 +28,7 @@ If the user's task does not map cleanly to these steps, use the native planning 
 
 ## Owner, Inputs, and Outputs
 
-Owner: `isomer-ext-kaoju-entrypoint->topic-creator`. Generic prerequisite owner: `isomer-op-entrypoint->topic-create`. Template mutation owner: `isomer-ext-kaoju-entrypoint->write`. Input: one concrete `topic.intent.overview` and ready Workspace Runtime. Outputs: validated topic-owned `paper.deep-dive`, `paper.skimming`, and `source-code.ingest` Mindset Sources beneath `topic.intent.kaoju_mindsets`; canonical content and LaTeX `main` stock; and non-canonical plural-path working copies.
+Owner: `isomer-ext-kaoju-entrypoint->topic-creator`. Generic prerequisite owner: `isomer-op-entrypoint->topic-create`. Template mutation owner: `isomer-ext-kaoju-entrypoint->write`. Input: one concrete `topic.intent.overview` and ready Workspace Runtime. Outputs: validated topic-owned `paper.deep-dive`, `paper.skimming`, `paper.lecture`, and `source-code.ingest` Mindset Sources beneath `topic.intent.kaoju_mindsets`; canonical content and LaTeX `main` stock; and non-canonical plural-path working copies.
 
 ## Gates, Blockers, and Resume
 

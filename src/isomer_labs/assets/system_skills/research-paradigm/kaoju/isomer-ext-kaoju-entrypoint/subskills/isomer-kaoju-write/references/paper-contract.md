@@ -9,6 +9,7 @@ The paper contract fixes the publication boundary and paper line before drafting
 - Paper-line scope and adaptive typed structure profile with its selection rationale.
 - Canonical MyST structure, draft, citation-map, and revision-log refs plus the selected content-template name, stable ref, state token, and observed tree digest.
 - Required section jobs, citation roles, typed display and source-ref placeholders, limitations, and compiler-owned numbering.
+- Exact accepted Field Summary ref, lecture commitment basis, one-to-one active, blocked, or explicitly superseded commitment inventory, dedicated-section jobs, equation and display jobs, unresolved obligations, and lecture-validation policy.
 - Independent content-template and LaTeX-template namespaces, each role's `main` default, creation and destructive-update policy, expected-state concurrency, arbitrary-tree assessment, and kind-specific non-canonical export policy.
 - Named LaTeX selection or default policy, required entrypoint and preamble, marker, or include contract, registered build profile, source provenance, license posture, exact snapshot policy, and paper-local repair boundary.
 - MyST-to-Markdown and MyST-to-TeX derivation policy, content checksum, presentation fingerprint inputs, unsupported-construct policy, drift reporting, and non-propagation rules.
@@ -18,6 +19,7 @@ The paper contract fixes the publication boundary and paper line before drafting
 
 - MyST remains canonical. Markdown, TeX, PDF, and bundles are derived.
 - The contract cannot strengthen verdicts, hide limitations, or add unsupported claims.
+- Every active lecture-ready commitment requires one dedicated detailed section. Every blocked commitment remains an unresolved paper obligation until repaired or explicitly superseded by an actor-approved decision that names the prior lecture Run or Source Digest.
 - A material content, dependency, build-profile, evaluator, or interpretation change requires a revised plan and fresh review authorization. Prompt-delegated agent review may authorize only changes inside the explicit target and accepted paper or build pins.
 - Paper-specific TeX repair does not mutate named LaTeX stock; promotion requires an explicit role-qualified update.
 - Historical TeX remains readable but never auto-promotes into canonical MyST.

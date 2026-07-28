@@ -66,6 +66,22 @@ def reading_list_diagnostics(payload: Mapping[str, Any]) -> list[ContractDiagnos
     return diagnostics
 
 
+def source_digest_diagnostics(payload: Mapping[str, Any]) -> list[ContractDiagnostic]:
+    """Return semantic diagnostics for one Kaoju Source Digest payload."""
+
+    diagnostics: list[ContractDiagnostic] = []
+    _validate_source_digest(payload, diagnostics)
+    return diagnostics
+
+
+def field_summary_diagnostics(payload: Mapping[str, Any]) -> list[ContractDiagnostic]:
+    """Return semantic diagnostics for one Kaoju Field Summary payload."""
+
+    diagnostics: list[ContractDiagnostic] = []
+    _validate_field_summary(payload, diagnostics)
+    return diagnostics
+
+
 MATERIAL_TRIAL_FIELDS = (
     "source_commit",
     "environment_lock",
@@ -409,6 +425,245 @@ def _validate_source_digest(payload: Mapping[str, Any], diagnostics: list[Contra
         diagnostics.append(ContractDiagnostic("source_digest_approval_missing", "Source Digest requires pending, approved, or rejected review state.", "sections.approval.status"))
     elif approval.get("status") in {"approved", "rejected"} and approval.get("actor_ref") in (None, ""):
         diagnostics.append(ContractDiagnostic("source_digest_approval_actor_missing", "A decided Source Digest review requires an actor ref.", "sections.approval.actor_ref"))
+    method = _mapping(sections.get("method"))
+    lecture = sections.get("lecture_exposition")
+    lecture_required = method.get("inspection_depth") == "lecture" or method.get("mindset_key") == "paper.lecture"
+    if lecture_required and not isinstance(lecture, dict):
+        diagnostics.append(ContractDiagnostic("lecture_exposition_missing", "Lecture-depth Source Digest requires lecture_exposition.", "sections.lecture_exposition"))
+    elif lecture is not None:
+        if not isinstance(lecture, dict):
+            diagnostics.append(ContractDiagnostic("lecture_exposition_invalid", "lecture_exposition must be an object.", "sections.lecture_exposition"))
+        else:
+            _validate_lecture_exposition(lecture, diagnostics)
+
+
+def _validate_lecture_exposition(lecture: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
+    location = "sections.lecture_exposition"
+    resolution = _mapping(lecture.get("mindset_resolution"))
+    for field in ("run_ref", "mindset_key", "disposition"):
+        if resolution.get(field) in (None, ""):
+            diagnostics.append(ContractDiagnostic("lecture_resolution_incomplete", f"Lecture exposition mindset resolution requires {field}.", f"{location}.mindset_resolution.{field}"))
+    if resolution.get("mindset_key") != "paper.lecture":
+        diagnostics.append(ContractDiagnostic("lecture_mindset_key_invalid", "Lecture exposition must cite selected mindset key paper.lecture.", f"{location}.mindset_resolution.mindset_key"))
+    disposition = resolution.get("disposition")
+    if disposition not in {"recorded", "skipped_source_missing"}:
+        diagnostics.append(ContractDiagnostic("lecture_mindset_disposition_invalid", "Lecture exposition mindset disposition must be recorded or skipped_source_missing.", f"{location}.mindset_resolution.disposition"))
+    elif disposition == "recorded" and resolution.get("record_ref") in (None, ""):
+        diagnostics.append(ContractDiagnostic("lecture_mindset_record_missing", "Recorded lecture mindset resolution requires record_ref.", f"{location}.mindset_resolution.record_ref"))
+    elif disposition == "skipped_source_missing" and resolution.get("record_ref") not in (None, ""):
+        diagnostics.append(ContractDiagnostic("lecture_mindset_record_unexpected", "Skipped lecture mindset resolution cannot cite a Mindset Record.", f"{location}.mindset_resolution.record_ref"))
+
+    for field in ("section_role", "reader_outcome", "problem_setting", "method_intuition"):
+        if not isinstance(lecture.get(field), str) or not str(lecture.get(field)).strip():
+            diagnostics.append(ContractDiagnostic("lecture_exposition_field_missing", f"Lecture exposition requires {field}.", f"{location}.{field}"))
+    for field in (
+        "prerequisites",
+        "definitions",
+        "symbol_glossary",
+        "method_walkthrough",
+        "results",
+        "comparisons",
+        "limitations",
+        "evidence_refs",
+        "proposed_section_outline",
+        "blockers",
+    ):
+        if not isinstance(lecture.get(field), list):
+            diagnostics.append(ContractDiagnostic("lecture_exposition_list_invalid", f"Lecture exposition {field} must be a list.", f"{location}.{field}"))
+    for field in ("method_walkthrough", "evidence_refs", "proposed_section_outline"):
+        if isinstance(lecture.get(field), list) and not lecture.get(field):
+            diagnostics.append(ContractDiagnostic("lecture_exposition_list_empty", f"Lecture exposition {field} cannot be empty.", f"{location}.{field}"))
+
+    not_applicable = _mapping(lecture.get("not_applicable"))
+    worked_trace = lecture.get("worked_trace")
+    if worked_trace is not None and not isinstance(worked_trace, dict):
+        diagnostics.append(ContractDiagnostic("lecture_worked_trace_invalid", "worked_trace must be an object or null.", f"{location}.worked_trace"))
+    if worked_trace is None and not _nonempty_string(not_applicable.get("worked_trace")):
+        diagnostics.append(ContractDiagnostic("lecture_worked_trace_unresolved", "Lecture exposition requires a worked trace or an explicit not-applicable rationale.", f"{location}.worked_trace"))
+
+    equations = lecture.get("equations")
+    if not isinstance(equations, list):
+        diagnostics.append(ContractDiagnostic("lecture_equations_invalid", "Lecture exposition equations must be a list.", f"{location}.equations"))
+    else:
+        if not equations and not _nonempty_string(not_applicable.get("equations")):
+            diagnostics.append(ContractDiagnostic("lecture_equations_unresolved", "Lecture exposition requires equation entries or an explicit not-applicable rationale.", f"{location}.equations"))
+        for index, equation in enumerate(equations):
+            _validate_lecture_equation(equation, diagnostics, location=f"{location}.equations/{index}")
+
+    displays = lecture.get("displays")
+    if not isinstance(displays, list):
+        diagnostics.append(ContractDiagnostic("lecture_displays_invalid", "Lecture exposition displays must be a list.", f"{location}.displays"))
+    else:
+        kinds = {str(item.get("kind")) for item in displays if isinstance(item, dict)}
+        for kind in ("figure", "table"):
+            if kind not in kinds and not _nonempty_string(not_applicable.get(f"{kind}s")):
+                diagnostics.append(ContractDiagnostic("lecture_display_type_unresolved", f"Lecture exposition requires a {kind} entry or an explicit not-applicable rationale.", f"{location}.displays"))
+        for index, display in enumerate(displays):
+            _validate_lecture_display(display, diagnostics, location=f"{location}.displays/{index}")
+
+    status = lecture.get("status")
+    blockers = lecture.get("blockers")
+    if status not in {"lecture-ready", "blocked"}:
+        diagnostics.append(ContractDiagnostic("lecture_status_invalid", "Lecture exposition status must be lecture-ready or blocked.", f"{location}.status"))
+    elif status == "lecture-ready" and isinstance(blockers, list) and blockers:
+        diagnostics.append(ContractDiagnostic("lecture_ready_with_blockers", "Lecture-ready exposition cannot retain blockers.", f"{location}.blockers"))
+    elif status == "blocked" and isinstance(blockers, list) and not blockers:
+        diagnostics.append(ContractDiagnostic("lecture_blockers_missing", "Blocked lecture exposition requires at least one blocker.", f"{location}.blockers"))
+
+
+def _validate_lecture_equation(value: object, diagnostics: list[ContractDiagnostic], *, location: str) -> None:
+    if not isinstance(value, dict):
+        diagnostics.append(ContractDiagnostic("lecture_equation_invalid", "Lecture equation entry must be an object.", location))
+        return
+    for field in ("locator", "teaching_role", "source_context", "interpretation", "planned_treatment"):
+        if not _nonempty_string(value.get(field)):
+            diagnostics.append(ContractDiagnostic("lecture_equation_field_missing", f"Lecture equation requires {field}.", f"{location}.{field}"))
+    evidence_refs = value.get("evidence_refs")
+    if not isinstance(evidence_refs, list) or not evidence_refs:
+        diagnostics.append(ContractDiagnostic("lecture_equation_evidence_missing", "Lecture equation requires evidence_refs.", f"{location}.evidence_refs"))
+    symbols = value.get("symbols")
+    if not isinstance(symbols, list) or not symbols:
+        diagnostics.append(ContractDiagnostic("lecture_equation_symbols_missing", "Lecture equation requires a nonempty symbols list.", f"{location}.symbols"))
+    else:
+        for index, symbol in enumerate(symbols):
+            if not isinstance(symbol, dict) or not _nonempty_string(symbol.get("symbol")) or not _nonempty_string(symbol.get("meaning")):
+                diagnostics.append(ContractDiagnostic("lecture_equation_symbol_invalid", "Each lecture equation symbol requires symbol and meaning.", f"{location}.symbols/{index}"))
+
+
+def _validate_lecture_display(value: object, diagnostics: list[ContractDiagnostic], *, location: str) -> None:
+    if not isinstance(value, dict):
+        diagnostics.append(ContractDiagnostic("lecture_display_invalid", "Lecture display entry must be an object.", location))
+        return
+    if value.get("kind") not in {"figure", "table"}:
+        diagnostics.append(ContractDiagnostic("lecture_display_kind_invalid", "Lecture display kind must be figure or table.", f"{location}.kind"))
+    for field in ("locator", "teaching_role", "source_context", "interpretation", "attribution"):
+        if not _nonempty_string(value.get(field)):
+            diagnostics.append(ContractDiagnostic("lecture_display_field_missing", f"Lecture display requires {field}.", f"{location}.{field}"))
+    if value.get("handling_posture") not in {"reproduce", "adapt", "redraw", "describe", "omit"}:
+        diagnostics.append(ContractDiagnostic("lecture_display_posture_invalid", "Lecture display handling_posture must be reproduce, adapt, redraw, describe, or omit.", f"{location}.handling_posture"))
+    evidence_refs = value.get("evidence_refs")
+    if not isinstance(evidence_refs, list) or not evidence_refs:
+        diagnostics.append(ContractDiagnostic("lecture_display_evidence_missing", "Lecture display requires evidence_refs.", f"{location}.evidence_refs"))
+    provenance_refs = value.get("provenance_refs")
+    if not isinstance(provenance_refs, list) or not provenance_refs:
+        diagnostics.append(ContractDiagnostic("lecture_display_provenance_missing", "Lecture display requires provenance_refs.", f"{location}.provenance_refs"))
+    if not isinstance(value.get("handling_evidence"), dict):
+        diagnostics.append(ContractDiagnostic("lecture_display_handling_evidence_missing", "Lecture display requires explicit attribution, license, permission, and blocker handling evidence.", f"{location}.handling_evidence"))
+
+
+def _validate_field_summary(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
+    sections = _mapping(payload.get("sections"))
+    if not isinstance(sections.get("synthesis"), dict):
+        diagnostics.append(ContractDiagnostic("field_summary_synthesis_missing", "Field Summary requires synthesis.", "sections.synthesis"))
+    raw_basis = sections.get("lecture_commitment_basis")
+    raw_commitments = sections.get("lecture_section_commitments")
+    if not isinstance(raw_basis, list):
+        diagnostics.append(ContractDiagnostic("lecture_commitment_basis_missing", "Field Summary requires an explicit lecture_commitment_basis list.", "sections.lecture_commitment_basis"))
+        return
+    if not isinstance(raw_commitments, list):
+        diagnostics.append(ContractDiagnostic("lecture_commitment_inventory_missing", "Field Summary requires an explicit lecture_section_commitments list.", "sections.lecture_section_commitments"))
+        return
+
+    basis_keys: set[tuple[str, str, str]] = set()
+    for index, item in enumerate(raw_basis):
+        key = _lecture_commitment_key(item, diagnostics, location=f"sections.lecture_commitment_basis/{index}", code_prefix="lecture_basis")
+        if key is None:
+            continue
+        if key in basis_keys:
+            diagnostics.append(ContractDiagnostic("lecture_basis_duplicate", "Lecture commitment basis cannot repeat a paper Run and Source Digest.", f"sections.lecture_commitment_basis/{index}"))
+        basis_keys.add(key)
+
+    commitment_keys: set[tuple[str, str, str]] = set()
+    for index, item in enumerate(raw_commitments):
+        location = f"sections.lecture_section_commitments/{index}"
+        key = _lecture_commitment_key(item, diagnostics, location=location, code_prefix="lecture_commitment")
+        if key is not None:
+            if key in commitment_keys:
+                diagnostics.append(ContractDiagnostic("lecture_commitment_duplicate", "Lecture commitment inventory cannot repeat a paper Run and Source Digest.", location))
+            commitment_keys.add(key)
+        if not isinstance(item, dict):
+            continue
+        posture = item.get("posture")
+        readiness = item.get("readiness")
+        blockers = item.get("blockers")
+        if posture not in {"active", "blocked", "superseded"}:
+            diagnostics.append(ContractDiagnostic("lecture_commitment_posture_invalid", "Lecture commitment posture must be active, blocked, or superseded.", f"{location}.posture"))
+        if readiness not in {"lecture-ready", "blocked"}:
+            diagnostics.append(ContractDiagnostic("lecture_commitment_readiness_invalid", "Lecture commitment readiness must be lecture-ready or blocked.", f"{location}.readiness"))
+        for field in ("equation_jobs", "display_jobs", "blockers", "evidence_refs"):
+            if not isinstance(item.get(field), list):
+                diagnostics.append(ContractDiagnostic("lecture_commitment_list_invalid", f"Lecture commitment {field} must be a list.", f"{location}.{field}"))
+        if isinstance(item.get("evidence_refs"), list) and not item.get("evidence_refs"):
+            diagnostics.append(ContractDiagnostic("lecture_commitment_evidence_missing", "Lecture commitment requires accepted evidence_refs.", f"{location}.evidence_refs"))
+        section_job = _mapping(item.get("section_job"))
+        if section_job.get("kind") != "dedicated-detailed-section":
+            diagnostics.append(ContractDiagnostic("lecture_section_job_invalid", "Active or retained lecture commitment requires section job kind dedicated-detailed-section.", f"{location}.section_job.kind"))
+        for field in ("title", "reader_outcome"):
+            if not _nonempty_string(section_job.get(field)):
+                diagnostics.append(ContractDiagnostic("lecture_section_job_field_missing", f"Lecture section job requires {field}.", f"{location}.section_job.{field}"))
+        if posture == "active":
+            if readiness != "lecture-ready":
+                diagnostics.append(ContractDiagnostic("lecture_active_not_ready", "Active lecture commitment requires lecture-ready evidence.", f"{location}.readiness"))
+            if isinstance(blockers, list) and blockers:
+                diagnostics.append(ContractDiagnostic("lecture_active_with_blockers", "Active lecture commitment cannot retain blockers.", f"{location}.blockers"))
+        elif posture == "blocked":
+            if readiness != "blocked":
+                diagnostics.append(ContractDiagnostic("lecture_blocked_readiness_invalid", "Blocked lecture commitment requires blocked readiness.", f"{location}.readiness"))
+            if isinstance(blockers, list) and not blockers:
+                diagnostics.append(ContractDiagnostic("lecture_commitment_blockers_missing", "Blocked lecture commitment requires at least one blocker.", f"{location}.blockers"))
+        elif posture == "superseded":
+            _validate_lecture_supersession(item, diagnostics, location=location)
+
+    missing = basis_keys - commitment_keys
+    extra = commitment_keys - basis_keys
+    if missing:
+        diagnostics.append(ContractDiagnostic("lecture_commitment_omitted", "Every audited lecture basis item requires one commitment inventory entry.", "sections.lecture_section_commitments"))
+    if extra:
+        diagnostics.append(ContractDiagnostic("lecture_commitment_basis_unresolved", "Every lecture commitment inventory entry must resolve to the audited lecture basis.", "sections.lecture_section_commitments"))
+
+
+def _lecture_commitment_key(
+    value: object,
+    diagnostics: list[ContractDiagnostic],
+    *,
+    location: str,
+    code_prefix: str,
+) -> tuple[str, str, str] | None:
+    if not isinstance(value, dict):
+        diagnostics.append(ContractDiagnostic(f"{code_prefix}_invalid", "Lecture commitment entry must be an object.", location))
+        return None
+    identity = _mapping(value.get("paper_identity"))
+    stable_id = identity.get("stable_id")
+    version_family = identity.get("version_family")
+    for field, field_value in (("stable_id", stable_id), ("version_family", version_family)):
+        if not _nonempty_string(field_value):
+            diagnostics.append(ContractDiagnostic(f"{code_prefix}_identity_missing", f"Lecture commitment paper identity requires {field}.", f"{location}.paper_identity.{field}"))
+    run_ref = value.get("run_ref")
+    source_digest_ref = value.get("source_digest_ref")
+    for field, field_value in (("run_ref", run_ref), ("source_digest_ref", source_digest_ref)):
+        if not _nonempty_string(field_value):
+            diagnostics.append(ContractDiagnostic(f"{code_prefix}_ref_missing", f"Lecture commitment entry requires {field}.", f"{location}.{field}"))
+    if all(_nonempty_string(item) for item in (stable_id, version_family, run_ref, source_digest_ref)):
+        return (f"{stable_id}@{version_family}", str(run_ref), str(source_digest_ref))
+    return None
+
+
+def _validate_lecture_supersession(value: Mapping[str, Any], diagnostics: list[ContractDiagnostic], *, location: str) -> None:
+    supersession = _mapping(value.get("supersession"))
+    for field in ("replacement_posture", "rationale", "actor_ref"):
+        if not _nonempty_string(supersession.get(field)):
+            diagnostics.append(ContractDiagnostic("lecture_supersession_field_missing", f"Lecture supersession requires {field}.", f"{location}.supersession.{field}"))
+    provenance_refs = supersession.get("provenance_refs")
+    if not isinstance(provenance_refs, list) or not provenance_refs:
+        diagnostics.append(ContractDiagnostic("lecture_supersession_provenance_missing", "Lecture supersession requires provenance_refs.", f"{location}.supersession.provenance_refs"))
+    run_matches = supersession.get("prior_run_ref") == value.get("run_ref")
+    digest_matches = supersession.get("prior_source_digest_ref") == value.get("source_digest_ref")
+    if not run_matches and not digest_matches:
+        diagnostics.append(ContractDiagnostic("lecture_supersession_target_mismatch", "Lecture supersession must name the prior lecture Run or Source Digest.", f"{location}.supersession"))
+
+
+def _nonempty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
 
 
 def _validate_env_plan(payload: Mapping[str, Any], diagnostics: list[ContractDiagnostic]) -> None:
@@ -610,6 +865,7 @@ _SEMANTIC_VALIDATORS = {
     "KAOJU:DIRECTION-SET": _validate_direction_set,
     "KAOJU:READING-LIST": _validate_reading_list,
     "KAOJU:SOURCE-DIGEST": _validate_source_digest,
+    "KAOJU:FIELD-SUMMARY": _validate_field_summary,
     "KAOJU:ENV-PREP-PLAN": _validate_env_plan,
     "KAOJU:ENV-GATE-REVISION": _validate_env_gate_revision,
     "KAOJU:PIXI-ENV-REF": _validate_pixi_env_ref,

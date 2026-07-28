@@ -235,7 +235,7 @@ class KaojuMindsetSourceTests(unittest.TestCase):
                 result = ensure_mindset_sources(Mock(), env={}, cwd=root)
                 replay = ensure_mindset_sources(Mock(), env={}, cwd=root)
             self.assertTrue(result["ok"], result)
-            self.assertEqual({"paper.deep-dive", "source-code.ingest"}, {item["mindset_key"] for item in result["created"]})
+            self.assertEqual({"paper.deep-dive", "paper.lecture", "source-code.ingest"}, {item["mindset_key"] for item in result["created"]})
             self.assertEqual(["paper.skimming"], [item["mindset_key"] for item in result["preserved"]])
             self.assertEqual(["paper.skimming"], [item["mindset_key"] for item in result["derivation_drift"]])
             self.assertFalse(replay["mutated"])
@@ -344,10 +344,32 @@ class KaojuMindsetSourceTests(unittest.TestCase):
         process = load_contract().raw
         self.assertEqual("paper.deep-dive", select_mindset_key(action="examine", source_kind="paper", depth="full-text", process=process))
         self.assertEqual("paper.skimming", select_mindset_key(action="ingest-reading-item", source_kind="report", depth="triage", process=process))
+        self.assertEqual("paper.lecture", select_mindset_key(action="examine", source_kind="paper", depth="lecture", process=process))
+        self.assertEqual(
+            "paper.lecture",
+            select_mindset_key(
+                action="ingest-reading-item",
+                source_kind="report",
+                depth="lecture",
+                process=process,
+                explicit_key="paper.lecture",
+            ),
+        )
         self.assertEqual("source-code.ingest", select_mindset_key(action="examine", source_kind="repository", depth="deep", process=process))
         self.assertIsNone(select_mindset_key(action="draft-paper", source_kind="paper", depth="deep", process=process))
         with self.assertRaisesRegex(ValueError, "does not apply"):
             select_mindset_key(action="examine", source_kind="paper", depth="skim", process=process, explicit_key="paper.deep-dive")
+        ambiguous = deepcopy(process)
+        ambiguous["mindsets"]["routes"].append(
+            {
+                "mindset_key": "paper.deep-dive",
+                "actions": ["examine"],
+                "source_kinds": ["paper"],
+                "depths": ["lecture"],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "ambiguous"):
+            select_mindset_key(action="examine", source_kind="paper", depth="lecture", process=ambiguous)
         self.assertEqual("reading_artifact", target_for_question(explicit_target=None, asks_to_persist=False))
         self.assertEqual("clarify", target_for_question(explicit_target=None, asks_to_persist=True))
         self.assertEqual("source", target_for_question(explicit_target="source", asks_to_persist=True))

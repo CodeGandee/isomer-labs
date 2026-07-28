@@ -477,6 +477,8 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
     @click.option("--required-section", "required_sections", multiple=True, help="Required heading. Repeat as needed.")
     @click.option("--allowed-placeholder", "allowed_placeholders", multiple=True, help="Allowed untyped placeholder. Repeat as needed.")
     @click.option("--source-ref", "source_refs", multiple=True, help="Allowed source or display Artifact ref.")
+    @click.option("--field-summary-ref", default=None, help="Exact accepted Field Summary ref used to reconcile lecture-section commitments.")
+    @click.option("--citation-map-ref", default=None, help="Exact accepted Citation Map ref used to validate lecture-section lineage and displays.")
     @click.argument("source", type=click.Path(path_type=Path, exists=True, dir_okay=False))
     @click.pass_context
     def paper_validate(ctx: click.Context, source: Path, **values: Any) -> int:
@@ -488,6 +490,8 @@ def register_kaoju_ext_commands(app: click.Group) -> None:
                 required_sections=list(values["required_sections"]) or REQUIRED_PAPER_SECTIONS,
                 allowed_placeholders=list(values["allowed_placeholders"]) if values["allowed_placeholders"] else None,
                 source_refs=list(values["source_refs"]),
+                field_summary_ref=values.get("field_summary_ref"),
+                citation_map_ref=values.get("citation_map_ref"),
             ),
         )
 

@@ -172,8 +172,8 @@ def load_contract() -> KaojuContract:
     if mindset_config.get("read_only_commands") != expected_read_only_commands:
         raise ValueError("Kaoju mindset metadata must declare the checked non-mutating help, explore, and status-only routes.")
     routes = mindset_config.get("routes")
-    if not isinstance(routes, list) or {str(item.get("mindset_key")) for item in routes if isinstance(item, dict)} != {"paper.deep-dive", "paper.skimming", "source-code.ingest"}:
-        raise ValueError("Kaoju mindset routes must cover the three checked Source keys exactly.")
+    if not isinstance(routes, list) or {str(item.get("mindset_key")) for item in routes if isinstance(item, dict)} != {"paper.deep-dive", "paper.skimming", "paper.lecture", "source-code.ingest"}:
+        raise ValueError("Kaoju mindset routes must cover the four checked Source keys exactly.")
     forbidden_mindset_fields = {"sources", "source_bodies", "runtime_fallback", "default_payloads"}
     if forbidden_mindset_fields & set(mindset_config):
         raise ValueError("Kaoju process metadata cannot embed Mindset Source bodies or a packaged runtime fallback.")

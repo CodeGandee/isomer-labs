@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import re
 from pathlib import Path
 import unittest
@@ -10,7 +11,9 @@ from isomer_labs.kaoju.survey import (
     choose_environment_strategy,
     classify_trial_retry,
     direction_set_diagnostics,
+    field_summary_diagnostics,
     reading_list_diagnostics,
+    source_digest_diagnostics,
 )
 
 
@@ -48,6 +51,81 @@ def reading_items(priority_count: int, secondary_count: int) -> list[dict[str, o
 
 
 class KaojuSurveyProcessTests(unittest.TestCase):
+    def lecture_source_digest(self) -> dict[str, object]:
+        return {
+            "sections": {
+                "source_identity": {"source_class": "paper", "title": "Lecture Paper", "version_family": "v1"},
+                "findings": [
+                    {
+                        "claim": "The method follows an ordered transformation.",
+                        "source_class": "paper",
+                        "locator": "page 4, section 3",
+                        "source_statement": "The paper defines the transformation.",
+                        "interpretation": "The transformation is the method's central teaching sequence.",
+                    }
+                ],
+                "method": {"inspection_depth": "lecture", "mindset_key": "paper.lecture"},
+                "lecture_exposition": {
+                    "mindset_resolution": {
+                        "run_ref": "run-lecture-1",
+                        "mindset_key": "paper.lecture",
+                        "disposition": "recorded",
+                        "record_ref": "mindset-record-lecture-1",
+                    },
+                    "section_role": "Teach the paper's method as a dedicated survey section.",
+                    "reader_outcome": "The reader can explain the method's inputs, transformation, and output.",
+                    "prerequisites": ["Basic optimization notation"],
+                    "problem_setting": "Transform input x into output y under constraint C.",
+                    "definitions": [{"term": "constraint C", "meaning": "The feasible transformation boundary."}],
+                    "symbol_glossary": [{"symbol": "x", "meaning": "Input"}],
+                    "method_intuition": "The method isolates the constrained transformation.",
+                    "method_walkthrough": ["Read x.", "Apply the constrained transformation.", "Return y."],
+                    "worked_trace": {"locator": "page 5, example 1", "summary": "Trace one input through the method."},
+                    "equations": [
+                        {
+                            "locator": "page 4, equation 2",
+                            "teaching_role": "Defines the constrained transformation.",
+                            "source_context": "Section 3 introduces the objective and constraint.",
+                            "interpretation": "The objective selects y for input x.",
+                            "planned_treatment": "derive",
+                            "evidence_refs": ["evidence-equation-2"],
+                            "symbols": [
+                                {"symbol": "x", "meaning": "Input"},
+                                {"symbol": "y", "meaning": "Output"},
+                            ],
+                        }
+                    ],
+                    "displays": [
+                        {
+                            "kind": "figure",
+                            "locator": "page 6, figure 2",
+                            "teaching_role": "Shows the ordered method stages.",
+                            "source_context": "Caption and surrounding section describe every stage.",
+                            "interpretation": "The arrows define the method flow.",
+                            "handling_posture": "redraw",
+                            "attribution": "Adapted from Lecture Paper, Figure 2.",
+                            "evidence_refs": ["evidence-figure-2"],
+                            "provenance_refs": ["source:lecture-paper-v1"],
+                            "handling_evidence": {
+                                "license": "unknown",
+                                "permission": "not-required-for-redraw-assessment-pending",
+                                "blockers": [],
+                            },
+                        }
+                    ],
+                    "results": [{"locator": "page 8, table 1", "summary": "Reported evaluation result."}],
+                    "comparisons": [{"work_ref": "paper:baseline", "summary": "Uses a different constraint."}],
+                    "limitations": ["The reported evaluation covers one workload."],
+                    "evidence_refs": ["evidence-equation-2", "evidence-figure-2"],
+                    "proposed_section_outline": ["Problem and notation", "Method walkthrough", "Evidence and limitations"],
+                    "not_applicable": {"tables": "No table is necessary for method comprehension."},
+                    "status": "lecture-ready",
+                    "blockers": [],
+                },
+                "approval": {"status": "approved", "actor_ref": "topic-actor:researcher"},
+            }
+        }
+
     def test_every_use_case_uses_an_exact_registered_semantic_id(self) -> None:
         semantic_ids: set[str] = set()
         for path in sorted(USE_CASE_ROOT.glob("uc-*.md")):
@@ -101,6 +179,89 @@ class KaojuSurveyProcessTests(unittest.TestCase):
 
         payload["sections"]["confirmation"] = {"status": "draft"}  # type: ignore[index]
         self.assertIn("direction_confirmation_missing", codes(direction_set_diagnostics(payload)))
+
+    def test_lecture_source_digest_requires_complete_exposition_and_supports_blocked_missing_record(self) -> None:
+        ready = self.lecture_source_digest()
+        self.assertEqual([], source_digest_diagnostics(ready))
+
+        blocked = deepcopy(ready)
+        lecture = blocked["sections"]["lecture_exposition"]  # type: ignore[index]
+        lecture["mindset_resolution"] = {  # type: ignore[index]
+            "run_ref": "run-lecture-missing-source",
+            "mindset_key": "paper.lecture",
+            "disposition": "skipped_source_missing",
+        }
+        lecture["status"] = "blocked"  # type: ignore[index]
+        lecture["blockers"] = ["Table values remain inaccessible."]  # type: ignore[index]
+        self.assertEqual([], source_digest_diagnostics(blocked))
+
+        missing = deepcopy(ready)
+        missing["sections"].pop("lecture_exposition")  # type: ignore[union-attr]
+        self.assertIn("lecture_exposition_missing", codes(source_digest_diagnostics(missing)))
+
+        invalid_posture = deepcopy(ready)
+        invalid_posture["sections"]["lecture_exposition"]["displays"][0]["handling_posture"] = "copy"  # type: ignore[index]
+        self.assertIn("lecture_display_posture_invalid", codes(source_digest_diagnostics(invalid_posture)))
+
+        ordinary = {
+            "sections": {
+                "source_identity": {"source_class": "paper", "title": "Ordinary Paper", "version_family": "v1"},
+                "findings": [{"locator": "page 1", "source_statement": "Statement.", "interpretation": "Interpretation."}],
+                "method": {"inspection_depth": "full-text"},
+                "approval": {"status": "pending"},
+            }
+        }
+        self.assertEqual([], source_digest_diagnostics(ordinary))
+
+    def test_field_summary_preserves_lecture_commitments_and_requires_explicit_supersession(self) -> None:
+        identity = {"stable_id": "paper:lecture-v1", "version_family": "v1"}
+        basis = {"paper_identity": identity, "run_ref": "run-lecture-1", "source_digest_ref": "source-digest-lecture-1"}
+        commitment = {
+            **basis,
+            "posture": "active",
+            "readiness": "lecture-ready",
+            "section_job": {
+                "kind": "dedicated-detailed-section",
+                "title": "Lecture Paper Method",
+                "reader_outcome": "The reader can explain the method without consulting the original paper.",
+            },
+            "equation_jobs": [{"locator": "page 4, equation 2"}],
+            "display_jobs": [{"locator": "page 6, figure 2", "handling_posture": "redraw"}],
+            "blockers": [],
+            "evidence_refs": ["source-digest-lecture-1"],
+        }
+        payload = {
+            "sections": {
+                "synthesis": {"conclusions": [{"text": "The method uses a constrained transformation."}]},
+                "lecture_commitment_basis": [basis],
+                "lecture_section_commitments": [commitment],
+            }
+        }
+        self.assertEqual([], field_summary_diagnostics(payload))
+
+        omitted = deepcopy(payload)
+        omitted["sections"]["lecture_section_commitments"] = []  # type: ignore[index]
+        self.assertIn("lecture_commitment_omitted", codes(field_summary_diagnostics(omitted)))
+
+        shortened = deepcopy(payload)
+        shortened["sections"]["lecture_section_commitments"][0]["section_job"]["kind"] = "related-work-mention"  # type: ignore[index]
+        self.assertIn("lecture_section_job_invalid", codes(field_summary_diagnostics(shortened)))
+
+        implicit_supersession = deepcopy(payload)
+        row = implicit_supersession["sections"]["lecture_section_commitments"][0]  # type: ignore[index]
+        row["posture"] = "superseded"  # type: ignore[index]
+        row["supersession"] = {  # type: ignore[index]
+            "prior_run_ref": "run-deep-dive-2",
+            "replacement_posture": "related-work-mention",
+            "rationale": "A later shorter reading exists.",
+            "actor_ref": "topic-actor:researcher",
+            "provenance_refs": ["decision:shorten"],
+        }
+        self.assertIn("lecture_supersession_target_mismatch", codes(field_summary_diagnostics(implicit_supersession)))
+
+        explicit_supersession = deepcopy(implicit_supersession)
+        explicit_supersession["sections"]["lecture_section_commitments"][0]["supersession"]["prior_run_ref"] = "run-lecture-1"  # type: ignore[index]
+        self.assertEqual([], field_summary_diagnostics(explicit_supersession))
 
     def test_reading_list_is_independently_scoped_and_shortage_is_only_a_warning(self) -> None:
         items = []

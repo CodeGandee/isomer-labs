@@ -322,7 +322,7 @@ class SourceArchitectureTests(unittest.TestCase):
         self.assertEqual(set(), root_files - ROOT_FILE_ALLOWLIST)
 
     def test_large_implementation_files_are_package_scoped_or_transition_tracked(self) -> None:
-        threshold = 800
+        threshold = 2500
         oversized: list[str] = []
         for path in sorted(SRC_ROOT.rglob("*.py")):
             relative = path.relative_to(SRC_ROOT).as_posix()

@@ -29,12 +29,12 @@ Use only after audit accepts the evidence for synthesis or narrows the claims ex
 
 ## Workflow
 
-1. **Accept audited inputs**. Require an accepted Audit Report, Survey Contract, accepted Artifact and Evidence Item refs, and the requested output view.
+1. **Accept audited inputs**. Require an accepted Audit Report, Survey Contract, accepted Artifact and Evidence Item refs, and the requested output view. Resolve every audited Run selected with `paper.lecture` and its source-scoped Source Digest even when the lecture exposition is blocked, contradicted, incomplete, or was produced under `skipped_source_missing`.
 2. **Apply begin callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-synthesize --stage begin`; follow compatible instructions, while empty callback results continue normally and conflicts must be reported.
 3. **Freeze claim boundaries**. Map each intended conclusion to accepted evidence, achieved depth, verdict, contradictions, and audit limits.
-4. **Build the requested view**. Produce the Related-Work Catalog or delta, Field Summary, Claim Status Table, comparison view, reading path, or Kaoju Dossier from accepted refs.
+4. **Build the requested view**. Produce the Related-Work Catalog or delta, Field Summary, Claim Status Table, comparison view, reading path, or Kaoju Dossier from accepted refs. For a Field Summary or equivalent survey synthesis, record `lecture_commitment_basis` from every audited `paper.lecture` Run and record exactly one matching `lecture_section_commitments` entry per basis item. Use posture `active` for lecture-ready work, `blocked` for unresolved work, or `superseded` only when an actor-approved survey-planning or synthesis decision names the prior Run or Source Digest and records its replacement posture, rationale, actor, and provenance. Record explicit empty lists when no audited lecture Runs exist.
 5. **Calibrate language**. Distinguish source-stated, source-supported, executed, compared, inconclusive, contradicted, blocked, and not-comparable conclusions.
-6. **Preserve lineage**. Link every derived section or table to its source Artifacts, Evidence Items, Runs, Findings, Decision Records, and Provenance Records.
+6. **Preserve lineage**. Link every derived section or table to its source Artifacts, Evidence Items, Runs, Findings, Decision Records, and Provenance Records. Preserve each lecture commitment's paper identity, lecture Run, Source Digest, readiness, proposed dedicated-section job, equation jobs, display jobs, blockers, and accepted evidence refs. Omission, a later non-lecture Run, or a preference for shorter treatment does not supersede a commitment.
 7. **Apply end callbacks**. Run `isomer-cli --print-json project skill-callbacks resolve --skill isomer-kaoju-synthesize --stage end`; apply compatible instructions, while empty callback results continue normally and conflicts must be reported.
 8. **Return status**. Report `complete`, `paused`, or `blocked` with output refs, coverage limits, unresolved questions, and a resume point when applicable.
 
@@ -46,7 +46,7 @@ If the task does not map cleanly to these steps, use the native planning tool to
 
 Every output states its Survey Contract boundary, evidence cutoff, `searched_through` limit, accepted input refs, achieved verification depths, important contradictions and failures, limitations, and unresolved frontier. Structured records require non-empty top-level `title` and `summary`.
 
-The Claim Status Table gives each conclusion a status, depth, verdict, supporting and challenging evidence refs, Run or source locators, and limitations. The Kaoju Dossier assembles the catalog, field model, comparisons, first-hand Findings, failures, limitations, unresolved questions, and reading path without hiding their lineage.
+The Claim Status Table gives each conclusion a status, depth, verdict, supporting and challenging evidence refs, Run or source locators, and limitations. The Kaoju Dossier assembles the catalog, field model, comparisons, first-hand Findings, failures, limitations, unresolved questions, and reading path without hiding their lineage. Every new Field Summary records both `lecture_commitment_basis` and `lecture_section_commitments`, including explicit empty lists. Each basis item names the paper identity, selected lecture Run, and Source Digest. Each commitment repeats that identity, declares `active`, `blocked`, or `superseded`, and records readiness, the dedicated-section job, equation and display jobs, blockers, accepted evidence refs, and explicit supersession evidence when applicable.
 
 ## Artifact Operations
 
@@ -73,6 +73,8 @@ Synthesis organizes accepted evidence; it does not manufacture missing evidence 
 - A final claim has no entry in the Claim Status Table.
 - Audited limitations disappear from the summary.
 - A generated-data capability probe is presented as benchmark reproduction.
+- An audited `paper.lecture` Run is absent from the lecture commitment basis or inventory.
+- A lecture commitment is treated as superseded without an actor-approved decision naming the prior Run or Source Digest.
 
 ## Operational Notes
 

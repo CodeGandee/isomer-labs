@@ -219,6 +219,163 @@ class KaojuSurveyIntentIntegrationTests(unittest.TestCase):
                 )
         return items
 
+    def lecture_digest_sections(self) -> dict[str, object]:
+        return {
+            "source_identity": {"source_class": "paper", "title": "Lecture Paper", "version_family": "v1", "stable_id": "paper:lecture-v1"},
+            "findings": [{"claim": "The method has three stages.", "source_class": "paper", "locator": "page 4, section 3", "source_statement": "The paper defines three stages.", "interpretation": "The stages form the teaching sequence."}],
+            "method": {"inspection_depth": "lecture", "mindset_key": "paper.lecture"},
+            "lecture_exposition": {
+                "mindset_resolution": {"run_ref": "run-lecture-1", "mindset_key": "paper.lecture", "disposition": "recorded", "record_ref": "mindset-record-lecture-1"},
+                "section_role": "Teach the paper's method in a dedicated survey section.",
+                "reader_outcome": "The reader can explain the method's input, stages, and output.",
+                "prerequisites": ["Basic optimization notation"],
+                "problem_setting": "Transform x into y under constraint C.",
+                "definitions": [{"term": "constraint C", "meaning": "The feasible boundary."}],
+                "symbol_glossary": [{"symbol": "x", "meaning": "Input"}],
+                "method_intuition": "The method isolates a constrained transformation.",
+                "method_walkthrough": ["Read x.", "Apply three stages.", "Return y."],
+                "worked_trace": {"locator": "page 5, example 1", "summary": "Trace x through the stages."},
+                "equations": [{"locator": "page 4, equation 2", "teaching_role": "Defines the transformation.", "source_context": "Section 3 defines the objective.", "interpretation": "The objective selects y.", "planned_treatment": "derive", "evidence_refs": ["evidence-equation-2"], "symbols": [{"symbol": "x", "meaning": "Input"}, {"symbol": "y", "meaning": "Output"}]}],
+                "displays": [{"kind": "figure", "locator": "page 6, figure 2", "teaching_role": "Shows the three stages.", "source_context": "The caption names every stage.", "interpretation": "Arrows define the method flow.", "handling_posture": "redraw", "attribution": "Adapted from Lecture Paper, Figure 2.", "evidence_refs": ["evidence-figure-2"], "provenance_refs": ["paper:lecture-v1"], "handling_evidence": {"license": "unknown", "permission": "pending", "blockers": []}}],
+                "results": [{"locator": "page 8, table 1", "summary": "Reported evaluation result."}],
+                "comparisons": [{"work_ref": "paper:baseline", "summary": "Uses a different constraint."}],
+                "limitations": ["The evaluation covers one workload."],
+                "evidence_refs": ["evidence-equation-2", "evidence-figure-2"],
+                "proposed_section_outline": ["Problem and notation", "Method walkthrough", "Evidence and limitations"],
+                "not_applicable": {"tables": "No table is necessary for method comprehension."},
+                "status": "lecture-ready",
+                "blockers": [],
+            },
+            "approval": {"status": "approved", "actor_ref": "topic-actor:researcher"},
+        }
+
+    def test_lecture_source_digest_contract_is_enforced_by_artifact_service(self) -> None:
+        ready = self.lecture_digest_sections()
+        created = self.put(
+            "KAOJU:SOURCE-DIGEST",
+            "source-digest-lecture-ready",
+            "isomer-kaoju-examine",
+            ready,
+            {"source": "paper:lecture-v1", "repository": "repository:not-applicable"},
+            scope="source:lecture-ready",
+        )
+        self.assertEqual("source-digest-lecture-ready", created["record"]["id"])
+
+        blocked = json.loads(json.dumps(ready))
+        blocked["lecture_exposition"]["mindset_resolution"] = {"run_ref": "run-lecture-missing-source", "mindset_key": "paper.lecture", "disposition": "skipped_source_missing"}
+        blocked["lecture_exposition"]["status"] = "blocked"
+        blocked["lecture_exposition"]["blockers"] = ["The original table values remain inaccessible."]
+        created = self.put(
+            "KAOJU:SOURCE-DIGEST",
+            "source-digest-lecture-blocked",
+            "isomer-kaoju-examine",
+            blocked,
+            {"source": "paper:lecture-v1", "repository": "repository:not-applicable"},
+            scope="source:lecture-blocked",
+        )
+        self.assertEqual("source-digest-lecture-blocked", created["record"]["id"])
+
+        invalid = json.loads(json.dumps(ready))
+        invalid["lecture_exposition"]["displays"][0]["handling_posture"] = "copy"
+        invalid_path = self.root / "inputs/source-digest-lecture-invalid.json"
+        write(
+            invalid_path,
+            json.dumps(
+                {
+                    "title": "Invalid lecture digest",
+                    "summary": "Invalid handling posture.",
+                    "artifact_family": "kaoju",
+                    "semantic_id": "KAOJU:SOURCE-DIGEST",
+                    "artifact_type": "source-digest",
+                    "sections": invalid,
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:SOURCE-DIGEST",
+            str(invalid_path),
+            "--producer",
+            "isomer-kaoju-examine",
+            "--id",
+            "source-digest-lecture-invalid",
+            "--status",
+            "ready",
+            "--scope-key",
+            "source:lecture-invalid",
+            "--relationships-json",
+            '[{"role":"source","target_ref":"paper:lecture-v1"},{"role":"repository","target_ref":"repository:not-applicable"}]',
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+
+    def test_field_summary_requires_complete_lecture_commitment_inventory(self) -> None:
+        identity = {"stable_id": "paper:lecture-v1", "version_family": "v1"}
+        basis = {"paper_identity": identity, "run_ref": "run-lecture-1", "source_digest_ref": "source-digest-lecture-1"}
+        commitment = {
+            **basis,
+            "posture": "active",
+            "readiness": "lecture-ready",
+            "section_job": {"kind": "dedicated-detailed-section", "title": "Lecture Paper Method", "reader_outcome": "The reader can explain the method."},
+            "equation_jobs": [{"locator": "page 4, equation 2"}],
+            "display_jobs": [{"locator": "page 6, figure 2", "handling_posture": "redraw"}],
+            "blockers": [],
+            "evidence_refs": ["source-digest-lecture-1"],
+        }
+        created = self.put(
+            "KAOJU:FIELD-SUMMARY",
+            "field-summary-with-lecture",
+            "isomer-kaoju-synthesize",
+            {
+                "synthesis": {"conclusions": [{"text": "The method uses a constrained transformation."}]},
+                "lecture_commitment_basis": [basis],
+                "lecture_section_commitments": [commitment],
+            },
+            {"audit_report": "audit-report-lecture-1"},
+            scope="survey:lecture",
+        )
+        self.assertEqual("field-summary-with-lecture", created["record"]["id"])
+
+        invalid_path = self.root / "inputs/field-summary-lecture-omitted.json"
+        write(
+            invalid_path,
+            json.dumps(
+                {
+                    "title": "Field summary with omitted lecture commitment",
+                    "summary": "Invalid lecture inventory.",
+                    "artifact_family": "kaoju",
+                    "semantic_id": "KAOJU:FIELD-SUMMARY",
+                    "artifact_type": "field-summary",
+                    "sections": {
+                        "synthesis": {"conclusions": [{"text": "Short summary."}]},
+                        "lecture_commitment_basis": [basis],
+                        "lecture_section_commitments": [],
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        status, rejected = self.artifact(
+            "put",
+            "KAOJU:FIELD-SUMMARY",
+            str(invalid_path),
+            "--producer",
+            "isomer-kaoju-synthesize",
+            "--id",
+            "field-summary-lecture-omitted",
+            "--status",
+            "ready",
+            "--scope-key",
+            "survey:lecture-omitted",
+            "--relationships-json",
+            '[{"role":"audit_report","target_ref":"audit-report-lecture-1"}]',
+        )
+        self.assertEqual(1, status)
+        self.assertEqual("artifact_contract_invalid", rejected["error"]["code"])
+
     def test_uc01_and_uc02_multiple_custom_directions_independent_lists_and_shortage(self) -> None:
         self.put("KAOJU:SURVEY-CONTRACT", "survey-contract-1", "isomer-kaoju-frame", {"scope": {"question": "How do offload mechanisms work?"}, "status": "active"}, {}, scope="survey:main", status="active")
         status, begun = self.run_cli(

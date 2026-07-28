@@ -96,7 +96,7 @@ class KaojuPaperWikiIntegrationTests(unittest.TestCase):
             "KAOJU:AUDIT-REPORT": {"findings": [{"check": "evidence-lineage", "status": "pass"}], "verdict": {"status": "ready"}},
             "KAOJU:SOURCE-DIGEST": {"source": {"ref": "source"}, "source_identity": {"work": "Source", "version": "v1"}, "findings": [{"locator": "section 1", "source_statement": "Observed statement.", "interpretation": "Bounded interpretation."}], "approval": {"status": "approved", "actor_ref": "topic-actor:test"}},
             "KAOJU:CITATION-MAP": {"citations": {"fixture": {"source_ref": "source"}}, "displays": {"planned": []}},
-            "KAOJU:FIELD-SUMMARY": {"synthesis": {"conclusions": [{"text": "Bounded conclusion"}]}},
+            "KAOJU:FIELD-SUMMARY": {"synthesis": {"conclusions": [{"text": "Bounded conclusion"}]}, "lecture_commitment_basis": [], "lecture_section_commitments": []},
         }
         selected_sections = {**required_sections.get(semantic_id, {}), **selected_sections}
         payload = {
@@ -281,6 +281,162 @@ Grounded optional detail that requires orphan confirmation.
             scope="paper-main",
         )
         return {"structure": "paper-structure-1", "draft": "paper-draft-1", "citation": "citation-map-1", "source": "source-digest-1", "display": "paper-display-1", "audit": "audit-ready"}
+
+    def test_paper_validation_reconciles_lecture_sections_with_synthesis_and_citation_lineage(self) -> None:
+        refs = self.paper_inputs()
+        identity = {"stable_id": "paper:lecture-v1", "version_family": "v1"}
+        basis = {"paper_identity": identity, "run_ref": "run-lecture-1", "source_digest_ref": refs["source"]}
+        commitment = {
+            **basis,
+            "posture": "active",
+            "readiness": "lecture-ready",
+            "section_job": {
+                "kind": "dedicated-detailed-section",
+                "title": "Lecture Paper Method",
+                "reader_outcome": "The reader can explain the method without consulting the original paper.",
+            },
+            "equation_jobs": [{"locator": "page 4, equation 2"}],
+            "display_jobs": [{"locator": "page 6, figure 2", "handling_posture": "redraw"}],
+            "blockers": [],
+            "evidence_refs": [refs["source"]],
+        }
+        self.put_structured(
+            "KAOJU:FIELD-SUMMARY",
+            "field-summary-lecture",
+            "isomer-kaoju-synthesize",
+            relationships={"audit_report": refs["audit"]},
+            sections={
+                "synthesis": {"conclusions": [{"text": "The method uses a constrained transformation."}]},
+                "lecture_commitment_basis": [basis],
+                "lecture_section_commitments": [commitment],
+            },
+            scope="survey-main",
+        )
+        self.put_structured(
+            "KAOJU:CITATION-MAP",
+            "citation-map-lecture",
+            "isomer-kaoju-write",
+            relationships={"paper_draft": refs["draft"], "evidence": refs["source"]},
+            sections={
+                "citations": {"paper-one": {"cite_key": "paper-one", "source_digest_ref": refs["source"]}},
+                "claims": {"claim-method": {"claim_id": "claim-method", "evidence_refs": [refs["source"]]}},
+                "equations": {
+                    "equation-method": {
+                        "equation_id": "equation-method",
+                        "source_digest_ref": refs["source"],
+                        "source_locator": "page 4, equation 2",
+                    }
+                },
+                "displays": {
+                    "display-method": {
+                        "display_id": "display-method",
+                        "artifact_ref": refs["display"],
+                        "evidence_refs": [refs["source"]],
+                        "source_locator": "page 6, figure 2",
+                        "teaching_role": "Show the method data flow.",
+                        "transformation_posture": "redraw",
+                        "attribution": "Adapted from Paper One, Figure 2.",
+                        "insertion_locator": "Lecture Paper Method",
+                    }
+                },
+            },
+            scope="paper-main",
+        )
+        components = {
+            name: {"status": "covered", "myst_locator": "Lecture coverage marker", "citation_map_refs": ["claim-method"]}
+            for name in (
+                "survey_role",
+                "problem_and_prerequisites",
+                "definitions_and_notation",
+                "method_intuition",
+                "method_walkthrough",
+                "worked_trace",
+                "equations",
+                "displays",
+                "results_and_evidence",
+                "comparison_and_positioning",
+                "limitations_and_failure_modes",
+                "unresolved_boundaries",
+            )
+        }
+        frontmatter = {
+            "lecture_sections": [
+                {
+                    "run_ref": "run-lecture-1",
+                    "source_digest_ref": refs["source"],
+                    "heading": "Lecture Paper Method",
+                    "section_job_kind": "dedicated-detailed-section",
+                    "reader_outcome": "The reader can explain the method without consulting the original paper.",
+                    "evidence_refs": [refs["source"]],
+                    "claim_refs": ["claim-method"],
+                    "components": components,
+                    "equation_jobs": [
+                        {
+                            "source_locator": "page 4, equation 2",
+                            "status": "covered",
+                            "myst_locator": "Equation coverage marker",
+                            "symbols": [
+                                {"symbol": "x", "meaning": "input"},
+                                {"symbol": "T", "meaning": "transformation"},
+                            ],
+                            "citation_map_refs": ["equation-method"],
+                        }
+                    ],
+                    "display_jobs": [
+                        {
+                            "source_locator": "page 6, figure 2",
+                            "status": "covered",
+                            "handling_posture": "redraw",
+                            "artifact_ref": refs["display"],
+                            "citation_map_refs": ["display-method"],
+                        }
+                    ],
+                }
+            ]
+        }
+        draft = self.root / "inputs/lecture-paper.md"
+        write(
+            draft,
+            "---\n"
+            + json.dumps(frontmatter, indent=2)
+            + "\n---\n\n"
+            + "# Survey\n\n"
+            + "## Abstract\nAccepted evidence.\n\n"
+            + "## Introduction\nSurvey role.\n\n"
+            + "## Background\nPrerequisites and notation.\n\n"
+            + "## Related Work\nPositioning.\n\n"
+            + "## Method Comparison\nComparison.\n\n"
+            + "## Lecture Paper Method\nLecture coverage marker.\n\n"
+            + "Equation coverage marker: $T(x)$, where $T$ is the transformation and $x$ is the input.\n\n"
+            + f"{{{{figure:{refs['display']}}}}}\n\n"
+            + "## Discussion\nLimitations and unresolved boundaries.\n\n"
+            + "## Conclusion\nBounded conclusion.\n\n"
+            + "## References\n{cite}`paper-one`\n",
+        )
+
+        status, result = self.paper(
+            "validate",
+            str(draft),
+            "--field-summary-ref",
+            "field-summary-lecture",
+            "--citation-map-ref",
+            "citation-map-lecture",
+        )
+
+        self.assertEqual(0, status, result)
+        self.assertEqual([], [item for item in result["diagnostics"] if item["severity"] == "error"])
+
+        draft.write_text(draft.read_text(encoding="utf-8").replace(f"{{{{figure:{refs['display']}}}}}", ""), encoding="utf-8")
+        status, invalid = self.paper(
+            "validate",
+            str(draft),
+            "--field-summary-ref",
+            "field-summary-lecture",
+            "--citation-map-ref",
+            "citation-map-lecture",
+        )
+        self.assertEqual(1, status)
+        self.assertIn("lecture_display_placeholder_missing", {item["code"] for item in invalid["diagnostics"]})
 
     def test_myst_template_exchange_derivation_tex_build_and_publication_gate(self) -> None:
         prepared = self.root / "inputs/named-paper-template"

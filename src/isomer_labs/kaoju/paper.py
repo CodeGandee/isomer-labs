@@ -73,6 +73,33 @@ REQUIRED_PAPER_SECTIONS = (
 )
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.M)
 DIRECTIVE_RE = re.compile(r"(?m)^:::\{([^}]+)\}")
+LECTURE_SECTION_COMPONENTS = (
+    "survey_role",
+    "problem_and_prerequisites",
+    "definitions_and_notation",
+    "method_intuition",
+    "method_walkthrough",
+    "worked_trace",
+    "equations",
+    "displays",
+    "results_and_evidence",
+    "comparison_and_positioning",
+    "limitations_and_failure_modes",
+    "unresolved_boundaries",
+)
+_CITATION_MAP_ID_FIELDS = (
+    "id",
+    "cite_key",
+    "citation_id",
+    "claim_id",
+    "equation_id",
+    "display_id",
+    "artifact_ref",
+    "source_ref",
+    "source_digest_ref",
+    "evidence_ref",
+)
+_CITATION_MAP_REF_FIELDS = ("source_refs", "claim_refs", "evidence_refs", "provenance_refs")
 
 
 def validate_myst(
@@ -152,6 +179,501 @@ def validate_myst(
     return _deduplicate_diagnostics(diagnostics)
 
 
+def validate_lecture_sections(
+    text: str,
+    *,
+    field_summary: Mapping[str, object],
+    citation_map: Mapping[str, object] | None,
+) -> list[PaperDiagnostic]:
+    """Reconcile lecture-section coverage with accepted synthesis and citation state."""
+
+    diagnostics: list[PaperDiagnostic] = []
+    summary_sections = _payload_sections(field_summary)
+    basis = summary_sections.get("lecture_commitment_basis")
+    commitments = summary_sections.get("lecture_section_commitments")
+    if not isinstance(basis, list):
+        return [PaperDiagnostic("lecture_commitment_basis_missing", "Accepted Field Summary has no explicit lecture_commitment_basis list.", 1)]
+    if not isinstance(commitments, list):
+        return [PaperDiagnostic("lecture_commitment_inventory_missing", "Accepted Field Summary has no explicit lecture_section_commitments list.", 1)]
+    if not basis and not commitments:
+        return []
+    if citation_map is None:
+        diagnostics.append(PaperDiagnostic("lecture_citation_map_required", "Lecture-section validation requires the exact accepted Citation Map.", 1))
+    known_citation_refs = _citation_map_refs(citation_map) if citation_map is not None else set()
+    citation_entries = _citation_map_entries(citation_map) if citation_map is not None else {}
+
+    frontmatter, _body = _extract_frontmatter(text)
+    raw_sections = frontmatter.get("lecture_sections")
+    if not isinstance(raw_sections, list):
+        if any(isinstance(item, dict) and item.get("posture") == "active" for item in commitments):
+            diagnostics.append(PaperDiagnostic("lecture_sections_missing", "Canonical MyST frontmatter requires a lecture_sections list for active lecture commitments.", 1))
+        raw_sections = []
+    indexed_sections: dict[tuple[str, str], list[Mapping[str, object]]] = {}
+    for index, raw_section in enumerate(raw_sections):
+        if not isinstance(raw_section, dict):
+            diagnostics.append(PaperDiagnostic("lecture_section_entry_invalid", f"lecture_sections entry {index + 1} must be a mapping.", 1))
+            continue
+        run_ref = _nonempty_text(raw_section.get("run_ref"))
+        digest_ref = _nonempty_text(raw_section.get("source_digest_ref"))
+        if run_ref is None or digest_ref is None:
+            diagnostics.append(PaperDiagnostic("lecture_section_identity_missing", f"lecture_sections entry {index + 1} requires run_ref and source_digest_ref.", 1))
+            continue
+        indexed_sections.setdefault((run_ref, digest_ref), []).append(raw_section)
+
+    active_keys: set[tuple[str, str]] = set()
+    for index, raw_commitment in enumerate(commitments):
+        if not isinstance(raw_commitment, dict):
+            diagnostics.append(PaperDiagnostic("lecture_commitment_invalid", f"Lecture commitment {index + 1} must be a mapping.", 1))
+            continue
+        run_ref = _nonempty_text(raw_commitment.get("run_ref"))
+        digest_ref = _nonempty_text(raw_commitment.get("source_digest_ref"))
+        posture = raw_commitment.get("posture")
+        if run_ref is None or digest_ref is None:
+            diagnostics.append(PaperDiagnostic("lecture_commitment_identity_missing", f"Lecture commitment {index + 1} requires run_ref and source_digest_ref.", 1))
+            continue
+        key = (run_ref, digest_ref)
+        if posture == "blocked":
+            blockers = raw_commitment.get("blockers")
+            detail = ", ".join(str(item) for item in blockers) if isinstance(blockers, list) and blockers else "accepted evidence remains incomplete"
+            diagnostics.append(PaperDiagnostic("lecture_commitment_blocked", f"Lecture commitment {run_ref} remains blocked: {detail}.", 1))
+            continue
+        if posture == "superseded":
+            continue
+        if posture != "active":
+            diagnostics.append(PaperDiagnostic("lecture_commitment_posture_invalid", f"Lecture commitment {run_ref} has unsupported posture {posture!r}.", 1))
+            continue
+        active_keys.add(key)
+        matches = indexed_sections.get(key, [])
+        if not matches:
+            diagnostics.append(PaperDiagnostic("lecture_section_missing", f"Active lecture commitment {run_ref} has no matching lecture_sections entry.", 1))
+            continue
+        if len(matches) > 1:
+            diagnostics.append(PaperDiagnostic("lecture_section_duplicate", f"Active lecture commitment {run_ref} has more than one lecture_sections entry.", 1))
+            continue
+        diagnostics.extend(
+            _validate_lecture_section(
+                text,
+                section=matches[0],
+                commitment=raw_commitment,
+                known_citation_refs=known_citation_refs,
+                citation_entries=citation_entries,
+                check_citation_refs=citation_map is not None,
+            )
+        )
+
+    for run_ref, digest_ref in sorted(set(indexed_sections) - active_keys):
+        diagnostics.append(PaperDiagnostic("lecture_section_unbound", f"lecture_sections entry for {run_ref} and {digest_ref} does not match an active accepted commitment.", 1))
+    return _deduplicate_diagnostics(diagnostics)
+
+
+def _validate_lecture_section(
+    text: str,
+    *,
+    section: Mapping[str, object],
+    commitment: Mapping[str, object],
+    known_citation_refs: set[str],
+    citation_entries: Mapping[str, Mapping[str, object]],
+    check_citation_refs: bool,
+) -> list[PaperDiagnostic]:
+    diagnostics: list[PaperDiagnostic] = []
+    run_ref = str(commitment["run_ref"])
+    heading = _nonempty_text(section.get("heading"))
+    headings = {_normalize_heading(match.group(2)): _line_number(text, match.start()) for match in HEADING_RE.finditer(text)}
+    section_job_value = commitment.get("section_job")
+    section_job = section_job_value if isinstance(section_job_value, dict) else {}
+    expected_heading = _nonempty_text(section_job.get("title"))
+    if heading is None:
+        diagnostics.append(PaperDiagnostic("lecture_section_heading_missing", f"Lecture section {run_ref} requires an exact heading.", 1))
+        section_line = 1
+    else:
+        normalized_heading = _normalize_heading(heading)
+        section_line = headings.get(normalized_heading, 1)
+        if normalized_heading not in headings:
+            diagnostics.append(PaperDiagnostic("lecture_section_heading_unresolved", f"Lecture section heading does not exist in canonical MyST: {heading}", 1))
+        if expected_heading is not None and normalized_heading != _normalize_heading(expected_heading):
+            diagnostics.append(PaperDiagnostic("lecture_section_job_mismatch", f"Lecture section heading {heading!r} does not match accepted section job {expected_heading!r}.", section_line))
+    if section.get("section_job_kind") != "dedicated-detailed-section":
+        diagnostics.append(PaperDiagnostic("lecture_section_job_invalid", f"Lecture section {run_ref} must record section_job_kind dedicated-detailed-section.", section_line))
+    if _nonempty_text(section.get("reader_outcome")) is None:
+        diagnostics.append(PaperDiagnostic("lecture_section_reader_outcome_missing", f"Lecture section {run_ref} must preserve its accepted reader outcome.", section_line))
+
+    evidence_refs = _string_list(section.get("evidence_refs"))
+    required_evidence_refs = set(_string_list(commitment.get("evidence_refs")))
+    required_evidence_refs.add(str(commitment["source_digest_ref"]))
+    if not required_evidence_refs.issubset(set(evidence_refs)):
+        missing = ", ".join(sorted(required_evidence_refs - set(evidence_refs)))
+        diagnostics.append(PaperDiagnostic("lecture_section_evidence_missing", f"Lecture section {run_ref} omits accepted evidence refs: {missing}.", section_line))
+    claim_refs = _string_list(section.get("claim_refs"))
+    if not claim_refs:
+        diagnostics.append(PaperDiagnostic("lecture_section_claim_refs_missing", f"Lecture section {run_ref} requires one or more accepted claim refs.", section_line))
+    _validate_citation_refs(
+        diagnostics,
+        refs=[*evidence_refs, *claim_refs],
+        known=known_citation_refs,
+        line=section_line,
+        context=f"lecture section {run_ref}",
+        enabled=check_citation_refs,
+    )
+
+    raw_components = section.get("components")
+    components = raw_components if isinstance(raw_components, dict) else {}
+    if not isinstance(raw_components, dict):
+        diagnostics.append(PaperDiagnostic("lecture_components_missing", f"Lecture section {run_ref} requires a components mapping.", section_line))
+    equation_jobs = commitment.get("equation_jobs")
+    display_jobs = commitment.get("display_jobs")
+    for component_name in LECTURE_SECTION_COMPONENTS:
+        raw_component = components.get(component_name)
+        if not isinstance(raw_component, dict):
+            diagnostics.append(PaperDiagnostic("lecture_component_missing", f"Lecture section {run_ref} does not declare component {component_name}.", section_line))
+            continue
+        diagnostics.extend(
+            _validate_lecture_component(
+                text,
+                name=component_name,
+                component=raw_component,
+                run_ref=run_ref,
+                known_citation_refs=known_citation_refs,
+                check_citation_refs=check_citation_refs,
+                required=(
+                    component_name == "equations" and isinstance(equation_jobs, list) and bool(equation_jobs)
+                )
+                or (
+                    component_name == "displays" and isinstance(display_jobs, list) and bool(display_jobs)
+                ),
+            )
+        )
+    diagnostics.extend(
+        _validate_lecture_equation_jobs(
+            text,
+            run_ref=run_ref,
+            accepted_jobs=equation_jobs,
+            recorded_jobs=section.get("equation_jobs"),
+            known_citation_refs=known_citation_refs,
+            citation_entries=citation_entries,
+            source_digest_ref=str(commitment["source_digest_ref"]),
+            check_citation_refs=check_citation_refs,
+            line=section_line,
+        )
+    )
+    diagnostics.extend(
+        _validate_lecture_display_jobs(
+            text,
+            run_ref=run_ref,
+            accepted_jobs=display_jobs,
+            recorded_jobs=section.get("display_jobs"),
+            known_citation_refs=known_citation_refs,
+            citation_entries=citation_entries,
+            source_digest_ref=str(commitment["source_digest_ref"]),
+            check_citation_refs=check_citation_refs,
+            line=section_line,
+        )
+    )
+    return diagnostics
+
+
+def _validate_lecture_component(
+    text: str,
+    *,
+    name: str,
+    component: Mapping[str, object],
+    run_ref: str,
+    known_citation_refs: set[str],
+    check_citation_refs: bool,
+    required: bool,
+) -> list[PaperDiagnostic]:
+    diagnostics: list[PaperDiagnostic] = []
+    status = component.get("status")
+    refs = _string_list(component.get("citation_map_refs"))
+    if status == "covered":
+        locator = _nonempty_text(component.get("myst_locator"))
+        if locator is None or locator not in text:
+            diagnostics.append(PaperDiagnostic("lecture_component_locator_unresolved", f"Covered component {name} for {run_ref} requires a MyST locator present in the draft.", 1))
+        if not refs:
+            diagnostics.append(PaperDiagnostic("lecture_component_lineage_missing", f"Covered component {name} for {run_ref} requires Citation Map refs.", 1))
+    elif status == "not-applicable":
+        if required:
+            diagnostics.append(PaperDiagnostic("lecture_component_required", f"Component {name} for {run_ref} has accepted jobs and cannot be not-applicable.", 1))
+        if _nonempty_text(component.get("rationale")) is None:
+            diagnostics.append(PaperDiagnostic("lecture_component_rationale_missing", f"Not-applicable component {name} for {run_ref} requires a rationale.", 1))
+        if not refs:
+            diagnostics.append(PaperDiagnostic("lecture_component_lineage_missing", f"Not-applicable component {name} for {run_ref} requires Citation Map evidence.", 1))
+    else:
+        diagnostics.append(PaperDiagnostic("lecture_component_status_invalid", f"Component {name} for {run_ref} must be covered or not-applicable.", 1))
+    _validate_citation_refs(
+        diagnostics,
+        refs=refs,
+        known=known_citation_refs,
+        line=1,
+        context=f"component {name} for {run_ref}",
+        enabled=check_citation_refs,
+    )
+    return diagnostics
+
+
+def _validate_lecture_equation_jobs(
+    text: str,
+    *,
+    run_ref: str,
+    accepted_jobs: object,
+    recorded_jobs: object,
+    known_citation_refs: set[str],
+    citation_entries: Mapping[str, Mapping[str, object]],
+    source_digest_ref: str,
+    check_citation_refs: bool,
+    line: int,
+) -> list[PaperDiagnostic]:
+    diagnostics: list[PaperDiagnostic] = []
+    accepted = accepted_jobs if isinstance(accepted_jobs, list) else []
+    recorded = recorded_jobs if isinstance(recorded_jobs, list) else []
+    by_locator = _jobs_by_locator(recorded)
+    for accepted_job in accepted:
+        locator = _job_locator(accepted_job)
+        if locator is None:
+            diagnostics.append(PaperDiagnostic("lecture_equation_job_locator_missing", f"Accepted equation job for {run_ref} has no source locator.", line))
+            continue
+        job = by_locator.get(locator)
+        if job is None:
+            diagnostics.append(PaperDiagnostic("lecture_equation_job_missing", f"Lecture section {run_ref} does not cover accepted equation job {locator}.", line))
+            continue
+        if job.get("status") != "covered":
+            diagnostics.append(PaperDiagnostic("lecture_equation_job_uncovered", f"Accepted equation job {locator} for {run_ref} must be covered.", line))
+        myst_locator = _nonempty_text(job.get("myst_locator"))
+        if myst_locator is None or myst_locator not in text:
+            diagnostics.append(PaperDiagnostic("lecture_equation_locator_unresolved", f"Equation job {locator} for {run_ref} requires a MyST locator present in the draft.", line))
+        symbols = job.get("symbols")
+        if not _valid_symbol_definitions(symbols):
+            diagnostics.append(PaperDiagnostic("lecture_equation_symbols_missing", f"Equation job {locator} for {run_ref} requires symbol definitions.", line))
+        refs = _string_list(job.get("citation_map_refs"))
+        if not refs:
+            diagnostics.append(PaperDiagnostic("lecture_equation_lineage_missing", f"Equation job {locator} for {run_ref} requires Citation Map refs.", line))
+        _validate_citation_refs(diagnostics, refs=refs, known=known_citation_refs, line=line, context=f"equation job {locator} for {run_ref}", enabled=check_citation_refs)
+        if check_citation_refs and not any(
+            _citation_entry_matches_source(citation_entries.get(ref), source_digest_ref=source_digest_ref, source_locator=locator)
+            for ref in refs
+        ):
+            diagnostics.append(PaperDiagnostic("lecture_equation_source_lineage_missing", f"Citation Map entries for equation job {locator} do not preserve its exact Source Digest and locator.", line))
+    extra = set(by_locator) - {locator for locator in (_job_locator(item) for item in accepted) if locator is not None}
+    for locator in sorted(extra):
+        diagnostics.append(PaperDiagnostic("lecture_equation_job_unbound", f"Recorded equation job {locator} for {run_ref} is absent from accepted synthesis.", line))
+    return diagnostics
+
+
+def _validate_lecture_display_jobs(
+    text: str,
+    *,
+    run_ref: str,
+    accepted_jobs: object,
+    recorded_jobs: object,
+    known_citation_refs: set[str],
+    citation_entries: Mapping[str, Mapping[str, object]],
+    source_digest_ref: str,
+    check_citation_refs: bool,
+    line: int,
+) -> list[PaperDiagnostic]:
+    diagnostics: list[PaperDiagnostic] = []
+    accepted = accepted_jobs if isinstance(accepted_jobs, list) else []
+    recorded = recorded_jobs if isinstance(recorded_jobs, list) else []
+    by_locator = _jobs_by_locator(recorded)
+    for accepted_job in accepted:
+        locator = _job_locator(accepted_job)
+        if locator is None:
+            diagnostics.append(PaperDiagnostic("lecture_display_job_locator_missing", f"Accepted display job for {run_ref} has no source locator.", line))
+            continue
+        job = by_locator.get(locator)
+        if job is None:
+            diagnostics.append(PaperDiagnostic("lecture_display_job_missing", f"Lecture section {run_ref} does not cover accepted display job {locator}.", line))
+            continue
+        accepted_posture = accepted_job.get("handling_posture") if isinstance(accepted_job, dict) else None
+        posture = job.get("handling_posture")
+        if accepted_posture is not None and posture != accepted_posture:
+            diagnostics.append(PaperDiagnostic("lecture_display_posture_mismatch", f"Display job {locator} for {run_ref} does not preserve accepted handling posture {accepted_posture!r}.", line))
+        refs = _string_list(job.get("citation_map_refs"))
+        if not refs:
+            diagnostics.append(PaperDiagnostic("lecture_display_lineage_missing", f"Display job {locator} for {run_ref} requires Citation Map refs.", line))
+        _validate_citation_refs(diagnostics, refs=refs, known=known_citation_refs, line=line, context=f"display job {locator} for {run_ref}", enabled=check_citation_refs)
+        display_entries = [citation_entries[ref] for ref in refs if ref in citation_entries]
+        if check_citation_refs and not any(
+            _citation_entry_matches_source(entry, source_digest_ref=source_digest_ref, source_locator=locator)
+            for entry in display_entries
+        ):
+            diagnostics.append(PaperDiagnostic("lecture_display_source_lineage_missing", f"Citation Map entries for display job {locator} do not preserve its exact Source Digest and locator.", line))
+        for field in ("teaching_role", "attribution", "insertion_locator"):
+            if check_citation_refs and not any(_nonempty_text(entry.get(field)) is not None for entry in display_entries):
+                diagnostics.append(PaperDiagnostic("lecture_display_metadata_missing", f"Citation Map entries for display job {locator} require {field}.", line))
+        if check_citation_refs and not any(
+            (entry.get("transformation_posture") or entry.get("handling_posture")) == posture
+            for entry in display_entries
+        ):
+            diagnostics.append(PaperDiagnostic("lecture_display_transformation_mismatch", f"Citation Map entries for display job {locator} do not preserve handling posture {posture!r}.", line))
+        if posture in {"reproduce", "adapt", "redraw"}:
+            artifact_ref = _nonempty_text(job.get("artifact_ref"))
+            if job.get("status") != "covered" or artifact_ref is None:
+                diagnostics.append(PaperDiagnostic("lecture_display_artifact_missing", f"Display job {locator} for {run_ref} requires a file-backed PAPER-DISPLAY Artifact.", line))
+            elif f"{{{{figure:{artifact_ref}}}}}" not in text and f"{{{{table:{artifact_ref}}}}}" not in text:
+                diagnostics.append(PaperDiagnostic("lecture_display_placeholder_missing", f"Display job {locator} for {run_ref} requires a typed MyST placeholder for {artifact_ref}.", line))
+            if artifact_ref is not None:
+                _validate_citation_refs(diagnostics, refs=[artifact_ref], known=known_citation_refs, line=line, context=f"display Artifact {artifact_ref}", enabled=check_citation_refs)
+        elif posture == "describe":
+            myst_locator = _nonempty_text(job.get("myst_locator"))
+            if job.get("status") != "covered" or myst_locator is None or myst_locator not in text:
+                diagnostics.append(PaperDiagnostic("lecture_display_description_missing", f"Display job {locator} for {run_ref} requires a located textual description.", line))
+        elif posture == "omit":
+            if job.get("status") != "not-applicable" or _nonempty_text(job.get("rationale")) is None:
+                diagnostics.append(PaperDiagnostic("lecture_display_omission_invalid", f"Omitted display job {locator} for {run_ref} requires not-applicable status and rationale.", line))
+        else:
+            diagnostics.append(PaperDiagnostic("lecture_display_posture_invalid", f"Display job {locator} for {run_ref} has unsupported handling posture {posture!r}.", line))
+    extra = set(by_locator) - {locator for locator in (_job_locator(item) for item in accepted) if locator is not None}
+    for locator in sorted(extra):
+        diagnostics.append(PaperDiagnostic("lecture_display_job_unbound", f"Recorded display job {locator} for {run_ref} is absent from accepted synthesis.", line))
+    return diagnostics
+
+
+def _validate_citation_refs(
+    diagnostics: list[PaperDiagnostic],
+    *,
+    refs: Sequence[str],
+    known: set[str],
+    line: int,
+    context: str,
+    enabled: bool,
+) -> None:
+    if not enabled:
+        return
+    for ref in refs:
+        if ref not in known:
+            diagnostics.append(PaperDiagnostic("lecture_citation_ref_unknown", f"Citation Map does not resolve {ref!r} used by {context}.", line))
+
+
+def _payload_sections(payload: Mapping[str, object]) -> Mapping[str, object]:
+    sections = payload.get("sections")
+    return sections if isinstance(sections, dict) else payload
+
+
+def _citation_map_refs(payload: Mapping[str, object]) -> set[str]:
+    sections = _payload_sections(payload)
+    refs: set[str] = set()
+    for name in ("citations", "claims", "equations", "displays", "evidence"):
+        value = sections.get(name)
+        if isinstance(value, dict):
+            refs.update(str(key) for key in value)
+        _collect_citation_refs(value, refs)
+    return refs
+
+
+def _citation_map_entries(payload: Mapping[str, object]) -> dict[str, Mapping[str, object]]:
+    sections = _payload_sections(payload)
+    entries: dict[str, Mapping[str, object]] = {}
+    for name in ("citations", "claims", "equations", "displays", "evidence"):
+        value = sections.get(name)
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if not isinstance(item, dict):
+                    continue
+                entries[str(key)] = item
+                for field in _CITATION_MAP_ID_FIELDS:
+                    identifier = _nonempty_text(item.get(field))
+                    if identifier is not None:
+                        entries[identifier] = item
+        elif isinstance(value, list):
+            for item in value:
+                if not isinstance(item, dict):
+                    continue
+                for field in _CITATION_MAP_ID_FIELDS:
+                    identifier = _nonempty_text(item.get(field))
+                    if identifier is not None:
+                        entries[identifier] = item
+    return entries
+
+
+def _citation_entry_matches_source(
+    entry: Mapping[str, object] | None,
+    *,
+    source_digest_ref: str,
+    source_locator: str,
+) -> bool:
+    if entry is None:
+        return False
+    recorded_locator = _nonempty_text(entry.get("source_locator")) or _nonempty_text(entry.get("locator"))
+    source_refs = {
+        item
+        for item in (
+            _nonempty_text(entry.get("source_digest_ref")),
+            _nonempty_text(entry.get("source_ref")),
+            *_string_list(entry.get("evidence_refs")),
+            *_string_list(entry.get("source_refs")),
+        )
+        if item is not None
+    }
+    return recorded_locator == source_locator and source_digest_ref in source_refs
+
+
+def _valid_symbol_definitions(value: object) -> bool:
+    return isinstance(value, list) and bool(value) and all(
+        isinstance(item, dict)
+        and _nonempty_text(item.get("symbol")) is not None
+        and _nonempty_text(item.get("meaning")) is not None
+        for item in value
+    )
+
+
+def _citation_map_display_refs(payload: Mapping[str, object]) -> set[str]:
+    displays = _payload_sections(payload).get("displays")
+    refs: set[str] = set()
+    if isinstance(displays, dict):
+        for value in displays.values():
+            if isinstance(value, dict):
+                artifact_ref = _nonempty_text(value.get("artifact_ref"))
+                if artifact_ref is not None:
+                    refs.add(artifact_ref)
+    elif isinstance(displays, list):
+        for value in displays:
+            if isinstance(value, dict):
+                artifact_ref = _nonempty_text(value.get("artifact_ref"))
+                if artifact_ref is not None:
+                    refs.add(artifact_ref)
+    return refs
+
+
+def _collect_citation_refs(value: object, refs: set[str]) -> None:
+    if isinstance(value, dict):
+        for field in _CITATION_MAP_ID_FIELDS:
+            item = _nonempty_text(value.get(field))
+            if item is not None:
+                refs.add(item)
+        for field in _CITATION_MAP_REF_FIELDS:
+            refs.update(_string_list(value.get(field)))
+        for item in value.values():
+            _collect_citation_refs(item, refs)
+    elif isinstance(value, list):
+        for item in value:
+            _collect_citation_refs(item, refs)
+
+
+def _jobs_by_locator(value: Sequence[object]) -> dict[str, Mapping[str, object]]:
+    jobs: dict[str, Mapping[str, object]] = {}
+    for item in value:
+        locator = _job_locator(item)
+        if isinstance(item, dict) and locator is not None:
+            jobs[locator] = item
+    return jobs
+
+
+def _job_locator(value: object) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    return _nonempty_text(value.get("source_locator")) or _nonempty_text(value.get("locator"))
+
+
+def _string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+
+
+def _nonempty_text(value: object) -> str | None:
+    return value.strip() if isinstance(value, str) and value.strip() else None
+
+
 def derive_markdown_text(text: str) -> tuple[str, list[PaperDiagnostic]]:
     """Derive deterministic review Markdown while reporting lossy constructs."""
 
@@ -191,9 +713,43 @@ class KaojuPaperService:
         required_sections: Sequence[str] = REQUIRED_PAPER_SECTIONS,
         allowed_placeholders: Sequence[str] | None = None,
         source_refs: Sequence[str] = (),
+        field_summary_ref: str | None = None,
+        citation_map_ref: str | None = None,
     ) -> dict[str, object]:
         text = source.read_text(encoding="utf-8")
-        diagnostics = validate_myst(text, required_sections=required_sections, allowed_placeholders=allowed_placeholders, source_refs=source_refs)
+        input_diagnostics: list[PaperDiagnostic] = []
+        field_summary: Mapping[str, object] | None = None
+        citation_map: Mapping[str, object] | None = None
+        display_refs: Sequence[str] | None = None
+        if field_summary_ref is not None:
+            field_summary_path, field_summary_record = self._record_file(field_summary_ref, expected={"KAOJU:FIELD-SUMMARY"})
+            field_summary = _load_json(field_summary_path)
+            if field_summary_record.get("status") != "ready":
+                input_diagnostics.append(PaperDiagnostic("lecture_field_summary_not_ready", f"Field Summary {field_summary_ref!r} is not accepted and ready.", 1))
+        if citation_map_ref is not None:
+            citation_map_path, citation_map_record = self._record_file(citation_map_ref, expected={"KAOJU:CITATION-MAP"})
+            citation_map = _load_json(citation_map_path)
+            if citation_map_record.get("status") != "ready":
+                input_diagnostics.append(PaperDiagnostic("lecture_citation_map_not_ready", f"Citation Map {citation_map_ref!r} is not accepted and ready.", 1))
+            display_refs = sorted(_citation_map_display_refs(citation_map))
+        diagnostics = [
+            *input_diagnostics,
+            *validate_myst(
+                text,
+                required_sections=required_sections,
+                allowed_placeholders=allowed_placeholders,
+                source_refs=source_refs,
+                display_refs=display_refs,
+            ),
+        ]
+        for display_ref in display_refs or ():
+            try:
+                self._record_file(display_ref, expected={"KAOJU:PAPER-DISPLAY"})
+            except KaojuServiceError as exc:
+                diagnostics.append(PaperDiagnostic("lecture_display_artifact_invalid", f"Citation Map display {display_ref!r} is not a valid file-backed PAPER-DISPLAY Artifact: {exc.message}", 1))
+        if field_summary is not None:
+            diagnostics.extend(validate_lecture_sections(text, field_summary=field_summary, citation_map=citation_map))
+            diagnostics = _deduplicate_diagnostics(diagnostics)
         return {
             "ok": not _errors(diagnostics),
             "mutated": False,

@@ -431,7 +431,7 @@ _Avoid_: Write sharing, filesystem permission, unrestricted shared workspace
 ### Artifacts, Evidence, and Decisions
 
 **Packaged Mindset Default**:
-A read-only question-catalog JSON resource shipped inside the Kaoju topic-creation skill. Kaoju packages v2 defaults for `paper.deep-dive`, `paper.skimming`, and `source-code.ingest`, each with one `default` question set whose `question_ids` value is `"all"`, but a packaged default is only a seed for topic creation. It is not current topic intent, an Artifact, a runtime fallback, or an instruction surface. Kaoju copies or topic-specializes a validated default only when creating a missing Mindset Source after one concrete `topic.intent.overview` exists.
+A read-only question-catalog JSON resource shipped inside the Kaoju topic-creation skill. Kaoju packages v2 defaults for `paper.deep-dive`, `paper.skimming`, `paper.lecture`, and `source-code.ingest`, each with one `default` question set whose `question_ids` value is `"all"`, but a packaged default is only a seed for topic creation. It is not current topic intent, an Artifact, a runtime fallback, or an instruction surface. Kaoju copies or topic-specializes a validated default only when creating a missing Mindset Source after one concrete `topic.intent.overview` exists.
 _Avoid_: Mindset Source, Mindset Record, Artifact, Workflow, system prompt
 
 **Packaged Writing-Template Default**:
@@ -449,6 +449,10 @@ _Avoid_: source paper, source repository, Workflow, Artifact, Mindset Record, `K
 **Mindset Record**:
 A Run-scoped, revisioned Artifact containing materialized answers to one immutable selected question-set snapshot from one Mindset Source. A Kaoju `KAOJU:MINDSET-RECORD` preserves the Source semantic label, safe relative path, key, schema version, digest, selected question-set id, selection kind, exact triggering condition, selection rationale, optional derivation metadata, expanded question order, exact prompts and `additional_notes`, answer and evidence expectations, pinned Research Topic and Survey Contract context, answer states, rationales, evidence refs, collector posture, explicitly assigned supplemental questions, Source-update disposition, and unresolved state. Later edits to the mutable Source or changes to task context affect later Runs only. Ordinary questions asked during reading remain in the applicable reading Artifacts unless the user explicitly targets the Mindset Record or both Record and Source.
 _Avoid_: Mindset Source, Workflow checkpoint, Source Digest, ordinary reading notes, generic questionnaire response
+
+**Lecture-Depth Paper Reading**:
+A Kaoju paper or report examination route selected by requested depth `lecture` and mindset key `paper.lecture`. The selected Run creates a detailed-presentation commitment even when its optional Mindset Source is absent. Examination records a `lecture-ready` or blocked `lecture_exposition` in the Source Digest; accepted synthesis carries a one-to-one lecture-section commitment into the Field Summary; writing maps every active commitment to one dedicated, substantial, evidence-grounded survey section. The section teaches the method well enough for basic standalone comprehension while the original work remains authoritative for full proof, audit, and reproduction. A later deep-dive, shorter draft, or omission does not remove the commitment; only an explicit accepted supersession that names the prior Run or Source Digest can change it.
+_Avoid_: paper deep dive, final survey prose in examination, automatic commitment from citation frequency, fixed word or media quota
 
 **Artifact**:
 A durable file or file-backed output produced or used during research work, such as a literature note, hypothesis, baseline report, experiment plan, result table, figure, report, Decision Record, prompt record, or tool output.

@@ -13,7 +13,7 @@ Survey-paper quality is a multidimensional profile with explicit populations, ex
 | Traceability | Claims, citations, tables, figures mapped to accepted records and locators; citation keys and bibliography resolved | A reviewer can audit each conclusion and display |
 | Synthesis quality | Survey questions answered, taxonomy categories with boundary cases, contradictions and negative findings represented, gaps distinguished from missing search, calibrated conclusions | Rewards useful organization without inventing consensus or novelty |
 | Balance and limitations | Material source-class, venue, time, provider, geographic, or method-family skews reported; audited limitations propagated | Reports observed imbalance and blind spots rather than hiding them behind aggregate counts |
-| Reader-facing reporting | Section jobs distinct, tables and figures state question and takeaway, terminology consistent, methods reproducible, main-text detail separated from appendices | Judges understandability and reviewability, not promotional tone |
+| Reader-facing reporting | Section jobs distinct, every active lecture commitment receives one dedicated self-contained method explanation, equations define symbols, tables and figures state question and takeaway, terminology consistent, methods reproducible, main-text detail separated from appendices | Judges understandability and reviewability, not promotional tone |
 | Document integrity | Numbering, citations, hierarchy, extracted text, layout, readability, accessibility, build provenance, file integrity | Publication readiness still requires the separate rendered-document checks |
 
 ## Verdicts

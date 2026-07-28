@@ -244,9 +244,9 @@
     {
       "semantic_id": "KAOJU:SOURCE-DIGEST",
       "category": "Examination, Comparison, Audit, and Synthesis",
-      "meaning": "inspected source identity, exact locators, statements, interpretations, contradictions, and depth.",
+      "meaning": "inspected source identity, exact locators, statements, interpretations, contradictions, and depth, with pedagogical exposition, equation and display treatment, dedicated-section intent, readiness, and blockers for lecture examination.",
       "minimum_content": [
-        "inspected source identity, exact locators, statements, interpretations, contradictions, and depth."
+        "inspected source identity, exact locators, statements, interpretations, contradictions, and depth, plus lecture exposition when the selected Run uses paper.lecture."
       ],
       "producer": "isomer-kaoju-examine",
       "consumers": [
@@ -358,9 +358,9 @@
     {
       "semantic_id": "KAOJU:FIELD-SUMMARY",
       "category": "Examination, Comparison, Audit, and Synthesis",
-      "meaning": "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits.",
+      "meaning": "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, limits, and the deterministic inventory of active, blocked, or explicitly superseded lecture-section commitments.",
       "minimum_content": [
-        "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, and limits."
+        "bounded themes, chronology, taxonomy, representative works, disagreements, gaps, limits, and lecture commitment basis and inventory."
       ],
       "producer": "isomer-kaoju-synthesize",
       "consumers": [
@@ -678,9 +678,9 @@
     {
       "semantic_id": "KAOJU:PAPER-REVISION-LOG",
       "category": "MyST-First Paper",
-      "meaning": "append-only canonical paper changes, evidence effects, and actor decisions.",
+      "meaning": "append-only canonical paper changes, evidence effects, actor decisions, and affected lecture commitment lineage.",
       "minimum_content": [
-        "append-only canonical paper changes, evidence effects, and actor decisions."
+        "append-only canonical paper changes, evidence effects, actor decisions, and affected active, blocked, or explicitly superseded lecture Run or Source Digest refs."
       ],
       "producer": "isomer-kaoju-write",
       "consumers": [

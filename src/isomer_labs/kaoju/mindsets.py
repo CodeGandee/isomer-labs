@@ -36,7 +36,7 @@ from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
 SOURCE_SEMANTIC_LABEL = "topic.intent.kaoju_mindsets"
 RECORD_SEMANTIC_ID = "KAOJU:MINDSET-RECORD"
-DEFAULT_KEYS = ("paper.deep-dive", "paper.skimming", "source-code.ingest")
+DEFAULT_KEYS = ("paper.deep-dive", "paper.skimming", "paper.lecture", "source-code.ingest")
 KEY_RE = re.compile(r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$")
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 MAX_SOURCE_BYTES = 128 * 1024
@@ -62,6 +62,20 @@ EXPECTED_DEFAULT_QUESTIONS = {
         ("survey-evidence-signal", "What is the strongest visible evidence relevant to the survey, where is it located, and what evidence depth have I actually achieved?"),
         ("scope-and-credibility-risk", "Which assumptions, evaluation settings, missing comparisons, contradictions, or identity and access uncertainties limit its relevance to this survey?"),
         ("survey-triage", "What survey disposition should I recommend: deep dive, defer, or exclude from the current boundary, what gap would it fill, and what must be verified first?"),
+    ),
+    "paper.lecture": (
+        ("survey-section-role", "Why does this paper warrant a dedicated detailed section in the active survey, and what role must that section play in the survey's argument?"),
+        ("reader-contract", "What should the intended reader understand after the section, and which prerequisites must the section introduce?"),
+        ("problem-setting-and-notation", "Which problem setting, assumptions, definitions, and notation must be established before explaining the method?"),
+        ("method-intuition", "What is the method's central intuition, and why do its major design choices follow from that intuition?"),
+        ("method-walkthrough", "What is the method's ordered algorithm, architecture, data flow, or reasoning process at enough detail for standalone comprehension?"),
+        ("worked-trace", "Which concrete example, worked derivation, or execution trace best helps a reader follow the method, and what source evidence supports it?"),
+        ("equation-teaching-plan", "Which equations are essential to understanding the method, what does every symbol mean, and how should each equation be interpreted or derived in the survey?"),
+        ("display-teaching-plan", "Which original figures or tables are essential, what does each show, and should the survey reproduce, adapt, redraw, describe, or omit each one?"),
+        ("evidence-and-results", "Which experiments, analyses, or theoretical results establish the method's main claims, and how strong is that evidence?"),
+        ("comparison-and-positioning", "How does the method differ from its closest alternatives along the survey's accepted comparison dimensions?"),
+        ("limitations-and-failure-modes", "Which assumptions, limitations, failure cases, contradictions, and unresolved details qualify the explanation?"),
+        ("section-outline-and-readiness", "What is the proposed dedicated-section sequence, and what evidence, explanation, display, permission, or interpretation gaps still block lecture-ready status?"),
     ),
     "source-code.ingest": (
         ("survey-role-and-identity", "How does this exact repository revision relate to the active survey question, selected direction, and associated works, and what are its source, license, and access posture?"),

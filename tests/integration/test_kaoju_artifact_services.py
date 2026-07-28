@@ -166,7 +166,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
 
         created = ensure_mindset_sources(context, env={}, cwd=self.root, specialize=specialize)
         self.assertTrue(created["ok"], created)
-        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "source-code.ingest")), {item["mindset_key"] for item in created["created"]})
+        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "paper.lecture", "source-code.ingest")), {item["mindset_key"] for item in created["created"]})
         deep, diagnostics = load_mindset_source(mindset_source_child(mindset_root, "paper.deep-dive"))
         self.assertEqual([], diagnostics)
         assert deep is not None
@@ -184,7 +184,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         self.assertTrue(upgraded.ok)
         replay = ensure_mindset_sources(context, env={}, cwd=self.root)
         self.assertFalse(replay["mutated"])
-        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "source-code.ingest")), {item["mindset_key"] for item in replay["preserved"]})
+        self.assertEqual(set(("paper.deep-dive", "paper.skimming", "paper.lecture", "source-code.ingest")), {item["mindset_key"] for item in replay["preserved"]})
         persisted, diagnostics = load_mindset_source(skim_path)
         self.assertEqual([], diagnostics)
         assert persisted is not None
@@ -217,7 +217,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             "resolve-mindset",
             "run-mindset-missing",
             "--mindset-key",
-            "paper.skimming",
+            "paper.lecture",
             "--source-missing",
             "--topic",
             "alpha",
@@ -232,10 +232,10 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
         source_root, diagnostics = resolve_semantic_path(context, "topic.intent.kaoju_mindsets", env={}, cwd=self.root)  # type: ignore[arg-type]
         self.assertEqual([], diagnostics)
         assert source_root is not None
-        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.lecture"))
         self.assertEqual([], diagnostics)
         assert source is not None
-        source_path = mindset_source_child(source_root.path, "paper.skimming")
+        source_path = mindset_source_child(source_root.path, "paper.lecture")
         source_path.parent.mkdir(parents=True, exist_ok=True)
         source_path.write_text(json.dumps(source), encoding="utf-8")
 
@@ -247,7 +247,7 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             "resolve-mindset",
             "run-mindset-missing",
             "--mindset-key",
-            "paper.skimming",
+            "paper.lecture",
             "--source-missing",
             "--topic",
             "alpha",

@@ -203,7 +203,7 @@ class SystemSkillInstallerTests(unittest.TestCase):
         topic_creator = kaoju_root / "subskills" / "isomer-kaoju-topic-creator"
         self.assertTrue((topic_creator / "SKILL-MAIN.md").is_file())
         self.assertEqual(
-            {"paper.deep-dive.json", "paper.skimming.json", "source-code.ingest.json"},
+            {"paper.deep-dive.json", "paper.skimming.json", "paper.lecture.json", "source-code.ingest.json"},
             {path.name for path in (topic_creator / "assets" / "defaults" / "mindsets").glob("*.json")},
         )
         template_defaults = (
