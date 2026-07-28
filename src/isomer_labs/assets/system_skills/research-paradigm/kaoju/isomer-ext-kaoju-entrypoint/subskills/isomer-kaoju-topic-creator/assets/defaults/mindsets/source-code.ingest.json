@@ -1,5 +1,5 @@
 {
-  "schema_version": "isomer-kaoju-mindset-source.v1",
+  "schema_version": "isomer-kaoju-mindset-source.v2",
   "mindset_key": "source-code.ingest",
   "purpose": "Guide survey-relative repository and source-tree examination without confusing inspected implementation with executed behavior.",
   "applicability": {
@@ -71,6 +71,13 @@
       "answer_expectation": "Recommend the smallest justified next evidence step without authorizing execution or satisfying a Gate.",
       "required_posture": "answer-or-unresolved",
       "evidence_expectation": "Cite the code findings, unresolved claims, dependencies, blockers, and risk evidence behind the recommendation."
+    }
+  ],
+  "question_sets": [
+    {
+      "question_set_id": "default",
+      "triggering_condition": "Use when no specialized question set matches the task and active Run context.",
+      "question_ids": "all"
     }
   ],
   "additional_question_collector": {

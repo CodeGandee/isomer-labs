@@ -9,9 +9,9 @@
     {
       "semantic_id": "KAOJU:MINDSET-RECORD",
       "category": "Run Reflection",
-      "meaning": "Run-scoped materialized answers to an immutable snapshot of one topic Mindset Source and its pinned survey context.",
+      "meaning": "Run-scoped materialized answers to one selected question set from an immutable snapshot of a topic Mindset Source and its pinned survey context.",
       "minimum_content": [
-        "Source label, relative path, key, digest, materialized questions and notes, Run and Survey Contract refs, answer states, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state."
+        "Source label, relative path, key, schema version, digest, selected question-set identity, triggering condition, selection kind and rationale, materialized questions and notes, Run and Survey Contract refs, answer states, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state. Historical Records may omit the additive Source-version and question-set-selection fields."
       ],
       "producer": "isomer-ext-kaoju-entrypoint",
       "consumers": [

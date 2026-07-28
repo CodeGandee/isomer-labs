@@ -14,7 +14,7 @@ This storage-neutral page is a bundle-local projection for quick reading. Run `i
 
 ## Run Reflection
 
-- `KAOJU:MINDSET-RECORD`: Run-scoped materialized answers to an immutable snapshot of one topic Mindset Source, with pinned survey context, exact prompts and notes, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state. The mutable Mindset Source itself is derived intent, not an Artifact.
+- `KAOJU:MINDSET-RECORD`: Run-scoped materialized answers to one selected question-set snapshot from one topic Mindset Source, with pinned survey context, selection condition and rationale, exact expanded prompts and notes, evidence refs, collector posture, supplemental questions, Source-update disposition, and unresolved state. The mutable Mindset Source itself is derived intent, not an Artifact.
 
 ## Discovery and Acquisition
 

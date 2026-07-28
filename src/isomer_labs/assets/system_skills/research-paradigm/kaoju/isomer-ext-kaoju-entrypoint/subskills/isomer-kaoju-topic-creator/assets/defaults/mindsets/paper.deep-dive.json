@@ -1,5 +1,5 @@
 {
-  "schema_version": "isomer-kaoju-mindset-source.v1",
+  "schema_version": "isomer-kaoju-mindset-source.v2",
   "mindset_key": "paper.deep-dive",
   "purpose": "Guide a survey-relative full-text paper examination without confusing source statements, interpretation, and evidence strength.",
   "applicability": {
@@ -71,6 +71,13 @@
       "answer_expectation": "Recommend bounded changes while keeping unresolved questions explicit.",
       "required_posture": "answer-or-unresolved",
       "evidence_expectation": "Cite the findings and survey records that justify each recommendation."
+    }
+  ],
+  "question_sets": [
+    {
+      "question_set_id": "default",
+      "triggering_condition": "Use when no specialized question set matches the task and active Run context.",
+      "question_ids": "all"
     }
   ],
   "additional_question_collector": {

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
 from hashlib import sha256
 from html import escape
 from importlib.resources import files
@@ -16,13 +15,26 @@ import uuid
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
 
+from isomer_labs.kaoju.mindset_question_sets import (
+    DEFAULT_QUESTION_SET_ID,
+    DEFAULT_TRIGGERING_CONDITION,
+    SOURCE_SCHEMA_RESOURCES,
+    SOURCE_SCHEMA_VERSION,
+    SOURCE_SCHEMA_VERSION_V1 as SOURCE_SCHEMA_VERSION_V1,
+    MindsetDiagnostic,
+    QuestionSetSelectionKind,
+    expanded_question_ids,
+    materialized_question,
+    question_contract,
+    question_set_selection_diagnostics,
+    question_sets_for_source,
+    validate_question_set_selection,
+)
 from isomer_labs.models import EffectiveTopicContext
 from isomer_labs.workspace.path_resolution import resolve_semantic_path
 
 
-SOURCE_SCHEMA_VERSION = "isomer-kaoju-mindset-source.v1"
 SOURCE_SEMANTIC_LABEL = "topic.intent.kaoju_mindsets"
-SOURCE_SCHEMA_RESOURCE = "resources/mindset-source.v1.schema.json"
 RECORD_SEMANTIC_ID = "KAOJU:MINDSET-RECORD"
 DEFAULT_KEYS = ("paper.deep-dive", "paper.skimming", "source-code.ingest")
 KEY_RE = re.compile(r"^[a-z0-9]+(?:[.-][a-z0-9]+)*$")
@@ -62,25 +74,6 @@ EXPECTED_DEFAULT_QUESTIONS = {
         ("survey-readiness-and-risks", "What further source inspection, environment preparation, bounded trial, or reproduction should I recommend for the survey, and what blockers, side effects, or resource risks qualify that recommendation?"),
     ),
 }
-
-
-@dataclass(frozen=True)
-class MindsetDiagnostic:
-    """One stable Mindset Source or Record diagnostic."""
-
-    code: str
-    message: str
-    location: str
-    severity: str = "error"
-
-    def to_json(self) -> dict[str, str]:
-        return {
-            "code": self.code,
-            "message": self.message,
-            "location": self.location,
-            "severity": self.severity,
-        }
-
 
 def mindset_source_child(root: Path, mindset_key: str) -> Path:
     """Resolve one deterministic direct-child Source path without scanning."""
@@ -136,7 +129,18 @@ def mindset_source_diagnostics(
     diagnostics: list[MindsetDiagnostic] = []
     if serialized_size is not None and serialized_size > MAX_SOURCE_BYTES:
         diagnostics.append(MindsetDiagnostic("mindset_source_too_large", f"Mindset Source exceeds {MAX_SOURCE_BYTES} bytes.", "<root>"))
-    schema = _load_json_resource(SOURCE_SCHEMA_RESOURCE)
+    source_schema_version = raw.get("schema_version") if isinstance(raw, dict) else None
+    schema_resource = SOURCE_SCHEMA_RESOURCES.get(source_schema_version) if isinstance(source_schema_version, str) else None
+    schema_resource = schema_resource or SOURCE_SCHEMA_RESOURCES[SOURCE_SCHEMA_VERSION]
+    if isinstance(raw, dict) and source_schema_version not in SOURCE_SCHEMA_RESOURCES:
+        diagnostics.append(
+            MindsetDiagnostic(
+                "mindset_source_schema_version_unsupported",
+                f"Mindset Source schema_version must be one of: {', '.join(sorted(SOURCE_SCHEMA_RESOURCES))}.",
+                "schema_version",
+            )
+        )
+    schema = _load_json_resource(schema_resource)
     errors = sorted(
         Draft202012Validator(schema).iter_errors(raw),
         key=lambda error: (tuple(str(part) for part in error.path), error.message),
@@ -175,6 +179,69 @@ def mindset_source_diagnostics(
     duplicates = sorted({item for item in question_ids if question_ids.count(item) > 1})
     if duplicates:
         diagnostics.append(MindsetDiagnostic("mindset_question_id_duplicate", f"Question ids must be unique: {', '.join(duplicates)}.", "questions"))
+    if source_schema_version == SOURCE_SCHEMA_VERSION:
+        fixed_question_ids = {str(question.get("question_id")) for question in questions if isinstance(question, dict)} if isinstance(questions, list) else set()
+        referenced_question_ids: set[str] = set()
+        question_set_ids: list[str] = []
+        question_sets = raw.get("question_sets")
+        if isinstance(question_sets, list):
+            for index, question_set in enumerate(question_sets):
+                if not isinstance(question_set, dict):
+                    continue
+                question_set_id = str(question_set.get("question_set_id"))
+                question_set_ids.append(question_set_id)
+                references = question_set.get("question_ids")
+                if references == "all":
+                    referenced_question_ids.update(fixed_question_ids)
+                    continue
+                if not isinstance(references, list):
+                    continue
+                reference_ids = [str(item) for item in references]
+                referenced_question_ids.update(reference_ids)
+                repeated_references = sorted({item for item in reference_ids if reference_ids.count(item) > 1})
+                if repeated_references:
+                    diagnostics.append(
+                        MindsetDiagnostic(
+                            "mindset_question_set_reference_duplicate",
+                            f"Question set {question_set_id!r} repeats question ids: {', '.join(repeated_references)}.",
+                            f"question_sets/{index}/question_ids",
+                        )
+                    )
+                unresolved = sorted(set(reference_ids) - fixed_question_ids)
+                if unresolved:
+                    diagnostics.append(
+                        MindsetDiagnostic(
+                            "mindset_question_set_reference_unresolved",
+                            f"Question set {question_set_id!r} references undeclared questions: {', '.join(unresolved)}.",
+                            f"question_sets/{index}/question_ids",
+                        )
+                    )
+        duplicate_set_ids = sorted({item for item in question_set_ids if question_set_ids.count(item) > 1})
+        if duplicate_set_ids:
+            diagnostics.append(
+                MindsetDiagnostic(
+                    "mindset_question_set_id_duplicate",
+                    f"Question set ids must be unique: {', '.join(duplicate_set_ids)}.",
+                    "question_sets",
+                )
+            )
+        if question_set_ids.count(DEFAULT_QUESTION_SET_ID) != 1:
+            diagnostics.append(
+                MindsetDiagnostic(
+                    "mindset_default_question_set_invalid",
+                    "Mindset Source v2 must declare exactly one question set named 'default'.",
+                    "question_sets",
+                )
+            )
+        unassigned = sorted(fixed_question_ids - referenced_question_ids)
+        if unassigned:
+            diagnostics.append(
+                MindsetDiagnostic(
+                    "mindset_question_unassigned",
+                    f"Every fixed question must belong to at least one question set: {', '.join(unassigned)}.",
+                    "questions",
+                )
+            )
     for location, key_name in _walk_keys(raw):
         normalized = key_name.lower().replace("-", "_")
         if normalized in {"command", "commands", "tool", "tools", "workflow_stage", "gate", "provider_payload", "system_prompt", "instruction_priority", "authority"}:
@@ -220,6 +287,20 @@ def validate_packaged_defaults(*, process: Mapping[str, Any] | None = None) -> l
         observed_questions = tuple((str(item.get("question_id")), str(item.get("prompt"))) for item in questions if isinstance(item, dict))
         if observed_questions != EXPECTED_DEFAULT_QUESTIONS[key]:
             diagnostics.append(MindsetDiagnostic("mindset_seed_questions_invalid", f"{key} question ids, order, or exact prompts differ from the checked inventory.", str(path)))
+        question_sets = question_sets_for_source(source)
+        expected_default_set = {
+            "question_set_id": DEFAULT_QUESTION_SET_ID,
+            "triggering_condition": DEFAULT_TRIGGERING_CONDITION,
+            "question_ids": "all",
+        }
+        if source.get("schema_version") != SOURCE_SCHEMA_VERSION or question_sets != [expected_default_set]:
+            diagnostics.append(
+                MindsetDiagnostic(
+                    "mindset_seed_default_question_set_invalid",
+                    f"{key} must use Source v2 with one exact default question set covering its checked question inventory.",
+                    str(path),
+                )
+            )
         for index, question in enumerate([*questions, source["additional_question_collector"]]):
             if question.get("additional_notes") != "":
                 diagnostics.append(MindsetDiagnostic("mindset_seed_notes_not_empty", "Packaged default additional_notes must be empty.", f"{path}/questions/{index}"))
@@ -258,6 +339,7 @@ def render_mindset_source(source: Mapping[str, Any], *, path: Path | None = None
     lines = [f"# {kind}: {escape(str(source.get('mindset_key', 'unknown')))}", "", escape(str(source.get("purpose", "")))]
     if path is not None:
         lines.extend(("", f"- Current path: `{escape(str(path))}`"))
+    lines.append(f"- Schema: `{escape(str(source.get('schema_version', 'unknown')))}`")
     lines.append(f"- Digest: `{canonical_digest(source)}`")
     applicability = source.get("applicability")
     if isinstance(applicability, dict):
@@ -277,6 +359,19 @@ def render_mindset_source(source: Mapping[str, Any], *, path: Path | None = None
         lines.append(f"   Notes: {escape(notes) if notes else '_none_'}")
         lines.append(f"   Answer expectation: {escape(str(question.get('answer_expectation', '')))}")
         lines.append(f"   Evidence expectation: {escape(str(question.get('evidence_expectation', '')))}")
+    lines.extend(("", "## Question Sets", ""))
+    for question_set in question_sets_for_source(source):
+        question_set_id = escape(str(question_set.get("question_set_id", "unknown")))
+        condition = question_set.get("triggering_condition")
+        references = question_set.get("question_ids")
+        lines.append(f"### {question_set_id}")
+        lines.append("")
+        lines.append(f"Triggering condition: {escape(str(condition)) if condition is not None else '_implicit legacy fallback_'}")
+        if references == "all":
+            lines.append("Questions: `all`")
+        elif isinstance(references, list):
+            lines.append(f"Questions: {', '.join(f'`{escape(str(item))}`' for item in references)}")
+        lines.append("")
     collector = source.get("additional_question_collector")
     if isinstance(collector, dict):
         lines.extend(("", "## Additional-Question Collector", "", f"**{escape(str(collector.get('question_id', 'unknown')))}:** {escape(str(collector.get('prompt', '')))}", f"Notes: {escape(str(collector.get('additional_notes', ''))) or '_none_'}"))
@@ -340,6 +435,14 @@ def ensure_mindset_sources(
             continue
         candidate = dict(specialize(deepcopy(seed), overview_text)) if specialize is not None else deepcopy(seed)
         candidate_diagnostics = mindset_source_diagnostics(candidate, filename=target.name, expected_key=key)
+        if candidate.get("schema_version") != SOURCE_SCHEMA_VERSION:
+            candidate_diagnostics.append(
+                MindsetDiagnostic(
+                    "mindset_created_source_version_invalid",
+                    f"Newly derived Mindset Sources must use {SOURCE_SCHEMA_VERSION}.",
+                    "schema_version",
+                )
+            )
         if candidate_diagnostics:
             invalid.append({"mindset_key": key, "path": str(target), "diagnostics": [item.to_json() for item in candidate_diagnostics]})
             continue
@@ -395,6 +498,9 @@ def materialize_record_payload(
     run_ref: str,
     survey_contract_ref: str,
     survey_context_refs: Sequence[str],
+    question_set_id: str | None = None,
+    question_set_selection_kind: QuestionSetSelectionKind | None = None,
+    question_set_selection_rationale: str | None = None,
 ) -> dict[str, Any]:
     """Create an independently readable, initially active Mindset Record snapshot."""
 
@@ -403,8 +509,28 @@ def materialize_record_payload(
         raise ValueError("Cannot materialize an invalid Mindset Source: " + "; ".join(item.message for item in source_diagnostics))
     if not survey_context_refs:
         raise ValueError("Mindset Record requires a selected Direction Set or direction-scoped Reading List context ref.")
-    rows = [_materialized_question(question) for question in source.get("questions", []) if isinstance(question, dict)]
-    collector = _materialized_question(source["additional_question_collector"])
+    selection = validate_question_set_selection(
+        source,
+        question_set_id=question_set_id,
+        selection_kind=question_set_selection_kind,
+        rationale=question_set_selection_rationale,
+    )
+    question_sets = {
+        str(item["question_set_id"]): item
+        for item in question_sets_for_source(source)
+        if isinstance(item.get("question_set_id"), str)
+    }
+    selected_set = question_sets[selection["question_set_id"]]
+    question_catalog = {
+        str(question["question_id"]): question
+        for question in source.get("questions", [])
+        if isinstance(question, dict) and isinstance(question.get("question_id"), str)
+    }
+    rows = [
+        materialized_question(question_catalog[str(question_id)])
+        for question_id in expanded_question_ids(source, selected_set)
+    ]
+    collector = materialized_question(source["additional_question_collector"])
     collector["checked"] = False
     payload = {
         "title": f"Mindset Record: {source['mindset_key']}",
@@ -418,6 +544,8 @@ def materialize_record_payload(
                 "relative_path": relative_path,
                 "mindset_key": source["mindset_key"],
                 "digest": canonical_digest(source),
+                "source_schema_version": source["schema_version"],
+                "question_set_selection": selection,
                 **({"derivation": source["derivation"]} if isinstance(source.get("derivation"), dict) else {}),
                 "questions": rows,
                 "additional_question_collector": collector,
@@ -457,6 +585,7 @@ def validate_mindset_record(payload: Mapping[str, Any], *, prior_payload: Mappin
         key = source.get("mindset_key")
         if isinstance(key, str) and relative != f"{key}.json":
             diagnostics.append(MindsetDiagnostic("mindset_record_locator_mismatch", "Source relative_path must equal <mindset_key>.json.", "sections/source_snapshot/relative_path"))
+        diagnostics.extend(question_set_selection_diagnostics(source))
         rows = source.get("questions")
         collector = source.get("additional_question_collector")
         ids = [str(row.get("question_id")) for row in rows if isinstance(row, dict)] if isinstance(rows, list) else []
@@ -533,7 +662,18 @@ def render_mindset_record(payload: Mapping[str, Any]) -> str:
 
     sections = payload.get("sections", {})
     source = sections.get("source_snapshot", {}) if isinstance(sections, dict) else {}
-    lines = [f"# {escape(str(payload.get('title', 'Mindset Record')))}", "", escape(str(payload.get("summary", ""))), "", f"- Source: `{escape(str(source.get('semantic_label', '')))}/{escape(str(source.get('relative_path', '')))}`", f"- Mindset key: `{escape(str(source.get('mindset_key', '')))}`", f"- Snapshotted digest: `{escape(str(source.get('digest', '')))}`"]
+    lines = [f"# {escape(str(payload.get('title', 'Mindset Record')))}", "", escape(str(payload.get("summary", ""))), "", f"- Source: `{escape(str(source.get('semantic_label', '')))}/{escape(str(source.get('relative_path', '')))}`", f"- Mindset key: `{escape(str(source.get('mindset_key', '')))}`", f"- Source schema: `{escape(str(source.get('source_schema_version', 'historical')))}`", f"- Snapshotted digest: `{escape(str(source.get('digest', '')))}`"]
+    selection = source.get("question_set_selection") if isinstance(source, dict) else None
+    if isinstance(selection, dict):
+        condition = selection.get("triggering_condition")
+        lines.extend(
+            (
+                f"- Question set: `{escape(str(selection.get('question_set_id', '')))}`",
+                f"- Selection kind: `{escape(str(selection.get('selection_kind', '')))}`",
+                f"- Triggering condition: {escape(str(condition)) if condition is not None else '_implicit legacy fallback_'}",
+                f"- Selection rationale: {escape(str(selection.get('rationale', '')))}",
+            )
+        )
     context = sections.get("survey_context", {}) if isinstance(sections, dict) else {}
     if isinstance(context, dict):
         lines.extend((f"- Research Topic: `{escape(str(context.get('topic_id', '')))}`", f"- Run: `{escape(str(context.get('run_ref', '')))}`", f"- Survey Contract: `{escape(str(context.get('survey_contract_ref', '')))}`", f"- Survey context refs: {', '.join(f'`{escape(str(item))}`' for item in context.get('context_refs', [])) or '_none_'}"))
@@ -575,21 +715,6 @@ def target_for_question(*, explicit_target: str | None, asks_to_persist: bool) -
     return "reading_artifact"
 
 
-def _materialized_question(question: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "question_id": question["question_id"],
-        "prompt": question["prompt"],
-        "additional_notes": question["additional_notes"],
-        "answer_expectation": question["answer_expectation"],
-        "required_posture": question["required_posture"],
-        "evidence_expectation": question["evidence_expectation"],
-        "answer_state": "unanswered",
-        "answer": None,
-        "rationale": None,
-        "evidence_refs": [],
-    }
-
-
 def _record_snapshot(payload: Mapping[str, Any]) -> str:
     sections = payload.get("sections")
     source = sections.get("source_snapshot") if isinstance(sections, dict) else None
@@ -598,20 +723,14 @@ def _record_snapshot(payload: Mapping[str, Any]) -> str:
     assert isinstance(sections, dict)
     snapshot = {
         key: source.get(key)
-        for key in ("semantic_label", "relative_path", "mindset_key", "digest", "derivation")
+        for key in ("semantic_label", "relative_path", "mindset_key", "digest", "source_schema_version", "question_set_selection", "derivation")
         if key in source
     }
-    snapshot["questions"] = [_question_contract(row) for row in source.get("questions", []) if isinstance(row, dict)]
+    snapshot["questions"] = [question_contract(row) for row in source.get("questions", []) if isinstance(row, dict)]
     collector = source.get("additional_question_collector")
-    snapshot["additional_question_collector"] = _question_contract(collector) if isinstance(collector, dict) else None
+    snapshot["additional_question_collector"] = question_contract(collector) if isinstance(collector, dict) else None
     snapshot["survey_context"] = sections.get("survey_context")
     return canonical_digest(snapshot)
-
-
-def _question_contract(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: row.get(key) for key in ("question_id", "prompt", "additional_notes", "answer_expectation", "required_posture", "evidence_expectation")}
-
-
 def _render_record_row(row: Mapping[str, Any]) -> list[str]:
     notes = escape(str(row.get("additional_notes", ""))) or "_none_"
     answer = row.get("answer") or row.get("rationale") or "_not recorded_"

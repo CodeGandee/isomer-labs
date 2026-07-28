@@ -387,6 +387,9 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             run_ref="run-mindset-present",
             survey_contract_ref="survey-contract-1",
             survey_context_refs=("direction-set-1",),
+            question_set_id="default",
+            question_set_selection_kind="default-fallback",
+            question_set_selection_rationale="The packaged Source declares no specialized question sets.",
         )
         payload_path = self.root / "mindset-record-present.json"
         payload_path.write_text(json.dumps(payload), encoding="utf-8")
@@ -469,6 +472,9 @@ class KaojuArtifactServiceIntegrationTests(unittest.TestCase):
             run_ref="run-mindset-1",
             survey_contract_ref="survey-contract-1",
             survey_context_refs=("direction-set-1",),
+            question_set_id="default",
+            question_set_selection_kind="default-fallback",
+            question_set_selection_rationale="The packaged Source declares no specialized question sets.",
         )
         payload_path = self.root / "mindset-record-v1.json"
         payload_path.write_text(json.dumps(payload), encoding="utf-8")

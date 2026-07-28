@@ -6,22 +6,30 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
+from typing import Mapping
 import unittest
 from unittest.mock import Mock, patch
 
+from isomer_labs.artifact_formats import ArtifactFormatRegistry, ResearchRecordFormatProvider, render_artifact
 from isomer_labs.kaoju.contracts import load_binding_registry, load_contract, load_semantic_registry
 from isomer_labs.kaoju.mindsets import (
     COLLECTOR_ANSWER_EXPECTATION,
     COLLECTOR_PROMPT,
     DEFAULT_KEYS,
+    DEFAULT_QUESTION_SET_ID,
+    DEFAULT_TRIGGERING_CONDITION,
     EXPECTED_DEFAULT_QUESTIONS,
+    SOURCE_SCHEMA_VERSION,
+    SOURCE_SCHEMA_VERSION_V1,
     canonical_digest,
     ensure_mindset_sources,
+    expanded_question_ids,
     load_mindset_source,
     materialize_record_payload,
     mindset_source_child,
     mindset_source_diagnostics,
     packaged_default_root,
+    question_sets_for_source,
     render_mindset_record,
     render_mindset_source,
     replace_mindset_source,
@@ -29,6 +37,7 @@ from isomer_labs.kaoju.mindsets import (
     target_for_question,
     validate_mindset_record,
     validate_packaged_defaults,
+    validate_question_set_selection,
 )
 
 
@@ -41,8 +50,23 @@ class KaojuMindsetSourceTests(unittest.TestCase):
             source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), key), expected_key=key)
             self.assertEqual([], diagnostics)
             assert source is not None
+            self.assertEqual(SOURCE_SCHEMA_VERSION, source["schema_version"])
             observed = tuple((item["question_id"], item["prompt"]) for item in source["questions"])
             self.assertEqual(EXPECTED_DEFAULT_QUESTIONS[key], observed)
+            self.assertEqual(
+                [
+                    {
+                        "question_set_id": DEFAULT_QUESTION_SET_ID,
+                        "triggering_condition": DEFAULT_TRIGGERING_CONDITION,
+                        "question_ids": "all",
+                    }
+                ],
+                source["question_sets"],
+            )
+            self.assertEqual(
+                [question_id for question_id, _prompt in EXPECTED_DEFAULT_QUESTIONS[key]],
+                expanded_question_ids(source, source["question_sets"][0]),
+            )
             self.assertTrue(all(item["additional_notes"] == "" for item in source["questions"]))
             collector = source["additional_question_collector"]
             self.assertEqual("additional-questions", collector["question_id"])
@@ -65,12 +89,110 @@ class KaojuMindsetSourceTests(unittest.TestCase):
         invalid_source = deepcopy(source)
         invalid_source["command"] = "run arbitrary code"
         invalid_source["questions"][1]["question_id"] = invalid_source["questions"][0]["question_id"]
+        invalid_source["questions"][0]["triggering_condition"] = "Questions cannot select themselves."
         invalid_source["additional_question_collector"]["prompt"] = "Anything else?"
         codes = {item.code for item in mindset_source_diagnostics(invalid_source, filename="paper.skimming.json")}
         self.assertIn("mindset_source_schema_invalid", codes)
         self.assertIn("mindset_authority_field_forbidden", codes)
         self.assertIn("mindset_question_id_duplicate", codes)
         self.assertIn("mindset_collector_prompt_invalid", codes)
+
+    def test_v2_question_sets_support_all_and_many_to_many_explicit_membership(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source["question_sets"].extend(
+            [
+                {
+                    "question_set_id": "evaluation-focused",
+                    "triggering_condition": "Use when evaluation evidence is central.",
+                    "question_ids": ["survey-fit", "survey-evidence-signal"],
+                },
+                {
+                    "question_set_id": "credibility-focused",
+                    "triggering_condition": "Use when credibility risks are central.",
+                    "question_ids": ["survey-fit", "scope-and-credibility-risk"],
+                },
+            ]
+        )
+        self.assertEqual([], mindset_source_diagnostics(source, filename="paper.skimming.json"))
+        self.assertEqual(
+            ["survey-fit", "survey-evidence-signal"],
+            expanded_question_ids(source, source["question_sets"][1]),
+        )
+        rendered = render_mindset_source(source)
+        self.assertIn("Questions: `all`", rendered)
+        self.assertIn("### evaluation-focused", rendered)
+        self.assertIn("`survey-fit`, `survey-evidence-signal`", rendered)
+
+    def test_v2_question_set_validation_rejects_invalid_fallback_and_membership(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+
+        missing_default = deepcopy(source)
+        missing_default["question_sets"][0]["question_set_id"] = "specialized"
+        missing_codes = {item.code for item in mindset_source_diagnostics(missing_default)}
+        self.assertIn("mindset_source_schema_invalid", missing_codes)
+        self.assertIn("mindset_default_question_set_invalid", missing_codes)
+
+        duplicate_default = deepcopy(source)
+        duplicate_default["question_sets"].append(deepcopy(duplicate_default["question_sets"][0]))
+        duplicate_codes = {item.code for item in mindset_source_diagnostics(duplicate_default)}
+        self.assertIn("mindset_question_set_id_duplicate", duplicate_codes)
+        self.assertIn("mindset_default_question_set_invalid", duplicate_codes)
+
+        unresolved = deepcopy(source)
+        unresolved["question_sets"][0]["question_ids"] = ["missing-question"]
+        unresolved_codes = {item.code for item in mindset_source_diagnostics(unresolved)}
+        self.assertIn("mindset_question_set_reference_unresolved", unresolved_codes)
+        self.assertIn("mindset_question_unassigned", unresolved_codes)
+
+        repeated = deepcopy(source)
+        repeated["question_sets"][0]["question_ids"] = ["survey-fit", "survey-fit"]
+        repeated_codes = {item.code for item in mindset_source_diagnostics(repeated)}
+        self.assertIn("mindset_question_set_reference_duplicate", repeated_codes)
+
+        invalid_all = deepcopy(source)
+        invalid_all["question_sets"][0]["question_ids"] = "everything"
+        invalid_all_codes = {item.code for item in mindset_source_diagnostics(invalid_all)}
+        self.assertIn("mindset_source_schema_invalid", invalid_all_codes)
+        self.assertIn("mindset_question_unassigned", invalid_all_codes)
+
+        too_many_sets = deepcopy(source)
+        too_many_sets["question_sets"].extend(
+            {
+                "question_set_id": f"set-{index}",
+                "triggering_condition": f"Use for bounded case {index}.",
+                "question_ids": ["survey-fit"],
+            }
+            for index in range(16)
+        )
+        self.assertIn(
+            "mindset_source_schema_invalid",
+            {item.code for item in mindset_source_diagnostics(too_many_sets)},
+        )
+
+    def test_v1_source_normalizes_to_implicit_default_without_mutation(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        legacy = deepcopy(source)
+        legacy["schema_version"] = SOURCE_SCHEMA_VERSION_V1
+        legacy.pop("question_sets")
+        before = deepcopy(legacy)
+        self.assertEqual([], mindset_source_diagnostics(legacy, filename="paper.skimming.json"))
+        self.assertEqual(
+            [
+                {
+                    "question_set_id": "default",
+                    "triggering_condition": None,
+                    "question_ids": "all",
+                }
+            ],
+            question_sets_for_source(legacy),
+        )
+        self.assertEqual(before, legacy)
 
     def test_source_rendering_escapes_user_content_and_stays_non_artifact(self) -> None:
         source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
@@ -94,6 +216,8 @@ class KaojuMindsetSourceTests(unittest.TestCase):
             mindset_root.mkdir(parents=True)
             existing_seed, _ = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
             assert existing_seed is not None
+            existing_seed["schema_version"] = SOURCE_SCHEMA_VERSION_V1
+            existing_seed.pop("question_sets")
             existing_seed["questions"][0]["additional_notes"] = "Prioritize compiler reliability."
             existing_seed["derivation"] = {
                 "overview_semantic_label": "topic.intent.overview",
@@ -119,6 +243,8 @@ class KaojuMindsetSourceTests(unittest.TestCase):
             preserved, diagnostics = load_mindset_source(existing_path)
             self.assertEqual([], diagnostics)
             assert preserved is not None
+            self.assertEqual(SOURCE_SCHEMA_VERSION_V1, preserved["schema_version"])
+            self.assertNotIn("question_sets", preserved)
             self.assertEqual("Prioritize compiler reliability.", preserved["questions"][0]["additional_notes"])
             copied, diagnostics = load_mindset_source(mindset_source_child(mindset_root, "paper.deep-dive"))
             self.assertEqual([], diagnostics)
@@ -145,6 +271,40 @@ class KaojuMindsetSourceTests(unittest.TestCase):
             self.assertEqual(["paper.deep-dive"], [item["mindset_key"] for item in result["invalid"]])
             self.assertEqual(before, invalid.read_bytes())
 
+    def test_create_missing_rejects_specialization_that_emits_legacy_v1(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            overview = root / "overview.md"
+            overview.write_text("Concrete topic", encoding="utf-8")
+            mindset_root = root / "mindsets"
+
+            def resolve(_context: object, label: str, **_kwargs: object) -> tuple[SimpleNamespace, list[object]]:
+                return (SimpleNamespace(path=overview if label == "topic.intent.overview" else mindset_root), [])
+
+            def legacy_specialization(seed: Mapping[str, object], _overview_text: str) -> Mapping[str, object]:
+                candidate = dict(deepcopy(seed))
+                candidate["schema_version"] = SOURCE_SCHEMA_VERSION_V1
+                candidate.pop("question_sets")
+                return candidate
+
+            with patch("isomer_labs.kaoju.mindsets.resolve_semantic_path", side_effect=resolve):
+                result = ensure_mindset_sources(
+                    Mock(),
+                    env={},
+                    cwd=root,
+                    specialize=legacy_specialization,
+                )
+            self.assertFalse(result["ok"])
+            self.assertFalse(result["mutated"])
+            self.assertEqual(set(DEFAULT_KEYS), {item["mindset_key"] for item in result["invalid"]})
+            self.assertTrue(
+                all(
+                    any(diagnostic["code"] == "mindset_created_source_version_invalid" for diagnostic in item["diagnostics"])
+                    for item in result["invalid"]
+                )
+            )
+            self.assertTrue(all(not mindset_source_child(mindset_root, key).exists() for key in DEFAULT_KEYS))
+
     def test_explicit_replacement_checks_observed_digest_and_preserves_key(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "paper.skimming.json"
@@ -159,6 +319,18 @@ class KaojuMindsetSourceTests(unittest.TestCase):
             self.assertNotEqual(observed, result["new_digest"])
             with self.assertRaisesRegex(ValueError, "changed after"):
                 replace_mindset_source(path, source, observed_digest=observed)
+
+            legacy = deepcopy(source)
+            legacy["schema_version"] = SOURCE_SCHEMA_VERSION_V1
+            legacy.pop("question_sets")
+            path.write_text(json.dumps(legacy), encoding="utf-8")
+            legacy_observed = canonical_digest(legacy)
+            upgraded = replace_mindset_source(path, candidate, observed_digest=legacy_observed)
+            self.assertEqual(legacy_observed, upgraded["old_digest"])
+            upgraded_source, upgraded_diagnostics = load_mindset_source(path)
+            self.assertEqual([], upgraded_diagnostics)
+            assert upgraded_source is not None
+            self.assertEqual(SOURCE_SCHEMA_VERSION, upgraded_source["schema_version"])
 
             path.write_text('{"mindset_key":"paper.skimming"}', encoding="utf-8")
             invalid_digest = sha256(path.read_bytes()).hexdigest()
@@ -195,6 +367,9 @@ class KaojuMindsetRecordTests(unittest.TestCase):
             run_ref="run-1",
             survey_contract_ref="survey-contract-1",
             survey_context_refs=("direction-1",),
+            question_set_id="default",
+            question_set_selection_kind="default-fallback",
+            question_set_selection_rationale="The packaged Source declares no specialized question sets.",
         )
 
     def test_materialization_validation_terminal_posture_and_rendering(self) -> None:
@@ -217,8 +392,136 @@ class KaojuMindsetRecordTests(unittest.TestCase):
         rendered = render_mindset_record(payload)
         self.assertIn("Materialized Source Questions", rendered)
         self.assertIn("Snapshotted digest", rendered)
+        self.assertIn("Question set: `default`", rendered)
+        self.assertIn("Selection kind: `default-fallback`", rendered)
         self.assertIn("Collector Posture", rendered)
         self.assertIn("Source Update Status", rendered)
+
+    def test_specialized_selection_materializes_only_explicit_order(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source["question_sets"].extend(
+            [
+                {
+                    "question_set_id": "evidence-focused",
+                    "triggering_condition": "Use when the task asks for the strongest evidence signal.",
+                    "question_ids": ["survey-evidence-signal", "survey-fit"],
+                },
+                {
+                    "question_set_id": "overlapping-focus",
+                    "triggering_condition": "Use when the task also asks about evidence.",
+                    "question_ids": ["survey-fit", "scope-and-credibility-risk"],
+                },
+            ]
+        )
+        payload = materialize_record_payload(
+            source,
+            relative_path="paper.skimming.json",
+            topic_id="alpha",
+            run_ref="run-specialized",
+            survey_contract_ref="survey-contract-1",
+            survey_context_refs=("direction-1",),
+            question_set_id="evidence-focused",
+            question_set_selection_kind="matched",
+            question_set_selection_rationale="Evidence strength is the primary task.",
+        )
+        snapshot = payload["sections"]["source_snapshot"]
+        self.assertEqual(
+            ["survey-evidence-signal", "survey-fit"],
+            [row["question_id"] for row in snapshot["questions"]],
+        )
+        self.assertEqual("evidence-focused", snapshot["question_set_selection"]["question_set_id"])
+        self.assertEqual(
+            "Use when the task asks for the strongest evidence signal.",
+            snapshot["question_set_selection"]["triggering_condition"],
+        )
+        self.assertEqual([], validate_mindset_record(payload))
+
+    def test_selection_boundary_rejects_invalid_set_kind_and_rationale(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source["question_sets"].append(
+            {
+                "question_set_id": "evidence-focused",
+                "triggering_condition": "Use for evidence-focused tasks.",
+                "question_ids": ["survey-evidence-signal"],
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "does not exist"):
+            validate_question_set_selection(
+                source,
+                question_set_id="missing",
+                selection_kind="matched",
+                rationale="A reason.",
+            )
+        with self.assertRaisesRegex(ValueError, "default-fallback"):
+            validate_question_set_selection(
+                source,
+                question_set_id="default",
+                selection_kind="matched",
+                rationale="A reason.",
+            )
+        with self.assertRaisesRegex(ValueError, "requires selection kind 'matched'"):
+            validate_question_set_selection(
+                source,
+                question_set_id="evidence-focused",
+                selection_kind="default-fallback",
+                rationale="A reason.",
+            )
+        with self.assertRaisesRegex(ValueError, "nonempty"):
+            validate_question_set_selection(
+                source,
+                question_set_id="evidence-focused",
+                selection_kind="matched",
+                rationale=" ",
+            )
+
+    def test_legacy_default_and_historical_record_compatibility(self) -> None:
+        source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))
+        self.assertEqual([], diagnostics)
+        assert source is not None
+        source["schema_version"] = SOURCE_SCHEMA_VERSION_V1
+        source.pop("question_sets")
+        payload = materialize_record_payload(
+            source,
+            relative_path="paper.skimming.json",
+            topic_id="alpha",
+            run_ref="run-legacy",
+            survey_contract_ref="survey-contract-1",
+            survey_context_refs=("direction-1",),
+        )
+        snapshot = payload["sections"]["source_snapshot"]
+        self.assertEqual("legacy-default", snapshot["question_set_selection"]["selection_kind"])
+        self.assertIsNone(snapshot["question_set_selection"]["triggering_condition"])
+        self.assertEqual(6, len(snapshot["questions"]))
+        self.assertEqual([], validate_mindset_record(payload))
+
+        historical = deepcopy(payload)
+        historical_snapshot = historical["sections"]["source_snapshot"]
+        historical_snapshot.pop("source_schema_version")
+        historical_snapshot.pop("question_set_selection")
+        self.assertEqual([], validate_mindset_record(historical))
+        registry = ArtifactFormatRegistry()
+        registry.register_provider(ResearchRecordFormatProvider())
+        rendered = render_artifact(
+            historical,
+            registry=registry,
+            format_profile_ref="isomer:research/record-format/profile/kaoju/reflection/mindset-record/v1",
+        )
+        self.assertTrue(rendered.ok, [diagnostic.message for diagnostic in rendered.diagnostics])
+        self.assertIn("Source schema: `historical`", str(rendered.content))
+
+    def test_question_set_selection_is_immutable_and_semantically_validated(self) -> None:
+        prior = self.make_payload()
+        changed = deepcopy(prior)
+        selection = changed["sections"]["source_snapshot"]["question_set_selection"]
+        selection["selection_kind"] = "matched"
+        selection["triggering_condition"] = "Changed after materialization."
+        codes = {item.code for item in validate_mindset_record(changed, prior_payload=prior)}
+        self.assertIn("mindset_record_question_set_selection_invalid", codes)
+        self.assertIn("mindset_record_snapshot_changed", codes)
 
     def test_materialization_requires_valid_source_and_selected_survey_context(self) -> None:
         source, diagnostics = load_mindset_source(mindset_source_child(packaged_default_root(), "paper.skimming"))

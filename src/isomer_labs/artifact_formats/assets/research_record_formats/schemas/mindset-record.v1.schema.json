@@ -25,6 +25,18 @@
             "relative_path": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*\\.json$", "maxLength": 85},
             "mindset_key": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$", "maxLength": 80},
             "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "source_schema_version": {"enum": ["isomer-kaoju-mindset-source.v1", "isomer-kaoju-mindset-source.v2"]},
+            "question_set_selection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["question_set_id", "selection_kind", "triggering_condition", "rationale"],
+              "properties": {
+                "question_set_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$", "maxLength": 80},
+                "selection_kind": {"enum": ["matched", "default-fallback", "legacy-default"]},
+                "triggering_condition": {"type": ["string", "null"], "minLength": 1, "maxLength": 2000},
+                "rationale": {"type": "string", "minLength": 1, "maxLength": 4000}
+              }
+            },
             "derivation": {
               "type": "object",
               "additionalProperties": false,

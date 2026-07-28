@@ -4,7 +4,13 @@
 
 - Source: `{{ payload.sections.source_snapshot.semantic_label }}/{{ payload.sections.source_snapshot.relative_path }}`
 - Mindset key: `{{ payload.sections.source_snapshot.mindset_key }}`
+- Source schema: `{% if payload.sections.source_snapshot.source_schema_version is defined %}{{ payload.sections.source_snapshot.source_schema_version }}{% else %}historical{% endif %}`
 - Snapshotted digest: `{{ payload.sections.source_snapshot.digest }}`
+{% if payload.sections.source_snapshot.question_set_selection is defined %}- Question set: `{{ payload.sections.source_snapshot.question_set_selection.question_set_id }}`
+- Selection kind: `{{ payload.sections.source_snapshot.question_set_selection.selection_kind }}`
+- Triggering condition: {{ payload.sections.source_snapshot.question_set_selection.triggering_condition or "implicit legacy fallback" }}
+- Selection rationale: {{ payload.sections.source_snapshot.question_set_selection.rationale }}
+{% endif %}
 - Run: `{{ payload.sections.survey_context.run_ref }}`
 - Survey Contract: `{{ payload.sections.survey_context.survey_contract_ref }}`
 - Survey context: {{ payload.sections.survey_context.context_refs | join(", ") }}
@@ -59,7 +65,7 @@ Checked: `{{ payload.sections.source_snapshot.additional_question_collector.chec
 
 `{{ payload.sections.source_update.disposition }}`
 
-{% if payload.sections.source_update.new_relative_path %}- New Source: `{{ payload.sections.source_update.new_relative_path }}`
+{% if payload.sections.source_update.new_relative_path is defined %}- New Source: `{{ payload.sections.source_update.new_relative_path }}`
 - New digest: `{{ payload.sections.source_update.new_digest }}`
 {% endif %}
 

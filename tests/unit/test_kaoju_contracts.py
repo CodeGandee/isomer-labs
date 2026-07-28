@@ -50,6 +50,11 @@ class KaojuContractTests(unittest.TestCase):
         self.assertNotIn("semantic_aliases", contract.raw)
         self.assertNotIn("binding_registry_resource", contract.raw)
         self.assertEqual("record-or-skip-missing-per-run", contract.raw["mindsets"]["resolution_mode"])
+        self.assertEqual("isomer-kaoju-mindset-source.v2", contract.raw["mindsets"]["source_schema_version"])
+        self.assertEqual(
+            ["isomer-kaoju-mindset-source.v1", "isomer-kaoju-mindset-source.v2"],
+            contract.raw["mindsets"]["accepted_source_schema_versions"],
+        )
         self.assertNotIn("ensure_mode", contract.raw["mindsets"])
 
         bindings = load_binding_registry()

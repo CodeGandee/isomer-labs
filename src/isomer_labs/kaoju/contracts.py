@@ -155,7 +155,11 @@ def load_contract() -> KaojuContract:
     if not isinstance(mindset_config, dict):
         raise ValueError("Kaoju contract must declare checked mindset route metadata.")
     expected_mindset_metadata = {
-        "source_schema_version": "isomer-kaoju-mindset-source.v1",
+        "source_schema_version": "isomer-kaoju-mindset-source.v2",
+        "accepted_source_schema_versions": [
+            "isomer-kaoju-mindset-source.v1",
+            "isomer-kaoju-mindset-source.v2",
+        ],
         "source_semantic_label": "topic.intent.kaoju_mindsets",
         "record_semantic_id": "KAOJU:MINDSET-RECORD",
         "repair_designator": "isomer-ext-kaoju-entrypoint->topic-creator",
